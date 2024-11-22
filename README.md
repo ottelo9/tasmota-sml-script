@@ -11,7 +11,6 @@ Fast HowTo:
 Die Skripte müssen von euch auf euren Zähler angepasst werden:
 
 Sucht die Zeile
-;-- SML --
 >M 1
 
 Dort müsst ihr den SML Descriptor für euren Zähler anpassen. Weitere Details auf meiner Seite!
