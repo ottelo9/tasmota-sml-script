@@ -1,5 +1,6 @@
 # tasmota-sml-script
-Tasmota Script with SML and Google Charts for Energy/Grid meter
+Tasmota Script with SML and Google Charts for Energy/Grid meter 
+
 Tasmota Skripte mit SML und Google Charts für smarte Stromzähler (oder Energiezähler/smarte Steckdosen)
 
 Für eine Anleitung, Beschreibung sowie passende Tasmota Images siehe mein Blog:
