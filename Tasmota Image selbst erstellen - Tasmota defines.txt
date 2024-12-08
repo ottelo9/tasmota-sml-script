@@ -130,7 +130,9 @@ oder hier Beschreibung https://github.com/arendst/Tasmota/blob/master/tasmota/my
 #endif*/
 
 //-- enables additional software serial channels for ESP32, (receive only), define pin with '-' sign to assign to software serial
-//USE_ESP32_SW_SERIAL
+/*#ifndef USE_ESP32_SW_SERIAL
+#define USE_ESP32_SW_SERIAL
+#endif*/
 
 //-- ESP8266: WENN IHR 1M FLASHSPEICHER HABT
 #ifndef USE_EEPROM
