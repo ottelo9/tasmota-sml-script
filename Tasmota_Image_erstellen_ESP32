@@ -95,6 +95,8 @@
 #define USE_SCRIPT_TASK
 #endif
 
+//----------------------------------------------------------------------------
+
 // Die OTA URL ändern, damit man nicht aus Versehen ein Upgrade macht!
 // Leider wird dieses define nur verwendet, wenn ihr Tasmota zum ersten Mal auf den ESP flasht, ansonsten wird immer die im Flash gespeicherte verwendet. Mit diesem Command in der Console könnt ihr die url aber nachträglich ändern: 
 // otaurl !!NEVER UPGRADE VIA WEB SERVER!!
