@@ -1,0 +1,164 @@
+// Tasmota Image erstellen - #defines für ESP8266 - 16.11.2024
+//------------------------------------------------------------------------------------------------------------------------------------------------
+// Diese Features/Treiber (defines) habe ich für meine ESP8266 Tasmota Images/Firmware verwendet, die ich auf ottelo.jimdo.de zum Download anbiete.
+// Diese Datei kann euch auch dabei helfen ein eigenes angepasstes Tasmota Image für euren ESP mit Gitpod (oder Visual Studio und co.) 
+// zu erstellen, wenn ihr mit dem ESP ein Stromzähler auslesen wollt (SML) oder eine smarte Steckdose mit Energiemessfunktion 
+// habt und ihr die schönen Liniendiagramme (Google Chart Script) für den Verbrauch haben wollt. Andernfalls verwendet einfach 
+// die originalen Images. Die unten stehenden Zeilen je nach Bedarf in die tasmota\user_config_override.h kopieren. Ich verwende alles.
+// Der Unterschied zwischen dieser Datei und der "Tasmota_Image_erstellen_ESP32" sind die vielen deaktivieren Treiber, um RAM und Flash zu sparen.
+//
+// Zum Kompilieren unter Gitpod folgendes in die Console eingeben:
+// platformio run -e tasmota     (für ESP8266)
+// für weitere ESPs siehe: https://github.com/arendst/Tasmota/blob/development/platformio_override_sample.ini bei default_envs
+//
+// In der platformio_override.ini müsst ihr noch bei folgenden Zeilen das ";" entfernen, falls ihr 4M oder mehr Flash habt.
+// board                   = esp8266_4M2M
+// board_build.f_cpu       = 160000000L
+// board_build.f_flash     = 40000000L
+//------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+// Folgende Features/Treiber habe ich für das ESP8266 Image deaktiviert, damit a) ein Firmwareupdate ohne Umwege über die minimal möglich ist und
+// b) der ESP noch genug RAM für das große Google Script hat! Damit habt ihr >12KByte RAM frei (beim ESP32 nicht notwendig). Eine komplette Liste 
+// deaktivierbarer Features/Treiber findet ihr hier: https://tasmota.github.io/docs/BUILDS/ oder hier https://github.com/arendst/Tasmota/blob/master/tasmota/my_user_config.h
+
+#undef USE_DOMOTICZ     //Zeile auskommentieren wenn ihr Domoticz verwenden wollt
+#undef USE_EMULATION_HUE
+#undef USE_EMULATION_WEMO
+#undef ROTARY_V1
+#undef USE_SONOFF_RF
+#undef USE_SONOFF_SC
+#undef USE_TUYA_MCU
+#undef USE_ARMTRONIX_DIMMERS
+#undef USE_PS_16_DZ
+#undef USE_SONOFF_IFAN
+#undef USE_BUZZER
+#undef USE_ARILUX_RF
+#undef USE_SHUTTER
+#undef USE_DEEPSLEEP
+#undef USE_EXS_DIMMER
+#undef USE_DEVICE_GROUPS
+#undef USE_PWM_DIMMER
+#undef USE_SONOFF_D1
+#undef USE_SHELLY_DIMMER
+#undef USE_LIGHT
+#undef USE_WS2812
+#undef USE_MY92X1
+#undef USE_SM16716
+#undef USE_SM2135
+#undef USE_SM2335
+#undef USE_BP1658CJ
+#undef USE_BP5758D
+#undef USE_SONOFF_L1
+#undef USE_ELECTRIQ_MOODL
+#undef USE_LIGHT_PALETTE
+#undef USE_LIGHT_VIRTUAL_CT
+#undef USE_DGR_LIGHT_SEQUENCE
+#undef USE_DS18x20
+#undef USE_I2C
+#undef USE_SERIAL_BRIDGE
+#undef USE_ENERGY_SENSOR //Zeile auskommentieren falls ihr einen SonOff / Gosund EP2 verwenden wollt
+#undef USE_ENERGY_DUMMY
+#undef USE_HLW8012       //Zeile auskommentieren falls ihr einen SonOff POW / Gosund EP2 verwenden wollt
+#undef USE_CSE7766       //Zeile auskommentieren falls ihr einen SonOff POW R2 verwendet
+#undef USE_PZEM004T
+#undef USE_PZEM_AC
+#undef USE_PZEM_DC
+#undef USE_MCP39F501
+#undef USE_BL09XX        //Zeile auskommentieren falls ihr einen SonOff Dual R3 v2 / Gosund EP2 verwendet
+#undef USE_DHT
+#undef USE_IR_REMOTE
+
+//----------------------------------------------------------------------------
+//-- SML, Script und Google Chart Support
+#ifndef USE_SCRIPT
+#define USE_SCRIPT
+#endif
+#ifndef USE_SML_M
+#define USE_SML_M
+#endif
+#ifdef USE_RULES
+#undef USE_RULES
+#endif
+#ifndef USE_SML_SCRIPT_CMD
+#define USE_SML_SCRIPT_CMD
+#endif
+#ifndef USE_GOOGLE_CHARTS
+#define USE_GOOGLE_CHARTS
+#endif
+#ifndef LARGE_ARRAYS
+#define LARGE_ARRAYS
+#endif
+#ifndef USE_SCRIPT_WEB_DISPLAY
+#define USE_SCRIPT_WEB_DISPLAY
+#endif
+
+//-- DWS74 Bugfix (bei negativen Werten <650W) und "1,=so2,1" im Skript eingeben
+#ifndef USE_SML_SPECOPT
+#define USE_SML_SPECOPT
+#endif
+
+//-- enables authentication, this is not needed by most energy meters. M,=so5
+/*#ifndef USE_SML_AUTHKEY
+#define USE_SML_AUTHKEY
+#endif*/
+
+//-- Modbus TCP SML Support
+#ifndef USE_SML_TCP
+#define USE_SML_TCP
+#endif
+
+//-- Verwende Home Assistant API
+#ifndef USE_HOME_ASSISTANT
+#define USE_HOME_ASSISTANT
+#endif
+
+//-- Verwende globale Variablen im Script
+#ifndef USE_SCRIPT_GLOBVARS
+#define USE_SCRIPT_GLOBVARS
+#endif
+
+//-- ESP8266 Skriptgröße (max Anzahl an Zeichen) https://tasmota.github.io/docs/Scripting-Language/#script-buffer-size
+//-- WENN IHR NUR 1M FLASHSPEICHER HABT:
+#ifndef USE_EEPROM
+#define USE_EEPROM
+#endif
+#define EEP_SCRIPT_SIZE 8192
+
+//-- WENN IHR 4M+ FLASHSPEICHER HABT:
+#ifndef USE_UFILESYS
+#define USE_UFILESYS
+#endif
+#define UFSYS_SIZE 8192   //ESP8266 4M+
+
+//----------------------------------------------------------------------------
+// Die optionalen Treiber/Features beanspruchen mehr RAM & Flash. Das könnte zu Problemen
+// mit eurem SML Script führen oder wenn ihr ein Firmwareupgrade durchführen wollt
+
+//-- Optional: Serielle Schnittstelle (RX/TX RS232) im Script verwenden
+#ifndef USE_SCRIPT_SERIAL
+#define USE_SCRIPT_SERIAL
+#endif
+
+//-- Optional: ESP32 WT32_ETH01 (Ethernet LAN Modul)
+#ifndef USE_WT32_ETH01
+#define USE_WT32_ETH01
+#endif
+
+//-- Optional: TCP-Server Script Support
+#ifndef USE_SCRIPT_TCP_SERVER
+#define USE_SCRIPT_TCP_SERVER
+#endif
+#ifndef USE_SCRIPT_TASK
+#define USE_SCRIPT_TASK
+#endif
+
+//----------------------------------------------------------------------------
+
+// Die OTA URL ändern, damit man nicht aus Versehen ein Upgrade macht!
+// Leider wird dieses define nur verwendet, wenn ihr Tasmota zum ersten Mal auf den ESP flasht, ansonsten wird immer die im Flash gespeicherte verwendet. Mit diesem Command in der Console könnt ihr die url aber nachträglich ändern: 
+// otaurl !!NEVER UPGRADE VIA WEB SERVER!!
+// Der Befehl ist in meinem neusten Google Charts Skript (11.2024) auch enthalten und wird nach jedem Start einmalig gesetzt!
+#undef OTA_URL
+#define OTA_URL "!!NEVER UPGRADE VIA WEB SERVER!!"
+#define CODE_IMAGE_STR "ottelo.jimdo.de"
