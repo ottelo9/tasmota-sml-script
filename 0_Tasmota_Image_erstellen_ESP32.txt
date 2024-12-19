@@ -75,6 +75,7 @@
 #ifndef USE_UFILESYS
 #define USE_UFILESYS
 #endif
+#undef UFSYS_SIZE
 #define UFSYS_SIZE 16384  //ESP32
 
 //-- Optional: Serielle Schnittstelle (RX/TX RS232) im Script verwenden
