@@ -19,4 +19,3 @@ Wenn ihr SML Zeilen entfernt oder hinzufügt, dann müsst ihr auch die Variablen
 
 So sieht das Google Chart Script in Natura aus:
 
-![screencapture-192-168-178-31-2024-12-28-15_41_15](https://github.com/user-attachments/assets/f6b1e032-bbc3-4400-b440-39711195c780)
