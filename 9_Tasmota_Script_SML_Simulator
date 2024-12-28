@@ -1,0 +1,45 @@
+>D 128
+; SML Simulator Script von ottelo.jimdo.de
+; Script zum Simulieren eines Smartmeters/Stromzählers
+; Das Script erzeugt eine Zufalls Wirkleistung in Watt und feste Werte
+; für Netzbezug und Einspeisung. Momentan simuliert das Script einen
+; MT175 Stromzähler. Damit das Script läuft muss ein angepasstes Tasmota Image
+; mit SML Support + #define SCRIPT_MAXSSIZE 128 verwendet werden. Das biete ich
+; auf meiner Seite an. Dann benötigt man ein IR Lesekopf mit ESP32 oder 8266.
+; Ein paar davon findet man ebenfalls auf meiner Seite. Das Script bzw. die 
+; gesendeten Werte können angepasst werden. Variable cEnIn und cEnOut. cPow
+; ist vordefiniert, die zufallsgenerierte Leistung wird unten in der >S Sektion
+; zum String hinzugefügt.
+
+iRanPow=0
+cRanPow=""
+;Netzbezug/Verbrauch/Zählerstand kWh
+cEnIn="77070100010800ff650001018201621e52ff59000000000e0d57b501"
+;Aktuelle Wirkleistung Watt. Ohne die letzten 10 Stellen, die werden generiert
+cPow="77070100100700ff0101621b520055"
+;Netzeinspeisung kWh
+cEnOut="77070100020800ff0101621e52ff5900000000005c9d7f01"
+
+>B
+->sensor53 r
+dp0
+
+>M 1
++1,3,s,0,9600,MT175,1
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
+
+>S
+if (secs%5==0) {
+;return a random number between 0 and 5000
+iRanPow=rnd(5000)
+cRanPow=cPow+hx(iRanPow)+"01"
+
+;send SML Hex string htxt as binary to Meter 1
+sml(1 1 cEnIn)
+sml(1 1 cRanPow)
+sml(1 1 cEnOut)
+
+print Zufallsgenerierte Wirkleistung = %iRanPow% W
+}
