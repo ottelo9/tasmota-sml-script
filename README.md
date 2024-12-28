@@ -16,3 +16,6 @@ Sucht die Zeile
 
 Dort müsst ihr den SML Descriptor für euren Zähler anpassen. Weitere Details auf meiner Seite!
 Wenn ihr SML Zeilen entfernt oder hinzufügt, dann müsst ihr auch die Variablen im Script anpassen. Wenn die erste SML Zeile im Script z.B. "1,77070100100700ff@1,Leistung,W,Power_curr,0" ist, dann wird im Hintergrund von Tasmota die aktuelle Leistung "Power_curr" des Zählers in die Variable sml[1] geschrieben. Die 2te und 3te Zeile (im Script ist das der Verbrauch und die Netzeinspeisung) werden in sml[2] und sml[3] geschrieben.
+
+So sieht das Google Chart Script in Natura aus.
+![screencapture-192-168-178-31-2024-12-28-15_41_15](https://github.com/user-attachments/assets/f6b1e032-bbc3-4400-b440-39711195c780)
