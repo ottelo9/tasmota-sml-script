@@ -96,6 +96,11 @@
 #define USE_SCRIPT_GLOBVARS
 #endif*/
 
+//-- Optional: Für mein SML Simulator Script (max String Länge = 128). Im Script >D 128
+/*#ifdef SCRIPT_MAXSSIZE
+#undef SCRIPT_MAXSSIZE
+#define SCRIPT_MAXSSIZE 128*/
+
 //----------------------------------------------------------------------------
 
 // Die OTA URL ändern, damit man nicht aus Versehen ein Upgrade macht!
