@@ -1,4 +1,4 @@
-// Tasmota Image erstellen - #defines für ESP32 - 16.11.2024
+// Tasmota Image erstellen - #defines für ESP32 - 29.12.2024
 //------------------------------------------------------------------------------------------------------------------------------------------------
 // Diese Features/Treiber (defines) habe ich für meine ESP32 Tasmota Images/Firmware verwendet, die ich auf ottelo.jimdo.de zum Download anbiete.
 // Diese Datei kann euch auch dabei helfen ein eigenes angepasstes Tasmota Image für euren ESP mit Gitpod (oder Visual Studio und co.) 
@@ -51,19 +51,9 @@
 #define USE_SML_AUTHKEY
 #endif*/
 
-//-- Modbus TCP SML Support
-#ifndef USE_SML_TCP
-#define USE_SML_TCP
-#endif
-
 //-- Verwende Home Assistant API
 #ifndef USE_HOME_ASSISTANT
 #define USE_HOME_ASSISTANT
-#endif
-
-//-- Verwende globale Variablen im Script
-#ifndef USE_SCRIPT_GLOBVARS
-#define USE_SCRIPT_GLOBVARS
 #endif
 
 //-- enables additional software serial channels for ESP32, (receive only), define pin with '-' sign to assign to software serial
@@ -79,22 +69,32 @@
 #define UFSYS_SIZE 16384  //ESP32
 
 //-- Optional: Serielle Schnittstelle (RX/TX RS232) im Script verwenden
-#ifndef USE_SCRIPT_SERIAL
+/*#ifndef USE_SCRIPT_SERIAL
 #define USE_SCRIPT_SERIAL
-#endif
+#endif*/
 
 //-- Optional: ESP32 WT32_ETH01 (Ethernet LAN Modul)
-#ifndef USE_WT32_ETH01
+/*#ifndef USE_WT32_ETH01
 #define USE_WT32_ETH01
-#endif
+#endif*/
 
 //-- Optional: TCP-Server Script Support
-#ifndef USE_SCRIPT_TCP_SERVER
+/*#ifndef USE_SCRIPT_TCP_SERVER
 #define USE_SCRIPT_TCP_SERVER
 #endif
 #ifndef USE_SCRIPT_TASK
 #define USE_SCRIPT_TASK
-#endif
+#endif*/
+
+//-- Optional: Modbus TCP SML Support
+/*#ifndef USE_SML_TCP
+#define USE_SML_TCP
+#endif*/
+
+//-- Optional: Verwende globale Variablen im Script
+/*#ifndef USE_SCRIPT_GLOBVARS
+#define USE_SCRIPT_GLOBVARS
+#endif*/
 
 //----------------------------------------------------------------------------
 
