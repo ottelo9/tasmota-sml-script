@@ -1,4 +1,4 @@
-// Tasmota Image erstellen - #defines für ESP8266 - 16.11.2024
+// Tasmota Image erstellen - #defines für ESP8266 - 29.12.2024
 //------------------------------------------------------------------------------------------------------------------------------------------------
 // Diese Features/Treiber (defines) habe ich für meine ESP8266 Tasmota Images/Firmware verwendet, die ich auf ottelo.jimdo.de zum Download anbiete.
 // Diese Datei kann euch auch dabei helfen ein eigenes angepasstes Tasmota Image für euren ESP mit Gitpod (oder Visual Studio und co.) 
