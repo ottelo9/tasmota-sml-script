@@ -103,19 +103,9 @@
 #define USE_SML_AUTHKEY
 #endif*/
 
-//-- Modbus TCP SML Support
-#ifndef USE_SML_TCP
-#define USE_SML_TCP
-#endif
-
 //-- Verwende Home Assistant API
 #ifndef USE_HOME_ASSISTANT
 #define USE_HOME_ASSISTANT
-#endif
-
-//-- Verwende globale Variablen im Script
-#ifndef USE_SCRIPT_GLOBVARS
-#define USE_SCRIPT_GLOBVARS
 #endif
 
 //-- ESP8266 Skriptgröße (max Anzahl an Zeichen) https://tasmota.github.io/docs/Scripting-Language/#script-buffer-size
@@ -127,32 +117,37 @@
 #define EEP_SCRIPT_SIZE 8192
 
 //-- WENN IHR 4M+ FLASHSPEICHER HABT:
-#ifndef USE_UFILESYS
+/*#ifndef USE_UFILESYS
 #define USE_UFILESYS
 #endif
-#define UFSYS_SIZE 8192   //ESP8266 4M+
+#define UFSYS_SIZE 8192*/   //ESP8266 4M+
 
 //----------------------------------------------------------------------------
 // Die optionalen Treiber/Features beanspruchen mehr RAM & Flash. Das könnte zu Problemen
 // mit eurem SML Script führen oder wenn ihr ein Firmwareupgrade durchführen wollt
 
 //-- Optional: Serielle Schnittstelle (RX/TX RS232) im Script verwenden
-#ifndef USE_SCRIPT_SERIAL
+/*#ifndef USE_SCRIPT_SERIAL
 #define USE_SCRIPT_SERIAL
-#endif
-
-//-- Optional: ESP32 WT32_ETH01 (Ethernet LAN Modul)
-#ifndef USE_WT32_ETH01
-#define USE_WT32_ETH01
-#endif
+#endif*/
 
 //-- Optional: TCP-Server Script Support
-#ifndef USE_SCRIPT_TCP_SERVER
+/*#ifndef USE_SCRIPT_TCP_SERVER
 #define USE_SCRIPT_TCP_SERVER
 #endif
 #ifndef USE_SCRIPT_TASK
 #define USE_SCRIPT_TASK
-#endif
+#endif*/
+
+//-- Modbus TCP SML Support
+/*#ifndef USE_SML_TCP
+#define USE_SML_TCP
+#endif*/
+
+//-- Verwende globale Variablen im Script
+/*#ifndef USE_SCRIPT_GLOBVARS
+#define USE_SCRIPT_GLOBVARS
+#endif*/
 
 //----------------------------------------------------------------------------
 
