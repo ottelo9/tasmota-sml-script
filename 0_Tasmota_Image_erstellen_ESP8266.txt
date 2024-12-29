@@ -139,15 +139,20 @@
 #define USE_SCRIPT_TASK
 #endif*/
 
-//-- Modbus TCP SML Support
+//-- Optional: Modbus TCP SML Support
 /*#ifndef USE_SML_TCP
 #define USE_SML_TCP
 #endif*/
 
-//-- Verwende globale Variablen im Script
+//-- Optional: Verwende globale Variablen im Script
 /*#ifndef USE_SCRIPT_GLOBVARS
 #define USE_SCRIPT_GLOBVARS
 #endif*/
+
+//-- Optional: Für mein SML Simulator Script (max String Länge = 128). Im Script >D 128
+/*#ifdef SCRIPT_MAXSSIZE
+#undef SCRIPT_MAXSSIZE
+#define SCRIPT_MAXSSIZE 128*/
 
 //----------------------------------------------------------------------------
 
