@@ -1,4 +1,4 @@
-// Tasmota Image erstellen - #defines für ESP32 - 29.12.2024
+// Tasmota Image erstellen - #defines für ESP32 - 31.12.2024
 //------------------------------------------------------------------------------------------------------------------------------------------------
 // Diese Features/Treiber (defines) habe ich für meine ESP32 Tasmota Images/Firmware verwendet, die ich auf ottelo.jimdo.de zum Download anbiete.
 // Diese Datei kann euch auch dabei helfen ein eigenes angepasstes Tasmota Image für euren ESP mit Gitpod (oder Visual Studio und co.) 
@@ -99,6 +99,7 @@
 //-- Optional: Für mein SML Simulator Script (max String Länge = 128). Im Script >D 128
 /*#ifdef SCRIPT_MAXSSIZE
 #undef SCRIPT_MAXSSIZE
+#endif
 #define SCRIPT_MAXSSIZE 128*/
 
 //----------------------------------------------------------------------------
