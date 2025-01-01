@@ -62,6 +62,7 @@ utm="00d 00h 00m"
 avgv2=0
 avgvc2=0
 hour=0
+yr=0
 da=1
 swesp=0
 swespflg=0
@@ -147,7 +148,7 @@ for tmp 1 12 1
 	}
 next
 wcs ]);
-wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,width:'80%%'},legend:'none',title:'Verbräuche / Einspeisungen (Jahr %year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
+wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,width:'80%%'},legend:'none',title:'Verbräuche / Einspeisungen (Jahr %0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
@@ -217,6 +218,7 @@ if (secs%3==0) {
 ; alle 60s
 if (secs%60==0) {
 	hour=hours
+	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
@@ -244,8 +246,7 @@ if (secs%60==0) {
 	if ((chg[hour]>0) and (hour==0)) {
 		if (day>1) {
 			da=day
-		}
-		else {
+		} else {
 		    ; Monatswechsel
 			for tmp (da+1) 31 1
 				dprod[tmp]=0
@@ -255,7 +256,7 @@ if (secs%60==0) {
 			mval=EnFrGrid
 			mval2=EnToGrid
 		}
-		if (chg[year]>0) {
+		if (chg[yr]>0) {
 			; Jahreswechsel
 			yval=EnFrGrid
 			yval2=EnToGrid
@@ -318,7 +319,7 @@ $<script type="text/javascript">google.charts.load('current',{packages:['corecha
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 17.12.2024 (PV no4/24) by ottelo.jimdo.de<br>
+$Version 01.01.2025 (PV no4/24) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden immer um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>

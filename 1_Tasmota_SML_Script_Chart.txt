@@ -63,6 +63,7 @@ avgv2=0
 avgvc=0
 avgvc2=0
 hour=0
+yr=0
 da=1
 save=0
 
@@ -126,7 +127,7 @@ for tmp 1 12 1
 	}
 next
 wcs ]);
-wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Verbräuche (Jahr %year%)',vAxis:{format:'# kWh'}};
+wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Verbräuche (Jahr %0(year-1)%/%0year%)',vAxis:{format:'# kWh'}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
@@ -196,6 +197,7 @@ if (secs%30==0) {
 ; alle 60s
 if (secs%60==0) {
 	hour=hours
+	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
@@ -228,8 +230,7 @@ if (secs%60==0) {
 	if ((chg[hour]>0) and (hour==0)) {
 		if (day>1) {
 			da=day
-		}
-		else {
+		} else {
 		    ; Monatswechsel
 			for tmp (da+1) 31 1
 				dcon[tmp]=0
@@ -237,7 +238,7 @@ if (secs%60==0) {
 			; monthly values
 			mval=EnFrGrid
 		}
-		if (chg[year]>0) {
+		if (chg[yr]>0) {
 			; Jahreswechsel
 			yval=EnFrGrid
 		}
@@ -313,7 +314,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 17.12.2024 by ottelo.jimdo.de<br>
+$Version 01.01.2025 by ottelo.jimdo.de<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
