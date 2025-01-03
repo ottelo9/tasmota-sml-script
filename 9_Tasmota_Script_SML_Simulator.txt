@@ -1,45 +1,105 @@
 >D 128
 ; SML Simulator Script von ottelo.jimdo.de
 ; Script zum Simulieren eines Smartmeters/Stromzählers
-; Das Script erzeugt eine Zufalls Wirkleistung in Watt und feste Werte
-; für Netzbezug und Einspeisung. Momentan simuliert das Script einen
-; MT175 Stromzähler. Damit das Script läuft muss ein angepasstes Tasmota Image
+; Es erzeugt eine Zufalls-Wirkleistung in W und errechnet damit Netzbezug und Netzeinspeisung
+; Momentan simuliert das Script einen MT175 Stromzähler. Damit das Script läuft muss ein angepasstes Tasmota Image
 ; mit SML Support + #define SCRIPT_MAXSSIZE 128 verwendet werden. Das biete ich
 ; auf meiner Seite an. Dann benötigt man ein IR Lesekopf mit ESP32 oder 8266.
-; Ein paar davon findet man ebenfalls auf meiner Seite. Das Script bzw. die 
-; gesendeten Werte können angepasst werden. Variable cEnIn und cEnOut. cPow
-; ist vordefiniert, die zufallsgenerierte Leistung wird unten in der >S Sektion
-; zum String hinzugefügt.
+; Die zufallsgenerierte Leistung/Arbeit/Energie wird unten in der >S Sektion
+; zum String hinzugefügt und dann als SML Binary gesendet.
+; Die Leistung wird jede Sekunde addiert. Wenn positiv dann +PwrFrGrd, wenn negativ dann
+; +PwrToGrd. Nach 60s wird die Arbeit/Energie für den Zähler errechnet = EnFrGrd EnToGrd.
 
-iRanPow=0
-cRanPow=""
-;Netzbezug/Verbrauch/Zählerstand kWh
-cEnIn="77070100010800ff650001018201621e52ff59000000000e0d57b501"
-;Aktuelle Wirkleistung Watt. Ohne die letzten 10 Stellen, die werden generiert
+
+RndPwr=0
+utm="00d 00h 00m"
+PwrToGrd=0
+PwrFrGrd=0
+save=0
+; Startwert Stromzählerwert kWh (Netzbezug)
+p:EnFrGrd=10000
+; Startwert Stromzählerwert kWh (Netzeinspeisung)
+p:EnToGrd=500
+; OBIS SML MT175 Stromzähler
+; Netzbezug kWh. Ohne die letzten 10 Stellen, werden generiert
+cEnIn="77070100010800ff650001018201621e52ff5900000000"
+; Aktuelle Wirkleistung Watt. Ohne die letzten 10 Stellen, werden generiert
 cPow="77070100100700ff0101621b520055"
-;Netzeinspeisung kWh
-cEnOut="77070100020800ff0101621e52ff5900000000005c9d7f01"
+; Netzeinspeisung kWh. Ohne die letzten 10 Stellen, werden generiert
+cEnOut="77070100020800ff0101621e52ff5900000000"
 
 >B
 ->sensor53 r
+; sets decimal precision to 0
 dp0
 
 >M 1
+; Stromzähler MT175 wird simuliert
+; Rx-Pin=3 (N/A), s=SML, 0=kein Filter, 9600=baudrate, MT175=Name, 1=Tx-Pin
 +1,3,s,0,9600,MT175,1
-1,77070100100700ff@1,Leistung,W,Power_curr,0
-1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
+1,77070100100700ff@1,*Leistung,W,Power_curr,0
+1,77070100010800ff@1000,*Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,*Netzeinspeisung,KWh,Total_out,2
 
 >S
-if (secs%5==0) {
-;return a random number between 0 and 5000
-iRanPow=rnd(5000)
-cRanPow=cPow+hx(iRanPow)+"01"
-
-;send SML Hex string htxt as binary to Meter 1
-sml(1 1 cEnIn)
-sml(1 1 cRanPow)
-sml(1 1 cEnOut)
-
-print Zufallsgenerierte Wirkleistung = %iRanPow% W
+;Daten speichern Button
+if (save==1) {
+save=0
+svars
+print Daten wurden gespeichert
 }
+
+;Zeit seit letztem Boot
+utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
+
+; Zufallszahl 0..7000 - 2000 = Zufallsleistung -2000W .. +5000W
+RndPwr=rnd(7000)-2000
+
+; alle 1s: Leistung W jede Sekunde addieren
+if (RndPwr<0) {
+PwrToGrd-=RndPwr
+} else {
+PwrFrGrd+=RndPwr
+}
+
+; alle 60s: Arbeit/Energie berechnen
+if (secs%60==0) {
+if (PwrFrGrd>0) {
+EnFrGrd+=PwrFrGrd/3600000
+PwrFrGrd=0		
+}
+if (PwrToGrd>0) {
+EnToGrd+=PwrToGrd/3600000
+PwrToGrd=0		
+}
+}
+
+; alle 5s: SML Werte senden (Hex String als binary)
+if (secs%5==0) {
+; Leistung
+sml(1 1 cPow+hx(RndPwr)+"01")
+; Netzbezug
+sml(1 1 cEnIn+hx(EnFrGrd*10000)+"01")
+; Netzeinspeisung
+sml(1 1 cEnOut+hx(EnToGrd*10000)+"01")
+}
+
+>W
+; web button
+bu(save "gespeichert!" "Daten speichern")
+
+Simulierte Zählerwerte:{m}
+Aktuelle Leistung{m}%0RndPwr% W
+Netzbezug (Verbrauch){m}%2EnFrGrd% kWh
+Netzeinspeisung (PV){m}%2EnToGrd% kWh
+
+; Zeit
+<hr>{m}<hr>
+Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
+Uptime{m}%0utm%
+
+$<center><span style="font-size:10px;">
+$Version 03.01.2025 (SML Simulator) by ottelo.jimdo.de<br>
+$Hinweis: Die Daten werden nicht automatisch gespeichert!<br>
+$Speichern über Button oder Restart.<br>
+$</span></center>
