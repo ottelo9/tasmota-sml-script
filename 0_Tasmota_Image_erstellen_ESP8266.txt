@@ -10,11 +10,26 @@
 // Zum Kompilieren unter Gitpod folgendes in die Console eingeben:
 // platformio run -e tasmota     (für ESP8266)
 // für weitere ESPs siehe: https://github.com/arendst/Tasmota/blob/development/platformio_override_sample.ini bei default_envs
+//------------------------------------------------------------------------------------------------------------------------------------------------
+// Features/Treiber (de)aktivieren: https://tasmota.github.io/docs/Compile-your-build/#enabling-a-feature-in-tasmota
+// Hier ist eine Übersicht aller Features/Treiber: https://github.com/arendst/Tasmota/blob/development/tasmota/my_user_config.h
 //
 // In der platformio_override.ini müsst ihr noch bei folgenden Zeilen das ";" entfernen, falls ihr 4M oder mehr Flash habt.
 // board                   = esp8266_4M2M
 // board_build.f_cpu       = 160000000L
 // board_build.f_flash     = 40000000L
+//------------------------------------------------------------------------------------------------------------------------------------------------
+
+// Zum Kompilieren unter Gitpod folgendes in die Console eingeben:
+// platformio run -e tasmota32   (Generic ESP32)
+// ESP32 Varianten (unbedingt den Hinweis weiter unten lesen):
+// platformio run -e tasmota32s2
+// platformio run -e tasmota32s3
+// platformio run -e tasmota32c3
+// platformio run -e tasmota32c6
+// platformio run -e tasmota32solo1 (für ESP32-S1 Single Core z.B. WT32-ETH01 v1.1)
+// Mehr Infos bzgl. ESP32 Versionen: https://tasmota.github.io/docs/ESP32/#esp32_1
+// für weitere ESPs siehe: https://github.com/arendst/Tasmota/blob/development/platformio_override_sample.ini bei default_envs
 //------------------------------------------------------------------------------------------------------------------------------------------------
 
 
