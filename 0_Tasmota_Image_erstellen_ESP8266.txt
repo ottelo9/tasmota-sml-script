@@ -95,9 +95,6 @@
 #ifdef USE_RULES
 #undef USE_RULES
 #endif
-#ifndef USE_SML_SCRIPT_CMD
-#define USE_SML_SCRIPT_CMD
-#endif
 #ifndef USE_GOOGLE_CHARTS
 #define USE_GOOGLE_CHARTS
 #endif
@@ -106,11 +103,6 @@
 #endif
 #ifndef USE_SCRIPT_WEB_DISPLAY
 #define USE_SCRIPT_WEB_DISPLAY
-#endif
-
-//-- DWS74 Bugfix (bei negativen Werten <650W) und "1,=so2,1" im Skript eingeben
-#ifndef USE_SML_SPECOPT
-#define USE_SML_SPECOPT
 #endif
 
 //-- enables authentication, this is not needed by most energy meters. M,=so5
@@ -141,6 +133,12 @@
 // Die optionalen Treiber/Features beanspruchen mehr RAM & Flash. Das könnte zu Problemen
 // mit eurem SML Script führen oder wenn ihr ein Firmwareupgrade durchführen wollt
 
+//-- Optional: Optionale SML Features deaktivieren
+/*#define NO_USE_SML_SPECOPT
+#define NO_USE_SML_SCRIPT_CMD
+#define NO_SML_REPLACE_VARS
+#define NO_USE_SML_DECRYPT*/
+
 //-- Optional: Serielle Schnittstelle (RX/TX RS232) im Script verwenden
 /*#ifndef USE_SCRIPT_SERIAL
 #define USE_SCRIPT_SERIAL
@@ -154,10 +152,9 @@
 #define USE_SCRIPT_TASK
 #endif*/
 
-//-- Optional: Modbus TCP SML Support
-/*#ifndef USE_SML_TCP
-#define USE_SML_TCP
-#endif*/
+//-- Optional: Modbus TCP/Canbus SML Support deaktiviert
+#define NO_USE_SML_TCP
+#define NO_USE_SML_CANBUS
 
 //-- Optional: Verwende globale Variablen im Script
 /*#ifndef USE_SCRIPT_GLOBVARS
