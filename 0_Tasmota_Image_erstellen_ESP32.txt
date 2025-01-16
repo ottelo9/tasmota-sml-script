@@ -1,4 +1,4 @@
-// Tasmota Image erstellen - #defines für ESP32 - 31.12.2024
+// Tasmota Image erstellen - #defines für ESP32 - 16.01.2025
 //------------------------------------------------------------------------------------------------------------------------------------------------
 // Diese Features/Treiber (defines) habe ich für meine ESP32 Tasmota Images/Firmware verwendet, die ich auf ottelo.jimdo.de zum Download anbiete.
 // Diese Datei kann euch auch dabei helfen ein eigenes angepasstes Tasmota Image für euren ESP mit Gitpod (oder Visual Studio und co.) 
@@ -9,6 +9,7 @@
 //
 // Zum Kompilieren unter Gitpod folgendes in die Console eingeben:
 // platformio run -e tasmota32   (Generic ESP32)
+// ESP32 Varianten (unbedingt den Hinweis weiter unten lesen):
 // platformio run -e tasmota32s2
 // platformio run -e tasmota32s3
 // platformio run -e tasmota32c3
@@ -16,6 +17,15 @@
 // platformio run -e tasmota32solo1 (für ESP32-S1 Single Core z.B. WT32-ETH01 v1.1)
 // Mehr Infos bzgl. ESP32 Versionen: https://tasmota.github.io/docs/ESP32/#esp32_1
 // für weitere ESPs siehe: https://github.com/arendst/Tasmota/blob/development/platformio_override_sample.ini bei default_envs
+//------------------------------------------------------------------------------------------------------------------------------------------------
+// Features/Treiber (de)aktivieren: https://tasmota.github.io/docs/Compile-your-build/#enabling-a-feature-in-tasmota
+// Hier ist eine Übersicht aller Features/Treiber: https://github.com/arendst/Tasmota/blob/development/tasmota/my_user_config.h
+// Wenn beim Kompilieren das ESP Board mit angegeben wird (z.B. -e tasmota32c3), dann werden Features/Treiber für diese Konfiguration
+// (siehe https://github.com/arendst/Tasmota/blob/development/platformio_tasmota_env32.ini z.B. [env:tasmota32c3])
+// verwendet und die deaktivierten Features, die ihr in der user_config_override.h eingetragen habt, überschrieben und somit doch verwendet!
+// Wenn Features/Treiber (de)aktivieren werden sollen, dann beim Kompilieren immer die Basis verwenden "platformio run -e tasmota32", nicht
+// Board spezifisch! Siehe auch https://tasmota.github.io/docs/Compile-your-build/#customize-your-build
+// "Do not try to add or remove features to a variant, only to tasmota or tasmota32"
 //------------------------------------------------------------------------------------------------------------------------------------------------
 
 //-- SML, Script und Google Chart Support
