@@ -38,9 +38,6 @@
 #ifdef USE_RULES
 #undef USE_RULES
 #endif
-#ifndef USE_SML_SCRIPT_CMD
-#define USE_SML_SCRIPT_CMD
-#endif
 #ifndef USE_GOOGLE_CHARTS
 #define USE_GOOGLE_CHARTS
 #endif
@@ -49,11 +46,6 @@
 #endif
 #ifndef USE_SCRIPT_WEB_DISPLAY
 #define USE_SCRIPT_WEB_DISPLAY
-#endif
-
-//-- DWS74 Bugfix (bei negativen Werten <650W) und "1,=so2,1" im Skript eingeben
-#ifndef USE_SML_SPECOPT
-#define USE_SML_SPECOPT
 #endif
 
 //-- enables authentication, this is not needed by most energy meters. M,=so5
@@ -96,10 +88,13 @@
 #define USE_SCRIPT_TASK
 #endif*/
 
-//-- Optional: Modbus TCP SML Support
-/*#ifndef USE_SML_TCP
-#define USE_SML_TCP
-#endif*/
+//-- Optional: Optionale SML Features deaktivieren
+/*#define NO_USE_SML_SPECOPT
+#define NO_USE_SML_SCRIPT_CMD
+#define NO_SML_REPLACE_VARS
+#define NO_USE_SML_DECRYPT
+#define NO_USE_SML_TCP
+#define NO_USE_SML_CANBUS*/
 
 //-- Optional: Verwende globale Variablen im Script
 /*#ifndef USE_SCRIPT_GLOBVARS
