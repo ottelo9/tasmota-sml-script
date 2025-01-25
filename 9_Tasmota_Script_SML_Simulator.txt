@@ -99,7 +99,7 @@ Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2
 Uptime{m}%0utm%
 
 $<center><span style="font-size:10px;">
-$Version 03.01.2025 (SML Simulator) by ottelo.jimdo.de<br>
+$Version 25.01.2025 (SML Simulator) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden nicht automatisch gespeichert!<br>
 $Speichern über Button oder Restart.<br>
 $</span></center>

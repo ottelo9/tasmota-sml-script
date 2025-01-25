@@ -3,7 +3,7 @@
 IP=192.168.178.31
 
 
-; Beschreibung:
+; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
@@ -11,28 +11,32 @@ IP=192.168.178.31
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
 ; Diagramme und Tabelle benötigen ca. 60s nach einem Neustart um korrekt dargestellt zu werden
 ; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
-; Optional im Skript enthalten: Schalte zweiten ESP (z.B. Poolpumpe) bei Netzeinspeisung
+; Optional im Skript enthalten: (Op1) Schalte zweiten ESP (z.B. Poolpumpe) bei Netzeinspeisung (Op2) Daten an www.clever-pv.com senden
 
-; Anleitung:
-; ESP32: Dieses Skript einfach in den internen Editor einfuegen und ggf. diese Kommentare entfernen um Platz zu sparen. IP Zeile oben loeschen.
+; (2) Anleitung:
+; (a) Skript an euren Zaehler anpassen:
+; Runterscrollen zu der ;-- SML -- Sektion und die Zeilen anpassen.
+; https://tasmota.github.io/docs/Smart-Meter-Interface/
+; (b) Script übertragen
+; Ich empfehle das Script mit dem ext. Editor zu "komprimieren" (Kommentare entfernen). Script laden -> Window -> Export to documents folder. Dann einfach in Tasmota einfügen.
+; ESP32:   Dieses Skript einfach in den internen Editor einfuegen und ggf. diese Kommentare entfernen um Platz zu sparen. IP Zeile oben loeschen.
 ; ESP8266: ScriptEditor runterladen um dieses Skript auf den ESP zu uebertragen. Der Editor entfernt alle Kommentare und leere Zeilen
 ;          https://tasmota.github.io/docs/Scripting-Language/#optional-external-editor
 ;          IP eures ESPs oben im Script eingeben, damit der Editor das Skript korrekt senden kann
-; Skript an euren Zaehler anpassen:
-; Runterscrollen zu der ;-- SML -- Sektion und die Zeilen anpassen.
-; https://tasmota.github.io/docs/Smart-Meter-Interface/
+; Hinweis Dateiformat Scriptdatei: UTF8, LF (\n) als Zeilenende (Unix EOL), damit der ext. Editor keine doppelten Leerzeichen anzeigt. Einstellbar in Notepad++ (Edit->EOL->Unix).
+; (c) Initialisieren
 ; Damit die Diagramme und Tabellen beim ersten Einrichten funktionieren folgendes in die Console auf eurem ESP eingeben (; am Anfang entfernen) - Achtung alle bereits gespeicherten Diagrammdaten werden gelöscht!
 ;backlog script >dval=EnFrGrid; script >dval2=EnToGrid; script >dcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}; script >dprod={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
 ;backlog script >mval=EnFrGrid; script >mval2=EnToGrid; script >mcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
 ;backlog script >yval=EnFrGrid; script >yval2=EnToGrid;     Zaehlerstand beim Jahreswechsel. Statt EnFrGrid / EnToGrid koennt ihr dort auch euren alten Zaehlerstand eingeben, falls ihr diesen am Ende des Jahres oder Neujahr notiert habt (kWh).
 ;script >=#rst24h
 ;script >svars
-; Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
+; (d) Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
 ;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
 ;script >var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
 ;script >=#rst24h  Loesche 24h Diagramm
 ;script >svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
-; Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
+; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
 ;script?dval   script?dval2   script?dcon   script?dprod   script?mval   script?mval2   script?mcon   script?yval   script?yval2
 ; Zum Importieren müssen sie dann wie oben mit backlog script >dcon={x x x x ...} eingeben werden. Am Ende script >svars
 
@@ -228,7 +232,7 @@ if (secs%3==0) {
         PToGridS-=power
     }	
 	
-	; Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
+	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
 		if ((power2<-300) and (swespflg==0)) {
 			;->websend [192.168.0.50] power ON
@@ -241,6 +245,8 @@ if (secs%3==0) {
 			swespflg=0
 		}
 	}
+	; (Op2) Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#8
+	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0power%}
 }
 
 ; alle 30s
@@ -344,7 +350,7 @@ if (secs%60==0) {
 
 ; web button
 bu(save "gespeichert!" "Daten sofort speichern")
-; Schalte anderen ESP bei Netzeinspeisung. Schaue in die >S Sektion.
+; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >S Sektion.
 ;bu(swesp "PV Steckdose aktivieren" "PV Steckdose deaktivieren")
 ; optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
 ;sl(4000 20000 vn "4 kW" "12 kW" "20 kW")
@@ -410,7 +416,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 01.01.2025 (PV-1Zaehler) by ottelo.jimdo.de<br>
+$Version 25.01.2025 (PV-1Zaehler) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>

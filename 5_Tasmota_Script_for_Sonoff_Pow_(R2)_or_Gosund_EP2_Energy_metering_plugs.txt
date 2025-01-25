@@ -3,7 +3,7 @@
 IP=192.168.178.31
 
 
-; Beschreibung:
+; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme) fuer Sonoff Pow (R2) / Gosund EP2 Energiemess-Steckdosen
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
@@ -11,28 +11,32 @@ IP=192.168.178.31
 ; Tabellen mit Anzeige des Verbrauchs pro Tag und pro Monat
 ; Diagramme und Tabelle benötigen ca. 60s nach einem Neustart um korrekt dargestellt zu werden
 ; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
-; Dieses Skript benoetigt ein angepasstes Tasmota Image, kompiliert mit USE_ENERGY_SENSOR und andere #defines. Siehe
-; https://pastebin.com/SPm2mRgn fuer mehr Infos oder schaue auf mein Blog ottelo.jimdo.de
+; Dieses Skript benoetigt ein angepasstes Tasmota Image kompiliert mit USE_ENERGY_SENSOR und andere #defines. Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#SkriptDownloadUser
+; Optional im Skript enthalten: (Op1) Daten an www.clever-pv.com senden
 
-; Anleitung:
-; ESP32: Dieses Skript einfach in den internen Editor einfuegen und ggf. diese Kommentare entfernen um Platz zu sparen. IP Zeile oben loeschen.
+; (2) Anleitung:
+; (a) Script übertragen
+; Ich empfehle das Script mit dem ext. Editor zu "komprimieren" (Kommentare entfernen). Script laden -> Window -> Export to documents folder. Dann einfach in Tasmota einfügen.
+; ESP32:   Dieses Skript einfach in den internen Editor einfuegen und ggf. diese Kommentare entfernen um Platz zu sparen. IP Zeile oben loeschen.
 ; ESP8266: ScriptEditor runterladen um dieses Skript auf den ESP zu uebertragen. Der Editor entfernt alle Kommentare und leere Zeilen
 ;          https://tasmota.github.io/docs/Scripting-Language/#optional-external-editor
 ;          IP eures ESPs oben im Script eingeben, damit der Editor das Skript korrekt senden kann
-; Skript an euren Zaehler anpassen:
-; Runterscrollen zu der ;-- SML -- Sektion und die Zeilen anpassen.
-; https://tasmota.github.io/docs/Smart-Meter-Interface/
+; Hinweis Dateiformat Scriptdatei: UTF8, LF (\n) als Zeilenende (Unix EOL), damit der ext. Editor keine doppelten Leerzeichen anzeigt. Einstellbar in Notepad++ (Edit->EOL->Unix).
+; (b) Initialisieren
 ; Damit die Diagramme und Tabellen beim ersten Einrichten funktionieren folgendes in die Console auf eurem ESP eingeben (; am Anfang entfernen)
 ;backlog script >dval=EnFrGrid; script >dcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
 ;backlog script >mval=EnFrGrid; script >mcon={0 0 0 0 0 0 0 0 0 0 0 0};
 ;script >yval=EnFrGrid     Zaehlerstand beim Jahreswechsel. Statt EnFrGrid koennt ihr dort auch euren alten Zaehlerstand eingeben, falls ihr diesen am Ende des Jahres oder Neujahr notiert habt (kWh).
 ;script >=#rst24h
 ;script >svars
-; Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
+; (c) Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
 ; script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
 ; script >var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
 ; script >=#rst24h  Loesche 24h Diagramm
 ; script >svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
+; (d) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
+;script?dval   script?dcon   script?mval   cript?mcon   script?yval
+; Zum Importieren müssen sie dann wie oben mit backlog script >dcon={x x x x ...} eingeben werden. Am Ende script >svars
 
 
 ; -- ARRAYS --
@@ -167,6 +171,8 @@ if (secs%3==0) {
 	avgv2+=power
 	avgvc+=1
 	avgvc2+=1	
+	; (Op1) Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#8
+	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0power%}
 }
 
 ; alle 30s
@@ -187,8 +193,8 @@ if (secs%60==0) {
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
-	; kopiere Verbrauch [kWh] vom Energiechip	
-	EnFrGrid=enrg[11]
+	; kopiere Verbrauch (ab Start) [kWh] vom Energiechip	
+	EnFrGrid=enrg[10]
 	; Tagesverbrauch [kWh]
 	dcon[day]=EnFrGrid-dval
 	; Monatsverbrauch [kWh]
@@ -302,7 +308,7 @@ $gc(e)
 
 $<center><span style="font-size:10px;">
 $Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung
-$Version 01.01.2025 by ottelo.jimdo.de<br>
+$Version 25.01.2025 by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden immer um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
