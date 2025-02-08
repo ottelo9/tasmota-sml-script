@@ -22,3 +22,5 @@ Wenn ihr SML Zeilen entfernt oder hinzufügt, dann müsst ihr auch die Variablen
 
 So sieht das Google Chart Script in Natura aus:  
 ![screencapture-192-168-178-31-2024-12-28-15_41_15](https://github.com/user-attachments/assets/cc1d8a8f-62c9-4609-839c-d90ff3d4c089)
+
+[Offizielle Tasmota Github Seite](https://github.com/arendst/Tasmota)
