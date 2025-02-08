@@ -76,7 +76,7 @@ save=0
 
 ; -- BOOT --
 >B
-=>otaurl !!NEVER UPGRADE VIA WEB SERVER!!
+=>otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 =>sensor53 r
 is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
@@ -161,7 +161,7 @@ if (year<2020) {
 }
 
 ; alle 3s
-if (secs%3==0) {
+if (upsecs%3==0) {
 	; Aktuelle Leistung [W]
 	;power=rnd(1000) for google chart testing
 	; enrg[n] = hole Wert vom energy register n 0=Gesamtverbrauch, 1..3 Spannung von Phase 1..3, 4..6 aktuell von Phase 1..3, 7..9 Leistung von Phase 1..3, 10=Verbrauch ab Start, 11=Tagesverbrauch, 12=Verbrauch Gestern (USE_ENERGY_SENSOR)
@@ -176,7 +176,7 @@ if (secs%3==0) {
 }
 
 ; alle 30s
-if (secs%30==0) {
+if (upsecs%30==0) {
 	; 4h chart. idx wird automatisch gesetzt
 	s4h=avgv/avgvc
 	avgv=0
@@ -188,7 +188,7 @@ if (secs%30==0) {
 }
 
 ; alle 60s
-if (secs%60==0) {
+if (upsecs%60==0) {
 	hour=hours
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
@@ -263,7 +263,7 @@ Jahresverbrauch{m}%2(EnFrGrid-yval)% kWh
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%0utm%
+Uptime{m}%utm%
 $<div style="margin-left:-20px">
 
 ; 4h Leistung Diagramm
@@ -308,7 +308,7 @@ $gc(e)
 
 $<center><span style="font-size:10px;">
 $Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung
-$Version 25.01.2025 by ottelo.jimdo.de<br>
+$Version 08.02.2025 by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden immer um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
