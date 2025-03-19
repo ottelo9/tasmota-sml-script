@@ -26,16 +26,16 @@ IP=192.168.178.31
 ; Hinweis Dateiformat Scriptdatei: UTF8, LF (\n) als Zeilenende (Unix EOL), damit der ext. Editor keine doppelten Leerzeichen anzeigt. Einstellbar in Notepad++ (Edit->EOL->Unix).
 ; (c) Initialisieren
 ; Damit die Diagramme und Tabellen beim ersten Einrichten funktionieren folgendes in die Console auf eurem ESP eingeben (; am Anfang entfernen) - Achtung alle bereits gespeicherten Diagrammdaten werden gelöscht!
-;backlog script >dval=EnFrGrid; script >dcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
-;backlog script >mval=EnFrGrid; script >mcon={0 0 0 0 0 0 0 0 0 0 0 0};
-;backlog script >yval=EnFrGrid;      Zaehlerstand beim Jahreswechsel. Statt EnFrGrid koennt ihr dort auch euren alten Zaehlerstand eingeben, falls ihr diesen am Ende des Jahres oder Neujahr notiert habt (kWh).
+;backlog script>dval=EnFrGrid; script>dcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
+;backlog script>mval=EnFrGrid; script>mcon={0 0 0 0 0 0 0 0 0 0 0 0};
+;backlog script>yval=EnFrGrid;      Zaehlerstand beim Jahreswechsel. Statt EnFrGrid koennt ihr dort auch euren alten Zaehlerstand eingeben, falls ihr diesen am Ende des Jahres oder Neujahr notiert habt (kWh).
 ;script >=#rst24h
 ;script >svars
 ; (d) Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
 ;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
-;script >var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
-;script >=#rst24h  Loesche 24h Diagramm
-;script >svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
+;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
+;script>=#rst24h  Loesche 24h Diagramm
+;script>svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
 ; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
 ;script?dval   script?dcon   script?mval   script?mcon   script?yval
 ; Zum Importieren müssen sie dann wie oben mit backlog script >dcon={x x x x ...} eingeben werden. Am Ende script >svars
