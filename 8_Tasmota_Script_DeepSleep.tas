@@ -1,20 +1,20 @@
 >D
-; Examplescript from gemu2015 (Tasmota Script developer)
-; Script um DeepSleep via Script auf einem ESP32 zu testen
-; Hier zählt ein Zähler alle 60 Sekunden hoch und sendet den Counter über eine globale Variable.
-; Man muss unbedingt eine Abfangmöglichkeit haben (hier über GPIO5) mit dem man den deepsleep abschalten kann,
-; sonst kommt man nicht mehr an das Gerät und muss über seriell neu flashen.
+; Examplescript from gemu2015 (Tasmota Script developer) and ottelo
+; This script shows the DeepSleep function with Tasmota Scripting (only for ESP32)
+; In this example the device sleeps for 60s then wakes up and count+1
+; and then enter deepsleep again for 60s. You can wake up the device earlier via
+; a RTC Wakeup pin. Look into the datasheets for your ESP32 to check which pins
+; can be used (RTC). E.g. ESP32-C3 = GPIO0 - GPIO5, C6 = GPIO0 - GPIO7
+;
 ; Notes:
-; LDO ca 100 uA, RGB Led ca 400 uA
-; pin 5 low disables deep sleep
-; this script shows how to use deep sleep to send a variable via global var, could also use websend
-; every ESP32 chip (variant) uses other RTC modes and uses other wake up pins
+; C6 power consumption: LDO ~100 uA, RGB Led ~400 uA
+; pin 5 high wakes up and disables deep sleep
 ; ds(-1) show status of last wakeup
 ; ds(x) (deep)sleep for x secs
-; ds(x pin level) if x = 0, then use "pin" and "level"
+; ds(x pin level) if x = 0, then use "pin" and "level" only
 ; pin = RTC Pin 0-7
-; level = 1 pullup wakeup with LOW-signal on pin
-; level = 0 pulldown wakeup with HIGH-signal on pin
+; level = 1 wakeup with HIGH-signal on pin
+; level = 0 wakeup with  LOW-signal on pin
 
 p:savn=0
 g:glbcnt=0
@@ -22,31 +22,67 @@ res=0
 xflg=0
 
 >B
-; flash the RGB LED at boot time
-=>power1 1
-delay(100)
+; create 1s task t1
+ct(1 1000 0)
+
+; flash the LED at boot time (config a pin as relay 1)
 =>power1 0
+delay(250)
+=>power1 1
+
+; get wakeup status
 res=ds(-1)
-print wakeup reason %res%
-; get GPIO5 to disable deep sleep
-spinm(5 P)
->S
-if wifis>0 {
-    if xflg==0 {
-        savn+=1
-        glbcnt=savn
-        print %glbcnt%
-        svars
-        xflg=1
-    } else {
-        if pin[5]==1 {
-        	; only when GPIO 5 is 1
-            print goto sleep
-            res=ds(60)
-        }
-    }
+print Wakeup Reason (%0res%):
+switch res  
+case 2 print ESP_SLEEP_WAKEUP_EXT0
+case 3 print ESP_SLEEP_WAKEUP_EXT1
+case 4 print ESP_SLEEP_WAKEUP_TIMER
+case 7 print ESP_SLEEP_WAKEUP_GPIO
+ends 
+
+; set GPIO5 to input
+spinm(5 0)
+
+>t1
+; wifi connected?
+;if wifis==0 {
+;  break
+;}
+; wait for NTP
+if year<2020 {
+  break
+}
+
+; initial boot or wake up from deep sleep?
+if xflg==0 {
+  ; boot / wakeup counter
+  savn+=1
+  glbcnt=savn
+  print Global Counter = %0glbcnt%
+  svars
+  xflg=1
+} else {
+  ; only when GPIO5 = low, go to deepsleep
+  if pin[5]==1 {
+    break
+  }
+  
+  print DeepSleep for 60s (wakeup after time or via pin)
+  =>power1 3
+  delay(5000)
+  ; wakeup with HIGH-signal on pin 5
+  print going to bed...
+  =>power1 4
+  delay(500)
+  ds(60 5 1)
 }
 
 >W
-counter{m}%glbcnt%
-pin{m}%pin[5]%
+Boot/WakeUp-Counter{m}%0glbcnt%
+GPIO5{m}%0pin[5]%
+Wakeup-Reason{m}%0res%
+
+$<center><span style="font-size:10px;">
+$Version 24.04.2025 DeepSleep Test by ottelo.jimdo.de<br>
+$Hinweis: DeepSleep GPIO5=0V, Wakeup/KeepAlive GPIO5==3.3V<br>
+$</span></center>
