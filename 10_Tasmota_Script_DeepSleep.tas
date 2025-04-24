@@ -1,0 +1,52 @@
+>D
+; Examplescript from gemu2015 (Tasmota Script developer)
+; Script um DeepSleep via Script auf einem ESP32 zu testen
+; Hier zählt ein Zähler alle 60 Sekunden hoch und sendet den Counter über eine globale Variable.
+; Man muss unbedingt eine Abfangmöglichkeit haben (hier über GPIO5) mit dem man den deepsleep abschalten kann,
+; sonst kommt man nicht mehr an das Gerät und muss über seriell neu flashen.
+; Notes:
+; LDO ca 100 uA, RGB Led ca 400 uA
+; pin 5 low disables deep sleep
+; this script shows how to use deep sleep to send a variable via global var, could also use websend
+; every ESP32 chip (variant) uses other RTC modes and uses other wake up pins
+; ds(-1) show status of last wakeup
+; ds(x) (deep)sleep for x secs
+; ds(x pin level) if x = 0, then use "pin" and "level"
+; pin = RTC Pin 0-7
+; level = 1 pullup wakeup with LOW-signal on pin
+; level = 0 pulldown wakeup with HIGH-signal on pin
+
+p:savn=0
+g:glbcnt=0
+res=0
+xflg=0
+
+>B
+; flash the RGB LED at boot time
+=>power1 1
+delay(100)
+=>power1 0
+res=ds(-1)
+print wakeup reason %res%
+; get GPIO5 to disable deep sleep
+spinm(5 P)
+>S
+if wifis>0 {
+    if xflg==0 {
+        savn+=1
+        glbcnt=savn
+        print %glbcnt%
+        svars
+        xflg=1
+    } else {
+        if pin[5]==1 {
+        	; only when GPIO 5 is 1
+            print goto sleep
+            res=ds(60)
+        }
+    }
+}
+
+>W
+counter{m}%glbcnt%
+pin{m}%pin[5]%
