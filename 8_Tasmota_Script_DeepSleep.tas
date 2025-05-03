@@ -7,7 +7,7 @@
 ; can be used (RTC). E.g. ESP32-C3 = GPIO0 - GPIO5, C6 = GPIO0 - GPIO7
 ; To indicate wake up and going to deep sleep the script can flash/toggle an LED
 ; which is usually found on every ESP board. To do this, define the pin as Relay 1
-; under Settings -> Modules. E.g. ESP32-C3-Super Mini / C6-Zero: GPIO8 = LED
+; under Settings -> Modules. E.g. ESP32-C3-Super Mini: GPIO8 = LED. C6 has only a PWM-LED.
 ;
 ; Notes:
 ; C6 power consumption: LDO ~100 uA, RGB Led ~400 uA
