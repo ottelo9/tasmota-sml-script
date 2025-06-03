@@ -78,7 +78,7 @@ save=0
 >B
 ->otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 =>sensor53 r
-is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
+tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
 smlj=0
 
@@ -325,7 +325,7 @@ $<script type="text/javascript">google.charts.load('current',{packages:['corecha
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 08.02.2025 (PV no4/24) by ottelo.jimdo.de<br>
+$Version 03.06.2025 (PV no4/24) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden immer um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
