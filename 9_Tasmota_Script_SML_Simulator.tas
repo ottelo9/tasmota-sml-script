@@ -29,6 +29,8 @@ cPow="77070100100700ff0101621b520055"
 cEnOut="77070100020800ff0101621e52ff5900000000"
 
 >B
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 ->sensor53 r
 ; sets decimal precision to 0
 dp0
@@ -99,7 +101,7 @@ Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2
 Uptime{m}%utm%
 
 $<center><span style="font-size:10px;">
-$Version 08.02.2025 (SML Simulator) by ottelo.jimdo.de<br>
+$Version 11.06.2025 (SML Simulator) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden nicht automatisch gespeichert!<br>
 $Speichern über Button oder Restart.<br>
 $</span></center>

@@ -88,7 +88,8 @@ save=0
 
 ; -- BOOT --
 >B
-->otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =>sensor53 r
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
@@ -105,7 +106,7 @@ next
 ; Tagesverbrauch Tabelle
 #daysub
 if wm>0 {
-wcs <div id="day" style="text-align:center;width:400px"></div>
+wcs <div id="day" style="text-align:center;width:600px;height:400px"></div>
 wcs <script language="JavaScript">function drawChart(){
 wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
 wcs var data=google.visualization.arrayToDataTable([['Tag','Energie [kWh]',{role: 'style'}],
@@ -129,7 +130,7 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 ; Tageseinspeisung PV Tabelle
 #dayprod
 if wm>0 {
-wcs <div id="dayp" style="text-align:center;width:400px"></div>
+wcs <div id="dayp" style="text-align:center;width:600px;height:400px"></div>
 wcs <script language="JavaScript">function drawChart(){
 wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
 wcs var data=google.visualization.arrayToDataTable([['Tag','Energie [kWh]',{role: 'style'}],
@@ -153,7 +154,7 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 ; Netzverbrauch und Einspeisung Monat Tabelle
 #monthsub
 if wm>0 {
-wcs <div id="month" style="text-align:center;width:400px"></div>
+wcs <div id="month" style="text-align:center;width:600px;height:400px"></div>
 wcs <script language="JavaScript">function drawChart(){
 wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
 wcs var data=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]','Einspeisung[kWh]'],
@@ -357,7 +358,7 @@ Uptime{m}%utm%
 $<div style="margin-left:-20px">
 
 ; 4h Leistung Diagramm
-$<div id="chart1" style="text-align:center;width:400px"></div>
+$<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
 $gc(lt s4h "wr" "Leistung [W]" cstr2)
 $var options = {
 $chartArea:{left:60,width:'83%%'},
@@ -372,7 +373,7 @@ $};
 $gc(e)
 
 ; 24h Leistung Diagramm
-$<div id="chart2" style="text-align:center;width:400px"></div>
+$<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
 $gc(lt sday "wr" "Leistung [W]" cstr)
 $var options = {
 $chartArea:{left:60,width:'83%%'},
@@ -387,7 +388,7 @@ $};
 $gc(e)
 
 ; Einfacher Saeulenchart mit 2 Reihen
-;$<div id="chart3" style="text-align:center;width:400px"></div>
+;$<div id="chart3" style="text-align:center;width:600px;height:400px"></div>
 ;$gc(c dprod "wr" "kWh" "cnt1" "Tägliche Einspeisung")
 
 ; Tagesverbrauch und Einspeisung Tabelle
@@ -398,7 +399,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 03.06.2025 (PV) by ottelo.jimdo.de<br>
+$Version 11.06.2025 (PV) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>

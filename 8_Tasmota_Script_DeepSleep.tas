@@ -25,6 +25,8 @@ res=0
 xflg=0
 
 >B
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 ; create 1s task t1
 ct(1 1000 0)
 
@@ -86,6 +88,6 @@ GPIO5{m}%0pin[5]%
 Wakeup-Reason{m}%0res%
 
 $<center><span style="font-size:10px;">
-$Version 24.04.2025 DeepSleep Test by ottelo.jimdo.de<br>
+$Version 11.06.2025 DeepSleep Test by ottelo.jimdo.de<br>
 $Hinweis: DeepSleep GPIO5=0V, Wakeup/KeepAlive GPIO5==3.3V<br>
 $</span></center>

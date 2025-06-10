@@ -1,46 +1,50 @@
 >D 40
 ; IP for external ScriptEditor
-IP=192.168.178.31
+;IP=192.168.178.171
+;stripcomments
+;scriptsize=16384
 
 
 ; (1) Beschreibung:
 ; Skript Version ganz unten
-; Tasmota SML Skript mit Google Chart (Diagramme) fuer Sonoff Pow (R2) / Gosund EP2 Energiemess-Steckdosen
-; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
+; Tasmota Script für eine Wasseruhr mit Reed Kontakt(mit Google Chart/Diagramme) 
+; Gezählt werden 0,1 Liter pro Impuls.
+; 2 Liniendiagramme: Stand der letzten 4 Stunden (fein aufgeloest) und Stand der letzten 24h (grob aufgeloest)
 ; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
-; Tabellen mit Anzeige des Verbrauchs pro Tag und pro Monat
+; Tabellen mit Anzeige des Netzbezugs pro Tag und pro Monat
 ; Diagramme und Tabelle benötigen ca. 60s nach einem Neustart um korrekt dargestellt zu werden
 ; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
-; Dieses Skript benoetigt ein angepasstes Tasmota Image kompiliert mit USE_ENERGY_SENSOR und andere #defines. Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#SkriptDownloadUser
-; Optional im Skript enthalten: (Op1) Daten an www.clever-pv.com senden
 
 ; (2) Anleitung:
-; (a) Script übertragen
+; (a) Variable factor=10000 an eure Wasseruhr anpassen. 10000 bedeutet 1 Puls = 0.0001m³
+; (b) Script übertragen
 ; Ich empfehle das Script mit dem ext. Editor zu "komprimieren" (Kommentare entfernen). Script laden -> Window -> Export to documents folder. Dann einfach in Tasmota einfügen.
 ; ESP32:   Dieses Skript einfach in den internen Editor einfuegen und ggf. diese Kommentare entfernen um Platz zu sparen. IP Zeile oben loeschen.
 ; ESP8266: ScriptEditor runterladen um dieses Skript auf den ESP zu uebertragen. Der Editor entfernt alle Kommentare und leere Zeilen
 ;          https://tasmota.github.io/docs/Scripting-Language/#optional-external-editor
 ;          IP eures ESPs oben im Script eingeben, damit der Editor das Skript korrekt senden kann
 ; Hinweis Dateiformat Scriptdatei: UTF8, LF (\n) als Zeilenende (Unix EOL), damit der ext. Editor keine doppelten Leerzeichen anzeigt. Einstellbar in Notepad++ (Edit->EOL->Unix).
-; (b) Initialisieren
-; Damit die Diagramme und Tabellen beim ersten Einrichten funktionieren folgendes in die Console auf eurem ESP eingeben (; am Anfang entfernen)
-;backlog script>dval=EnFrGrid; script>dcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
-;backlog script>mval=EnFrGrid; script>mcon={0 0 0 0 0 0 0 0 0 0 0 0};
-;script>yval=EnFrGrid     Zaehlerstand beim Jahreswechsel. Statt EnFrGrid koennt ihr dort auch euren alten Zaehlerstand eingeben, falls ihr diesen am Ende des Jahres oder Neujahr notiert habt (kWh).
-;script>=#rst24h
-;script>svars
-; (c) Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
-; script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
-; script >var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
-; script >=#rst24h  Loesche 24h Diagramm
-; script >svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
-; (d) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
-;script?dval   script?dcon   script?mval   cript?mcon   script?yval
+; (c) Initialisieren
+; Folgendes in die Console eingeben um euren aktuellen Stand der Wasseruhr in m³ zu setzen: sensor53 c1 m3      m3 euer Stand in m³ multipliziert mit dem Faktor (siehe factor), z.B. 1070000 für 107m³ wenn factor=10000
+; Damit die Diagramme und Tabellen beim ersten Einrichten funktionieren folgendes in die Console auf eurem ESP eingeben (; am Anfang entfernen) - Achtung alle bereits gespeicherten Diagrammdaten werden gelöscht!
+; Nachdem ihr euren aktuellen Zählerstand eingegeben habt müsst ihr kurz warten, bis sich der Tageswert aktualisiert hat, dann weitermachen:
+;backlog script>dval=WaterCon; script>dcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
+;backlog script>mval=WaterCon; script>mcon={0 0 0 0 0 0 0 0 0 0 0 0};
+;backlog script>yval=WaterCon;      Wasseruhr Stand beim Jahreswechsel in m³. Statt WaterCon koennt ihr dort auch euren alten Stand eingeben, falls ihr diesen am Ende des Jahres oder Neujahr notiert habt.
+;script >=#rst24h
+;script >svars
+; (d) Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
+;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
+;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
+;script>=#rst24h  Loesche 24h Diagramm
+;script>svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
+; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
+;script?dval   script?dcon   script?mval   script?mcon   script?yval
 ; Zum Importieren müssen sie dann wie oben mit backlog script >dcon={x x x x ...} eingeben werden. Am Ende script >svars
 
 
 ; -- ARRAYS --
-; 24h power chart
+; 24h chart
 M:p:sday=0 288
 ; Tagesverbrauch Tabelle 1-31
 M:p:dcon=0 31
@@ -50,35 +54,30 @@ M:p:mcon=0 12
 M:s4h=0 480
 
 ; -- VARS --
-; Zaehlerwert [kWh]
-EnFrGrid=0
-; Aktuelle Leistung +/- [W]
-power=0
+; Water Consumption / Wasserverbrauch [m³] Der Wert wird hochgezählt
+WaterCon=0
 ; Tages, Monats, Jahres Verbrauch
 p:mval=0
 p:dval=0
 p:yval=0
-;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
 tmp=0
 m5=0
 cstr="cnt0/12"
 cstr2="cnth0/120"
 utm="00d 00h 00m"
-avgv=0
-avgv2=0
-avgvc=0
-avgvc2=0
 hour=0
 yr=0
 da=1
 save=0
+;10000: 1 Puls = 0.0001m³ für >M Sektion
+factor=10000
 
 
 ; -- BOOT --
 >B
+WaterCon=pc[1]/factor
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
-=>sensor53 r
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
 smlj=0
@@ -97,7 +96,7 @@ if wm>0 {
 wcs <div id="day" style="text-align:center;width:600px;height:400px"></div>
 wcs <script language="JavaScript">function drawChart(){
 wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
-wcs var data=google.visualization.arrayToDataTable([['Tag','Energie [kWh]',{role: 'style'}],
+wcs var data=google.visualization.arrayToDataTable([['Tag','Verbrauch [m³]',{role: 'style'}],
 for tmp 1 dcon[-1] 1
 	if (tmp==day) {
 		wcs [%tmp%,%dcon[tmp]%,'red'],
@@ -110,7 +109,7 @@ for tmp 1 dcon[-1] 1
 	}
 next
 wcs ]);
-wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Tagesverbräuche (Monat %is[month]%)',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
+wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Tagesverbräuche (Monat %is[month]%)',vAxis:{format:'# m³'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('day'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
@@ -121,7 +120,7 @@ if wm>0 {
 wcs <div id="month" style="text-align:center;width:600px;height:400px"></div>
 wcs <script language="JavaScript">function drawChart(){
 wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
-wcs var data=google.visualization.arrayToDataTable([['Monat','Energie [kWh]',{role: 'style'}],
+wcs var data=google.visualization.arrayToDataTable([['Monat','Verbrauch [m³]',{role: 'style'}],
 for tmp 1 12 1
 	if (tmp<month) {
 		wcs ['%is[tmp]%',%mcon[tmp]%,'green'],
@@ -130,29 +129,33 @@ for tmp 1 12 1
 		wcs ['%is[tmp]%',%mcon[tmp]%,'red'],
 	}
 	if (tmp>month) {
-		wcs ['%is[tmp]%',%mcon[tmp]%,''],
+		wcs ['%is[tmp]%',%mcon[tmp]%,'blue'],
 	}
 next
 wcs ]);
-wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Verbräuche (Jahr %0(year-1)%/%0year%)',vAxis:{format:'# kWh'}};
+wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Verbräuche (Jahr %0(year-1)%/%0year%)',vAxis:{format:'# m³'}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
 
+
+;-- SML --
+;https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-metrics
+>M 1
+;1=meter1, 21=GPIO21, c=Counter, 1=counter-with-pullup -50=debounce-time-ms and irq counter
++1,21,c,1,-50,
+;1-0:1.8.0*255 for counter, %factor% = Faktor z.B. 10000 = 0.0001m³, 4 = Dezimalstellen
+1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
+#
 
 
 ; -- JEDE SEKUNDE --
 >S
 ;Daten sofort speichern Button
 if (save==1) {
-save=0
-svars
-print Daten wurden gespeichert
-}
-
-; Start MQTT erst wenn Daten vom Energiechip der Steckdose kommen
-if (enrg[1]>0) {
-	smlj=1
+	save=0
+	svars
+	print Daten wurden gespeichert
 }
 
 ; Warte auf NTP
@@ -160,28 +163,15 @@ if (year<2020) {
 	print NTP not ready
 	break
 }
-
-; alle 3s
-if (upsecs%3==0) {
-	; Aktuelle Leistung [W]
-	;power=rnd(1000) for google chart testing
-	; enrg[n] = hole Wert vom energy register n 0=Gesamtverbrauch, 1..3 Spannung von Phase 1..3, 4..6 aktuell von Phase 1..3, 7..9 Leistung von Phase 1..3, 10=Verbrauch ab Start, 11=Tagesverbrauch, 12=Verbrauch Gestern (USE_ENERGY_SENSOR)
-	power=enrg[7]	
-	; Leistung aufsummieren 4h/24h Diagramm
-	avgv+=power
-	avgv2+=power
-	avgvc+=1
-	avgvc2+=1	
-	; (Op1) Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#8
-	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0power%}
-}
+; Starte MQTT erst jetzt
+smlj=1
 
 ; alle 30s
 if (upsecs%30==0) {
+	; kopiere Netzbezug [m³] vom Zaehler (aus counter 1), dividiere durch den Faktor
+	WaterCon=pc[1]/factor
 	; 4h chart. idx wird automatisch gesetzt
-	s4h=avgv/avgvc
-	avgv=0
-	avgvc=0
+	s4h=WaterCon
 
 	; Setze 4h Chart X-Achse alle 30s => /120 Werte pro Stunde. Arraygroesse = 480
 	; tasmota calc [hh:mm] via cnthX/Y. mm = X%Y * 60/Y. hh = X/Y
@@ -191,28 +181,25 @@ if (upsecs%30==0) {
 ; alle 60s
 if (upsecs%60==0) {
 	hour=hours
+	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
-	; kopiere Verbrauch (ab Start) [kWh] vom Energiechip	
-	EnFrGrid=enrg[10]
-	; Tagesverbrauch [kWh]
-	dcon[day]=EnFrGrid-dval
-	; Monatsverbrauch [kWh]
-	mcon[month]=EnFrGrid-mval
+	; Tagesverbrauch [m³]
+	dcon[day]=WaterCon-dval
+	; Monatsverbrauch [m³]
+	mcon[month]=WaterCon-mval
 	
 	;=>publish stat/%topic%/script/consday %2(dcon[day])%
 	;=>publish stat/%topic%/script/consmonth %2(mcon[month])%
-	;=>publish stat/%topic%/script/consyear %2(yval)%
+	;=>publish stat/%topic%/script/consyear %2(WaterCon-yval)%
 
-	; 24h Chart. Berechne Durschnittsleistung [W] der letzten 5min => ins Array[1-288]
+	; 24h Chart. Zählerstand der letzten 5min => ins Array[1-288]
 	m5=int((((hours*60)+mins)/5)+1)
 	; set idx (pointer starts from 0)
 	sday[0]=m5
 	if (chg[m5]>0) {
-		sday[m5]=int(avgv2/avgvc2)
-		avgv2=0
-		avgvc2=0
+		sday[m5]=WaterCon
 	}
 
 	; Aktualisiere 24h Chart alle 5Min => Arraygröße 288
@@ -229,16 +216,16 @@ if (upsecs%60==0) {
 				dcon[tmp]=0
 			next
 			; monthly values
-			mval=EnFrGrid
+			mval=WaterCon
 		}
-		if (chg[year]>0) {
+		if (chg[yr]>0) {
 			; Jahreswechsel
-			yval=EnFrGrid
+			yval=WaterCon
 		}
 		; daily values
-		dval=EnFrGrid
-		; save only once at midnight
-		svars 
+		dval=WaterCon
+		; nur 1x um Mitternacht speichern
+		svars
 	}
 }
 
@@ -246,7 +233,7 @@ if (upsecs%60==0) {
 ; WEB INTERFACE
 >W
 ; Auto reload
-;$<script> setTimeout("location.reload(true);",5000); </script>
+;$<script> setTimeout("location.reload(true);",60000); </script>
 
 ;Tasmota Buttons ausblenden. Um an die Menüs zu kommen z.B. http://tasmota-ip/mn? eingeben
 ;<style>form button{display:none}</style>
@@ -254,13 +241,10 @@ if (upsecs%60==0) {
 ; web button
 bu(save "gespeichert!" "Daten sofort speichern")
 
-; optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
-;sl(4000 20000 vn "4 kW" "12 kW" "20 kW")
-
 ; Verbrauch
-Tagesverbrauch{m}%2(EnFrGrid-dval)% kWh
-Monatsverbrauch{m}%2(EnFrGrid-mval)% kWh
-Jahresverbrauch{m}%2(EnFrGrid-yval)% kWh
+Tagesverbrauch{m}%4(WaterCon-dval)% m³
+Monatsverbrauch{m}%2(WaterCon-mval)% m³
+Jahresverbrauch{m}%2(WaterCon-yval)% m³
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
@@ -269,37 +253,29 @@ $<div style="margin-left:-20px">
 
 ; 4h Leistung Diagramm
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt s4h "wr" "Leistung [W]" cstr2)
+$gc(lt s4h "wr" "Verbrauch [m³]" cstr2)
 $var options = {
 $chartArea:{left:60,width:'83%%'},
 $legend:'none',
-;$vAxis:{format:'# W',viewWindow:{max:%vn%}},   optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
-;$vAxis:{format:'# W',viewWindow:{max:5000}},   optional um Y-Achse Werte auf 5kW zu begrenzen
-$vAxis:{format:'# W'},
+$vAxis:{format:'# m³'},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
 $series: {0: {type: 'area'}},              
-$title:'Verbrauch 4 Stunden [Watt]'
+$title:'Verbrauch 4 Stunden [m³]'
 $};
 $gc(e)
 
 ; 24h Leistung Diagramm
 $<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt sday "wr" "Leistung [W]" cstr)
+$gc(lt sday "wr" "Verbrauch [m³]" cstr)
 $var options = {
 $chartArea:{left:60,width:'83%%'},
 $legend:'none',
-;$vAxis:{format:'# W',viewWindow:{max:%vn%}},   optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
-;$vAxis:{format:'# W',viewWindow:{max:5000}},   optional um Y-Achse Werte auf 5kW zu begrenzen
-$vAxis:{format:'# W'},
+$vAxis:{format:'# m³'},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
 $series: {0: {type: 'area'}},            
-$title:'Verbrauch 24 Stunden [Watt]'
+$title:'Verbrauch 24 Stunden [m³]'
 $};
 $gc(e)
-
-; Einfacher Saeulenchart mit 2 Reihen
-;$<div id="chart3" style="text-align:center;width:600px;height:400px"></div>
-;$gc(c dprod "wr" "kWh" "cnt1" "Tägliche Einspeisung")
 
 ; Tagesverbrauch Tabelle
 %=#daysub
@@ -308,10 +284,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung
-$Version 11.06.2025 by ottelo.jimdo.de<br>
-$Hinweis: Die Daten werden immer um Mitternacht gespeichert!<br>
+$Version 10.06.2025 (Wasseruhr) by ottelo.jimdo.de<br>
+$Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
-
-; -- END SCRIPT --
