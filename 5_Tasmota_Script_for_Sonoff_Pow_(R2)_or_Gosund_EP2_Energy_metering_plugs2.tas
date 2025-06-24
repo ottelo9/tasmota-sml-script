@@ -2,13 +2,13 @@
 ; IP for external ScriptEditor
 IP=192.168.178.31
 
-; Tasmota Script für SonoffPow(R2), GosundEP2, Nous A1T Energiemess/smarte Steckdosen "Variante 1"
-; Diese Variante 1 bietet im Gegensatz zum anderen Script (2) ein Diagramm für die Momentanleistung der letzten 4 Stunden (alle 30s ein Wert)
+; Tasmota Script für SonoffPow(R2), GosundEP2, Nous A1T Energiemess/smarte Steckdosen "Variante 2"
+; Diese Variante bietet im Gegensatz zum anderen Script ein sehr hoch aufgelöstes Diagramm für die Momentanleistung der letzten Stunde (alle 5s ein Wert)
 ; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme) fuer Sonoff Pow (R2) / Gosund EP2 Energiemess-Steckdosen
-; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
-; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
+; 2 Liniendiagramme: Leistung der letzten Stunde (sehr fein aufgeloest, 5s) und Leistung der letzten 24h (grob aufgeloest)
+; Das 1h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
 ; Tabellen mit Anzeige des Verbrauchs pro Tag und pro Monat
 ; Diagramme und Tabelle benötigen ca. 60s nach einem Neustart um korrekt dargestellt zu werden
 ; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
@@ -48,7 +48,7 @@ M:p:dcon=0 31
 ; Monatsverbrauch Tabelle 1-12
 M:p:mcon=0 12
 ; 4h Chart, Neuer Wert alle 30s
-M:s4h=0 480
+M:s4h=0 720
 
 ; -- VARS --
 ; Zaehlerwert [kWh]
@@ -63,11 +63,9 @@ p:yval=0
 tmp=0
 m5=0
 cstr="cnt0/12"
-cstr2="cnth0/120"
+cstr2="cnth0/720"
 utm="00d 00h 00m"
-avgv=0
 avgv2=0
-avgvc=0
 avgvc2=0
 hour=0
 yr=0
@@ -169,24 +167,24 @@ if (upsecs%3==0) {
 	; enrg[n] = hole Wert vom energy register n 0=Gesamtverbrauch, 1..3 Spannung von Phase 1..3, 4..6 aktuell von Phase 1..3, 7..9 Leistung von Phase 1..3, 10=Verbrauch ab Start, 11=Tagesverbrauch, 12=Verbrauch Gestern (USE_ENERGY_SENSOR)
 	power=enrg[7]	
 	; Leistung aufsummieren 4h/24h Diagramm
-	avgv+=power
 	avgv2+=power
-	avgvc+=1
 	avgvc2+=1	
 	; (Op1) Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#8
 	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0power%}
 }
 
-; alle 30s
-if (upsecs%30==0) {
-	; 4h chart. idx wird automatisch gesetzt
-	s4h=avgv/avgvc
-	avgv=0
-	avgvc=0
+; alle 5s
+if (upsecs%5==0) {
+	; 1h chart. idx wird automatisch gesetzt
+	s4h=power
 
-	; Setze 4h Chart X-Achse alle 30s => /120 Werte pro Stunde. Arraygroesse = 480
-	; tasmota calc [hh:mm] via cnthX/Y. mm = X%Y * 60/Y. hh = X/Y
-	cstr2="cnth"+s(1.0((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1))+"/120"
+	; Setze 1h Chart X-Achse alle 5s => /720 Werte pro Stunde. Arraygroesse = 720
+	; 2880: 720 Werte pro Stunde * 24h => modulo
+	; (hours+23)*720: hours=0-23 * 720, da pro Stunde 720 Werte
+	;                 +23 = Offset, da das Diagramm 24-1h in die Vergangenheit reichen soll
+	; mins*2: (mins=0-59), *12 da pro Minute 12 Werte
+	; secs/5: (secs=0-59), /5 da pro 5s ein Wert
+	cstr2="cnth"+s(1.0((((hours+23)*720)+(mins*12)+(int(secs/5)))%17280+1))+"/720"
 }
 
 ; alle 60s
@@ -268,7 +266,7 @@ Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2
 Uptime{m}%utm%
 $<div style="margin-left:-20px">
 
-; 4h Leistung Diagramm
+; 1h hochaufgelöstes Leistung Diagramm (5s Raster)
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
 $gc(lt s4h "wr" "Leistung [W]" cstr2)
 $var options = {
@@ -279,7 +277,7 @@ $legend:'none',
 $vAxis:{format:'# W'},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
 $series: {0: {type: 'area'}},              
-$title:'Verbrauch 4 Stunden [Watt]'
+$title:'Verbrauch in der letzten Stunde [Watt]'
 $};
 $gc(e)
 
@@ -294,7 +292,7 @@ $legend:'none',
 $vAxis:{format:'# W'},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
 $series: {0: {type: 'area'}},            
-$title:'Verbrauch 24 Stunden [Watt]'
+$title:'Verbrauch in den letzten 24 Stunden [Watt]'
 $};
 $gc(e)
 
@@ -310,7 +308,7 @@ $gc(e)
 
 $<center><span style="font-size:10px;">
 $Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung
-$Version 11.06.2025 by ottelo.jimdo.de<br>
+$Version 17.06.2025 by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden immer um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>

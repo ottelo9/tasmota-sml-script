@@ -1,0 +1,409 @@
+>D 40
+; IP for external ScriptEditor
+;IP=192.168.178.31
+;stripcomments
+;scriptsize=16384
+
+; (1) Beschreibung:
+; Skript Version ganz unten
+; Tasmota SML Skript mit Google Chart (Diagramme)
+; Diese Variante bietet im Gegensatz zum anderen Script ein sehr hoch aufgelöstes Diagramm für die Momentanleistung der letzten Stunde (alle 5s ein Wert)
+; 2 Liniendiagramme: Leistung der letzten Stunde (sehr fein aufgeloest, 5s) und Leistung der letzten 24h (grob aufgeloest)
+; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
+; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
+; Diagramme und Tabelle benötigen ca. 60s nach einem Neustart um korrekt dargestellt zu werden
+; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
+; Optional im Skript enthalten: (Op1) Schalte zweiten ESP (z.B. Poolpumpe) bei Netzeinspeisung (Op2) Daten an www.clever-pv.com senden. Zum Aktivieren nach (OpX) suchen und inkl ; entfernen.
+
+; (2) Anleitung:
+; (a) Skript an euren Zaehler anpassen:
+; Runterscrollen zu der ;-- SML -- Sektion und die Zeilen anpassen.
+; https://tasmota.github.io/docs/Smart-Meter-Interface/
+; (b) Script übertragen
+; Ich empfehle das Script mit dem ext. Editor zu "komprimieren" (Kommentare entfernen). Script laden -> Window -> Export to documents folder. Dann einfach in Tasmota einfügen.
+; ESP32:   Dieses Skript einfach in den internen Editor einfuegen und ggf. diese Kommentare entfernen um Platz zu sparen. IP Zeile oben loeschen.
+; ESP8266: ScriptEditor runterladen um dieses Skript auf den ESP zu uebertragen. Der Editor entfernt alle Kommentare und leere Zeilen
+;          https://tasmota.github.io/docs/Scripting-Language/#optional-external-editor
+;          IP eures ESPs oben im Script eingeben, damit der Editor das Skript korrekt senden kann
+; Hinweis Dateiformat Scriptdatei: UTF8, LF (\n) als Zeilenende (Unix EOL), damit der ext. Editor keine doppelten Leerzeichen anzeigt. Einstellbar in Notepad++ (Edit->EOL->Unix).
+; (c) Initialisieren
+; Damit die Diagramme und Tabellen beim ersten Einrichten funktionieren folgendes in die Console auf eurem ESP eingeben (; am Anfang entfernen) - Achtung alle bereits gespeicherten Diagrammdaten werden gelöscht!
+;backlog script>dval=EnFrGrid; script>dval2=EnToGrid; script>dcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}; script>dprod={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
+;backlog script>mval=EnFrGrid; script>mval2=EnToGrid; script>mcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
+;backlog script>yval=EnFrGrid; script>yval2=EnToGrid;     Zaehlerstand beim Jahreswechsel. Statt EnFrGrid / EnToGrid koennt ihr dort auch euren alten Zaehlerstand eingeben, falls ihr diesen am Ende des Jahres oder Neujahr notiert habt (kWh).
+;script >=#rst24h
+;script >svars
+; (d) Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
+;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
+;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
+;script>=#rst24h  Loesche 24h Diagramm
+;script>svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
+; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
+;script?dval   script?dval2   script?dcon   script?dprod   script?mval   script?mval2   script?mcon   script?yval   script?yval2
+; Zum Importieren müssen sie dann wie oben mit backlog script >dcon={x x x x ...} eingeben werden. Am Ende script >svars
+
+
+; -- ARRAYS --
+; 24h power chart
+M:p:sday=0 288
+; Tagesnetzbezug Tabelle 1-31
+M:p:dcon=0 31
+; Tagesnetzeinspeisung Tabelle 1-31
+M:p:dprod=0 31  
+; Monatsverbrauch Tabelle 1-12, Einspeisung 13-24
+M:p:mcon=0 24
+; 1h Chart, Neuer Wert alle 5s
+M:s4h=0 720
+
+; -- VARS --
+; Netzbezug [kWh]
+EnFrGrid=0
+; Netzeinspeisung [kWh]
+EnToGrid=0
+; Aktuelle Leistung +/- [W]
+power=0
+; Tages, Monats, Jahres Verbrauch / Einspeisung
+p:mval=0
+p:dval=0
+p:mval2=0
+p:dval2=0
+p:yval=0
+p:yval2=0
+;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
+tmp=0
+m5=0
+cstr="cnt0/12"
+cstr2="cnth0/720"
+utm="00d 00h 00m"
+avgv=0
+avgv2=0
+avgvc=0
+avgvc2=0
+hour=0
+yr=0
+da=1
+swesp=0
+swespflg=0
+power2=0
+save=0
+
+
+; -- BOOT --
+>B
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
+=>sensor53 r
+tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
+;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
+smlj=0
+
+
+; -- SUBS --
+; Resette 24h Chart
+#rst24h
+for tmp 1 sday[-1] 1
+	sday[tmp]=0
+next
+
+; Tagesverbrauch Tabelle
+#daysub
+if wm>0 {
+wcs <div id="day" style="text-align:center;width:600px;height:400px"></div>
+wcs <script language="JavaScript">function drawChart(){
+wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
+wcs var data=google.visualization.arrayToDataTable([['Tag','Energie [kWh]',{role: 'style'}],
+for tmp 1 dcon[-1] 1
+	if (tmp==day) {
+		wcs [%tmp%,%dcon[tmp]%,'red'],
+	}
+	if (tmp<day) {
+		wcs [%tmp%,%dcon[tmp]%,'green'],
+	}
+	if (tmp>day) {
+		wcs [%tmp%,%dcon[tmp]%,''],
+	}
+next
+wcs ]);
+wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Tagesverbräuche (Monat %is[month]%)',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
+wcs var chart=new google.visualization.ColumnChart(document.getElementById('day'));
+wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
+}
+
+; Tageseinspeisung PV Tabelle
+#dayprod
+if wm>0 {
+wcs <div id="dayp" style="text-align:center;width:600px;height:400px"></div>
+wcs <script language="JavaScript">function drawChart(){
+wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
+wcs var data=google.visualization.arrayToDataTable([['Tag','Energie [kWh]',{role: 'style'}],
+for tmp 1 dprod[-1] 1
+	if (tmp==day) {
+		wcs [%tmp%,%dprod[tmp]%,'red'],
+	}
+	if (tmp<day) {
+		wcs [%tmp%,%dprod[tmp]%,'green'],
+	}
+	if (tmp>day) {
+		wcs [%tmp%,%dprod[tmp]%,''],
+	}
+next
+wcs ]);
+wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Tageseinspeisung (Monat %is[month]%)',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
+wcs var chart=new google.visualization.ColumnChart(document.getElementById('dayp'));
+wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
+}
+
+; Netzverbrauch und Einspeisung Monat Tabelle
+#monthsub
+if wm>0 {
+wcs <div id="month" style="text-align:center;width:600px;height:400px"></div>
+wcs <script language="JavaScript">function drawChart(){
+wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
+wcs var data=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]','Einspeisung[kWh]'],
+for tmp 1 12 1
+	if (tmp<month) {
+		wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
+	}
+	if (tmp==month) {
+		wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
+	}
+	if (tmp>month) {
+		wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
+	}
+next
+wcs ]);
+wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,width:'80%%'},legend:'none',title:'Verbräuche / Einspeisungen (Jahr %0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
+wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
+wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
+}
+
+;-- SML --
+>M 1
+;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
++1,5,s,16,9600,MT175,4
+;1. line = sml[1] (aktuelle Leistung W), 2. = sml[2] (Netzbezug kWh), 3. = sml[3] (Netzeinspeisung kWh)
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
+;optional - Falls diese Werte von deinem Zaehler gesendet werden
+;1,77070100200700ff@1,Spannung,V,Volt,1
+;1,770701001f0700ff@1,Strom,A,Current,2
+;1,770701000e0700ff@1,Frequenz,Hz,Frequency,1
+;DWS74 Bugfix
+;1,=so2,1
+#
+
+
+; -- JEDE SEKUNDE --
+>S
+;Daten sofort speichern Button
+if (save==1) {
+save=0
+svars
+print Daten wurden gespeichert
+}
+
+; Starte MQTT erst wenn Daten vom Stromzaehler kommen
+if (sml[2]>0) {
+	smlj=1
+}
+
+; Warte auf NTP
+if (year<2020) {
+	print NTP not ready
+	break
+}
+
+; alle 3s
+if (upsecs%3==0) {
+	; Aktuelle Leistung [W]
+	;power=rnd(1000)-500 google chart testing
+	; kopiere Leistung vom Zaehler (aus SML Variable)
+	power=sml[1]
+	; Leistung aufsummieren 24h Diagramm
+	avgv2+=power
+	avgvc2+=1
+	; Optional: gemittelte Leistung fuer opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
+	power2=(0.9*power2)+((1-0.9)*power)		
+
+	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
+	if (swesp==1) {
+		if ((power2<-300) and (swespflg==0)) {
+			;->websend [192.168.0.50] power ON
+			;print power ON %power2%W
+			swespflg=1
+		}
+		if ((power2>100) and (swespflg==1)) {
+			;->websend [192.168.0.50] power OFF
+			;print power OFF %power2%W
+			swespflg=0
+		}
+	}
+	; (Op2) Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#8
+	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0power%}
+}
+
+; alle 5s
+if (upsecs%5==0) {
+	; 1h chart. idx wird automatisch gesetzt
+	s4h=power
+
+	; Setze 1h Chart X-Achse alle 5s => /720 Werte pro Stunde. Arraygroesse = 720
+	; 2880: 720 Werte pro Stunde * 24h => modulo
+	; (hours+23)*720: hours=0-23 * 720, da pro Stunde 720 Werte
+	;                 +23 = Offset, da das Diagramm 24-1h in die Vergangenheit reichen soll
+	; mins*2: (mins=0-59), *12 da pro Minute 12 Werte
+	; secs/5: (secs=0-59), /5 da pro 5s ein Wert
+	cstr2="cnth"+s(1.0((((hours+23)*720)+(mins*12)+(int(secs/5)))%17280+1))+"/720"
+}
+
+; alle 60s
+if (upsecs%60==0) {
+	hour=hours
+	yr=year
+	;Zeit seit letztem Boot
+	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
+
+	; kopiere Netzbezug [kWh] vom Zaehler (aus SML Variable)
+	EnFrGrid=sml[2]
+	; kopiere Netzeinspeisung [kWh] vom Zaehler (aus SML Variable)
+	EnToGrid=sml[3]	
+	; Tagesverbrauch [kWh]
+	dcon[day]=EnFrGrid-dval
+	; Monatsverbrauch [kWh]
+	mcon[month]=EnFrGrid-mval
+	; Tageseinspeisung [kWh]
+	dprod[day]=EnToGrid-dval2
+	; Monatseinspeisung [kWh]
+	mcon[month+12]=EnToGrid-mval2
+	
+	;=>publish stat/%topic%/script/consday %2(dcon[day])%
+	;=>publish stat/%topic%/script/yieldday %2(dprod[day])%
+	;=>publish stat/%topic%/script/consmonth %2(mcon[month])%
+	;=>publish stat/%topic%/script/yieldmonth %2(mcon[month+12])%
+	;=>publish stat/%topic%/script/consyear %2(EnFrGrid-yval)%
+	;=>publish stat/%topic%/script/yielyear %2(EnToGrid-yval2)%
+
+	; 24h Chart. Berechne Durschnittsleistung [W] der letzten 5min => ins Array[1-288]
+	m5=int((((hours*60)+mins)/5)+1)
+	; set idx (pointer starts from 0)
+	sday[0]=m5
+	if (chg[m5]>0) {
+		sday[m5]=int(avgv2/avgvc2)
+		avgv2=0
+		avgvc2=0
+	}
+
+	; Aktualisiere 24h Chart alle 5Min => Arraygröße 288
+	; tasmota calc [hh:mm] via cnthX/Y. mm = X%Y * 60/Y. hh = X/Y
+	cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
+
+	; Tagesverbrauch & Einspeisung Berechnung um Mitternacht
+	if ((chg[hour]>0) and (hour==0)) {
+		if (day>1) {
+			da=day
+		} else {
+		    ; Monatswechsel
+			for tmp (da+1) 31 1
+				dprod[tmp]=0
+				dcon[tmp]=0
+			next
+			; monthly values
+			mval=EnFrGrid
+			mval2=EnToGrid
+		}
+		if (chg[yr]>0) {
+			; Jahreswechsel
+			yval=EnFrGrid
+			yval2=EnToGrid
+		}
+		; daily values
+		dval=EnFrGrid
+		dval2=EnToGrid
+		; nur 1x um Mitternacht speichern
+		svars 
+	}
+}
+
+
+; WEB INTERFACE
+>W
+; Auto reload
+;$<script> setTimeout("location.reload(true);",5000); </script>
+
+;Tasmota Buttons ausblenden. Um an die Menüs zu kommen z.B. http://tasmota-ip/mn? eingeben
+;<style>form button{display:none}</style>
+
+; web button
+bu(save "gespeichert!" "Daten sofort speichern")
+; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >S Sektion.
+;bu(swesp "PV Steckdose aktivieren" "PV Steckdose deaktivieren")
+; optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
+;sl(4000 20000 vn "4 kW" "12 kW" "20 kW")
+
+; Filtered power
+Leistung (gefiltert){m}%power2% W
+
+; Verbrauch
+Tagesverbrauch{m}%2(EnFrGrid-dval)% kWh
+Monatsverbrauch{m}%2(EnFrGrid-mval)% kWh
+Jahresverbrauch{m}%2(EnFrGrid-yval)% kWh
+
+; Einspeisung (PV)
+Tageseinspeisung{m}%2(EnToGrid-dval2)% kWh
+Monatseinspeisung{m}%2(EnToGrid-mval2)% kWh
+Jahreseinspeisung{m}%2(EnToGrid-yval2)% kWh
+
+; Zeit
+Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
+Uptime{m}%utm%
+$<div style="margin-left:-20px">
+
+; 1h hochaufgelöstes Leistung Diagramm (5s Raster)
+$<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
+$gc(lt s4h "wr" "Leistung [W]" cstr2)
+$var options = {
+$chartArea:{left:60,width:'83%%'},
+$legend:'none',
+;$vAxis:{format:'# W',viewWindow:{max:%vn%}},   optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
+;$vAxis:{format:'# W',viewWindow:{max:5000}},   optional um Y-Achse Werte auf 5kW zu begrenzen
+$vAxis:{format:'# W'},
+$explorer:{actions:['dragToZoom', 'rightClickToReset']},
+$series: {0: {type: 'area'}},              
+$title:'Verbrauch in der letzten Stunde [Watt]'
+$};
+$gc(e)
+
+; 24h Leistung Diagramm
+$<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
+$gc(lt sday "wr" "Leistung [W]" cstr)
+$var options = {
+$chartArea:{left:60,width:'83%%'},
+$legend:'none',
+;$vAxis:{format:'# W',viewWindow:{max:%vn%}},   optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
+;$vAxis:{format:'# W',viewWindow:{max:5000}},   optional um Y-Achse Werte auf 5kW zu begrenzen
+$vAxis:{format:'# W'},
+$explorer:{actions:['dragToZoom', 'rightClickToReset']},
+$series: {0: {type: 'area'}},            
+$title:'Verbrauch in den letzten 24 Stunden [Watt]'
+$};
+$gc(e)
+
+; Einfacher Saeulenchart mit 2 Reihen
+;$<div id="chart3" style="text-align:center;width:600px;height:400px"></div>
+;$gc(c dprod "wr" "kWh" "cnt1" "Tägliche Einspeisung")
+
+; Tagesverbrauch und Einspeisung Tabelle
+%=#daysub
+%=#dayprod
+
+; Netzverbrauch und Einspeisung Monat Tabelle
+%=#monthsub
+
+$<center><span style="font-size:10px;">
+$Version 17.06.2025 (PV2) by ottelo.jimdo.de<br>
+$Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
+$Der Restart Button speichert ebenfalls die Daten.<br>
+$</span></center></div>
+
+; -- END SCRIPT --
