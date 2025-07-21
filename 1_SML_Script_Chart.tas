@@ -56,10 +56,11 @@ M:s4h=0 480
 EnFrGrid=0
 ; Aktuelle Leistung +/- [W]
 power=0
-; Tages, Monats, Jahres Verbrauch
+; PermVars (max 50Bytes): Tages, Monats, Jahres Verbrauch
 p:mval=0
 p:dval=0
 p:yval=0
+p:da=1
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
 tmp=0
 m5=0
@@ -72,7 +73,6 @@ avgvc=0
 avgvc2=0
 hour=0
 yr=0
-da=1
 save=0
 
 
@@ -325,7 +325,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 11.06.2025 by ottelo.jimdo.de<br>
+$Version 16.07.2025 by ottelo.jimdo.de<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>

@@ -1,16 +1,19 @@
->D 40
+>D 250
 ; IP for external ScriptEditor
-IP=192.168.178.31
+IP=192.168.178.132
 
 
 ; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
-; OHNE 2 Liniendiagramme (siehe andere Skripte von mir)
+; Diese Variante des Scriptes beinhaltet die Emulation vom Shelly Pro 3EM und Ecotracker damit die Nulleinspeisung mit einem Marstek Akku realisiert werden kann (nur ESP32!)
+; Ecotracker JSON URL: http://EURE-IP/v1/json
+; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
+; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
 ; Diagramme und Tabelle benötigen ca. 60s nach einem Neustart um korrekt dargestellt zu werden
 ; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
-; Optional im Skript enthalten: (Op1) Schalte zweiten ESP (z.B. Poolpumpe) bei Netzeinspeisung (Op2) Daten an www.clever-pv.com senden
+; Optional im Skript enthalten: (Op1) Schalte zweiten ESP (z.B. Poolpumpe) bei Netzeinspeisung (Op2) Daten an www.clever-pv.com senden. Zum Aktivieren nach (OpX) suchen und inkl ; entfernen.
 
 ; (2) Anleitung:
 ; (a) Skript an euren Zaehler anpassen:
@@ -28,10 +31,12 @@ IP=192.168.178.31
 ;backlog script>dval=EnFrGrid; script>dval2=EnToGrid; script>dcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}; script>dprod={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
 ;backlog script>mval=EnFrGrid; script>mval2=EnToGrid; script>mcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
 ;backlog script>yval=EnFrGrid; script>yval2=EnToGrid;     Zaehlerstand beim Jahreswechsel. Statt EnFrGrid / EnToGrid koennt ihr dort auch euren alten Zaehlerstand eingeben, falls ihr diesen am Ende des Jahres oder Neujahr notiert habt (kWh).
+;script >=#rst24h
 ;script >svars
 ; (d) Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
 ;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
 ;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
+;script>=#rst24h  Loesche 24h Diagramm
 ;script>svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
 ; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
 ;script?dval   script?dval2   script?dcon   script?dprod   script?mval   script?mval2   script?mcon   script?yval   script?yval2
@@ -39,12 +44,16 @@ IP=192.168.178.31
 
 
 ; -- ARRAYS --
+; 24h power chart
+M:p:sday=0 288
 ; Tagesnetzbezug Tabelle 1-31
 M:p:dcon=0 31
 ; Tagesnetzeinspeisung Tabelle 1-31
 M:p:dprod=0 31  
 ; Monatsverbrauch Tabelle 1-12, Einspeisung 13-24
 M:p:mcon=0 24
+; 4h Chart, Neuer Wert alle 30s
+M:s4h=0 480
 
 ; -- VARS --
 ; Netzbezug [kWh]
@@ -63,8 +72,13 @@ p:yval2=0
 p:da=1
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
 tmp=0
+m5=0
+cstr="cnt0/12"
+cstr2="cnth0/120"
 utm="00d 00h 00m"
+avgv=0
 avgv2=0
+avgvc=0
 avgvc2=0
 hour=0
 yr=0
@@ -72,6 +86,21 @@ swesp=0
 swespflg=0
 power2=0
 save=0
+; shellypro3em emulieren (z.B. für Marstek Venus E)
+res=0
+c1p=0
+c2p=0
+c3p=0
+cpwr=0
+tcurr=0
+str=""
+tstr=""
+cstr3=""
+mstr1=""
+mstr2=""
+mstr3=""
+header=""
+once=0
 
 
 ; -- BOOT --
@@ -85,6 +114,11 @@ smlj=0
 
 
 ; -- SUBS --
+; Resette 24h Chart
+#rst24h
+for tmp 1 sday[-1] 1
+	sday[tmp]=0
+next
 
 ; Tagesverbrauch Tabelle
 #daysub
@@ -158,19 +192,18 @@ wcs var chart=new google.visualization.ColumnChart(document.getElementById('mont
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
 
-
 ;-- SML --
 >M 1
 ;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
-+1,5,s,16,9600,MT175,4
++1,3,s,0,9600,MT175,1
 ;1. line = sml[1] (aktuelle Leistung W), 2. = sml[2] (Netzbezug kWh), 3. = sml[3] (Netzeinspeisung kWh)
 1,77070100100700ff@1,Leistung,W,Power_curr,0
 1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
 1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
-;optional - Falls diese Werte von deinem Zaehler gesendet werden
-;1,77070100200700ff@1,Spannung,V,Volt,1
-;1,770701001f0700ff@1,Strom,A,Current,2
-;1,770701000e0700ff@1,Frequenz,Hz,Frequency,1
+;optional - Falls die Leistung aller 3 Phasen ausgegeben wird, optional relevant für Shelly Emulation sml[4],[5],[6]
+;1,77070100240700ff@1,L1,W,L1,18
+;1,77070100380700ff@1,L2,W,L2,18
+;1,770701004C0700ff@1,L3,W,L3,18
 ;DWS74 Bugfix
 ;1,=so2,1
 #
@@ -185,7 +218,7 @@ svars
 print Daten wurden gespeichert
 }
 
-; Start MQTT erst wenn Daten vom Stromzaehler kommen
+; Starte MQTT erst wenn Daten vom Stromzaehler kommen
 if (sml[2]>0) {
 	smlj=1
 }
@@ -196,15 +229,71 @@ if (year<2020) {
 	break
 }
 
+; Shelly Pro 3EM Emulation
+; 1Phase
+cpwr=sml[1]
+c1p=cpwr/3
+c2p=cpwr/3
+c3p=cpwr/3
+; 3Phasen
+;c1p=sml[4]
+;c2p=sml[5]
+;c3p=sml[6]
+
+if once==0 {
+	; starte mdns für Shelly "-" verwende Geräte MAC
+	res=mdns("shellypro3em-" "-" "shelly")
+	; udp rpc handler auf port 1010
+	res=udp(0 1010)
+	once=1
+}
+str=udp(1)
+if str!="" {
+	print udp rpc payload=%str%
+	res=ins(str "EM.GetStatus")
+	if res>=0 {
+		=#getsrc
+		=#getstat
+		mstr2+="}"
+		udp(2 header mstr1 mstr2)
+		print >> %header%
+		print >> %mstr1%
+		print >> %mstr2%
+		break
+	}
+	res=ins(str "Shelly.GetDeviceInfo")
+	if res>=0 {
+		=#getsrc
+		=#getdefi
+		udp(2 header mstr1 mstr2)
+		print >> 1 %mstr1%
+		print >> 2 %mstr2%
+		break
+	}
+	res=ins(str "EM.GetConfig")
+	if res>=0 {
+		=#getsrc
+		=#getcfg
+		udp(2 header mstr1)
+		print >> 1 %mstr1%
+		break
+	}
+}
+
 ; alle 3s
 if (upsecs%3==0) {
 	; Aktuelle Leistung [W]
 	;power=rnd(1000)-500 google chart testing
 	; kopiere Leistung vom Zaehler (aus SML Variable)
 	power=sml[1]
+	; Leistung aufsummieren 4h/24h Diagramm
+	avgv+=power
+	avgv2+=power
+	avgvc+=1
+	avgvc2+=1
 	; Optional: gemittelte Leistung fuer opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
-	power2=(0.9*power2)+((1-0.9)*power)	
-	
+	power2=(0.9*power2)+((1-0.9)*power)		
+
 	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
 		if ((power2<-300) and (swespflg==0)) {
@@ -220,6 +309,18 @@ if (upsecs%3==0) {
 	}
 	; (Op2) Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#8
 	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0power%}
+}
+
+; alle 30s
+if (upsecs%30==0) {
+	; 4h chart. idx wird automatisch gesetzt
+	s4h=avgv/avgvc
+	avgv=0
+	avgvc=0
+
+	; Setze 4h Chart X-Achse alle 30s => /120 Werte pro Stunde. Arraygroesse = 480
+	; tasmota calc [hh:mm] via cnthX/Y. mm = X%Y * 60/Y. hh = X/Y
+	cstr2="cnth"+s(1.0((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1))+"/120"
 }
 
 ; alle 60s
@@ -249,6 +350,20 @@ if (upsecs%60==0) {
 	;=>publish stat/%topic%/script/consyear %2(EnFrGrid-yval)%
 	;=>publish stat/%topic%/script/yielyear %2(EnToGrid-yval2)%
 
+	; 24h Chart. Berechne Durschnittsleistung [W] der letzten 5min => ins Array[1-288]
+	m5=int((((hours*60)+mins)/5)+1)
+	; set idx (pointer starts from 0)
+	sday[0]=m5
+	if (chg[m5]>0) {
+		sday[m5]=int(avgv2/avgvc2)
+		avgv2=0
+		avgvc2=0
+	}
+
+	; Aktualisiere 24h Chart alle 5Min => Arraygröße 288
+	; tasmota calc [hh:mm] via cnthX/Y. mm = X%Y * 60/Y. hh = X/Y
+	cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
+
 	; Tagesverbrauch & Einspeisung Berechnung um Mitternacht
 	if ((chg[hour]>0) and (hour==0)) {
 		if (day>1) {
@@ -275,6 +390,110 @@ if (upsecs%60==0) {
 		svars 
 	}
 }
+
+
+;-- SHELLY PRO 3EM + ECOTRACKER EMULATION --
+>ah
+; http rpc handler shelly
+res=won(1 "/rpc/*")
+; http status shelly
+res=won(2 "/status")
+; http status ecotracker
+res=won(3 "/v1/json")
+
+>on1
+print SHELLY RPC RQ
+str=warg
+
+res=ins(str "EM.GetStatus")
+if res>=0 {
+	wcs so(4)
+	=#htph
+	wcs %mstr1%
+	=#getsrc
+	wcs %header%
+	=#getstat
+	wcs %mstr1%
+	wcs %mstr2%
+	wcs }
+	wcf
+	break
+}
+
+res=ins(str "Shelly.GetDeviceInfo")
+if res>=0 {
+	wcs so(4)
+	=#htph
+	wcs %mstr1%	
+	=#getsrc
+	=#getdefi	
+	wcs %header%
+	wcs %mstr1%
+	wcs %mstr2%
+	wcf
+	break
+}
+
+res=ins(str "EM.GetConfig")
+if res>=0 {
+	wcs so(4)
+	=#htph
+	wcs %mstr1%
+	=#getsrc
+	=#getcfg
+	wcs %header%
+	wcs %mstr1%
+	wcf
+	break
+}
+
+print unknown request: %str%
+; not yet
+;"EMData.GetStatus"
+
+
+>on2
+print SHELLY STATUS RQ
+wcs so(4)
+=#htph
+wcs %mstr1%
+dp(0 2)
+wcs {"Power": %cpwr%,"E_in":%sml[2]%,"E_out":%sml[3]%}
+wcf
+
+>on3
+print ECOTRACKER
+wcs so(4)
+=#htph
+wcs %mstr1%
+dp(0 2)
+wcs {"energyCounterIn":%sml[2]%,"energyCounterOut":%sml[3]%,"powerAvg":%cpwr%,"energyCounterInT1":0,
+wcs "energyCounterInT2":0,"power":%cpwr%}
+wcf
+
+#htph
+mstr1="HTTP/1.1 200 OK\r\nContent-type: application/json\r\n\r\n"
+
+#getcfg
+mstr1="{\"id\":0,\"name\":null,\"blink_mode_selector\":\"active_energy\",\"phase_selector\":\"a\",\"monitor_phase_sequence\":true,\"ct_type\":\"120A\"}}"
+
+#getdefi
+mstr1="{\"name\":\""+tstr+"\",\"id\":\""+tstr+"\",\"mac\":\""+maca+"\",\"slot\":1,\"model\":\"SPEM-003CEBEU\","
+mstr2="\"gen\":2,\"fw_id\":\"20241011-114455/1.4.4-g6d2a586\","
+mstr2+="\"ver\":\"1.4.4\",\"app\":\"Pro3EM\",\"auth_en\":0,\"profile\":\"triphase\"}}"
+
+#getstat
+dp(0 2)
+tcurr=cpwr/230/3
+cstr3=s(tcurr)
+mstr1="{\"id\":0,\"a_current\":"+cstr3+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
+mstr1+="\"b_current\":"+cstr3+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
+mstr2="\"c_current\":"+cstr3+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
+mstr2+="\"total_current\":"+s(tcurr*3)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}"
+
+#getsrc
+tstr="shellypro3em-"+maca
+header="{\"id\":0,\"src\":\""+tstr+"\",\"result\":"
 
 
 ; WEB INTERFACE
@@ -310,9 +529,35 @@ Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2
 Uptime{m}%utm%
 $<div style="margin-left:-20px">
 
-; Lade google chart javascript (muss manuell hier geladen werden, wenn im Skript nicht gc() verwendet wird!!)
-$<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-$<script type="text/javascript">google.charts.load('current',{packages:['corechart']});</script>
+; 4h Leistung Diagramm
+$<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
+$gc(lt s4h "wr" "Leistung [W]" cstr2)
+$var options = {
+$chartArea:{left:60,width:'83%%'},
+$legend:'none',
+;$vAxis:{format:'# W',viewWindow:{max:%vn%}},   optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
+;$vAxis:{format:'# W',viewWindow:{max:5000}},   optional um Y-Achse Werte auf 5kW zu begrenzen
+$vAxis:{format:'# W'},
+$explorer:{actions:['dragToZoom', 'rightClickToReset']},
+$series: {0: {type: 'area'}},              
+$title:'Verbrauch 4 Stunden [Watt]'
+$};
+$gc(e)
+
+; 24h Leistung Diagramm
+$<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
+$gc(lt sday "wr" "Leistung [W]" cstr)
+$var options = {
+$chartArea:{left:60,width:'83%%'},
+$legend:'none',
+;$vAxis:{format:'# W',viewWindow:{max:%vn%}},   optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
+;$vAxis:{format:'# W',viewWindow:{max:5000}},   optional um Y-Achse Werte auf 5kW zu begrenzen
+$vAxis:{format:'# W'},
+$explorer:{actions:['dragToZoom', 'rightClickToReset']},
+$series: {0: {type: 'area'}},            
+$title:'Verbrauch 24 Stunden [Watt]'
+$};
+$gc(e)
 
 ; Einfacher Saeulenchart mit 2 Reihen
 ;$<div id="chart3" style="text-align:center;width:600px;height:400px"></div>
@@ -326,8 +571,9 @@ $<script type="text/javascript">google.charts.load('current',{packages:['corecha
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 16.07.2025 (PV no4/24) by ottelo.jimdo.de<br>
-$Hinweis: Die Daten werden immer um Mitternacht gespeichert!<br>
+$Version 21.07.2025 (PV+Ecotracker/Shelly Emu) by ottelo.jimdo.de<br>
+$Ecotracker & Shelly Pro 3EM Emulation by gemu2015/Kalle<br>
+$Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
 

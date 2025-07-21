@@ -31,10 +31,10 @@ IP=192.168.178.31
 ;script>=#rst24h
 ;script>svars
 ; (c) Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
-; script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
-; script >var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
-; script >=#rst24h  Loesche 24h Diagramm
-; script >svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
+; script?var       beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
+; script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
+; script>=#rst24h  Loesche 24h Diagramm
+; script>svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
 ; (d) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
 ;script?dval   script?dcon   script?mval   cript?mcon   script?yval
 ; Zum Importieren müssen sie dann wie oben mit backlog script >dcon={x x x x ...} eingeben werden. Am Ende script >svars
@@ -55,10 +55,11 @@ M:s4h=0 720
 EnFrGrid=0
 ; Aktuelle Leistung +/- [W]
 power=0
-; Tages, Monats, Jahres Verbrauch
+; PermVars (max 50Bytes): Tages, Monats, Jahres Verbrauch
 p:mval=0
 p:dval=0
 p:yval=0
+p:da=1
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
 tmp=0
 m5=0
@@ -69,7 +70,6 @@ avgv2=0
 avgvc2=0
 hour=0
 yr=0
-da=1
 save=0
 
 
@@ -308,7 +308,7 @@ $gc(e)
 
 $<center><span style="font-size:10px;">
 $Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung
-$Version 17.06.2025 by ottelo.jimdo.de<br>
+$Version 16.07.2025 by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden immer um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
