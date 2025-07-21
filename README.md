@@ -3,10 +3,26 @@ Tasmota Script with SML and Google Charts for Energy / Grid meter or energy meas
 Tasmota Skripte mit SML und Google Charts für smarte Stromzähler / Energiezähler oder smarte Steckdosen.  
 
 Für eine Anleitung, Beschreibung sowie passende Tasmota Images siehe mein Blog:
-[https://ottelo.jimdo.de](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/)
+[https://ottelo.jimdo.de](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/)  
+Eine kleine Anleitung befindet sich auch im Script selbst.
+
+### Scriptauswahl
+Die SML Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauchs. Und zwar fein aufgelöst für die letzten 4 Stunden, grob aufgelöst für die letzten 24 Stunden und dann Tages und Monatsverbräuche als Balkendiagramm. Ich habe über die Zeit einige Varianten des Scriptes erstellt, die alle durch unterschiedliche Nutzeranfragen auf meinem Blog entstanden sind.
+- `1_SML_Script_Chart` wenn ihr keine PV-Anlage / Balkonkraftwerk BKW habt (ohne Einspeisung)
+- `2_SML_Script_Chart_PV` wenn ihr eure Einspeisung sehen möchtet und euer Zähler das unterstützt (2-Richtungszähler)
+- `2_SML_Script_Chart_PV_2` wie _PV Script aber mit sehr hoch aufgelöstem 4h-Leistungs-Diagramm (alle 5s ein Wert)
+- `2_SML_Script_Chart_PV_Ecotracker` wie _PV Script aber mit Ecotracker Emulation (z.B. für Marstek Venus/Jupiter Akku)
+- `2_SML_Script_Chart_PV_ShellyEcotracker` wie _PV Script aber mit Ecotracker / Shelly Pro 3EM Emulation
+- `3_SML_Script_Chart_PV_1-Richtungszaehler` wie _PV Script aber für 1-Richtungszähler (Netzeinspeisung in kWh wird berechnet)
+- `4_SML_Script_Chart_PV_no_4h24h` wie _PV Script aber ohne 4h und 24h Diagramme
+- `5_SonoffPowR2_GosundEP2_NousA1T` wie 1_ Script jedoch für Energiemess-Steckdosen
+- `5_SonoffPowR2_GosundEP2_NousA1T_2` sehr hoch aufgelöstes 4h-Leistungs-Diagramm (alle 5s ein Wert)
+- `6_SML_Script_Wasseruhr` Wasseruhr Script mit Diagrammen (Impulse)
+- `8_Script_DeepSleep` ESP Tasmota Deepsleep Testscript (nur für ESP32)
+- `9_Script_SML_Simulator` emuliert ein MT175 Stromzähler, einfach auf einen 2. Lesekopf aufspielen (ESP8266 / ESP32)
 
 ### Tasmota Image/Firmware
-Die Skripte funktionieren nur, wenn ihr ein speziell angepasstes Tasmota Image (Firmware) verwendet (z.B. mit SML Support). Die Images könnt ihr auf meiner Seite herunterladen. Wenn ihr sehen möchtet, welche Features ich beim Erstellen der Images verwendet habe oder ihr euer eigenes Image erstellen wollt, dann schaut [hier](https://github.com/ottelo9/tasmota-sml-images) vorbei.
+Die Skripte funktionieren nur, wenn ihr ein speziell angepasstes Tasmota Image (Firmware) verwendet (z.B. mit SML Support). Die Images könnt ihr ebenfalls auf [meiner github Seite](https://github.com/ottelo9/tasmota-sml-images/releases). herunterladen. Wenn ihr sehen möchtet, welche Features ich beim Erstellen der Images verwendet habe oder ihr euer eigenes Image erstellen wollt, dann schaut in die Readme [hier](https://github.com/ottelo9/tasmota-sml-images).
 
 ### Hardware
 Die Scripte sind so gemacht, dass sie sogar auf einem **ESP8266** laufen (z.B. im Hichi Lesekopf oder in Sonoff / Gosund Steckdosen verbaut). Dafür muss das Script aber dringend über den externen Script Editor "komprimiert" werden. D.h. es werden alle Kommentare und Leerzeichen entfernt. Der Editor überträgt das Script dann auch gleich. Beim **ESP32** muss dies nicht mehr unbedingt gemacht werden. Aber es sollten die Kommentare entfernt werden. Dort wird das Script einfach in den internen Editor kopiert.
