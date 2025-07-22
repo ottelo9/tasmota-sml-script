@@ -16,8 +16,10 @@ Die SML Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauc
   wie _PV Script aber mit sehr hoch aufgelöstem 4h-Leistungs-Diagramm (alle 5s ein Wert)
 - `2_SML_Script_Chart_PV_Ecotracker`  
   wie _PV Script aber mit Ecotracker Emulation (z.B. für Marstek Venus/Jupiter Akku)
+  benötigt mein Tasmota Image [V15.0.1](https://github.com/ottelo9/tasmota-sml-images/releases/tag/V15.0.1_250721) oder höher (ESP8266/ESP32)
 - `2_SML_Script_Chart_PV_ShellyEcotracker`  
   wie _PV Script aber mit Ecotracker / Shelly Pro 3EM Emulation - **TESTVERSION!**
+  benötigt mein Tasmota Image [V15.0.1](https://github.com/ottelo9/tasmota-sml-images/releases/tag/V15.0.1_250721) oder höher (nur ESP32)
 - `3_SML_Script_Chart_PV_1-Richtungszaehler`  
   wie _PV Script aber für 1-Richtungszähler (Netzeinspeisung in kWh wird berechnet)
 - `4_SML_Script_Chart_PV_no_4h24h`  
