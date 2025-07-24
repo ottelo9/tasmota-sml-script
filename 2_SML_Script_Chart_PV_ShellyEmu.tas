@@ -6,8 +6,7 @@ IP=192.168.178.132
 ; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
-; Diese Variante des Scriptes beinhaltet die Emulation vom Shelly Pro 3EM und Ecotracker damit die Nulleinspeisung mit einem Marstek Akku realisiert werden kann (nur ESP32!)
-; Ecotracker JSON URL: http://EURE-IP/v1/json
+; Diese Variante des Scriptes beinhaltet die Emulation vom Shelly Pro 3EM damit die Nulleinspeisung mit einem Marstek Akku realisiert werden kann (dieses Script ist nur für den ESP32!)
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
 ; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
@@ -229,13 +228,10 @@ header="{\"id\":0,\"src\":\""+tstr+"\",\"result\":"
 res=won(1 "/rpc/*")
 ; http status shelly
 res=won(2 "/status")
-; http status ecotracker
-res=won(3 "/v1/json")
 
 >on1
 print SHELLY RPC RQ
 str=warg
-
 res=ins(str "EM.GetStatus")
 if res>=0 {
 	wcs so(4)
@@ -297,16 +293,6 @@ dp(0 2)
 wcs {"Power": %cpwr%,"E_in":%sml[2]%,"E_out":%sml[3]%}
 wcf
 
->on3
-print ECOTRACKER
-wcs so(4)
-=#htph
-wcs %mstr1%
-dp(0 2)
-wcs {"energyCounterIn":%sml[2]%,"energyCounterOut":%sml[3]%,"powerAvg":%cpwr%,"energyCounterInT1":0,
-wcs "energyCounterInT2":0,"power":%cpwr%}
-wcf
-
 
 ;-- SML --
 >M 1
@@ -343,68 +329,6 @@ if (sml[2]>0) {
 if (year<2020) {
 	print NTP not ready
 	break
-}
-
-; Shelly Pro 3EM Emulation
-; 1Phase
-cpwr=sml[1]
-c1p=cpwr/3
-c2p=cpwr/3
-c3p=cpwr/3
-; 3Phasen
-;c1p=sml[4]
-;c2p=sml[5]
-;c3p=sml[6]
-; Phasenströme berechnen
-c1c=c1p/230
-c2c=c2p/230
-c3c=c3p/230
-
-if once==0 {
-	; starte mdns für Shelly "-" verwende Geräte MAC
-	res=mdns("shellypro3em-" "-" "shelly")
-	; udp rpc handler auf port 1010
-	res=udp(0 1010)
-	once=1
-}
-str=udp(1)
-if str!="" {
-	;print udp rpc payload=%str%
-	res=ins(str "EM.GetStatus")
-	if res>=0 {
-		=#getsrc
-		=#getstat
-		udp(2 header mstr1 mstr2)
-		;print >> %header%
-		;print >> %mstr1%
-		;print >> %mstr2%
-		break
-	}
-	res=ins(str "Shelly.GetDeviceInfo")
-	if res>=0 {
-		=#getsrc
-		=#getdefi
-		udp(2 header mstr1 mstr2)
-		;print >> 1 %mstr1%
-		;print >> 2 %mstr2%
-		break
-	}
-	res=ins(str "EM.GetConfig")
-	if res>=0 {
-		=#getsrc
-		=#getcfg
-		udp(2 header mstr1)
-		;print >> 1 %mstr1%
-		break
-	}
-	res=ins(str "EMData.GetStatus")
-	if res>=0 {
-		=#getsrc
-		=#egetstat
-		udp(2 header mstr1)
-		;print >> 1 %mstr1%
-		break
-	}
 }
 
 ; alle 3s
@@ -515,6 +439,68 @@ if (upsecs%60==0) {
 		dval2=EnToGrid
 		; nur 1x um Mitternacht speichern
 		svars 
+	}
+}
+
+; Shelly Pro 3EM Emulation
+; 1Phase
+cpwr=power2
+c1p=cpwr/3
+c2p=cpwr/3
+c3p=cpwr/3
+; 3Phasen
+;c1p=sml[4]
+;c2p=sml[5]
+;c3p=sml[6]
+; Phasenströme berechnen
+c1c=c1p/230
+c2c=c2p/230
+c3c=c3p/230
+
+if once==0 {
+	; starte mdns für Shelly "-" verwende Geräte MAC
+	res=mdns("shellypro3em-" "-" "shelly")
+	; udp rpc handler auf port 1010
+	res=udp(0 1010)
+	once=1
+}
+str=udp(1)
+if str!="" {
+	;print udp rpc payload=%str%
+	res=ins(str "EM.GetStatus")
+	if res>=0 {
+		=#getsrc
+		=#getstat
+		udp(2 header mstr1 mstr2)
+		;print >> %header%
+		;print >> %mstr1%
+		;print >> %mstr2%
+		break
+	}
+	res=ins(str "Shelly.GetDeviceInfo")
+	if res>=0 {
+		=#getsrc
+		=#getdefi
+		udp(2 header mstr1 mstr2)
+		;print >> 1 %mstr1%
+		;print >> 2 %mstr2%
+		break
+	}
+	res=ins(str "EM.GetConfig")
+	if res>=0 {
+		=#getsrc
+		=#getcfg
+		udp(2 header mstr1)
+		;print >> 1 %mstr1%
+		break
+	}
+	res=ins(str "EMData.GetStatus")
+	if res>=0 {
+		=#getsrc
+		=#egetstat
+		udp(2 header mstr1)
+		;print >> 1 %mstr1%
+		break
 	}
 }
 
