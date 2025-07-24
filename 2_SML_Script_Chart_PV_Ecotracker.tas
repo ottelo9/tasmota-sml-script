@@ -7,6 +7,7 @@ IP=192.168.178.169
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
 ; Diese Variante des Scriptes beinhaltet die Emulation vom Ecotracker damit die Nulleinspeisung mit einem Marstek Akku realisiert werden kann (ESP8266 z.B. ESP01s / ESP32)
+; Aktuell findet der Marstek den Emulator aber nicht, es müsste Arbeit reingesteckt werden. Da die Shelly Emulation im anderen Script läuft wird sich da wohl nichts tun.
 ; JSON URL: http://EURE-IP/v1/json
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
 ; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
