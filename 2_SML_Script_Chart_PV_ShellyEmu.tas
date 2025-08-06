@@ -444,7 +444,7 @@ if (upsecs%60==0) {
 
 ; Shelly Pro 3EM Emulation
 ; 1Phase
-cpwr=power2
+cpwr=sml[1]
 c1p=cpwr/3
 c2p=cpwr/3
 c3p=cpwr/3
@@ -580,7 +580,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 22.07.2025 (PV+Ecotracker/Shelly Emu) by ottelo.jimdo.de<br>
+$Version 06.08.2025 (PV+Ecotracker/Shelly Emu) by ottelo.jimdo.de<br>
 $Ecotracker & Shelly Pro 3EM Emulation by gemu2015/Kalle<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
