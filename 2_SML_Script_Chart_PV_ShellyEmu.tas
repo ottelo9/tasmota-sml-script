@@ -446,11 +446,7 @@ if (upsecs%60==0) {
 
 ; Shelly Pro 3EM Emulation
 ; 1Phase
-cpwr=power
-;Marstek Akku Leistung begrenzen
-if (power>400) {
-	power=400
-}
+cpwr=sml[1]
 c1p=cpwr
 ; 3Phasen
 ;c1p=sml[4]
