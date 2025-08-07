@@ -331,19 +331,21 @@ if (year<2020) {
 	break
 }
 
+; Aktuelle Leistung [W]
+;power=rnd(1000)-500 google chart testing
+; kopiere Leistung vom Zaehler (aus SML Variable)
+power=sml[1]
+; Optional: gemittelte Leistung fuer z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
+;power2=(0.9*power2)+((1-0.9)*power)
+
 ; alle 3s
 if (upsecs%3==0) {
-	; Aktuelle Leistung [W]
-	;power=rnd(1000)-500 google chart testing
-	; kopiere Leistung vom Zaehler (aus SML Variable)
-	power=sml[1]
 	; Leistung aufsummieren 4h/24h Diagramm
 	avgv+=power
 	avgv2+=power
 	avgvc+=1
 	avgvc2+=1
-	; Optional: gemittelte Leistung fuer opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
-	power2=(0.9*power2)+((1-0.9)*power)		
+	;=>publish stat/%topic%/script/power2 %power2%
 
 	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
@@ -444,10 +446,12 @@ if (upsecs%60==0) {
 
 ; Shelly Pro 3EM Emulation
 ; 1Phase
-cpwr=sml[1]
-c1p=cpwr/3
-c2p=cpwr/3
-c3p=cpwr/3
+cpwr=power
+;Marstek Akku Leistung begrenzen
+if (power>400) {
+	power=400
+}
+c1p=cpwr
 ; 3Phasen
 ;c1p=sml[4]
 ;c2p=sml[5]
