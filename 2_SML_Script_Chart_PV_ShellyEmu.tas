@@ -12,7 +12,7 @@ IP=192.168.178.132
 ; dann könnt ihr das Script dafür anpassen. Sucht nach "cpwr=sml[1]". Dort könnt ihr die ; entfernen um alle 3 Phasen korrekt an den Akku zu senden. Der Akku kann dann nämlich erkennen, an welcher Phase er hängt.
 ; Gibt euer Zähler nur die Ströme (und ggf. Spannungen) für L1-3 aus, dann müsst ihr die Leistung im Script für die einzelnen Phasen berechnen (U*I+cosPhi) oder ihr verwendet nur die Gesamtleistung, was zu empfehlen ist.
 ; Wie sich das ganze bei mehr als zwei Marstek Akkus verhält ist mir leider noch nicht bekannt. Bitte kontaktiert mich, falls ihr mehr wisst.
-; Mehr Infos unter https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13 FAQ Nr 17 oder www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
+; Mehr Infos unter https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a oder www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
 ; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
