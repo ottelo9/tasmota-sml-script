@@ -7,6 +7,12 @@ IP=192.168.178.132
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
 ; Diese Variante des Scriptes beinhaltet die Emulation vom Shelly Pro 3EM damit die Nulleinspeisung mit einem Marstek Akku realisiert werden kann (dieses Script ist nur für den ESP32!)
+; Wenn ihr einen Jupiter oder Venus Akku habt, sollte der Marstek Akku den Emulator bereits finden. Beim B2500 Akku müsst ihr ggf. noch den Port anpassen, sucht hier nach "udp(0 1010)" und ändert 1010 -> 2220.
+; Dann müsst ihr natürlich noch die SML Sektion (>M) auf euren Zähler anpassen, die Reihenfolge muss eingehalten werden! Habt ihr einen Zähler, der die Leistung/Ströme aller 3 Phasen einzeln ausgeben kann
+; dann könnt ihr das Script dafür anpassen. Sucht nach "cpwr=sml[1]". Dort könnt ihr die ; entfernen um alle 3 Phasen korrekt an den Akku zu senden. Der Akku kann dann nämlich erkennen, an welcher Phase er hängt.
+; Gibt euer Zähler nur die Ströme (und ggf. Spannungen) für L1-3 aus, dann müsst ihr die Leistung im Script für die einzelnen Phasen berechnen (U*I+cosPhi) oder ihr verwendet nur die Gesamtleistung, was zu empfehlen ist.
+; Wie sich das ganze bei mehr als zwei Marstek Akkus verhält ist mir leider noch nicht bekannt. Bitte kontaktiert mich, falls ihr mehr wisst.
+; Mehr Infos unter https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13 FAQ Nr 17 oder www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
 ; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
@@ -339,7 +345,8 @@ c1c=c1p/230
 if once==0 {
 	; starte mdns für Shelly "-" verwende Geräte MAC
 	res=mdns("shellypro3em-" "-" "shelly")
-	; udp rpc handler auf port 1010
+	; udp rpc handler. Venus/Jupiter Port 1010, B2500 Port 2220
+	; je nach Firmwarestand vom B2500 muss der Port im Script angepasst werden: 1010 (FW Version <= 224), 2220 (FW Version >= 226)
 	res=udp(0 1010)
 	tstr="shellypro3em-"+maca
 	header="{\"id\":0,\"src\":\""+tstr+"\",\"result\":"
