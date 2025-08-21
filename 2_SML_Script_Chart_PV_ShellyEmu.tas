@@ -332,7 +332,13 @@ if (year<2020) {
 
 ; Shelly Pro 3EM Emulation
 ; Standard: Zähler übermittelt nur Gesamtleistung
-cpwr=sml[1]
+; Peaks dämpfen (z.B. Kühlschrank)
+tmp=sml[1]-cpwr
+if (tmp>500) {
+	cpwr=sml[1]-(tmp/2)
+} else {
+	cpwr=sml[1]
+}
 c1p=cpwr
 c1c=c1p/230
 ; Optional: Zähler übermittelt Leistungen der einzelnen Phasen. ; entfernen
@@ -580,7 +586,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 15.08.2025 (PV+Shelly Emu) by ottelo.jimdo.de<br>
+$Version 21.08.2025 (PV+Shelly Emu) by ottelo.jimdo.de<br>
 $Shelly Pro 3EM Emulation by gemu2015/Kalle<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
