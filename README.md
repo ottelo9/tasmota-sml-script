@@ -21,7 +21,7 @@ Die SML Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauc
   wie _PV Script aber mit Shelly Pro 3EM Emulation (für Marstek Akkus Jupiter, Venus, B2500)
   benötigt mein Tasmota Image [V15.0.1](https://github.com/ottelo9/tasmota-sml-images/releases/tag/V15.0.1_250721) oder höher (nur ESP32). Im Script ist eine grobe Beschreibung, wie ihr das alles zum Laufen bekommt.
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!  
-  Das Script basiert auf dem ["Basisscript" von gemu2015](https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas). Das Basisscript läuft auch auf dem ESP8266!
+  Ein vereinfachtes Basisscript, was auch auf dem ESP8266 läuft, ist das 7_SML_ShellyEmu_Simple.tas.
 - `3_SML_Script_Chart_PV_1-Richtungszaehler`  
   wie _PV Script aber für 1-Richtungszähler (Netzeinspeisung in kWh wird berechnet)
 - `4_SML_Script_Chart_PV_no_4h24h`  
@@ -32,6 +32,12 @@ Die SML Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauc
   sehr hoch aufgelöstes 4h-Leistungs-Diagramm (alle 5s ein Wert)
 - `6_SML_Script_Wasseruhr`  
   Wasseruhr Script mit Diagrammen (Impulse)
+- `7_SML_ShellyEmu_Simple`  
+  Sehr einfaches Script zum Emulieren eines Shelly Pro 3EM / Ecotracker (für Marstek Akkus Jupiter, Venus, B2500)  
+  Es ist so klein, dass es auch auf dem ESP8266 läuft. Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte) an.
+  Benötigt mein Tasmota Image [V15.0.1](https://github.com/ottelo9/tasmota-sml-images/releases/) oder höher. Im Script ist eine grobe Beschreibung, wie ihr das alles zum Laufen bekommt.
+  Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
+  Das Script basiert auf dem ["Basisscript" von gemu2015](https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas)
 - `8_Script_DeepSleep`  
   ESP Tasmota Deepsleep Testscript (nur für ESP32)
 - `9_Script_SML_Simulator`  
