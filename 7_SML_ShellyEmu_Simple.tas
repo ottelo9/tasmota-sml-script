@@ -23,7 +23,7 @@ mstr2=""
 header=""
 once=0
 throttle=1
-tmp
+tmp=0
 
 
 >B
@@ -220,9 +220,10 @@ if str!="" {
 
 
 >W
-Uptime{m}%utm%
+Uptime{m}%uptime% min
+Power to Marstek{m}%cpwr% W
 $<center><span style="font-size:10px;">
-$Version 21.08.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 25.08.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Shelly Pro 3EM Emulation by gemu2015/Kalle<br>
 $</span></center>
 
