@@ -1,6 +1,6 @@
 >D 250
 ; Einfaches Shelly/EcoTracker Emulator Script für ESP8266/ESP32 und Tasmota Image von ottelo
-; Emuliert Shelly Pro 3EM oder EcoTracker für Marstek Akku Jupiter, Venus, B2500, ...
+; Emuliert Shelly Pro 3EM oder EcoTracker für Marstek Akku Jupiter, Venus, B2500,Growatt Noah 2000(aktuell ungetestet) ...
 ; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
 ; Script basiert auf https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas
 ; Script ist für ein Wifi Tasmota ESP Lesekopf für Stromzähler gedacht, z.B. HichiV1/V2, Bitshake, usw.
@@ -20,10 +20,15 @@ str=""
 tstr=""
 mstr1=""
 mstr2=""
+mstr3=""
+mstr4=""
+mstr5=""
 header=""
 once=0
 throttle=1
 tmp=0
+Current_Time=""
+I:unixts=1548028800
 
 
 >B
@@ -47,7 +52,7 @@ if res>=0 {
 	=#htph
 	wcs %mstr1%
 	wcs %header%
-	=#getstat
+	=#getemstat
 	wcs %mstr1%
 	wcs %mstr2%
 	wcf
@@ -90,6 +95,20 @@ if res>=0 {
 	wcf
 	break
 }
+res=ins(str "Shelly.GetStatus")
+if res>=0 {
+      wcs so(4)
+      =#htph
+      wcs %mstr1%
+      =#getshellystat
+      wcs %mstr1%
+      wcs %mstr2%
+      wcs %mstr3%
+      wcs %mstr4%
+      wcs %mstr5%
+      wcf
+      break
+}
 print unknown http equest: %str%
 
 >on2
@@ -122,7 +141,7 @@ mstr1="{\"name\":\""+tstr+"\",\"id\":\""+tstr+"\",\"mac\":\""+maca+"\",\"slot\":
 mstr2="\"gen\":2,\"fw_id\":\"20241011-114455/1.4.4-g6d2a586\","
 mstr2+="\"ver\":\"1.4.4\",\"app\":\"Pro3EM\",\"auth_en\":0,\"profile\":\"triphase\"}}"
 
-#getstat
+#getemstat
 dp(0 2)
 mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
 mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
@@ -133,6 +152,46 @@ mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"t
 dp(0 2)
 mstr1="{\"id\":0,\"a_total_act_energy\":"+s(c1p)+",\"a_total_act_ret_energy\":"+s(c1p)+",\"b_total_act_energy\":"+s(c2p)+",\"b_total_act_ret_energy\":"+s(c2p)+",\"c_total_act_energy\":"+s(c3p)+",\"c_total_act_ret_energy\":"+s(c3p)+",\"total_act\":"+s(cpwr)+",\"total_act_ret\":"+s(cpwr)+"}}"
 
+#getshellystat
+; Currently raw meter data is used, so no peak power detection etc.  
+;Currently, this Function is for single-phase use.
+; For 3-phase meters, values for phase B and C should also be set.  
+; With multiple phases, some totals (e.g. total_current, total_act_power, total_apparent_power, total_power) may need to be provided depending on the system.  
+Current_Time= s(2.0hours)
+Current_Time+=":"
+Current_Time+= s(2.0mins)
+unixts=i(1548028800)
+unixts+=i(epoch)
+mstr1 = "{\"wifi_sta\":{\"connected\":true,\"ssid\":\"kabellos\",\"ip\":\""+lip+"\",\"rssi\":-40},";
+mstr1 += "\"cloud\":{\"enabled\":false,\"connected\":false},";
+mstr1 += "\"mqtt\":{\"connected\":false},";
+mstr1 += "\"mac\":\""+maca+"\",\"has_update\":false";
+;mstr1- alles außer die MAC und die  IP ist Statisch
+mstr2 = ",\"unixtime\":"+s(unixts)+","
+mstr2 += "\"time\":\""+Current_Time+"\","
+;mstr2 = ",\"time\":\"09:37\",\"unixtime\":1756021020,"
+mstr2 += "\"ram_total\":50648,\"ram_free\":38376,";
+mstr2 += "\"ram_lwm\":32968,\"fs_size\":233681,\"fs_free\":174194,";
+mstr2 += "\"temperature\":28.08,\"overtemperature\":false,\"tmp\":{\"tC\":28.08,\"tF\":82.54,\"is_valid\":true},\"fs_mounted\":true,"
+
+
+mstr3 = "\"total_power\":"+s(sml[3])+",";
+mstr3 += "\"em:0\":{";
+mstr3 += "\"id\":0,";
+mstr3 += "\"a_current\":"+s(sml[5])+",\"a_voltage\":"+s(sml[4])+",\"a_act_power\":"+s(sml[3])+",";
+mstr3 += "\"a_aprt_power\":"+s(sml[3])+",\"a_pf\":1,\"a_freq\":"+s(sml[6])+",";
+mstr3 += "\"b_current\":0,\"b_voltage\":"+s(sml[4])+",\"b_act_power\":0,";
+mstr3 += "\"b_aprt_power\":0,\"b_pf\":1,\"b_freq\":0,";
+mstr4 = "\"c_current\":0,\"c_voltage\":"+s(sml[4])+",\"c_act_power\":0,";
+mstr4 += "\"c_aprt_power\":0,\"c_pf\":1,\"c_freq\":0,";
+mstr4 += "\"total_current\":"+s(sml[5])+",\"total_act_power\":"+s(sml[3])+",\"total_aprt_power\":"+s(sml[3])+"},";
+mstr4 += "\"emdata:0\":{";
+mstr4 += "\"id\":0,";
+mstr4 += "\"a_total_act_energy\":"+s(sml[1])+",\"a_total_act_ret_energy\":"+s(sml[2])+",";
+mstr5 = "\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,";
+mstr5 += "\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,";
+mstr5 += "\"total_act\":"+s(sml[1])+",\"total_act_ret\":"+s(sml[2])+"},";
+mstr5 += "\"modbus\":{\"enabled\":false},\"serial\":1,\"uptime\":"+s(upsecs)+"}"
 
 >S
 if year<2000 {
