@@ -68,7 +68,32 @@ Den Befehl müsst ihr ggf. auf euren Ort anpassen! https://tasmotatimezone.com  
 So sieht das Google Chart Script in Natura aus:  
 ![screencapture-192-168-178-31-2024-12-28-15_41_15](https://github.com/user-attachments/assets/cc1d8a8f-62c9-4609-839c-d90ff3d4c089)
 
-[Offizielle Tasmota Github Seite](https://github.com/arendst/Tasmota)
+### Debuggen oder Daten loggen
+Falls ihr vielleicht im Script irgendwas loggen wollt (Zustände oder Werte in eine Datei mit Zeitstempel schreiben), dann gibt es eine schöne einfache Methode via Script. Erstellt dazu einfach ein neuen #Sub, da wo bereits Subs sind, ansonsten ist es egal wo:
+```
+#log(str)
+tmp=fo("log.txt" a)
+if tmp>=0 {
+	res=fw(cts(tstamp 1) tmp)
+	str="\t"+str+"\n"
+	res=fw(str tmp)
+	fc(tmp)
+}
+```
+Ihr braucht dafür zwei neue Variablen, die ihr ganz oben im Script deklarieren müsst, falls sie noch nicht existieren:
+```
+tmp=0
+res=0
+str=""
+```
+Jetzt könnt ihr irgendwo im Script z.B. ein Wert in die Datei "log.txt" schreiben lassen inkl. Zeitstempel:
+```
+str="Leistung: "+s(sml[1])+" W"
+=#log(str)
+oder einfach nur
+=#log(s(sml[1]))
+```
 
 ------------------
-Bedanken möchte ich mich besonders bei [gemu2015](https://github.com/gemu2015), der das Tasmota Scripting und SML entwickelt hat und mir immer sofort bei Problemen geholfen hat. Und natürlich beim restlichen [Tasmota Entwickler-Team](https://tasmota.github.io/docs/About/), für das grandiose Tasmota :).
+Bedanken möchte ich mich besonders bei [gemu2015](https://github.com/gemu2015), der das Tasmota Scripting und SML entwickelt hat und mir immer sofort bei Problemen geholfen hat. Und natürlich beim restlichen [Tasmota Entwickler-Team](https://tasmota.github.io/docs/About/), für das grandiose Tasmota :).  
+[Offizielle Tasmota Github Seite](https://github.com/arendst/Tasmota)
