@@ -1,6 +1,6 @@
 >D 250
 ; IP for external ScriptEditor
-IP=192.168.178.132
+IP=192.168.178.31
 
 
 ; (1) Beschreibung:
@@ -11,7 +11,6 @@ IP=192.168.178.132
 ; Dann müsst ihr natürlich noch die SML Sektion (>M) auf euren Zähler anpassen, die Reihenfolge muss eingehalten werden! Habt ihr einen Zähler, der die Leistung/Ströme aller 3 Phasen einzeln ausgeben kann
 ; dann könnt ihr das Script dafür anpassen. Sucht nach "cpwr=sml[1]". Dort könnt ihr die ; entfernen um alle 3 Phasen korrekt an den Akku zu senden. Der Akku kann dann nämlich erkennen, an welcher Phase er hängt.
 ; Gibt euer Zähler nur die Ströme (und ggf. Spannungen) für L1-3 aus, dann müsst ihr die Leistung im Script für die einzelnen Phasen berechnen (U*I+cosPhi) oder ihr verwendet nur die Gesamtleistung, was zu empfehlen ist.
-; Wie sich das ganze bei mehr als zwei Marstek Akkus verhält ist mir leider noch nicht bekannt. Bitte kontaktiert mich, falls ihr mehr wisst.
 ; Mehr Infos unter https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a oder www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
 ; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
@@ -117,6 +116,8 @@ once=0
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
 smlj=0
+;Starte Multitasking >t1
+res=ct(1 1000 1)
 
 
 ; -- SUBS --
@@ -198,8 +199,7 @@ wcs var chart=new google.visualization.ColumnChart(document.getElementById('mont
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
 
-
-;-- SHELLY PRO 3EM + ECOTRACKER EMULATION --
+;-- SHELLY PRO 3EM EMULATION --
 #htph
 mstr1="HTTP/1.1 200 OK\r\nContent-type: application/json\r\n\r\n"
 
@@ -288,76 +288,42 @@ wcs so(4)
 =#htph
 wcs %mstr1%
 dp(0 2)
-wcs {"Power": %cpwr%,"E_in":%sml[2]%,"E_out":%sml[3]%}
+wcs {"Power": %cpwr%,"E_in":%EnFrGrid%,"E_out":%EnToGrid%}
 wcf
 
-
-;-- SML --
->M 1
-;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
-; der Median Filter (16) darf für die Shelly Emulation nicht aktiviert werden sonst schwingt Marstek 
-+1,3,s,0,9600,MT175,1
-;1. line = sml[1] (aktuelle Leistung W), 2. = sml[2] (Netzbezug kWh), 3. = sml[3] (Netzeinspeisung kWh)
-1,77070100100700ff@1,Leistung,W,Power_curr,0
-1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
-;optional - Falls die Leistung aller 3 Phasen ausgegeben wird, optional relevant für Shelly Emulation sml[4],[5],[6]
-;1,77070100240700ff@1,L1,W,L1,18
-;1,77070100380700ff@1,L2,W,L2,18
-;1,770701004C0700ff@1,L3,W,L3,18
-;DWS74 Bugfix
-;1,=so2,1
-#
-
-
-; -- JEDE SEKUNDE --
->S
-;Daten sofort speichern Button
-if (save==1) {
-	save=0
-	svars
-	print Daten wurden gespeichert
+>t1
+; Multitasking Thread für Shelly Pro 3EM Emulation
+if once==0 {
+	; starte mDNS damit Marstek den emulierten Shelly findet
+	res=mdns("shellypro3em-" "-" "shelly")
+	; start UDP für Datenkommunikation
+	; Port 1010 oder ggf. 2220 für B2500
+	res=udp(0 1010)
+	tstr="shellypro3em-"+maca
+	header="{\"id\":0,\"src\":\""+tstr+"\",\"result\":"
+	once=1
 }
-
-; Starte MQTT erst wenn Daten vom Stromzaehler kommen
-if (sml[2]>0) {
-	smlj=1
-}
-
-; Warte auf NTP
-if (year<2020) {
-	print NTP not ready
-	break
-}
-
-; Shelly Pro 3EM Emulation
 ; Standard: Zähler übermittelt nur Gesamtleistung
 ; Peaks dämpfen (z.B. Kühlschrank)
 tmp=sml[1]-cpwr
 if (tmp>500) {
 	cpwr=sml[1]-(tmp/2)
 } else {
-	cpwr=sml[1]
+	; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt (reduziert Einspeisung)
+	cpwr=sml[1]-50
 }
+
+; Standard: Zähler sendet nur Gesamtleistung
 c1p=cpwr
-c1c=c1p/230
-; Optional: Zähler übermittelt Leistungen der einzelnen Phasen. ; entfernen
+; Optional: Wenn Zähler auch Einzelleistungen sendet (L1-3). Marstek prüft dann, auf welcher Phase er verbunden ist. ; entfernen um zu verwenden.
 ;c1p=sml[4]
 ;c2p=sml[5]
 ;c3p=sml[6]
+; Ströme berechnen
+c1c=c1p/230
 ;c2c=c2p/230
 ;c3c=c3p/230
 
-if once==0 {
-	; starte mdns für Shelly "-" verwende Geräte MAC
-	res=mdns("shellypro3em-" "-" "shelly")
-	; udp rpc handler. Venus/Jupiter Port 1010, B2500 Port 2220
-	; je nach Firmwarestand vom B2500 muss der Port im Script angepasst werden: 1010 (FW Version <= 224), 2220 (FW Version >= 226)
-	res=udp(0 1010)
-	tstr="shellypro3em-"+maca
-	header="{\"id\":0,\"src\":\""+tstr+"\",\"result\":"
-	once=1
-}
 str=udp(1)
 if str!="" {
 	;print udp rpc payload=%str%
@@ -397,12 +363,30 @@ if str!="" {
 	udp(2 header mstr1 mstr2)
 }
 
+
+; -- JEDE SEKUNDE --
+>S
+;Daten sofort speichern Button
+if (save==1) {
+	save=0
+	svars
+	print Daten wurden gespeichert
+}
+; Starte MQTT erst wenn Daten vom Stromzaehler kommen
+if (sml[2]>0) {
+	smlj=1
+}
+; Warte auf NTP
+if (year<2020) {
+	print NTP not ready
+	break
+}
+
 ; Aktuelle Leistung [W]
-;power=rnd(1000)-500 google chart testing
 ; kopiere Leistung vom Zaehler (aus SML Variable)
 power=sml[1]
 ; Optional: gemittelte Leistung fuer z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
-;power2=(0.9*power2)+((1-0.9)*power)
+power2=(0.9*power2)+((1-0.9)*power)
 
 ; alle 3s
 if (upsecs%3==0) {
@@ -411,7 +395,7 @@ if (upsecs%3==0) {
 	avgv2+=power
 	avgvc+=1
 	avgvc2+=1
-	;=>publish stat/%topic%/script/power2 %power2%
+	=>publish stat/%topic%/script/power2 %power2%
 
 	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
@@ -527,7 +511,8 @@ bu(save "gespeichert!" "Daten sofort speichern")
 ;sl(4000 20000 vn "4 kW" "12 kW" "20 kW")
 
 ; Filtered power
-Leistung (gefiltert){m}%power2% W
+Leistung (gefiltert){m}%0power2% W
+Leistung (an Marstek Akku){m}%0cpwr% W
 
 ; Verbrauch
 Tagesverbrauch{m}%2(EnFrGrid-dval)% kWh
@@ -586,10 +571,28 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 21.08.2025 (PV+Shelly Emu) by ottelo.jimdo.de<br>
-$Shelly Pro 3EM Emulation by gemu2015/Kalle<br>
+$Version 28.08.2025 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Credits to gemu2015(Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
 
-; -- END SCRIPT --
+
+;-- SML --
+; SML Sektion an euren Stromzähler anpassen
+;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
+; Anleitung: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#4c
+; Reihenfolge nicht ändern: 1=(Gesamt)Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]
+; Medianfilter <flag> = 16 nicht verwenden, verbessert Marstek Regelung
+; https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-definition
+>M 1
+; Beispiel MT175 mit bitShake SmartMeterReader-Air
++1,5,s,0,9600,MT175,4
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
+;optional - Falls die Leistung aller 3 Phasen ausgegeben wird, optional relevant für Shelly Emulation sml[4],[5],[6]
+;1,77070100240700ff@1,L1,W,L1,0
+;1,77070100380700ff@1,L2,W,L2,0
+;1,770701004C0700ff@1,L3,W,L3,0
+#

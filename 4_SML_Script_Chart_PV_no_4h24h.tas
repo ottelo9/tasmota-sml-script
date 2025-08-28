@@ -159,23 +159,6 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 }
 
 
-;-- SML --
->M 1
-;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
-+1,5,s,16,9600,MT175,4
-;1. line = sml[1] (aktuelle Leistung W), 2. = sml[2] (Netzbezug kWh), 3. = sml[3] (Netzeinspeisung kWh)
-1,77070100100700ff@1,Leistung,W,Power_curr,0
-1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
-;optional - Falls diese Werte von deinem Zaehler gesendet werden
-;1,77070100200700ff@1,Spannung,V,Volt,1
-;1,770701001f0700ff@1,Strom,A,Current,2
-;1,770701000e0700ff@1,Frequenz,Hz,Frequency,1
-;DWS74 Bugfix
-;1,=so2,1
-#
-
-
 ; -- JEDE SEKUNDE --
 >S
 ;Daten sofort speichern Button
@@ -199,11 +182,10 @@ if (year<2020) {
 ; alle 3s
 if (upsecs%3==0) {
 	; Aktuelle Leistung [W]
-	;power=rnd(1000)-500 google chart testing
-	; kopiere Leistung vom Zaehler (aus SML Variable)
 	power=sml[1]
 	; Optional: gemittelte Leistung fuer opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
-	power2=(0.9*power2)+((1-0.9)*power)	
+	power2=(0.9*power2)+((1-0.9)*power)
+	;=>publish stat/%topic%/script/power2 %power2%
 	
 	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
@@ -326,9 +308,23 @@ $<script type="text/javascript">google.charts.load('current',{packages:['corecha
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 16.07.2025 (PV no4/24) by ottelo.jimdo.de<br>
+$Version 28.08.2025 (PV no4/24) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden immer um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
 
-; -- END SCRIPT --
+
+;-- SML --
+>M 1
+; Beispiel MT175 mit bitShake SmartMeterReader-Air
+;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
++1,5,s,16,9600,MT175,4
+;1. line = sml[1] (aktuelle Leistung W), 2. = sml[2] (Netzbezug kWh), 3. = sml[3] (Netzeinspeisung kWh)
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
+;optional - Falls diese Werte von deinem Zaehler gesendet werden
+;1,77070100200700ff@1,Spannung,V,Volt,1
+;1,770701001f0700ff@1,Strom,A,Current,2
+;1,770701000e0700ff@1,Frequenz,Hz,Frequency,1
+#

@@ -1,8 +1,6 @@
 >D 40
 ; IP for external ScriptEditor
-;IP=192.168.178.171
-;stripcomments
-;scriptsize=16384
+IP=192.168.178.171
 
 
 ; (1) Beschreibung:
@@ -137,16 +135,6 @@ wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Verbräuc
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
-
-
-;-- SML --
-;https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-metrics
->M 1
-;1=meter1, 21=GPIO21, c=Counter, 1=counter-with-pullup -50=debounce-time-ms and irq counter
-+1,21,c,1,-50,
-;1-0:1.8.0*255 for counter, %factor% = Faktor z.B. 10000 = 0.0001m³, 4 = Dezimalstellen
-1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
-#
 
 
 ; -- JEDE SEKUNDE --
@@ -284,7 +272,17 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 16.07.2025 (Wasseruhr) by ottelo.jimdo.de<br>
+$Version 28.08.2025 (Wasseruhr) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
+
+
+;-- SML --
+;https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-metrics
+>M 1
+;1=meter1, 21=GPIO21, c=Counter, 1=counter-with-pullup -50=debounce-time-ms and irq counter
++1,21,c,1,-50,
+;1-0:1.8.0*255 for counter, %factor% = Faktor z.B. 10000 = 0.0001m³, 4 = Dezimalstellen
+1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
+#

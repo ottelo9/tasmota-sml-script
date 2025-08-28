@@ -1,14 +1,14 @@
->D 100
+>D 40
 ; IP for external ScriptEditor
-IP=192.168.178.169
+IP=192.168.178.31
 
 
 ; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
-; Diese Variante des Scriptes beinhaltet die Emulation vom Ecotracker damit die Nulleinspeisung mit einem Marstek Akku realisiert werden kann (ESP8266 z.B. ESP01s / ESP32)
-; Aktuell findet der Marstek den Emulator aber nicht, es müsste Arbeit reingesteckt werden. Da die Shelly Emulation im anderen Script läuft wird sich da wohl nichts tun.
-; JSON URL: http://EURE-IP/v1/json
+; Diese Variante des Scriptes beinhaltet die Emulation vom EcoTracker von everHome damit die Nulleinspeisung mit einem Marstek Akku realisiert werden kann (dieses Script ist nur für den ESP32!)
+; Dann müsst ihr natürlich noch die SML Sektion (>M) auf euren Zähler anpassen, die Reihenfolge muss eingehalten werden!
+; Mehr Infos unter https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a oder www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
 ; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
@@ -87,6 +87,10 @@ swesp=0
 swespflg=0
 power2=0
 save=0
+; EcoTracker emulieren (z.B. für Marstek Venus E)
+res=0
+cpwr=0
+once=0
 
 
 ; -- BOOT --
@@ -178,56 +182,58 @@ wcs var chart=new google.visualization.ColumnChart(document.getElementById('mont
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
 
-;-- SML --
->M 1
-;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
-+1,5,s,16,9600,MT175,4
-;1. line = sml[1] (aktuelle Leistung W), 2. = sml[2] (Netzbezug kWh), 3. = sml[3] (Netzeinspeisung kWh)
-1,77070100100700ff@1,Leistung,W,Power_curr,0
-1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
-;optional - Falls diese Werte von deinem Zaehler gesendet werden
-;1,77070100200700ff@1,Spannung,V,Volt,1
-;1,770701001f0700ff@1,Strom,A,Current,2
-;1,770701000e0700ff@1,Frequenz,Hz,Frequency,1
-;DWS74 Bugfix
-;1,=so2,1
-#
+;-- ECOTRACKER EMULATION --
+>ah
+; bei Änderung in >ah muss Tasmota neugestartet werden
+res=won(1 "/v1/json")
+
+>on1
+;print Ecotracker
+wcs so(4)
+wcs HTTP/1.1 200 OK\r\nContent-type: application/json\r\n\r\n
+dp(0 2)
+wcs {"power":%cpwr%,"powerAvg":%cpwr%,"energyCounterIn":%EnFrGrid%,"energyCounterInT1":0,"energyCounterInT2":0,"energyCounterOut":%EnToGrid%}
+wcf
 
 
 ; -- JEDE SEKUNDE --
 >S
 ;Daten sofort speichern Button
 if (save==1) {
-save=0
-svars
-print Daten wurden gespeichert
+	save=0
+	svars
+	print Daten wurden gespeichert
 }
-
 ; Starte MQTT erst wenn Daten vom Stromzaehler kommen
 if (sml[2]>0) {
 	smlj=1
 }
-
 ; Warte auf NTP
 if (year<2020) {
 	print NTP not ready
 	break
 }
 
+; starte mDNS damit Marstek den emulierten EcoTracker findet
+if once==0 {
+res=mdns("ecotracker-" "-" "everhome")
+once=1
+}
+; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt (reduziert Einspeisung)
+cpwr=sml[1]-50
+
 ; alle 3s
 if (upsecs%3==0) {
 	; Aktuelle Leistung [W]
-	;power=rnd(1000)-500 google chart testing
-	; kopiere Leistung vom Zaehler (aus SML Variable)
 	power=sml[1]
 	; Leistung aufsummieren 4h/24h Diagramm
 	avgv+=power
 	avgv2+=power
 	avgvc+=1
 	avgvc2+=1
-	; Optional: gemittelte Leistung fuer opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
-	power2=(0.9*power2)+((1-0.9)*power)		
+	; Optional: gemittelte Leistung fuer z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
+	power2=(0.9*power2)+((1-0.9)*power)
+	;=>publish stat/%topic%/script/power2 %power2%
 
 	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
@@ -327,20 +333,6 @@ if (upsecs%60==0) {
 }
 
 
-;-- ECOTRACKER EMULATION --
->ah
-; http status ecotracker
-tmp=won(1 "/v1/json")
-
->on1
-print ECOTRACKER RQ
-wcs so(4)
-wcs HTTP/1.1 200 OK\r\nContent-type: application/json\r\n\r\n
-dp(0 2)
-wcs {"energyCounterIn":%sml[3]%,"energyCounterOut":%sml[2]%,"powerAvg":%sml[1]%,"energyCounterInT1":0,"energyCounterInT2":0,"power":%sml[1]%}
-wcf
-
-
 ; WEB INTERFACE
 >W
 ; Auto reload
@@ -357,7 +349,8 @@ bu(save "gespeichert!" "Daten sofort speichern")
 ;sl(4000 20000 vn "4 kW" "12 kW" "20 kW")
 
 ; Filtered power
-Leistung (gefiltert){m}%power2% W
+Leistung (gefiltert){m}%0power2% W
+Leistung (an Marstek Akku){m}%0cpwr% W
 
 ; Verbrauch
 Tagesverbrauch{m}%2(EnFrGrid-dval)% kWh
@@ -416,10 +409,24 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 21.07.2025 (PV+Ecotracker Emu) by ottelo.jimdo.de<br>
-$Ecotracker Emulation by gemu2015<br>
+$Version 28.08.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Credits to gemu2015(Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
 
-; -- END SCRIPT --
+
+;-- SML --
+; SML Sektion an euren Stromzähler anpassen
+;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
+; Anleitung: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#4c
+; Reihenfolge nicht ändern: 1=(Gesamt)Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]
+; Medianfilter <flag> = 16 nicht verwenden, verbessert Marstek Regelung
+; https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-definition
+>M 1
+; Beispiel MT175 mit bitShake SmartMeterReader-Air
++1,5,s,0,9600,MT175,4
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
+#
