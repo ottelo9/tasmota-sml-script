@@ -133,7 +133,12 @@ if once==0 {
 res=mdns("ecotracker-" "-" "everhome")
 once=1
 }
+tmp=sml[1]-cpwr
+if (tmp>500) {
+cpwr=sml[1]-(tmp/2)
+} else {
 cpwr=sml[1]-50
+}
 if (upsecs%3==0) {
 power=sml[1]
 avgv+=power
