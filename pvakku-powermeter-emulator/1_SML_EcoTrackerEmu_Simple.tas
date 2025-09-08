@@ -61,8 +61,8 @@ cpwr=sml[1]-(tmp/2)
 cpwr=sml[1]-50
 }
 ; Netzbezug und Einspeisung
-kwhin=sml[2]
-kwhout=sml[3]
+kwhin=sml[2]*1000
+kwhout=sml[3]*1000
 
 
 >W
