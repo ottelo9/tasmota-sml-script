@@ -1,6 +1,6 @@
 >D 40
 ; Einfaches EcoTracker Emulator Script für ESP8266/ESP32 und Tasmota Image von ottelo
-; Emuliert EcoTracker für Marstek Akku Jupiter, Venus, B2500, ...
+; Emuliert EcoTracker für Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles (MS-A2)
 ; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
 ; Script basiert auf https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas
 ; Script ist für ein Wifi Tasmota ESP Lesekopf für Stromzähler gedacht, z.B. HichiV1/V2, Bitshake, usw.
@@ -16,10 +16,8 @@ kwhin=0
 kwhout=0
 once=0
 
-
 >B
 =>sensor53 r
-
 
 ; bei Änderung in >ah muss Tasmota neugestartet werden
 >ah
@@ -28,12 +26,15 @@ res=won(1 "/v1/json")
 
 >on1
 ;print Ecotracker
+dp(0 1)
+json="{\"power\":"+s(cpwr)+",\"powerAvg\":"+s(cpwr)+",\"energyCounterIn\":"+s(kwhin)+",\"energyCounterOut\":"+s(kwhout)+"}"
+tmp=sl(json)
+dp(0 0)
+header="HTTP/1.1 200 OK\r\nContent-Length: "+s(tmp)+"\r\nContent-Type: application/json\r\n\r\n"
 wcs so(4)
-wcs HTTP/1.1 200 OK\r\nContent-type: application/json\r\n\r\n
-dp(0 2)
-wcs {"power":%cpwr%,"powerAvg":%cpwr%,"energyCounterIn":%kwhin%,"energyCounterInT1":0,"energyCounterInT2":0,"energyCounterOut":%kwhout%}
+wcs %header%
+wcs %json%
 wcf
-
 
 >S
 ; starte MQTT erst wenn der Stromzähler sendet
@@ -66,7 +67,7 @@ kwhout=sml[3]
 Uptime{m}%0uptime% min
 Leistung an Marstek{m}%0cpwr% W
 $<center><span style="font-size:10px;">
-$Version 28.08.2025 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Version 08.09.2025 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 
