@@ -192,7 +192,7 @@ res=won(1 "/v1/json")
 >on1
 ;print Ecotracker
 dp(0 1)
-json="{\"power\":"+s(cpwr)+",\"powerAvg\":"+s(cpwr)+",\"energyCounterIn\":"+s(EnFrGrid)+",\"energyCounterOut\":"+s(EnToGrid)+"}"
+json="{\"power\":"+s(cpwr)+",\"powerAvg\":"+s(cpwr)+",\"energyCounterIn\":"+s(EnFrGrid*1000)+",\"energyCounterOut\":"+s(EnToGrid*1000)+"}"
 tmp=sl(json)
 dp(0 0)
 header="HTTP/1.1 200 OK\r\nContent-Length: "+s(tmp)+"\r\nContent-Type: application/json\r\n\r\n"
