@@ -6,7 +6,7 @@ IP=192.168.178.31
 ; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
-; Diese Variante des Scriptes beinhaltet die Emulation vom EcoTracker von everHome damit die Nulleinspeisung mit einem Marstek Akku realisiert werden kann (dieses Script ist nur für den ESP32!)
+; Diese Variante des Scriptes beinhaltet die Emulation vom EcoTracker von everHome damit die Nulleinspeisung mit Marstek Akkus (Jupiter, Venus, B2500) / Hoymiles MS-A2 realisiert werden kann (dieses Script ist nur für den ESP32!)
 ; Dann müsst ihr natürlich noch die SML Sektion (>M) auf euren Zähler anpassen, die Reihenfolge muss eingehalten werden!
 ; Mehr Infos unter https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a oder www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
@@ -91,6 +91,8 @@ save=0
 res=0
 cpwr=0
 once=0
+header=""
+json=""
 
 
 ; -- BOOT --
@@ -189,10 +191,14 @@ res=won(1 "/v1/json")
 
 >on1
 ;print Ecotracker
+dp(0 1)
+json="{\"power\":"+s(cpwr)+",\"powerAvg\":"+s(cpwr)+",\"energyCounterIn\":"+s(EnFrGrid)+",\"energyCounterOut\":"+s(EnToGrid)+"}"
+tmp=sl(json)
+dp(0 0)
+header="HTTP/1.1 200 OK\r\nContent-Length: "+s(tmp)+"\r\nContent-Type: application/json\r\n\r\n"
 wcs so(4)
-wcs HTTP/1.1 200 OK\r\nContent-type: application/json\r\n\r\n
-dp(0 2)
-wcs {"power":%cpwr%,"powerAvg":%cpwr%,"energyCounterIn":%EnFrGrid%,"energyCounterInT1":0,"energyCounterInT2":0,"energyCounterOut":%EnToGrid%}
+wcs %header%
+wcs %json%
 wcf
 
 
