@@ -10,12 +10,13 @@
 ; Die Leistung wird jede Sekunde addiert. Wenn positiv dann +PwrFrGrd, wenn negativ dann
 ; +PwrToGrd. Nach 60s wird die Arbeit/Energie für den Zähler errechnet = EnFrGrd EnToGrd.
 
-
 RndPwr=0
 utm="00d 00h 00m"
 PwrToGrd=0
 PwrFrGrd=0
 save=0
+rndsld=0
+pwrsld=0
 ; Startwert Stromzählerwert kWh (Netzbezug)
 p:EnFrGrd=10000
 ; Startwert Stromzählerwert kWh (Netzeinspeisung)
@@ -35,14 +36,6 @@ cEnOut="77070100020800ff0101621e52ff5900000000"
 ; sets decimal precision to 0
 dp0
 
->M 1
-; Stromzähler MT175 wird simuliert
-; Rx-Pin=3 (N/A), s=SML, 0=kein Filter, 9600=baudrate, MT175=Name, 1=Tx-Pin
-+1,3,s,0,9600,MT175,1
-1,77070100100700ff@1,*Leistung,W,Power_curr,0
-1,77070100010800ff@1000,*Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,*Netzeinspeisung,KWh,Total_out,2
-
 >S
 ;Daten speichern Button
 if (save==1) {
@@ -54,10 +47,17 @@ print Daten wurden gespeichert
 ;Zeit seit letztem Boot
 utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
-; Zufallszahl 0..7000 - 2000 = Zufallsleistung -2000W .. +5000W
-RndPwr=rnd(7000)-2000
+; Zufallszahl 0..1000 - 500 = Zufallsleistung -500W .. +1000W
+if (rndsld==0) {
+if (upsecs%5==0) {
+RndPwr=rnd(1000)-500
+;RndPwr=100
+}
+} else {
+RndPwr=pwrsld
+}
 
-; alle 1s: Leistung W jede Sekunde addieren
+; alle 1s: Leistung W jede Sekunde addieren, damit Bezug/Einspeisung korrekt erhöht wird
 if (RndPwr<0) {
 PwrToGrd-=RndPwr
 } else {
@@ -89,6 +89,9 @@ sml(1 1 cEnOut+hx(EnToGrd*10000)+"01")
 >W
 ; web button
 bu(save "gespeichert!" "Daten speichern")
+; Simulierte Leistung via Slider
+sl(-1000 1000 pwrsld "-1000 W" "0 W" "1000 W")
+bu(rndsld "Leistung via Slider vorgeben" "Simulierte Zufallsleistung")
 
 Simulierte Zählerwerte:{m}
 Aktuelle Leistung{m}%0RndPwr% W
@@ -101,7 +104,16 @@ Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2
 Uptime{m}%utm%
 
 $<center><span style="font-size:10px;">
-$Version 11.06.2025 (SML Simulator) by ottelo.jimdo.de<br>
+$Version 06.09.2025 (SML Simulator) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden nicht automatisch gespeichert!<br>
 $Speichern über Button oder Restart.<br>
 $</span></center>
+
+>M 1
+; Stromzähler MT175 wird simuliert
+; Rx-Pin=3 (N/A), s=SML, 0=kein Filter, 9600=baudrate, MT175=Name, 1=Tx-Pin
++1,3,s,0,9600,MT175,1
+1,77070100100700ff@1,*Leistung,W,Power_curr,0
+1,77070100010800ff@1000,*Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,*Netzeinspeisung,KWh,Total_out,2
+#
