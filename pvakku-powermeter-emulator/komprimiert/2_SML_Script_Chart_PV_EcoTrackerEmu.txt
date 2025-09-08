@@ -1,4 +1,4 @@
->D 40
+>D 250
 M:p:sday=0 288
 M:p:dcon=0 31
 M:p:dprod=0 31
