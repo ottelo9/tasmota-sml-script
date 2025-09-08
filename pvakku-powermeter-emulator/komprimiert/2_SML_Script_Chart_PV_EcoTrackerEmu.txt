@@ -32,6 +32,8 @@ save=0
 res=0
 cpwr=0
 once=0
+header=""
+json=""
 >B
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
@@ -111,10 +113,14 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 >ah
 res=won(1 "/v1/json")
 >on1
+dp(0 1)
+json="{\"power\":"+s(cpwr)+",\"powerAvg\":"+s(cpwr)+",\"energyCounterIn\":"+s(EnFrGrid*1000)+",\"energyCounterOut\":"+s(EnToGrid*1000)+"}"
+tmp=sl(json)
+dp(0 0)
+header="HTTP/1.1 200 OK\r\nContent-Length: "+s(tmp)+"\r\nContent-Type: application/json\r\n\r\n"
 wcs so(4)
-wcs HTTP/1.1 200 OK\r\nContent-type: application/json\r\n\r\n
-dp(0 2)
-wcs {"power":%cpwr%,"powerAvg":%cpwr%,"energyCounterIn":%EnFrGrid%,"energyCounterInT1":0,"energyCounterInT2":0,"energyCounterOut":%EnToGrid%}
+wcs %header%
+wcs %json%
 wcf
 >S
 if (save==1) {
@@ -238,7 +244,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 28.08.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Version 29.08.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
 $Credits to gemu2015(Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
