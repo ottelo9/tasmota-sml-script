@@ -1,4 +1,4 @@
->D 40
+>D 250
 ; Einfaches EcoTracker Emulator Script für ESP8266/ESP32 und Tasmota Image von ottelo
 ; Emuliert EcoTracker für Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles (MS-A2)
 ; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
