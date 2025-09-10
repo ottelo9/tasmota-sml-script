@@ -231,8 +231,9 @@ tmp=sml[1]-cpwr
 if (tmp>500) {
 	cpwr=sml[1]-(tmp/2)
 } else {
-	; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt (reduziert Einspeisung)
-	cpwr=sml[1]-50
+	; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
+	;cpwr=sml[1]-50
+	cpwr=sml[1]
 }
 
 ; alle 3s
@@ -422,7 +423,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 29.08.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Version 10.09.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
 $Credits to gemu2015(Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>

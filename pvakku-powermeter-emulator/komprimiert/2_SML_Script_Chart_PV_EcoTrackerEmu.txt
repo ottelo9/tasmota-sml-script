@@ -143,7 +143,8 @@ tmp=sml[1]-cpwr
 if (tmp>500) {
 cpwr=sml[1]-(tmp/2)
 } else {
-cpwr=sml[1]-50
+;cpwr=sml[1]-50
+cpwr=sml[1]
 }
 if (upsecs%3==0) {
 power=sml[1]
@@ -244,7 +245,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 29.08.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Version 10.09.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
 $Credits to gemu2015(Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>

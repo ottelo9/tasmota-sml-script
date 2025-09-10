@@ -153,8 +153,9 @@ tmp=sml[1]-cpwr
 if (tmp>500) {
 cpwr=sml[1]-(tmp/2)
 } else {
-; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt (reduziert Einspeisung)
-cpwr=sml[1]-50
+; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
+;cpwr=sml[1]-50
+cpwr=sml[1]
 }
 ; Netzbezug und Einspeisung
 kwhin=sml[2]
@@ -211,7 +212,7 @@ udp(2 header mstr1 mstr2)
 Uptime{m}%0uptime% min
 Leistung an Marstek{m}%0cpwr% W
 $<center><span style="font-size:10px;">
-$Version 28.08.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 10.09.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 
