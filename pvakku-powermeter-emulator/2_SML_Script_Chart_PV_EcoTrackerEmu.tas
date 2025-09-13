@@ -1,4 +1,4 @@
->D 250
+>D 40
 ; IP for external ScriptEditor
 IP=192.168.178.31
 
@@ -63,7 +63,7 @@ EnFrGrid=0
 EnToGrid=0
 ; Aktuelle Leistung +/- [W]
 power=0
-; PermVars (max 50Bytes): Tages, Monats, Jahres Verbrauch / Einspeisung
+; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch / Einspeisung
 p:mval=0
 p:dval=0
 p:mval2=0
@@ -81,8 +81,9 @@ avgv=0
 avgv2=0
 avgvc=0
 avgvc2=0
-hour=0
+hr=0
 yr=0
+ms=0
 swesp=0
 swespflg=0
 power2=0
@@ -279,8 +280,9 @@ if (upsecs%30==0) {
 }
 
 ; alle 60s
-if (upsecs%60==0) {
-	hour=hours
+ms=mins
+if chg[ms]>0 {
+	hr=hours
 	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
@@ -320,7 +322,7 @@ if (upsecs%60==0) {
 	cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
 
 	; Tagesverbrauch & Einspeisung Berechnung um Mitternacht
-	if ((chg[hour]>0) and (hour==0)) {
+	if ((chg[hr]>0) and (hr==0)) {
 		if (day>1) {
 			da=day
 		} else {

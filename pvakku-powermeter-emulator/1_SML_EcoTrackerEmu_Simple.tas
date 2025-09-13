@@ -1,4 +1,4 @@
->D 250
+>D 40
 ; Einfaches EcoTracker Emulator Script für ESP8266/ESP32 und Tasmota Image von ottelo
 ; Emuliert EcoTracker für Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles (MS-A2)
 ; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
@@ -9,6 +9,17 @@
 ; !! Es darf kein Passwortschutz in Tasmota aktiv sein !!
 ; Der Datenaustausch erfolgt dann via REST API https://everhome.cloud/en/developer/ecotracker alle paar Sek (~13s beim Jupiter C Plus)
 ; Zum Test einfach http://IP-TASMOTA/v1/json eingeben
+
+; Zum erstmaligen Einrichten des Scripts folgendes in die Console einfügen (erst wenn auch Werte vom Zähler kommen!)
+;backlog script>dval=sml[2];script>dval2=sml[3];script>mval=sml[2];script>mval2=sml[3];script>yval=sml[2];script>yval2=sml[3];script>svars
+
+; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch / Einspeisung
+p:dval=0
+p:dval2=0
+p:mval2=0
+p:mval=0
+p:yval=0
+p:yval2=0
 res=0
 tmp=0
 cpwr=0
@@ -17,6 +28,10 @@ kwhout=0
 once=0
 header=""
 json=""
+save=0
+ms=0
+hr=0
+yr=0
 
 >B
 =>sensor53 r
@@ -39,13 +54,42 @@ wcs %json%
 wcf
 
 >S
+if save==1 {
+save=0
+svars
+}
 ; starte MQTT erst wenn der Stromzähler sendet
-if (sml[2]>0) {
+if sml[2]>0 {
 smlj=1
 }
 ; auf NTP warten
 if year<2000 {
 break
+}
+; pro Minute
+ms=mins
+if chg[ms]>0 {
+hr=hours
+yr=year
+; Tages-, Monats-, Jahresverbrauch um Mitternacht
+; Aktualisiere & speichere Zählerstände
+if ((chg[hr]>0) and (hr==0)) {
+; Tageswechsel
+dval=sml[2]
+dval2=sml[3]
+if day==1 {
+; Monatswechsel
+mval=sml[2]
+mval2=sml[3]
+}
+if chg[yr]>0 {
+; Jahreswechsel
+yval=sml[2]
+yval2=sml[3]
+}
+; nur 1x um Mitternacht speichern
+svars
+}
 }
 ; starte mDNS damit Marstek den emulierten EcoTracker findet
 if once==0 {
@@ -54,7 +98,7 @@ once=1
 }
 ; Peaks dämpfen (z.B. Kühlschrank)
 tmp=sml[1]-cpwr
-if (tmp>500) {
+if tmp>500 {
 cpwr=sml[1]-(tmp/2)
 } else {
 ; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
@@ -67,10 +111,17 @@ kwhout=sml[3]*1000
 
 
 >W
+bu(save "gespeichert!" "Daten sofort speichern")
+Tagesverbrauch{m}%2(sml[2]-dval)% kWh
+Monatsverbrauch{m}%2(sml[2]-mval)% kWh
+Jahresverbrauch{m}%2(sml[2]-yval)% kWh
+Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
+Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
+Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
 Leistung an Marstek{m}%0cpwr% W
 $<center><span style="font-size:10px;">
-$Version 10.09.2025 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Version 13.09.2025 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 

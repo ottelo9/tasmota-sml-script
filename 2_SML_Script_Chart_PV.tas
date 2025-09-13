@@ -60,7 +60,7 @@ EnFrGrid=0
 EnToGrid=0
 ; Aktuelle Leistung +/- [W]
 power=0
-; PermVars (max 50Bytes): Tages, Monats, Jahres Verbrauch / Einspeisung
+; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch / Einspeisung
 p:mval=0
 p:dval=0
 p:mval2=0
