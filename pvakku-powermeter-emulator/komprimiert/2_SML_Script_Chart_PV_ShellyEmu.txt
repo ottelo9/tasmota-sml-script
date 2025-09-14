@@ -23,8 +23,9 @@ avgv=0
 avgv2=0
 avgvc=0
 avgvc2=0
-hour=0
+hr=0
 yr=0
+ms=0
 swesp=0
 swespflg=0
 power2=0
@@ -212,7 +213,6 @@ tmp=sml[1]-cpwr
 if (tmp>500) {
 cpwr=sml[1]-(tmp/2)
 } else {
-;cpwr=sml[1]-50
 cpwr=sml[1]
 }
 c1p=cpwr
@@ -283,8 +283,9 @@ avgv=0
 avgvc=0
 cstr2="cnth"+s(1.0((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1))+"/120"
 }
-if (upsecs%60==0) {
-hour=hours
+ms=mins
+if chg[ms]>0 {
+hr=hours
 yr=year
 utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 EnFrGrid=sml[2]
@@ -301,7 +302,7 @@ avgv2=0
 avgvc2=0
 }
 cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
-if ((chg[hour]>0) and (hour==0)) {
+if ((chg[hr]>0) and (hr==0)) {
 if (day>1) {
 da=day
 } else {
