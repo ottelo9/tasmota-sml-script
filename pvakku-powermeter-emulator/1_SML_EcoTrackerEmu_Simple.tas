@@ -48,6 +48,7 @@ json="{\"power\":"+s(cpwr)+",\"powerAvg\":"+s(cpwr)+",\"energyCounterIn\":"+s(kw
 tmp=sl(json)
 dp(0 0)
 header="HTTP/1.1 200 OK\r\nContent-Length: "+s(tmp)+"\r\nContent-Type: application/json\r\n\r\n"
+dp(0 2)
 wcs so(4)
 wcs %header%
 wcs %json%
