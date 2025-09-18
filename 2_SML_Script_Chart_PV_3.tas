@@ -1,45 +1,41 @@
 >D 40
 ; IP for external ScriptEditor
-IP=192.168.178.132
+IP=192.168.178.31
 
 
 ; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
 ; Diese Variante bietet im Gegensatz zum anderen Script Chart_PV eine Kalenderwochenübersicht über das ganze Jahr, Bezug und Einspeisung = 53 Wochen
-; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgeloest) und Leistung der letzten 24h (grob aufgeloest)
-; Das 4 und 24h Diagramm wird nicht gespeichert und wird nach jedem Neustart neu befuellt
+; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgelöst) und Leistung der letzten 24h (grob aufgelöst)
+; Das 4 und 24h Diagramm wird nicht gespeichert und wird nach jedem Neustart neu befüllt
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
-; Diagramme und Tabelle benötigen ca. 60s nach einem Neustart um korrekt dargestellt zu werden
 ; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
 ; Optional im Skript enthalten: (Op1) Schalte zweiten ESP (z.B. Poolpumpe) bei Netzeinspeisung (Op2) Daten an www.clever-pv.com senden. Zum Aktivieren nach (OpX) suchen und inkl ; entfernen.
 
 ; (2) Anleitung:
-; (a) Skript an euren Zaehler anpassen:
-; Runterscrollen zu der ;-- SML -- Sektion und die Zeilen anpassen.
+; http://ottelo.jimdo.de/
+; (a) Skript an euren Zähler anpassen:
+; ganz unten >M Sektion anpassen
 ; https://tasmota.github.io/docs/Smart-Meter-Interface/
 ; (b) Script übertragen
 ; Ich empfehle das Script mit dem ext. Editor zu "komprimieren" (Kommentare entfernen). Script laden -> Window -> Export to documents folder. Dann einfach in Tasmota einfügen.
-; ESP32:   Dieses Skript einfach in den internen Editor einfuegen und ggf. diese Kommentare entfernen um Platz zu sparen. IP Zeile oben loeschen.
-; ESP8266: ScriptEditor runterladen um dieses Skript auf den ESP zu uebertragen. Der Editor entfernt alle Kommentare und leere Zeilen
-;          https://tasmota.github.io/docs/Scripting-Language/#optional-external-editor
-;          IP eures ESPs oben im Script eingeben, damit der Editor das Skript korrekt senden kann
+; ScriptEditor runterladen um dieses Skript auf den ESP zu übertragen. Der Editor entfernt alle Kommentare und leere Zeilen
+; https://tasmota.github.io/docs/Scripting-Language/#optional-external-editor
+; IP eures ESPs oben im Script eingeben, damit der Editor das Skript korrekt senden kann
 ; Hinweis Dateiformat Scriptdatei: UTF8, LF (\n) als Zeilenende (Unix EOL), damit der ext. Editor keine doppelten Leerzeichen anzeigt. Einstellbar in Notepad++ (Edit->EOL->Unix).
 ; (c) Initialisieren
-; Damit die Diagramme und Tabellen beim ersten Einrichten funktionieren folgendes in die Console auf eurem ESP eingeben (; am Anfang entfernen) - Achtung alle bereits gespeicherten Diagrammdaten werden gelöscht!
-;backlog script>dval=EnFrGrid; script>dval2=EnToGrid; script>dcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}; script>dprod={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
-;backlog script>mval=EnFrGrid; script>mval2=EnToGrid; script>mcon={0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0};
-;backlog script>yval=EnFrGrid; script>yval2=EnToGrid;     Zaehlerstand beim Jahreswechsel. Statt EnFrGrid / EnToGrid koennt ihr dort auch euren alten Zaehlerstand eingeben, falls ihr diesen am Ende des Jahres oder Neujahr notiert habt (kWh).
-;backlog script>wval=EnFrGrid; script>wval2=EnToGrid; script>cw=AKTUELLE Kalenderwoche
-;script>=#rstwk  Loesche Week Array
-;script >svars
-; (d) Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
+; Wenn die Werte vom Stromzähler korrekt angezeigt werden, muss das Script einmalig initialisiert werden. Folgendes in die Tasmota Console eingeben - Achtung alle Daten im Diagramm/Tabelle werden gelöscht!
+; script>cw=KW             KW=gegen die aktuelle Kalenderwoche tauschen!
+; script>=#init
+; Zählerstand beim Jahreswechsel: Falls ihr den Jahresverbrauch für das aktuelle Jahr korrekt anzeigen wollt, könnt ihr den Zählerstand (kWh) vom 1.1. via Console nachträglich setzen (danach speichern):
+;backlog script>yval=Zählerstand-Bezug; script>yval2=Zählerstand-Einspeisung
+; (d) Um später fehlende oder falsche Werte in den Tabellen zu ändern, können folgende Befehle in der Console eingegeben werden:
 ;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
 ;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
-;script>svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
 ; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
-;script?dval   script?dval2   script?dcon   script?dprod   script?mval   script?mval2   script?mcon   script?yval   script?yval2
-; Zum Importieren müssen sie dann wie oben mit backlog script >dcon={x x x x ...} eingeben werden. Am Ende script >svars
+;script?dval   script?dval2   script?dcon   script?dprod   script?mval   script?mval2   script?mcon   script?yval   script?yval2   script?wval   script?wval2
+; Zum Importieren müssen sie dann mit z.B. script>dcon={x x x x ...} eingeben werden. Am Ende speichern.
 
 
 ; -- ARRAYS --
@@ -59,13 +55,7 @@ M:s4h=0 480
 M:sday=0 288
 
 ; -- VARS --
-; Netzbezug [kWh]
-EnFrGrid=0
-; Netzeinspeisung [kWh]
-EnToGrid=0
-; Aktuelle Leistung +/- [W]
-power=0
-; PermVars (max 1536bytes): Tages, Wochen, Monats, Jahres Verbrauch / Einspeisung
+; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch / Einspeisung
 p:mval=0
 p:dval=0
 p:mval2=0
@@ -86,8 +76,9 @@ avgv=0
 avgv2=0
 avgvc=0
 avgvc2=0
-hour=0
+hr=0
 yr=0
+ms=0
 swesp=0
 swespflg=0
 power2=0
@@ -96,9 +87,6 @@ save=0
 
 ; -- BOOT --
 >B
-->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
-->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
-spinm(4 1)
 =>sensor53 r
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
@@ -106,12 +94,29 @@ smlj=0
 
 
 ; -- SUBS --
-; Resette weekchart
-#rstwk
+#init
+dval=sml[2]
+dval2=sml[3]
+for tmp 1 dcon[-1] 1
+	dcon[tmp]=0
+	dprod[tmp]=0
+next
+mval=sml[2]
+mval2=sml[3]
+for tmp 1 mcon[-1] 1
+	mcon[tmp]=0
+next
+yval=sml[2]
+yval2=sml[3]
+wval=sml[2]
+wval2=sml[3]
 for tmp 1 wcon[-1] 1
 	wcon[tmp]=0
 	wprod[tmp]=0
 next
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
+svars
 
 ; Tagesverbrauch Tabelle
 #daysub
@@ -195,34 +200,29 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 
 ; -- JEDE SEKUNDE --
 >S
-;Daten sofort speichern Button
+; Daten sofort speichern Button
 if (save==1) {
-save=0
-svars
-print Daten wurden gespeichert
+	save=0
+	svars
 }
-; Starte MQTT erst wenn Daten vom Stromzaehler kommen
-if (sml[2]>0) {
-	smlj=1
-}
-; Warte auf NTP
-if (year<2020) {
-	print NTP not ready
+; Warte auf NTP und Zähler
+if ((year<2020) or (sml[2]==0)) {
+	print auf NTP/Zähler warten
 	break
 }
+; Starte MQTT erst wenn Daten vom Stromzähler kommen
+smlj=1
 
 ; alle 3s
 if (upsecs%3==0) {
-	; Aktuelle Leistung [W]
-	power=sml[1]
 	; Leistung aufsummieren 4h/24h Diagramm
-	avgv+=power
-	avgv2+=power
+	avgv+=sml[1]
+	avgv2+=sml[1]
 	avgvc+=1
 	avgvc2+=1
-	; Optional: gemittelte Leistung fuer z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
-	power2=(0.9*power2)+((1-0.9)*power)
-	=>publish tasmota/stat/%topic%/script/power2 %power2%
+	; Optional: gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
+	power2=(0.9*power2)+((1-0.9)*sml[1])
+	;=>publish stat/%topic%/script/power2 %power2%
 
 	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
@@ -248,44 +248,41 @@ if (upsecs%30==0) {
 	avgv=0
 	avgvc=0
 
-	; Setze 4h Chart X-Achse alle 30s => /120 Werte pro Stunde. Arraygroesse = 480
+	; Setze 4h Chart X-Achse alle 30s => /120 Werte pro Stunde. Arraygrösse = 480
 	; tasmota calc [hh:mm] via cnthX/Y. mm = X%Y * 60/Y. hh = X/Y
 	cstr2="cnth"+s(1.0((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1))+"/120"
 }
 
 ; alle 60s
-if (upsecs%60==0) {
-	hour=hours
+ms=mins
+if chg[ms]>0 {
+	hr=hours
 	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
-	; kopiere Netzbezug [kWh] vom Zaehler (aus SML Variable)
-	EnFrGrid=sml[2]
-	; kopiere Netzeinspeisung [kWh] vom Zaehler (aus SML Variable)
-	EnToGrid=sml[3]	
 	; Tagesverbrauch [kWh]
-	dcon[day]=EnFrGrid-dval
+	dcon[day]=sml[2]-dval
 	; Wochenverbrauch [kWh]
-	wcon[cw]=EnFrGrid-wval
+	wcon[cw]=sml[2]-wval
 	; Monatsverbrauch [kWh]
-	mcon[month]=EnFrGrid-mval
+	mcon[month]=sml[2]-mval
 	; Tageseinspeisung [kWh]
-	dprod[day]=EnToGrid-dval2
+	dprod[day]=sml[3]-dval2
 	; Wocheneinspeisung [kWh]
 	wprod[cw]=EnToGrid-wval2
 	; Monatseinspeisung [kWh]
-	mcon[month+12]=EnToGrid-mval2
+	mcon[month+12]=sml[3]-mval2
 	
 	
-	=>publish tasmota/stat/%topic%/script/consday %2(dcon[day])%
-	=>publish tasmota/stat/%topic%/script/consweek %2(wcon[wday])%
-	=>publish tasmota/stat/%topic%/script/consmonth %2(mcon[month])%
-	=>publish tasmota/stat/%topic%/script/consyear %2(EnFrGrid-yval)%
-	=>publish tasmota/stat/%topic%/script/yieldday %2(prod[day])%
-	=>publish tasmota/stat/%topic%/script/yielweek %2(wprod[wday])%
-	=>publish tasmota/stat/%topic%/script/yieldmonth %2(mcon[month+12])%
-	=>publish tasmota/stat/%topic%/script/yielyear %2(EnToGrid-yval2)%
+	;=>publish stat/%topic%/script/consday %2(dcon[day])%
+	;=>publish stat/%topic%/script/consweek %2(wcon[cw])%
+	;=>publish stat/%topic%/script/consmonth %2(mcon[month])%
+	;=>publish stat/%topic%/script/consyear %2(sml[2]-yval)%
+	;=>publish stat/%topic%/script/yieldday %2(dprod[day])%
+	;=>publish stat/%topic%/script/yielweek %2(wprod[cw])%
+	;=>publish stat/%topic%/script/yieldmonth %2(mcon[month+12])%
+	;=>publish stat/%topic%/script/yielyear %2(sml[3]-yval2)%
 
 	; 24h Chart. Berechne Durschnittsleistung [W] der letzten 5min => ins Array[1-288]
 	m5=int((((hours*60)+mins)/5)+1)
@@ -302,7 +299,7 @@ if (upsecs%60==0) {
 	cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
 
 	; Tagesverbrauch & Einspeisung Berechnung um Mitternacht
-	if ((chg[hour]>0) and (hour==0)) {
+	if ((chg[hr]>0) and (hr==0)) {
 		if (day>1) {
 			da=day
 		} else {
@@ -312,8 +309,8 @@ if (upsecs%60==0) {
 				dcon[tmp]=0
 			next
 			; monthly values
-			mval=EnFrGrid
-			mval2=EnToGrid
+			mval=sml[2]
+			mval2=sml[3]
 		}
 		; Kalenderwochen
 		if (wday==2) {
@@ -322,18 +319,18 @@ if (upsecs%60==0) {
 				cw+=1
 			}
 			; aktuellen Zählerwert speichern
-			wval=EnFrGrid
-			wval2=EnToGrid
+			wval=sml[2]
+			wval2=sml[3]
 		}
 		if (chg[yr]>0) {
 			; Jahreswechsel
-			yval=EnFrGrid
-			yval2=EnToGrid
+			yval=sml[2]
+			yval2=sml[3]
 			cw=1
 		}
 		; daily values
-		dval=EnFrGrid
-		dval2=EnToGrid
+		dval=sml[2]
+		dval2=sml[3]
 		; nur 1x um Mitternacht speichern
 		svars 
 	}
@@ -356,22 +353,22 @@ bu(save "gespeichert!" "Daten sofort speichern")
 ;sl(4000 20000 vn "4 kW" "12 kW" "20 kW")
 
 ; Filtered power
-Leistung (gefiltert){m}%power2% W
+Leistung (gefiltert){m}%0power2% W
 
 ; KW
 Kalenderwoche{m}%0cw%
 
 ; Verbrauch
-Tagesverbrauch{m}%2(EnFrGrid-dval)% kWh
-Wochenverbrauch{m}%2(EnFrGrid-wval)% kWh
-Monatsverbrauch{m}%2(EnFrGrid-mval)% kWh
-Jahresverbrauch{m}%2(EnFrGrid-yval)% kWh
+Tagesverbrauch{m}%2(sml[2]-dval)% kWh
+Wochenverbrauch{m}%2(sml[2]-wval)% kWh
+Monatsverbrauch{m}%2(sml[2]-mval)% kWh
+Jahresverbrauch{m}%2(sml[2]-yval)% kWh
 
 ; Einspeisung (PV)
-Tageseinspeisung{m}%2(EnToGrid-dval2)% kWh
-Wocheneinspeisung{m}%2(EnToGrid-wval2)% kWh
-Monatseinspeisung{m}%2(EnToGrid-mval2)% kWh
-Jahreseinspeisung{m}%2(EnToGrid-yval2)% kWh
+Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
+Wocheneinspeisung{m}%2(sml[3]-wval2)% kWh
+Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
+Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
@@ -389,7 +386,7 @@ $legend:'none',
 $vAxis:{format:'# W'},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
 $series: {0: {type: 'area'}},              
-$title:'Verbrauch 4 Stunden [Watt]'
+$title:'Leistung 4 Stunden [Watt]'
 $};
 $gc(e)
 
@@ -404,11 +401,11 @@ $legend:'none',
 $vAxis:{format:'# W'},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
 $series: {0: {type: 'area'}},            
-$title:'Verbrauch 24 Stunden [Watt]'
+$title:'Leistung 24 Stunden [Watt]'
 $};
 $gc(e)
 
-; Einfacher Saeulenchart mit 2 Reihen
+; Einfacher Säulenchart mit 2 Reihen
 ;$<div id="chart3" style="text-align:center;width:600px;height:400px"></div>
 ;$gc(c dprod "wr" "kWh" "cnt1" "Tägliche Einspeisung")
 
@@ -423,35 +420,23 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 04.09.2025 (PV3) by ottelo.jimdo.de<br>
+$Version 18.09.2025 (PV3) by ottelo.jimdo.de<br>
+$Credits to gemu2015(Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4&24h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
 
 
 ;-- SML --
->M 1
-; Beispiel MT175 mit hichiv2
+; SML Sektion an euren Stromzähler anpassen
 ;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
-+1,3,s,16,9600,sml,1
-;1. line = sml[1] (aktuelle Leistung W), 2. = sml[2] (Netzbezug kWh), 3. = sml[3] (Netzeinspeisung kWh)
-1,77070100100700ff@1,Leistung,W,Power_curr,16
-1,77070100010800ff@1000,Verbrauch,KWh,Total_in,3
-1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,3
-;optional - Falls diese Werte von deinem Zaehler gesendet werden
-1,770701000E0700FF@1,Netz Frequenz,Hz,grid_frequency,1
-1,770701001F0700FF@1,Strom L1,A,current_l1,2
-1,77070100200700FF@1,Spannung L1,V,voltage_l1,1
-1,77070100240700FF@1,Wirkleistung L1,W,power_curr_l1,16
-1,77070100330700FF@1,Strom L2,A,current_l2,2
-1,77070100340700FF@1,Spannung L2,V,voltage_l2,1
-1,77070100380700FF@1,Wirkleistung L2,W,power_curr_l2,16
-1,77070100470700FF@1,Strom L3,A,current_l3,2
-1,77070100480700FF@1,Spannung L3,V,voltage_l3,1
-1,770701004C0700FF@1,Wirkleistung L3,W,power_curr_l3,16
-1,77070100510701FF@1,Phasenwinkel U L1/L2,°,phasenwinkel_u_l1_l2,0
-1,77070100510702FF@1,Phasenwinkel U L1/L3,°,phasenwinkel_u_l1_l3,0
-1,77070100510704FF@1,Phasenwinkel I/U L1,°,phasenwinkel_i_u_l1,0
-1,7707010051070FFF@1,Phasenwinkel I/U L2,°,phasenwinkel_i_u_l2,0
-1,7707010051071AFF@1,Phasenwinkel I/U L3,°,phasenwinkel_i_u_l3,0
+; Anleitung: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#4c
+; Reihenfolge nicht ändern: 1=(Gesamt)Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]
+; https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-definition
+>M 1
+; Beispiel MT175 mit bitShake SmartMeterReader-Air
++1,5,s,16,9600,MT175,4
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
 #

@@ -1,26 +1,24 @@
 >D 40
 ; IP for external ScriptEditor
-IP=192.168.178.171
+IP=192.168.178.31
 
 
 ; (1) Beschreibung:
 ; Skript Version ganz unten
-; Tasmota Script für eine Wasseruhr mit Reed Kontakt(mit Google Chart/Diagramme) 
+; Tasmota Script für eine Wasseruhr mit Reed Kontakt(mit Google Chart/Diagramme)
 ; Gezählt werden 0,1 Liter pro Impuls.
-; 2 Liniendiagramme: Stand der letzten 4 Stunden (fein aufgeloest) und Stand der letzten 24h (grob aufgeloest)
-; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befuellt
+; 2 Liniendiagramme: Stand der letzten 4 Stunden (fein aufgelöst) und Stand der letzten 24h (grob aufgelöst)
+; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befüllt
 ; Tabellen mit Anzeige des Netzbezugs pro Tag und pro Monat
-; Diagramme und Tabelle benötigen ca. 60s nach einem Neustart um korrekt dargestellt zu werden
 ; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
 
 ; (2) Anleitung:
 ; (a) Variable factor=10000 an eure Wasseruhr anpassen. 10000 bedeutet 1 Puls = 0.0001m³
 ; (b) Script übertragen
 ; Ich empfehle das Script mit dem ext. Editor zu "komprimieren" (Kommentare entfernen). Script laden -> Window -> Export to documents folder. Dann einfach in Tasmota einfügen.
-; ESP32:   Dieses Skript einfach in den internen Editor einfuegen und ggf. diese Kommentare entfernen um Platz zu sparen. IP Zeile oben loeschen.
-; ESP8266: ScriptEditor runterladen um dieses Skript auf den ESP zu uebertragen. Der Editor entfernt alle Kommentare und leere Zeilen
-;          https://tasmota.github.io/docs/Scripting-Language/#optional-external-editor
-;          IP eures ESPs oben im Script eingeben, damit der Editor das Skript korrekt senden kann
+; ScriptEditor runterladen um dieses Skript auf den ESP zu übertragen. Der Editor entfernt alle Kommentare und leere Zeilen
+; https://tasmota.github.io/docs/Scripting-Language/#optional-external-editor
+; IP eures ESPs oben im Script eingeben, damit der Editor das Skript korrekt senden kann
 ; Hinweis Dateiformat Scriptdatei: UTF8, LF (\n) als Zeilenende (Unix EOL), damit der ext. Editor keine doppelten Leerzeichen anzeigt. Einstellbar in Notepad++ (Edit->EOL->Unix).
 ; (c) Initialisieren
 ; Folgendes in die Console eingeben um euren aktuellen Stand der Wasseruhr in m³ zu setzen: sensor53 c1 m3      m3 euer Stand in m³ multipliziert mit dem Faktor (siehe factor), z.B. 1070000 für 107m³ wenn factor=10000
@@ -31,14 +29,12 @@ IP=192.168.178.171
 ;backlog script>yval=WaterCon;      Wasseruhr Stand beim Jahreswechsel in m³. Statt WaterCon koennt ihr dort auch euren alten Stand eingeben, falls ihr diesen am Ende des Jahres oder Neujahr notiert habt.
 ;script >=#rst24h
 ;script >svars
-; (d) Um spaeter fehlende oder falsche Werte in den Tabellen zu aendern, koennen folgende Befehle in der Console eingegeben werden:
+; (d) Um später fehlende oder falsche Werte in den Tabellen zu ändern, können folgende Befehle in der Console eingegeben werden:
 ;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
 ;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
-;script>=#rst24h  Loesche 24h Diagramm
-;script>svars     Alle Werte/Diagramme speichern (passiert sonst immer um Mitternacht)
 ; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
 ;script?dval   script?dcon   script?mval   script?mcon   script?yval
-; Zum Importieren müssen sie dann wie oben mit backlog script >dcon={x x x x ...} eingeben werden. Am Ende script >svars
+; Zum Importieren müssen sie dann mit z.B. script>dcon={x x x x ...} eingeben werden. Am Ende speichern.
 
 
 ; -- ARRAYS --
@@ -50,11 +46,10 @@ M:p:dcon=0 31
 M:p:mcon=0 12
 ; 4h Chart, Neuer Wert alle 30s
 M:s4h=0 480
-
 ; -- VARS --
 ; Water Consumption / Wasserverbrauch [m³] Der Wert wird hochgezählt
 WaterCon=0
-; PermVars (max 50Bytes): Tages, Monats, Jahres Verbrauch
+; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch
 p:mval=0
 p:dval=0
 p:yval=0
@@ -64,8 +59,9 @@ m5=0
 cstr="cnt0/12"
 cstr2="cnth0/120"
 utm="00d 00h 00m"
-hour=0
+hr=0
 yr=0
+ms=0
 save=0
 ;10000: 1 Puls = 0.0001m³ für >M Sektion
 factor=10000
@@ -74,19 +70,28 @@ factor=10000
 ; -- BOOT --
 >B
 WaterCon=pc[1]/factor
-->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
-->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
 smlj=0
 
 
 ; -- SUBS --
-; Resette 24h Chart
-#rst24h
+#init
+dval=WaterCon
+for tmp 1 dcon[-1] 1
+	dcon[tmp]=0
+next
+mval=WaterCon
+for tmp 1 mcon[-1] 1
+	mcon[tmp]=0
+next
+yval=WaterCon
 for tmp 1 sday[-1] 1
 	sday[tmp]=0
 next
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
+svars
 
 ; Tagesverbrauch Tabelle
 #daysub
@@ -139,16 +144,14 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 
 ; -- JEDE SEKUNDE --
 >S
-;Daten sofort speichern Button
+; Daten sofort speichern Button
 if (save==1) {
 	save=0
 	svars
-	print Daten wurden gespeichert
 }
-
 ; Warte auf NTP
 if (year<2020) {
-	print NTP not ready
+	print auf NTP warten
 	break
 }
 ; Starte MQTT erst jetzt
@@ -161,14 +164,15 @@ if (upsecs%30==0) {
 	; 4h chart. idx wird automatisch gesetzt
 	s4h=WaterCon
 
-	; Setze 4h Chart X-Achse alle 30s => /120 Werte pro Stunde. Arraygroesse = 480
+	; Setze 4h Chart X-Achse alle 30s => /120 Werte pro Stunde. Arraygrösse = 480
 	; tasmota calc [hh:mm] via cnthX/Y. mm = X%Y * 60/Y. hh = X/Y
 	cstr2="cnth"+s(1.0((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1))+"/120"
 }
 
 ; alle 60s
-if (upsecs%60==0) {
-	hour=hours
+ms=mins
+if chg[ms]>0 {
+	hr=hours
 	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
@@ -195,7 +199,7 @@ if (upsecs%60==0) {
 	cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
 
 	; Tagesverbrauch Berechnung um Mitternacht
-	if ((chg[hour]>0) and (hour==0)) {
+	if ((chg[hr]>0) and (hr==0)) {
 		if (day>1) {
 			da=day
 		} else {
@@ -272,7 +276,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 28.08.2025 (Wasseruhr) by ottelo.jimdo.de<br>
+$Version 18.09.2025 (Wasseruhr) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
