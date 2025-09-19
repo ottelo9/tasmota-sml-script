@@ -10,8 +10,8 @@
 ; Der Datenaustausch erfolgt dann via REST API https://everhome.cloud/en/developer/ecotracker alle paar Sek (~13s beim Jupiter C Plus)
 ; Zum Test einfach http://IP-TASMOTA/v1/json eingeben
 
-; Zum erstmaligen Einrichten des Scripts folgendes in die Console einfügen (erst wenn auch Werte vom Zähler kommen!)
-;backlog script>dval=sml[2];script>dval2=sml[3];script>mval=sml[2];script>mval2=sml[3];script>yval=sml[2];script>yval2=sml[3];script>svars
+; Zum erstmaligen Einrichten des Scripts folgendes in die Console eingeben (erst wenn auch Werte vom Zähler kommen!)
+;script>=#init
 
 ; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch / Einspeisung
 p:dval=0
@@ -35,6 +35,15 @@ yr=0
 
 >B
 =>sensor53 r
+
+#init
+dval=sml[2]
+dval2=sml[3]
+mval=sml[2]
+mval2=sml[3]
+yval=sml[2]
+yval2=sml[3]
+script>svars
 
 ; bei Änderung in >ah muss Tasmota neugestartet werden
 >ah
