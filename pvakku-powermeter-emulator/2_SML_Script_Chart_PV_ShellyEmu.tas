@@ -290,7 +290,7 @@ wcs so(4)
 =#htph
 wcs %mstr1%
 dp(0 2)
-wcs {"Power": %cpwr%,"E_in":%EnFrGrid%,"E_out":%EnToGrid%}
+wcs {"Power": %cpwr%,"E_in":%sml[2]%,"E_out":%sml[3]%}
 wcf
 
 >t1

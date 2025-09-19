@@ -270,7 +270,7 @@ if chg[ms]>0 {
 	; Tageseinspeisung [kWh]
 	dprod[day]=sml[3]-dval2
 	; Wocheneinspeisung [kWh]
-	wprod[cw]=EnToGrid-wval2
+	wprod[cw]=sml[3]-wval2
 	; Monatseinspeisung [kWh]
 	mcon[month+12]=sml[3]-mval2
 	
