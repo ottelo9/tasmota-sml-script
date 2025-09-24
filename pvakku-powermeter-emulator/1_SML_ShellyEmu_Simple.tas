@@ -1,16 +1,16 @@
 >D 250
 ; Einfaches Shelly Emulator Script für ESP8266/ESP32 und Tasmota Image von ottelo
-; Emuliert Shelly Pro 3EM für Marstek Akku Jupiter, Venus, B2500, ...
+; Emuliert Shelly Pro 3EM für Marstek Akku Jupiter, Venus, B2500
+; Scriptgröße beim ESP8266 begrenzt: EEP_SCRIPT_SIZE 4096
 ; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
 ; Script basiert auf https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas
 ; Script ist für ein Wifi Tasmota ESP Lesekopf für Stromzähler gedacht, z.B. HichiV1/V2, Bitshake, usw.
 ; Der Text kann einfach so in den internen Editor von Tasmota eingefügt werden. Beim ESP8266 sollten alle Kommentare entfernen werden.
 ; Die Marstek App sucht nach dem Shelly via mDNS, der Emulator meldet sich als shellypro3em-<mac>
 ; Der Datenaustausch erfolgt dann via UDP alle paar Sek (~2-4s beim Jupiter C Plus)
-; Zum Test einfach http://IP-TASMOTA/rpc/EMData.GetStatus eingeben
 
-; Zum erstmaligen Einrichten des Scripts folgendes in die Console einfügen (erst wenn auch Werte vom Zähler kommen!)
-;backlog script>dval=sml[2];script>dval2=sml[3];script>mval=sml[2];script>mval2=sml[3];script>yval=sml[2];script>yval2=sml[3];script>svars
+; Zum erstmaligen Einrichten des Scripts folgendes in die Console eingeben (erst wenn auch Werte vom Zähler kommen!)
+;script>=#init
 
 ; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch / Einspeisung
 p:dval=0
@@ -19,6 +19,11 @@ p:mval2=0
 p:mval=0
 p:yval=0
 p:yval2=0
+t:t1=60
+tmp=0
+save=0
+hr=0
+;-- SHELLY EMULATION --
 res=0
 c1p=0
 c2p=0
@@ -27,147 +32,67 @@ c1c=0
 c2c=0
 c3c=0
 cpwr=0
-kwhin=0
-kwhout=0
 str=""
-tstr=""
 mstr1=""
 mstr2=""
 header=""
 once=0
 throttle=1
-tmp=0
-save=0
-ms=0
-hr=0
-yr=0
 
 
 >B
 =>sensor53 r
+smlj=0
+header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
 
+#init
+dval=sml[2]
+dval2=sml[3]
+mval=sml[2]
+mval2=sml[3]
+yval=sml[2]
+yval2=sml[3]
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
+svars
 
-; bei Änderung in >ah muss Tasmota neugestartet werden
->ah
-; Shelly
-res=won(1 "/rpc/*")
-res=won(2 "/status")
-
->on1
-;print Shelly rpc request
-str=warg
-
-res=ins(str "EM.GetStatus")
-if res>=0 {
-wcs so(4)
-=#htph
-wcs %mstr1%
-wcs %header%
-=#getstat
-wcs %mstr1%
-wcs %mstr2%
-wcf
-break
-}
-res=ins(str "Shelly.GetDeviceInfo")
-if res>=0 {
-wcs so(4)
-=#htph
-wcs %mstr1%	
-=#getdefi	
-wcs %header%
-wcs %mstr1%
-wcs %mstr2%
-wcf	
-break
-}
-res=ins(str "EM.GetConfig")
-if res>=0 {
-wcs so(4)
-=#htph
-wcs %mstr1%	
-=#getcfg
-wcs %header%
-wcs %mstr1%
-wcf	
-break
-}
-res=ins(str "EMData.GetStatus")
-if res>=0 {
-wcs so(4)
-=#htph
-wcs %mstr1%
-=#egetstat
-wcs %header%
-wcs %mstr1%
-wcf
-break
-}
-print unknown http equest: %str%
-
->on2
-;print Shelly status request
-wcs so(4)
-=#htph
-wcs %mstr1%
-dp(0 2)
-wcs {"Power": %cpwr%,"E_in":%kwhin%,"E_out":%kwhout%}
-wcf
-
-#htph
-mstr1="HTTP/1.1 200 OK\r\nContent-type: application/json\r\n\r\n"
-
-#getcfg
-mstr1="{\"id\":0,\"name\":null,\"blink_mode_selector\":\"active_energy\",\"phase_selector\":\"a\",\"monitor_phase_sequence\":true,\"ct_type\":\"120A\"}}"
-
-#getdefi
-mstr1="{\"name\":\""+tstr+"\",\"id\":\""+tstr+"\",\"mac\":\""+maca+"\",\"slot\":1,\"model\":\"SPEM-003CEBEU\","
-mstr2="\"gen\":2,\"fw_id\":\"20241011-114455/1.4.4-g6d2a586\","
-mstr2+="\"ver\":\"1.4.4\",\"app\":\"Pro3EM\",\"auth_en\":0,\"profile\":\"triphase\"}}"
-
+;-- SHELLY EMULATION --
 #getstat
-dp(0 2)
-mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
-mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
-mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
-mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
-
-#egetstat
-dp(0 2)
-mstr1="{\"id\":0,\"a_total_act_energy\":"+s(c1p)+",\"a_total_act_ret_energy\":"+s(c1p)+",\"b_total_act_energy\":"+s(c2p)+",\"b_total_act_ret_energy\":"+s(c2p)+",\"c_total_act_energy\":"+s(c3p)+",\"c_total_act_ret_energy\":"+s(c3p)+",\"total_act\":"+s(cpwr)+",\"total_act_ret\":"+s(cpwr)+"}}"
+mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(0c1p)+",\"a_aprt_power\":"+s(0c1p)+",\"a_pf\":1,\"a_freq\":50,"
+mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(0c2p)+",\"b_aprt_power\":"+s(0c2p)+",\"b_pf\":1,\"b_freq\":50,"
+mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(0c3p)+",\"c_aprt_power\":"+s(0c3p)+",\"c_pf\":1,\"c_freq\":50,"
+mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(0cpwr)+",\"total_aprt_power\":"+s(0cpwr)+"}}"
 
 
 >S
-if save==1 {
+if (save==1) {
 save=0
 svars
 }
-; starte MQTT erst wenn der Stromzähler sendet
-if sml[2]>0 {
-smlj=1
-}
-; auf NTP warten
-if year<2000 {
+; Warte auf NTP und Zähler
+if ((year<2020) or (sml[2]==0)) {
+print auf NTP/Zähler warten
 break
 }
+; Starte MQTT erst wenn Daten vom Stromzähler kommen
+smlj=1
 
-; pro Minute
-ms=mins
-if chg[ms]>0 {
+; alle 60s
+if (t1==0) {
+t1=60
 hr=hours
-yr=year
 ; Tages-, Monats-, Jahresverbrauch um Mitternacht
 ; Aktualisiere & speichere Zählerstände
 if ((chg[hr]>0) and (hr==0)) {
 ; Tageswechsel
 dval=sml[2]
 dval2=sml[3]
-if day==1 {
+if (day==1) {
 ; Monatswechsel
 mval=sml[2]
 mval2=sml[3]
 }
-if chg[yr]>0 {
+if (day*month==1) {
 ; Jahreswechsel
 yval=sml[2]
 yval2=sml[3]
@@ -177,34 +102,30 @@ svars
 }
 }
 
-if once==0 {
+;-- SHELLY EMULATION --
+if (once==0) {
 ; starte mDNS damit Marstek den emulierten Shelly findet
 res=mdns("shellypro3em-" "-" "shelly")
 ; start UDP für Datenkommunikation
 ; Port 1010 oder ggf. 2220 für B2500
 res=udp(0 1010)
-tstr="shellypro3em-"+maca
-header="{\"id\":0,\"src\":\""+tstr+"\",\"result\":"
 once=1
 }
 
 ; Marstek Abfrage verzögern, throttle=1 => sekündlich senden
-if upsecs%throttle!=0 {
+if (upsecs%throttle!=0) {
 break;
 }
 
-; Peaks reduzieren, verbessert Marstek Regelung
+; Peaks reduzieren, verbessert Regelung
 tmp=sml[1]-cpwr
-if tmp>500 {
+if (tmp>500) {
 cpwr=sml[1]-(tmp/2)
 } else {
 ; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
 ;cpwr=sml[1]-50
 cpwr=sml[1]
 }
-; Netzbezug und Einspeisung
-kwhin=sml[2]
-kwhout=sml[3]
 
 ; Standard: Zähler sendet nur Gesamtleistung
 c1p=cpwr
@@ -217,33 +138,14 @@ c1c=c1p/230
 ;c2c=c2p/230
 ;c3c=c3p/230
 
-
 ; UDP Anfrage bearbeiten
 str=udp(1)
-if str!="" {
+if (str!="") {
 ;print udp rpc payload=%str%
 res=ins(str "EM.GetStatus")
-if res>=0 {
+if (res>=0) {
 =#getstat
 udp(2 header mstr1 mstr2)
-break
-}
-res=ins(str "Shelly.GetDeviceInfo")
-if res>=0 {
-=#getdefi
-udp(2 header mstr1 mstr2)
-break
-}
-res=ins(str "EM.GetConfig")
-if res>=0 {
-=#getcfg
-udp(2 header mstr1)
-break
-}
-res=ins(str "EMData.GetStatus")
-if res>=0 {
-=#egetstat
-udp(2 header mstr1)
 break
 }
 } else {
@@ -255,6 +157,7 @@ udp(2 header mstr1 mstr2)
 
 >W
 bu(save "gespeichert!" "Daten sofort speichern")
+Leistung (an Marstek Akku){m}%0cpwr% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
 Jahresverbrauch{m}%2(sml[2]-yval)% kWh
@@ -262,9 +165,8 @@ Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
-Leistung an Marstek{m}%0cpwr% W
 $<center><span style="font-size:10px;">
-$Version 13.09.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 24.09.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 
@@ -275,7 +177,7 @@ $</span></center>
 ; Medianfilter <flag> = 16 nicht verwenden, verbessert Marstek Regelung
 ; https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-definition
 >M 1
-; Beispiel MT175 mit HichiV2
+; Beispiel MT175 mit HichiV1/V2
 +1,3,s,0,9600,MT175,1
 1,77070100100700ff@1,Leistung,W,Power_curr,0
 1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2

@@ -1,6 +1,7 @@
 >D 250
 ; Einfaches EcoTracker Emulator Script für ESP8266/ESP32 und Tasmota Image von ottelo
 ; Emuliert EcoTracker für Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles (MS-A2)
+; Scriptgröße beim ESP8266 begrenzt: EEP_SCRIPT_SIZE 4096
 ; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
 ; Script basiert auf https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas
 ; Script ist für ein Wifi Tasmota ESP Lesekopf für Stromzähler gedacht, z.B. HichiV1/V2, Bitshake, usw.
@@ -20,21 +21,21 @@ p:mval2=0
 p:mval=0
 p:yval=0
 p:yval2=0
+t:t1=60
+hr=0
+save=0
+;-- ECOTRACKER EMULATION --
 res=0
 tmp=0
 cpwr=0
-kwhin=0
-kwhout=0
 once=0
 header=""
 json=""
-save=0
-ms=0
-hr=0
-yr=0
+
 
 >B
 =>sensor53 r
+smlj=0
 
 #init
 dval=sml[2]
@@ -43,56 +44,55 @@ mval=sml[2]
 mval2=sml[3]
 yval=sml[2]
 yval2=sml[3]
-script>svars
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
+svars
 
-; bei Änderung in >ah muss Tasmota neugestartet werden
+;-- ECOTRACKER EMULATION --
 >ah
-; Ecotracker
+; bei Änderung in >ah muss Tasmota neugestartet werden
 res=won(1 "/v1/json")
 
 >on1
 ;print Ecotracker
-dp(0 1)
-json="{\"power\":"+s(cpwr)+",\"powerAvg\":"+s(cpwr)+",\"energyCounterIn\":"+s(kwhin)+",\"energyCounterOut\":"+s(kwhout)+"}"
+json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0cpwr)+",\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
 tmp=sl(json)
-dp(0 0)
-header="HTTP/1.1 200 OK\r\nContent-Length: "+s(tmp)+"\r\nContent-Type: application/json\r\n\r\n"
-dp(0 2)
+header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
 wcs so(4)
 wcs %header%
 wcs %json%
 wcf
 
+
 >S
-if save==1 {
+if (save==1) {
 save=0
 svars
 }
-; starte MQTT erst wenn der Stromzähler sendet
-if sml[2]>0 {
-smlj=1
-}
-; auf NTP warten
-if year<2000 {
+; Warte auf NTP und Zähler
+if ((year<2020) or (sml[2]==0)) {
+print auf NTP/Zähler warten
 break
 }
-; pro Minute
-ms=mins
-if chg[ms]>0 {
+; Starte MQTT erst wenn Daten vom Stromzähler kommen
+smlj=1
+
+; alle 60s
+if (t1==0) {
+t1=60
 hr=hours
-yr=year
 ; Tages-, Monats-, Jahresverbrauch um Mitternacht
 ; Aktualisiere & speichere Zählerstände
 if ((chg[hr]>0) and (hr==0)) {
 ; Tageswechsel
 dval=sml[2]
 dval2=sml[3]
-if day==1 {
+if (day==1) {
 ; Monatswechsel
 mval=sml[2]
 mval2=sml[3]
 }
-if chg[yr]>0 {
+if (day*month==1) {
 ; Jahreswechsel
 yval=sml[2]
 yval2=sml[3]
@@ -101,27 +101,27 @@ yval2=sml[3]
 svars
 }
 }
+
+;-- ECOTRACKER EMULATION --
 ; starte mDNS damit Marstek den emulierten EcoTracker findet
-if once==0 {
+if (once==0) {
 res=mdns("ecotracker-" "-" "everhome")
 once=1
 }
-; Peaks dämpfen (z.B. Kühlschrank)
+; Peaks reduzieren, verbessert Regelung
 tmp=sml[1]-cpwr
-if tmp>500 {
+if (tmp>500) {
 cpwr=sml[1]-(tmp/2)
 } else {
 ; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
 ;cpwr=sml[1]-50
 cpwr=sml[1]
 }
-; Netzbezug und Einspeisung
-kwhin=sml[2]*1000
-kwhout=sml[3]*1000
 
 
 >W
 bu(save "gespeichert!" "Daten sofort speichern")
+Leistung (an Marstek Akku){m}%0cpwr% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
 Jahresverbrauch{m}%2(sml[2]-yval)% kWh
@@ -129,9 +129,8 @@ Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
-Leistung an Marstek{m}%0cpwr% W
 $<center><span style="font-size:10px;">
-$Version 13.09.2025 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Version 24.09.2025 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 

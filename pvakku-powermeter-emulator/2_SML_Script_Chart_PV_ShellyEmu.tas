@@ -11,7 +11,7 @@ IP=192.168.178.31
 ; Dann müsst ihr natürlich noch die SML Sektion (>M) auf euren Zähler anpassen, die Reihenfolge muss eingehalten werden! Habt ihr einen Zähler, der die Leistung/Ströme aller 3 Phasen einzeln ausgeben kann
 ; dann könnt ihr das Script dafür anpassen. Sucht nach "cpwr=sml[1]". Dort könnt ihr die ; entfernen um alle 3 Phasen korrekt an den Akku zu senden. Der Akku kann dann nämlich erkennen, an welcher Phase er hängt.
 ; Gibt euer Zähler nur die Ströme (und ggf. Spannungen) für L1-3 aus, dann müsst ihr die Leistung im Script für die einzelnen Phasen berechnen (U*I+cosPhi) oder ihr verwendet nur die Gesamtleistung, was zu empfehlen ist.
-; Mehr Infos unter https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a oder www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
+; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a Forum www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgelöst) und Leistung der letzten 24h (grob aufgelöst)
 ; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befüllt
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
@@ -48,7 +48,7 @@ M:p:sday=0 288
 ; Tagesnetzbezug Tabelle 1-31
 M:p:dcon=0 31
 ; Tagesnetzeinspeisung Tabelle 1-31
-M:p:dprod=0 31  
+M:p:dprod=0 31
 ; Monatsverbrauch Tabelle 1-12, Einspeisung 13-24
 M:p:mcon=0 24
 ; 4h Chart, Neuer Wert alle 30s
@@ -63,6 +63,9 @@ p:yval=0
 p:yval2=0
 p:da=1
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
+t:t1=3
+t:t2=30
+t:t3=60
 tmp=0
 m5=0
 cstr="cnt0/12"
@@ -73,13 +76,11 @@ avgv2=0
 avgvc=0
 avgvc2=0
 hr=0
-yr=0
-ms=0
 swesp=0
 swespflg=0
 power2=0
 save=0
-; shellypro3em emulieren (z.B. für Marstek Venus E)
+;-- SHELLY EMULATION --
 res=0
 c1p=0
 c2p=0
@@ -92,9 +93,9 @@ str=""
 tstr=""
 mstr1=""
 mstr2=""
-mstr3=""
 header=""
 once=0
+throttle=1
 
 
 ; -- BOOT --
@@ -103,8 +104,7 @@ once=0
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
 smlj=0
-;Starte Multitasking >t1
-res=ct(1 1000 1)
+header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
 
 
 ; -- SUBS --
@@ -201,170 +201,12 @@ wcs var chart=new google.visualization.ColumnChart(document.getElementById('mont
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
 
-;-- SHELLY PRO 3EM EMULATION --
-#htph
-mstr1="HTTP/1.1 200 OK\r\nContent-type: application/json\r\n\r\n"
-
-#getcfg
-mstr1="{\"id\":0,\"name\":null,\"blink_mode_selector\":\"active_energy\",\"phase_selector\":\"a\",\"monitor_phase_sequence\":true,\"ct_type\":\"120A\"}}"
-
-#getdefi
-mstr1="{\"name\":\""+tstr+"\",\"id\":\""+tstr+"\",\"mac\":\""+maca+"\",\"slot\":1,\"model\":\"SPEM-003CEBEU\","
-mstr2="\"gen\":2,\"fw_id\":\"20241011-114455/1.4.4-g6d2a586\","
-mstr2+="\"ver\":\"1.4.4\",\"app\":\"Pro3EM\",\"auth_en\":0,\"profile\":\"triphase\"}}"
-
+;-- SHELLY EMULATION --
 #getstat
-dp(0 2)
-mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
-mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
-mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
-mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
-
-#egetstat
-dp(0 2)
-mstr1="{\"id\":0,\"a_total_act_energy\":"+s(c1p)+",\"a_total_act_ret_energy\":"+s(c1p)+",\"b_total_act_energy\":"+s(c2p)+",\"b_total_act_ret_energy\":"+s(c2p)
-mstr1+=",\"c_total_act_energy\":"+s(c3p)+",\"c_total_act_ret_energy\":"+s(c3p)+",\"total_act\":"+s(cpwr)+",\"total_act_ret\":"+s(cpwr)+"}}"
-
-
->ah
-; bei Änderung in >ah muss Tasmota neugestartet werden
-; http rpc handler shelly
-res=won(1 "/rpc/*")
-; http status shelly
-res=won(2 "/status")
-
->on1
-;print SHELLY RPC RQ
-str=warg
-res=ins(str "EM.GetStatus")
-if res>=0 {
-	wcs so(4)
-	=#htph
-	wcs %mstr1%
-	wcs %header%
-	=#getstat
-	wcs %mstr1%
-	wcs %mstr2%
-	wcf
-	break
-}
-res=ins(str "Shelly.GetDeviceInfo")
-if res>=0 {
-	wcs so(4)
-	=#htph
-	wcs %mstr1%	
-	=#getdefi	
-	wcs %header%
-	wcs %mstr1%
-	wcs %mstr2%
-	wcf
-	break
-}
-res=ins(str "EM.GetConfig")
-if res>=0 {
-	wcs so(4)
-	=#htph
-	wcs %mstr1%
-	=#getcfg
-	wcs %header%
-	wcs %mstr1%
-	wcf
-	break
-}
-res=ins(str "EMData.GetStatus")
-if res>=0 {
-	wcs so(4)
-	=#htph
-	wcs %mstr1%
-	=#egetstat
-	wcs %header%
-	wcs %mstr1%
-	wcf
-	break
-}
-print UNKNOWN RQ: %str%
-
->on2
-;print SHELLY STATUS RQ
-wcs so(4)
-=#htph
-wcs %mstr1%
-dp(0 2)
-wcs {"Power": %cpwr%,"E_in":%sml[2]%,"E_out":%sml[3]%}
-wcf
-
->t1
-; Multitasking Thread für Shelly Pro 3EM Emulation
-if once==0 {
-	; starte mDNS damit Marstek den emulierten Shelly findet
-	res=mdns("shellypro3em-" "-" "shelly")
-	; start UDP für Datenkommunikation
-	; Port 1010 oder ggf. 2220 für B2500
-	res=udp(0 1010)
-	tstr="shellypro3em-"+maca
-	header="{\"id\":0,\"src\":\""+tstr+"\",\"result\":"
-	once=1
-}
-; Standard: Zähler übermittelt nur Gesamtleistung
-; Peaks dämpfen (z.B. Kühlschrank)
-tmp=sml[1]-cpwr
-if (tmp>500) {
-	cpwr=sml[1]-(tmp/2)
-} else {
-	; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
-	;cpwr=sml[1]-50
-	cpwr=sml[1]
-}
-
-; Standard: Zähler sendet nur Gesamtleistung
-c1p=cpwr
-; Optional: Wenn Zähler auch Einzelleistungen sendet (L1-3). Marstek prüft dann, auf welcher Phase er verbunden ist. ; entfernen um zu verwenden.
-;c1p=sml[4]
-;c2p=sml[5]
-;c3p=sml[6]
-; Ströme berechnen
-c1c=c1p/230
-;c2c=c2p/230
-;c3c=c3p/230
-
-str=udp(1)
-if str!="" {
-	;print udp rpc payload=%str%
-	res=ins(str "EM.GetStatus")
-	if res>=0 {
-		=#getstat
-		udp(2 header mstr1 mstr2)
-		;print >> %header%
-		;print >> %mstr1%
-		;print >> %mstr2%
-		break
-	}
-	res=ins(str "Shelly.GetDeviceInfo")
-	if res>=0 {
-		=#getdefi
-		udp(2 header mstr1 mstr2)
-		;print >> 1 %mstr1%
-		;print >> 2 %mstr2%
-		break
-	}
-	res=ins(str "EM.GetConfig")
-	if res>=0 {
-		=#getcfg
-		udp(2 header mstr1)
-		;print >> 1 %mstr1%
-		break
-	}
-	res=ins(str "EMData.GetStatus")
-	if res>=0 {
-		=#egetstat
-		udp(2 header mstr1)
-		;print >> 1 %mstr1%
-		break
-	}
-} else {
-	=#getstat
-	udp(2 header mstr1 mstr2)
-}
+mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(0c1p)+",\"a_aprt_power\":"+s(0c1p)+",\"a_pf\":1,\"a_freq\":50,"
+mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(0c2p)+",\"b_aprt_power\":"+s(0c2p)+",\"b_pf\":1,\"b_freq\":50,"
+mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(0c3p)+",\"c_aprt_power\":"+s(0c3p)+",\"c_pf\":1,\"c_freq\":50,"
+mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(0cpwr)+",\"total_aprt_power\":"+s(0cpwr)+"}}"
 
 
 ; -- JEDE SEKUNDE --
@@ -383,7 +225,8 @@ if ((year<2020) or (sml[2]==0)) {
 smlj=1
 
 ; alle 3s
-if (upsecs%3==0) {
+if (t1==0) {
+	t1=3
 	; Leistung aufsummieren 4h/24h Diagramm
 	avgv+=sml[1]
 	avgv2+=sml[1]
@@ -411,7 +254,8 @@ if (upsecs%3==0) {
 }
 
 ; alle 30s
-if (upsecs%30==0) {
+if (t2==0) {
+	t2=30
 	; 4h chart. idx wird automatisch gesetzt
 	s4h=avgv/avgvc
 	avgv=0
@@ -423,10 +267,9 @@ if (upsecs%30==0) {
 }
 
 ; alle 60s
-ms=mins
-if chg[ms]>0 {
+if (t3==0) {
+	t3=60
 	hr=hours
-	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
@@ -474,7 +317,7 @@ if chg[ms]>0 {
 			mval=sml[2]
 			mval2=sml[3]
 		}
-		if (chg[yr]>0) {
+		if (day*month==1) {
 			; Jahreswechsel
 			yval=sml[2]
 			yval2=sml[3]
@@ -483,8 +326,61 @@ if chg[ms]>0 {
 		dval=sml[2]
 		dval2=sml[3]
 		; nur 1x um Mitternacht speichern
-		svars 
+		svars
 	}
+}
+
+;-- SHELLY EMULATION --
+if (once==0) {
+	; starte mDNS damit Marstek den emulierten Shelly findet
+	res=mdns("shellypro3em-" "-" "shelly")
+	; start UDP für Datenkommunikation
+	; Port 1010 oder ggf. 2220 für B2500
+	res=udp(0 1010)
+	once=1
+}
+
+; Marstek Abfrage verzögern, throttle=1 => sekündlich senden
+if (upsecs%throttle!=0) {
+break;
+}
+
+; Standard: Zähler übermittelt nur Gesamtleistung
+; Peaks reduzieren, verbessert Regelung
+tmp=sml[1]-cpwr
+if (tmp>500) {
+	cpwr=sml[1]-(tmp/2)
+} else {
+	; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
+	;cpwr=sml[1]-50
+	cpwr=sml[1]
+}
+
+; Standard: Zähler sendet nur Gesamtleistung
+c1p=cpwr
+; Optional: Wenn Zähler auch Einzelleistungen sendet (L1-3). Marstek prüft dann, auf welcher Phase er verbunden ist. ; entfernen um zu verwenden.
+;c1p=sml[4]
+;c2p=sml[5]
+;c3p=sml[6]
+; Ströme berechnen
+c1c=c1p/230
+;c2c=c2p/230
+;c3c=c3p/230
+
+; UDP Anfrage bearbeiten
+str=udp(1)
+if (str!="") {
+	;print udp rpc payload=%str%
+	res=ins(str "EM.GetStatus")
+	if (res>=0) {
+		=#getstat
+		udp(2 header mstr1 mstr2)
+		break
+	}
+} else {
+	; sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
+	=#getstat
+	udp(2 header mstr1 mstr2)
 }
 
 
@@ -519,7 +415,7 @@ Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0uptime% min
 $<div style="margin-left:-20px">
 
 ; 4h Leistung Diagramm
@@ -532,7 +428,7 @@ $legend:'none',
 ;$vAxis:{format:'# W',viewWindow:{max:5000}},   optional um Y-Achse Werte auf 5kW zu begrenzen
 $vAxis:{format:'# W'},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
-$series: {0: {type: 'area'}},              
+$series: {0: {type: 'area'}},
 $title:'Leistung 4 Stunden [Watt]'
 $};
 $gc(e)
@@ -547,7 +443,7 @@ $legend:'none',
 ;$vAxis:{format:'# W',viewWindow:{max:5000}},   optional um Y-Achse Werte auf 5kW zu begrenzen
 $vAxis:{format:'# W'},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
-$series: {0: {type: 'area'}},            
+$series: {0: {type: 'area'}},
 $title:'Leistung 24 Stunden [Watt]'
 $};
 $gc(e)
@@ -564,8 +460,8 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 18.09.2025 (PV+ShellyEmu) by ottelo.jimdo.de<br>
-$Credits to gemu2015(Tasmota Script Dev)<br>
+$Version 24.09.2025 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
@@ -583,7 +479,7 @@ $</span></center></div>
 +1,5,s,0,9600,MT175,4
 1,77070100100700ff@1,Leistung,W,Power_curr,0
 1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
+1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
 ;optional - Falls die Leistung aller 3 Phasen ausgegeben wird, optional relevant für Shelly Emulation sml[4],[5],[6]
 ;1,77070100240700ff@1,L1,W,L1,0
 ;1,77070100380700ff@1,L2,W,L2,0

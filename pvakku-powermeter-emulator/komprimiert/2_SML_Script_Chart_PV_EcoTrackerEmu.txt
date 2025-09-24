@@ -11,6 +11,9 @@ p:dval2=0
 p:yval=0
 p:yval2=0
 p:da=1
+t:t1=3
+t:t2=30
+t:t3=60
 tmp=0
 m5=0
 cstr="cnt0/12"
@@ -21,8 +24,6 @@ avgv2=0
 avgvc=0
 avgvc2=0
 hr=0
-yr=0
-ms=0
 swesp=0
 swespflg=0
 power2=0
@@ -142,7 +143,7 @@ print auf NTP/Zähler warten
 break
 }
 smlj=1
-if once==0 {
+if (once==0) {
 res=mdns("ecotracker-" "-" "everhome")
 once=1
 }
@@ -152,7 +153,8 @@ cpwr=sml[1]-(tmp/2)
 } else {
 cpwr=sml[1]
 }
-if (upsecs%3==0) {
+if (t1==0) {
+t1=3
 avgv+=sml[1]
 avgv2+=sml[1]
 avgvc+=1
@@ -167,16 +169,16 @@ swespflg=0
 }
 }
 }
-if (upsecs%30==0) {
+if (t2==0) {
+t2=30
 s4h=avgv/avgvc
 avgv=0
 avgvc=0
 cstr2="cnth"+s(1.0((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1))+"/120"
 }
-ms=mins
-if chg[ms]>0 {
+if (t3==0) {
+t3=60
 hr=hours
-yr=year
 utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 dcon[day]=sml[2]-dval
 mcon[month]=sml[2]-mval
@@ -201,7 +203,7 @@ next
 mval=sml[2]
 mval2=sml[3]
 }
-if (chg[yr]>0) {
+if (day*month==1) {
 yval=sml[2]
 yval2=sml[3]
 }
@@ -221,7 +223,7 @@ Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0uptime% min
 $<div style="margin-left:-20px">
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
 $gc(lt s4h "wr" "Leistung [W]" cstr2)
@@ -249,8 +251,8 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 18.09.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
-$Credits to gemu2015(Tasmota Script Dev)<br>
+$Version 24.09.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
@@ -258,5 +260,5 @@ $</span></center></div>
 +1,5,s,0,9600,MT175,4
 1,77070100100700ff@1,Leistung,W,Power_curr,0
 1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
+1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
 #

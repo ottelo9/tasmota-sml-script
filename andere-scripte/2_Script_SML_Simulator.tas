@@ -10,13 +10,6 @@
 ; Die Leistung wird jede Sekunde addiert. Wenn positiv dann +PwrFrGrd, wenn negativ dann
 ; +PwrToGrd. Nach 60s wird die Arbeit/Energie für den Zähler errechnet = EnFrGrd EnToGrd.
 
-RndPwr=0
-utm="00d 00h 00m"
-PwrToGrd=0
-PwrFrGrd=0
-save=0
-rndsld=0
-pwrsld=0
 ; Startwert Stromzählerwert kWh (Netzbezug)
 p:EnFrGrd=26693.56
 ; Startwert Stromzählerwert kWh (Netzeinspeisung)
@@ -33,6 +26,17 @@ cEnOut="77070100020800ff0101621e52ff5900000000"
 cEnOut1="77070100020801ff0101621e52ff5900000000"
 ; Aktuelle Wirkleistung Watt
 cPow="77070100100700ff0101621b520055"
+; Countdown Timer 5s and 60s
+t:t1=5
+t:t2=60
+; Vars
+RndPwr=0
+utm="00d 00h 00m"
+PwrToGrd=0
+PwrFrGrd=0
+save=0
+rndsld=0
+pwrsld=0
 
 >B
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
@@ -55,7 +59,8 @@ utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60
 ; Zufallszahl 0..1000 - 500 = Zufallsleistung -500W .. +1000W
 if (rndsld==0) {
 ; alle 5s: neue Zufallszahl
-if (upsecs%5==0) {
+if (t1==0) {
+t1=5
 RndPwr=rnd(1000)-500
 ;RndPwr=100
 }
@@ -71,7 +76,8 @@ PwrFrGrd+=RndPwr
 }
 
 ; alle 60s: Arbeit/Energie berechnen
-if (secs%60==0) {
+if (t2==0) {
+t2=60
 if (PwrFrGrd>0) {
 EnFrGrd+=PwrFrGrd/3600000
 PwrFrGrd=0		
@@ -83,7 +89,6 @@ PwrToGrd=0
 }
 
 ; alle 1s: SML Werte senden (Hex String als binary)
-if (secs%1==0) {
 ; Geräteidentifikation
 sml(1 1 "77070100000009ff010101010b090149534b00047ffe7801")
 ; Zählerstand Bezug Total
@@ -100,7 +105,6 @@ sml(1 1 cEnOut1+hx(EnToGrd*10000)+"01")
 sml(1 1 "77070100020802ff0101621e52ff59000000000000000001")
 ; aktuelle Wirkleistung
 sml(1 1 cPow+hx(RndPwr)+"01")
-}
 
 >W
 ; web button
@@ -120,7 +124,7 @@ Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2
 Uptime{m}%utm%
 
 $<center><span style="font-size:10px;">
-$Version 13.09.2025 (SML Simulator) by ottelo.jimdo.de<br>
+$Version 24.09.2025 (SML Simulator) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden nicht automatisch gespeichert!<br>
 $Speichern über Button oder Restart.<br>
 $</span></center>
