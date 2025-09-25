@@ -54,14 +54,15 @@ p:mval=0
 p:dval=0
 p:yval=0
 p:da=1
+t:t1=3
+t:t2=30
+t:t3=60
 tmp=0
 m5=0
 cstr="cnt0/12"
 cstr2="cnth0/120"
 utm="00d 00h 00m"
 hr=0
-yr=0
-ms=0
 save=0
 ;10000: 1 Puls = 0.0001m³ für >M Sektion
 factor=10000
@@ -158,7 +159,8 @@ if (year<2020) {
 smlj=1
 
 ; alle 30s
-if (upsecs%30==0) {
+if (t2==0) {
+	t2=30
 	; kopiere Netzbezug [m³] vom Zaehler (aus counter 1), dividiere durch den Faktor
 	WaterCon=pc[1]/factor
 	; 4h chart. idx wird automatisch gesetzt
@@ -170,10 +172,9 @@ if (upsecs%30==0) {
 }
 
 ; alle 60s
-ms=mins
-if chg[ms]>0 {
+if (t3==0) {
+	t3=60
 	hr=hours
-	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
@@ -210,7 +211,7 @@ if chg[ms]>0 {
 			; monthly values
 			mval=WaterCon
 		}
-		if (chg[yr]>0) {
+		if (day*month==1) {
 			; Jahreswechsel
 			yval=WaterCon
 		}
@@ -240,7 +241,7 @@ Jahresverbrauch{m}%2(WaterCon-yval)% m³
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0uptime% min
 $<div style="margin-left:-20px">
 
 ; 4h Leistung Diagramm
@@ -276,14 +277,15 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 18.09.2025 (Wasseruhr) by ottelo.jimdo.de<br>
+$Version 25.09.2025 (Wasseruhr) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
 
 
 ;-- SML --
-;https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-metrics
+; https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-metrics
 >M 1
 ;1=meter1, 21=GPIO21, c=Counter, 1=counter-with-pullup -50=debounce-time-ms and irq counter
 +1,21,c,1,-50,

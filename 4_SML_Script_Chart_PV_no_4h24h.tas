@@ -28,7 +28,7 @@ IP=192.168.178.31
 ; Zählerstand beim Jahreswechsel: Falls ihr den Jahresverbrauch für das aktuelle Jahr korrekt anzeigen wollt, könnt ihr den Zählerstand (kWh) vom 1.1. via Console nachträglich setzen (danach speichern):
 ;backlog script>yval=Zählerstand-Bezug; script>yval2=Zählerstand-Einspeisung
 ; (d) Um später fehlende oder falsche Werte in den Tabellen zu ändern, können folgende Befehle in der Console eingegeben werden:
-;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
+;script?var       beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
 ;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
 ; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
 ;script?dval   script?dval2   script?dcon   script?dprod   script?mval   script?mval2   script?mcon   script?yval   script?yval2
@@ -52,13 +52,13 @@ p:yval=0
 p:yval2=0
 p:da=1
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
+t:t1=3
+t:t3=60
 tmp=0
 utm="00d 00h 00m"
 avgv2=0
 avgvc2=0
 hr=0
-yr=0
-ms=0
 swesp=0
 swespflg=0
 power2=0
@@ -181,7 +181,8 @@ if ((year<2020) or (sml[2]==0)) {
 smlj=1
 
 ; alle 3s
-if (upsecs%3==0) {
+if (t1==0) {
+	t1=3
 	; Optional: gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
 	power2=(0.9*power2)+((1-0.9)*sml[1])
 	;=>publish stat/%topic%/script/power2 %power2%
@@ -200,14 +201,13 @@ if (upsecs%3==0) {
 		}
 	}
 	; (Op2) Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#8
-	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0power%}
+	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0sml[1]%}
 }
 
 ; alle 60s
-ms=mins
-if chg[ms]>0 {
+if (t3==0) {
+	t3=60
 	hr=hours
-	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
@@ -234,14 +234,14 @@ if chg[ms]>0 {
 		} else {
 		    ; Monatswechsel
 			for tmp (da+1) 31 1
-				dprod[tmp]=0
 				dcon[tmp]=0
+				dprod[tmp]=0
 			next
 			; monthly values
 			mval=sml[2]
 			mval2=sml[3]
 		}
-		if (chg[yr]>0) {
+		if (day*month==1) {
 			; Jahreswechsel
 			yval=sml[2]
 			yval2=sml[3]
@@ -285,7 +285,7 @@ Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0uptime% min
 $<div style="margin-left:-20px">
 
 ; Lade google chart javascript (muss manuell hier geladen werden, wenn im Skript nicht gc() verwendet wird!!)
@@ -304,8 +304,8 @@ $<script type="text/javascript">google.charts.load('current',{packages:['corecha
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 18.09.2025 (PV no4/24) by ottelo.jimdo.de<br>
-$Credits to gemu2015(Tasmota Script Dev)<br>
+$Version 25.09.2025 (PV no4/24) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
@@ -322,5 +322,5 @@ $</span></center></div>
 +1,5,s,16,9600,MT175,4
 1,77070100100700ff@1,Leistung,W,Power_curr,0
 1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
+1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
 #

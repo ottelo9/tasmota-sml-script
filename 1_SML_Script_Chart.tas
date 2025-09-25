@@ -29,7 +29,7 @@ IP=192.168.178.31
 ; Zählerstand beim Jahreswechsel: Falls ihr den Jahresverbrauch für das aktuelle Jahr korrekt anzeigen wollt, könnt ihr den Zählerstand (kWh) vom 1.1. via Console nachträglich setzen (danach speichern):
 ;backlog script>yval=Zählerstand-Bezug
 ; (d) Um später fehlende oder falsche Werte in den Tabellen zu ändern, können folgende Befehle in der Console eingegeben werden:
-;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
+;script?var       beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
 ;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
 ; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
 ;script?dval   script?dcon   script?mval   script?mcon   script?yval
@@ -52,6 +52,9 @@ p:dval=0
 p:yval=0
 p:da=1
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
+t:t1=3
+t:t2=30
+t:t3=60
 tmp=0
 m5=0
 cstr="cnt0/12"
@@ -62,8 +65,6 @@ avgv2=0
 avgvc=0
 avgvc2=0
 hr=0
-yr=0
-ms=0
 save=0
 
 
@@ -158,7 +159,8 @@ if ((year<2020) or (sml[2]==0)) {
 smlj=1
 
 ; alle 3s
-if (upsecs%3==0) {
+if (t1==0) {
+	t1=3
 	; Leistung aufsummieren 4h/24h Diagramm
 	avgv+=sml[1]
 	avgv2+=sml[1]
@@ -169,7 +171,8 @@ if (upsecs%3==0) {
 }
 
 ; alle 30s
-if (upsecs%30==0) {
+if (t2==0) {
+	t2=30
 	; 4h chart. idx wird automatisch gesetzt
 	s4h=avgv/avgvc
 	avgv=0
@@ -181,10 +184,9 @@ if (upsecs%30==0) {
 }
 
 ; alle 60s
-ms=mins
-if chg[ms]>0 {
+if (t3==0) {
+	t3=60
 	hr=hours
-	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
@@ -223,7 +225,7 @@ if chg[ms]>0 {
 			; monthly values
 			mval=sml[2]
 		}
-		if (chg[yr]>0) {
+		if (day*month==1) {
 			; Jahreswechsel
 			yval=sml[2]
 		}
@@ -255,7 +257,7 @@ Jahresverbrauch{m}%2(sml[2]-yval)% kWh
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0uptime% min
 $<div style="margin-left:-20px">
 
 ; 4h Leistung Diagramm
@@ -299,8 +301,8 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 18.09.2025 by ottelo.jimdo.de<br>
-$Credits to gemu2015(Tasmota Script Dev)<br>
+$Version 25.09.2025 by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>

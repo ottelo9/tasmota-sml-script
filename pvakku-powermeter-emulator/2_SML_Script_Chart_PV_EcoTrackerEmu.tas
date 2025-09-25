@@ -32,7 +32,7 @@ IP=192.168.178.31
 ; Zählerstand beim Jahreswechsel: Falls ihr den Jahresverbrauch für das aktuelle Jahr korrekt anzeigen wollt, könnt ihr den Zählerstand (kWh) vom 1.1. via Console nachträglich setzen (danach speichern):
 ;backlog script>yval=Zählerstand-Bezug; script>yval2=Zählerstand-Einspeisung
 ; (d) Um später fehlende oder falsche Werte in den Tabellen zu ändern, können folgende Befehle in der Console eingegeben werden:
-;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
+;script?var       beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
 ;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
 ; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
 ;script?dval   script?dval2   script?dcon   script?dprod   script?mval   script?mval2   script?mcon   script?yval   script?yval2
@@ -45,7 +45,7 @@ M:p:sday=0 288
 ; Tagesnetzbezug Tabelle 1-31
 M:p:dcon=0 31
 ; Tagesnetzeinspeisung Tabelle 1-31
-M:p:dprod=0 31  
+M:p:dprod=0 31
 ; Monatsverbrauch Tabelle 1-12, Einspeisung 13-24
 M:p:mcon=0 24
 ; 4h Chart, Neuer Wert alle 30s
@@ -80,8 +80,8 @@ save=0
 ;-- ECOTRACKER EMULATION --
 res=0
 cpwr=0
-once=0
 header=""
+once=0
 json=""
 
 
@@ -218,22 +218,6 @@ if ((year<2020) or (sml[2]==0)) {
 ; Starte MQTT erst wenn Daten vom Stromzähler kommen
 smlj=1
 
-; starte mDNS damit Marstek den emulierten EcoTracker findet
-if (once==0) {
-	res=mdns("ecotracker-" "-" "everhome")
-	once=1
-}
-
-; Peaks reduzieren, verbessert Regelung
-tmp=sml[1]-cpwr
-if (tmp>500) {
-	cpwr=sml[1]-(tmp/2)
-} else {
-	; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
-	;cpwr=sml[1]-50
-	cpwr=sml[1]
-}
-
 ; alle 3s
 if (t1==0) {
 	t1=3
@@ -260,7 +244,7 @@ if (t1==0) {
 		}
 	}
 	; (Op2) Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#8
-	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0power%}
+	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0sml[1]%}
 }
 
 ; alle 30s
@@ -320,8 +304,8 @@ if (t3==0) {
 		} else {
 		    ; Monatswechsel
 			for tmp (da+1) 31 1
-				dprod[tmp]=0
 				dcon[tmp]=0
+				dprod[tmp]=0
 			next
 			; monthly values
 			mval=sml[2]
@@ -336,10 +320,26 @@ if (t3==0) {
 		dval=sml[2]
 		dval2=sml[3]
 		; nur 1x um Mitternacht speichern
-		svars 
+		svars
 	}
 }
 
+;-- ECOTRACKER EMULATION
+if (once==0) {
+	; starte mDNS damit Marstek den emulierten EcoTracker findet
+	res=mdns("ecotracker-" "-" "everhome")
+	once=1
+}
+
+; Peaks reduzieren, verbessert Regelung
+tmp=sml[1]-cpwr
+if (tmp>500) {
+	cpwr=sml[1]-(tmp/2)
+} else {
+	; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
+	;cpwr=sml[1]-50
+	cpwr=sml[1]
+}
 
 ; WEB INTERFACE
 >W
@@ -385,7 +385,7 @@ $legend:'none',
 ;$vAxis:{format:'# W',viewWindow:{max:5000}},   optional um Y-Achse Werte auf 5kW zu begrenzen
 $vAxis:{format:'# W'},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
-$series: {0: {type: 'area'}},              
+$series: {0: {type: 'area'}},
 $title:'Leistung 4 Stunden [Watt]'
 $};
 $gc(e)
@@ -400,7 +400,7 @@ $legend:'none',
 ;$vAxis:{format:'# W',viewWindow:{max:5000}},   optional um Y-Achse Werte auf 5kW zu begrenzen
 $vAxis:{format:'# W'},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
-$series: {0: {type: 'area'}},            
+$series: {0: {type: 'area'}},
 $title:'Leistung 24 Stunden [Watt]'
 $};
 $gc(e)
@@ -417,7 +417,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 24.09.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Version 25.09.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>

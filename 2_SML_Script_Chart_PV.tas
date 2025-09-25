@@ -57,6 +57,9 @@ p:yval=0
 p:yval2=0
 p:da=1
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
+t:t1=3
+t:t2=30
+t:t3=60
 tmp=0
 m5=0
 cstr="cnt0/12"
@@ -67,8 +70,6 @@ avgv2=0
 avgvc=0
 avgvc2=0
 hr=0
-yr=0
-ms=0
 swesp=0
 swespflg=0
 power2=0
@@ -194,7 +195,8 @@ if ((year<2020) or (sml[2]==0)) {
 smlj=1
 
 ; alle 3s
-if (upsecs%3==0) {
+if (t1==0) {
+	t1=3
 	; Leistung aufsummieren 4h/24h Diagramm
 	avgv+=sml[1]
 	avgv2+=sml[1]
@@ -222,7 +224,8 @@ if (upsecs%3==0) {
 }
 
 ; alle 30s
-if (upsecs%30==0) {
+if (t2==0) {
+	t2=30
 	; 4h chart. idx wird automatisch gesetzt
 	s4h=avgv/avgvc
 	avgv=0
@@ -234,10 +237,9 @@ if (upsecs%30==0) {
 }
 
 ; alle 60s
-ms=mins
-if chg[ms]>0 {
+if (t3==0) {
+	t3=60
 	hr=hours
-	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
@@ -285,7 +287,7 @@ if chg[ms]>0 {
 			mval=sml[2]
 			mval2=sml[3]
 		}
-		if (chg[yr]>0) {
+		if (day*month==1) {
 			; Jahreswechsel
 			yval=sml[2]
 			yval2=sml[3]
@@ -329,7 +331,7 @@ Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0uptime% min
 $<div style="margin-left:-20px">
 
 ; 4h Leistung Diagramm
@@ -374,8 +376,8 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 18.09.2025 (PV) by ottelo.jimdo.de<br>
-$Credits to gemu2015(Tasmota Script Dev)<br>
+$Version 25.09.2025 (PV) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
@@ -392,5 +394,5 @@ $</span></center></div>
 +1,5,s,16,9600,MT175,4
 1,77070100100700ff@1,Leistung,W,Power_curr,0
 1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Netzeinspeisung,KWh,Total_out,2
+1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
 #

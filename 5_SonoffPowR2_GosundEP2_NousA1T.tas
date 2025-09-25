@@ -50,6 +50,9 @@ p:dval=0
 p:yval=0
 p:da=1
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
+t:t1=3
+t:t2=30
+t:t3=60
 tmp=0
 m5=0
 cstr="cnt0/12"
@@ -60,8 +63,6 @@ avgv2=0
 avgvc=0
 avgvc2=0
 hr=0
-yr=0
-ms=0
 save=0
 
 
@@ -157,7 +158,8 @@ if ((year<2020) or (enrg[1]==0)) {
 smlj=1
 
 ; alle 3s
-if (upsecs%3==0) {
+if (t1==0) {
+	t1=3
 	; enrg[n] = hole Wert vom energy register n 0=Gesamtverbrauch, 1..3 Spannung von Phase 1..3, 4..6 aktuell von Phase 1..3, 7..9 Leistung von Phase 1..3, 10=Verbrauch ab Start, 11=Tagesverbrauch, 12=Verbrauch Gestern (USE_ENERGY_SENSOR)
 	; Leistung aufsummieren 4h/24h Diagramm
 	avgv+=enrg[7]
@@ -169,7 +171,8 @@ if (upsecs%3==0) {
 }
 
 ; alle 30s
-if (upsecs%30==0) {
+if (t2==0) {
+	t2=30
 	; 4h chart. idx wird automatisch gesetzt
 	s4h=avgv/avgvc
 	avgv=0
@@ -181,10 +184,9 @@ if (upsecs%30==0) {
 }
 
 ; alle 60s
-ms=mins
-if chg[ms]>0 {
+if (t3==0) {
+	t3=60
 	hr=hours
-	yr=year
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
@@ -223,7 +225,7 @@ if chg[ms]>0 {
 			; monthly values
 			mval=enrg[10]
 		}
-		if (chg[yr]>0) {
+		if (day*month==1) {
 			; Jahreswechsel
 			yval=enrg[10]
 		}
@@ -255,7 +257,7 @@ Jahresverbrauch{m}%2(enrg[10]-yval)% kWh
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0uptime% min
 $<div style="margin-left:-20px">
 
 ; 4h Leistung Diagramm
@@ -300,8 +302,8 @@ $gc(e)
 
 $<center><span style="font-size:10px;">
 $Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung
-$Version 18.09.2025 by ottelo.jimdo.de<br>
-$Credits to gemu2015(Tasmota Script Dev)<br>
+$Version 25.09.2025 by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>

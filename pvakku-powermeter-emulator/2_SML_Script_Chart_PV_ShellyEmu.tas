@@ -35,7 +35,7 @@ IP=192.168.178.31
 ; Zählerstand beim Jahreswechsel: Falls ihr den Jahresverbrauch für das aktuelle Jahr korrekt anzeigen wollt, könnt ihr den Zählerstand (kWh) vom 1.1. via Console nachträglich setzen (danach speichern):
 ;backlog script>yval=Zählerstand-Bezug; script>yval2=Zählerstand-Einspeisung
 ; (d) Um später fehlende oder falsche Werte in den Tabellen zu ändern, können folgende Befehle in der Console eingegeben werden:
-;script?var        beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
+;script?var       beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
 ;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
 ; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
 ;script?dval   script?dval2   script?dcon   script?dprod   script?mval   script?mval2   script?mcon   script?yval   script?yval2
@@ -203,10 +203,12 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 
 ;-- SHELLY EMULATION --
 #getstat
-mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(0c1p)+",\"a_aprt_power\":"+s(0c1p)+",\"a_pf\":1,\"a_freq\":50,"
-mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(0c2p)+",\"b_aprt_power\":"+s(0c2p)+",\"b_pf\":1,\"b_freq\":50,"
-mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(0c3p)+",\"c_aprt_power\":"+s(0c3p)+",\"c_pf\":1,\"c_freq\":50,"
-mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(0cpwr)+",\"total_aprt_power\":"+s(0cpwr)+"}}"
+;B2500 benötigt unbedingt 2 Dezimalstellen
+dp(0 2)
+mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
+mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
+mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
+mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
 
 
 ; -- JEDE SEKUNDE --
@@ -250,7 +252,7 @@ if (t1==0) {
 		}
 	}
 	; (Op2) Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#8
-	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0power%}
+	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0sml[1]%}
 }
 
 ; alle 30s
@@ -310,8 +312,8 @@ if (t3==0) {
 		} else {
 		    ; Monatswechsel
 			for tmp (da+1) 31 1
-				dprod[tmp]=0
 				dcon[tmp]=0
+				dprod[tmp]=0
 			next
 			; monthly values
 			mval=sml[2]
@@ -460,7 +462,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 24.09.2025 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 25.09.2025 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
