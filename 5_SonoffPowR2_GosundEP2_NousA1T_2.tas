@@ -255,7 +255,7 @@ Jahresverbrauch{m}%2(enrg[10]-yval)% kWh
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%0uptime% min
+Uptime{m}%utm%
 $<div style="margin-left:-20px">
 
 ; 1h hochaufgelöstes Leistung Diagramm (5s Raster)
