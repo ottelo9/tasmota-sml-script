@@ -45,7 +45,7 @@ M:p:dcon=0 31
 ; Monatsverbrauch Tabelle 1-12
 M:p:mcon=0 12
 ; 4h Chart, Neuer Wert alle 30s
-M:s4h=0 480
+M:s4h=0 481
 ; -- VARS --
 ; Water Consumption / Wasserverbrauch [m³] Der Wert wird hochgezählt
 WaterCon=0
@@ -113,7 +113,7 @@ for tmp 1 dcon[-1] 1
 	}
 next
 wcs ]);
-wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Tagesverbräuche (Monat %is[month]%)',vAxis:{format:'# m³'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
+wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:'Tagesverbräuche (Monat %is[month]%)',vAxis:{format:'# m³'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('day'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
@@ -137,7 +137,7 @@ for tmp 1 12 1
 	}
 next
 wcs ]);
-wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Verbräuche (Jahr %0(year-1)%/%0year%)',vAxis:{format:'# m³'}};
+wcs var options={chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Verbräuche (Jahr %0(year-1)%/%0year%)',vAxis:{format:'# m³'}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
@@ -242,17 +242,18 @@ Jahresverbrauch{m}%2(WaterCon-yval)% m³
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
 Uptime{m}%utm%
-$<div style="margin-left:-20px">
+$<div style="margin-left:-30px">
 
 ; 4h Leistung Diagramm
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
 $gc(lt s4h "wr" "Verbrauch [m³]" cstr2)
 $var options = {
-$chartArea:{left:60,width:'83%%'},
+$chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
 $vAxis:{format:'# m³'},
-$explorer:{actions:['dragToZoom', 'rightClickToReset']},
-$series: {0: {type: 'area'}},              
+$hAxis:{slantedTextAngle:45},
+$explorer:{actions:['dragToZoom','rightClickToReset']},
+$series: {0: {type: 'area'}},
 $title:'Verbrauch 4 Stunden [m³]'
 $};
 $gc(e)
@@ -261,11 +262,12 @@ $gc(e)
 $<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
 $gc(lt sday "wr" "Verbrauch [m³]" cstr)
 $var options = {
-$chartArea:{left:60,width:'83%%'},
+$chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
 $vAxis:{format:'# m³'},
+$hAxis:{slantedTextAngle:45},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
-$series: {0: {type: 'area'}},            
+$series: {0: {type: 'area'}},
 $title:'Verbrauch 24 Stunden [m³]'
 $};
 $gc(e)
@@ -277,7 +279,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 25.09.2025 (Wasseruhr) by ottelo.jimdo.de<br>
+$Version 29.09.2025 (Wasseruhr) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>

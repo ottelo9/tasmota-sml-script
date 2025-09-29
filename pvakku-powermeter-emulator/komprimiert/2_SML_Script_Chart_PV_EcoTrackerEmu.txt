@@ -3,7 +3,7 @@ M:p:sday=0 288
 M:p:dcon=0 31
 M:p:dprod=0 31
 M:p:mcon=0 24
-M:s4h=0 480
+M:s4h=0 481
 p:mval=0
 p:dval=0
 p:mval2=0
@@ -75,7 +75,7 @@ wcs [%tmp%,%dcon[tmp]%,''],
 }
 next
 wcs ]);
-wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Tagesverbräuche (Monat %is[month]%)',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
+wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:'Tagesverbräuche (Monat %is[month]%)',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('day'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
@@ -97,7 +97,7 @@ wcs [%tmp%,%dprod[tmp]%,''],
 }
 next
 wcs ]);
-wcs var options={chartArea:{left:40,width:'86%%'},legend:'none',title:'Tageseinspeisung (Monat %is[month]%)',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
+wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:'Tageseinspeisung (Monat %is[month]%)',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('dayp'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
@@ -119,7 +119,7 @@ wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
 }
 next
 wcs ]);
-wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,width:'80%%'},legend:'none',title:'Verbräuche / Einspeisungen (Jahr %0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
+wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Verbräuche / Einspeisungen (Jahr %0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
@@ -223,15 +223,16 @@ Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%0uptime% min
-$<div style="margin-left:-20px">
+Uptime{m}%utm%
+$<div style="margin-left:-30px">
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
 $gc(lt s4h "wr" "Leistung [W]" cstr2)
 $var options = {
-$chartArea:{left:60,width:'83%%'},
+$chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
 $vAxis:{format:'# W'},
-$explorer:{actions:['dragToZoom', 'rightClickToReset']},
+$hAxis:{slantedTextAngle:45},
+$explorer:{actions:['dragToZoom','rightClickToReset']},
 $series: {0: {type: 'area'}},
 $title:'Leistung 4 Stunden [Watt]'
 $};
@@ -239,9 +240,10 @@ $gc(e)
 $<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
 $gc(lt sday "wr" "Leistung [W]" cstr)
 $var options = {
-$chartArea:{left:60,width:'83%%'},
+$chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
 $vAxis:{format:'# W'},
+$hAxis:{slantedTextAngle:45},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
 $series: {0: {type: 'area'}},
 $title:'Leistung 24 Stunden [Watt]'
@@ -251,7 +253,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 24.09.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Version 29.09.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
