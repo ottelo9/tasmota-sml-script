@@ -35,7 +35,8 @@ Die SML Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauc
 - `2_Script_SML_Simulator`  
   emuliert ein MT175 Stromzähler, einfach auf einen 2. Lesekopf aufspielen (ESP8266 / ESP32)
 
-**pvakku-powermeter-emulator**
+**pvakku-powermeter-emulator**  
+_Damit die Scripte funktionieren werden von mir angepasste Tasmota Images benötigt (min. 15.0.1). Images gibt es [hier](https://github.com/ottelo9/tasmota-sml-images). Für den ESP8266 muss entweder das tasmota1m_energy_ottelo oder tasmota4m_ottelo gewählt werden._  
 - `1_SML_EcoTrackerEmu_Simple`  
   Sehr kleines und wirklich einfaches Script zum Emulieren eines EcoTracker von everHome. Getestet mit Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles MS-A2.
   Es ist so klein, dass es auch auf dem ESP8266 läuft. Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte + Tages/Monats/Jahreswerte) an.
