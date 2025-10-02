@@ -1,7 +1,7 @@
 >D 128
 ; SML Simulator Script von ottelo.jimdo.de
 ; Script zum Simulieren eines Smartmeters/Stromzählers
-; Es erzeugt eine Zufalls-Wirkleistung in W und errechnet damit Netzbezug und Netzeinspeisung
+; Es erzeugt eine simulierte Wirkleistung in W und errechnet damit Netzbezug und Netzeinspeisung
 ; Momentan simuliert das Script einen MT175 Stromzähler. Damit das Script läuft muss ein angepasstes Tasmota Image
 ; mit SML Support + #define SCRIPT_MAXSSIZE 128 verwendet werden. Das biete ich
 ; auf meiner Seite an. Dann benötigt man ein IR Lesekopf mit ESP32 oder 8266.
@@ -11,9 +11,11 @@
 ; +PwrToGrd. Nach 60s wird die Arbeit/Energie für den Zähler errechnet = EnFrGrd EnToGrd.
 
 ; Startwert Stromzählerwert kWh (Netzbezug)
-p:EnFrGrd=26693.56
+p:EnFrGrd=26712.92
 ; Startwert Stromzählerwert kWh (Netzeinspeisung)
-p:EnToGrd=640.60
+p:EnToGrd=657.85
+p:mode=1
+p:pwrsld=0
 ; OBIS binary SML MT175 Stromzähler
 ; OBIS (hex) Dumps (erstellt mit echtem Zähler via sensor53 d1). Die letzten 10 Hex Zahlen werden generiert
 ; Zählerstand Bezug Total [Wh]
@@ -35,17 +37,16 @@ utm="00d 00h 00m"
 PwrToGrd=0
 PwrFrGrd=0
 save=0
-rndsld=0
-pwrsld=0
 
 >B
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 ->sensor53 r
-
->S
+mode=1
 ; sets decimal precision to 0
 dp0
+
+>S
 ;Daten speichern Button
 if (save==1) {
 save=0
@@ -56,17 +57,30 @@ print Daten wurden gespeichert
 ;Zeit seit letztem Boot
 utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
-; Zufallszahl 0..1000 - 500 = Zufallsleistung -500W .. +1000W
-if (rndsld==0) {
-; alle 5s: neue Zufallszahl
-if (t1==0) {
+; Simulation Leistung
+switch mode
+case 1
+; Zufallszahl
+if t1==0 {
 t1=5
 RndPwr=rnd(1000)-500
-;RndPwr=100
 }
+case 2
+; Festwert via Slider
+RndPwr=999
+print pwrsld=%pwrsld% RndPwr=%RndPwr%
+RndPwr=999
+case 3
+; Rampe
+if t1==0 {
+t1=5
+if RndPwr>1000 {
+RndPwr=-1000
 } else {
-RndPwr=pwrsld
+RndPwr+=20
 }
+}
+ends 
 
 ; alle 1s: Leistung W jede Sekunde addieren, damit Bezug/Einspeisung korrekt erhöht wird
 if (RndPwr<0) {
@@ -80,11 +94,11 @@ if (t2==0) {
 t2=60
 if (PwrFrGrd>0) {
 EnFrGrd+=PwrFrGrd/3600000
-PwrFrGrd=0		
+PwrFrGrd=0
 }
 if (PwrToGrd>0) {
 EnToGrd+=PwrToGrd/3600000
-PwrToGrd=0		
+PwrToGrd=0
 }
 }
 
@@ -111,7 +125,7 @@ sml(1 1 cPow+hx(RndPwr)+"01")
 bu(save "gespeichert!" "Daten speichern")
 ; Simulierte Leistung via Slider
 sl(-1000 1000 pwrsld "-1000 W" "0 W" "1000 W")
-bu(rndsld "Leistung via Slider vorgeben" "Simulierte Zufallsleistung")
+pd(mode "Modus wählen: " 80 "Zufall" "Fest" "Rampe")
 
 Simulierte Zählerwerte:{m}
 aktuelle Wirkleistung{m}%0RndPwr% W
@@ -124,7 +138,7 @@ Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2
 Uptime{m}%utm%
 
 $<center><span style="font-size:10px;">
-$Version 24.09.2025 (SML Simulator) by ottelo.jimdo.de<br>
+$Version 02.10.2025 (SML Simulator) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden nicht automatisch gespeichert!<br>
 $Speichern über Button oder Restart.<br>
 $</span></center>
