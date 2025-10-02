@@ -67,9 +67,7 @@ RndPwr=rnd(1000)-500
 }
 case 2
 ; Festwert via Slider
-RndPwr=999
-print pwrsld=%pwrsld% RndPwr=%RndPwr%
-RndPwr=999
+RndPwr=pwrsld
 case 3
 ; Rampe
 if t1==0 {
