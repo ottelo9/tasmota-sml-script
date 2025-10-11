@@ -1,0 +1,23 @@
+>D
+res=0
+scnt=0
+>B
+=>sensor53 r
+>F
+scnt+=1
+switch scnt
+case 6
+  res=sml(1 0 300)
+  res=sml(1 1 "2F3F210D0A")
+case 18
+  res=sml(1 1 "063035300D0A")
+case 20
+  res=sml(1 0 9600)
+case 80
+  scnt=0
+ends
+>M 1
++1,3,o,0,9600,Zähler,1
+1,1-0:1.8.0(@1,Bezug,kWh,1-8-0,2
+1,1-0:2.8.0(@1,Einspeisung,kWh,2-8-0,2
+#

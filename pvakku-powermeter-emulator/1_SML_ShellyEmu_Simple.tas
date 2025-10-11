@@ -151,9 +151,9 @@ udp(2 header mstr1 mstr2)
 break
 }
 } else {
-; sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
-=#getstat
-udp(2 header mstr1 mstr2)
+; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
+;=#getstat
+;udp(2 header mstr1 mstr2)
 }
 
 
@@ -168,7 +168,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
 $<center><span style="font-size:10px;">
-$Version 24.09.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 02.10.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 

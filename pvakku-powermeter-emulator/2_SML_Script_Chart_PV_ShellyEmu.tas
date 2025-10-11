@@ -380,9 +380,9 @@ if (str!="") {
 		break
 	}
 } else {
-	; sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
-	=#getstat
-	udp(2 header mstr1 mstr2)
+	; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
+	;=#getstat
+	;udp(2 header mstr1 mstr2)
 }
 
 
@@ -464,7 +464,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 29.09.2025 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 02.10.2025 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>

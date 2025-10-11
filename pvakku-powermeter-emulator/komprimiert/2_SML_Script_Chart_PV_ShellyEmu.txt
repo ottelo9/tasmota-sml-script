@@ -233,8 +233,8 @@ udp(2 header mstr1 mstr2)
 break
 }
 } else {
-=#getstat
-udp(2 header mstr1 mstr2)
+;=#getstat
+;udp(2 header mstr1 mstr2)
 }
 >W
 bu(save "gespeichert!" "Daten sofort speichern")
@@ -277,7 +277,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 29.09.2025 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 02.10.2025 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
