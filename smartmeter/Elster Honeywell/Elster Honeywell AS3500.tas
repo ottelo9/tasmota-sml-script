@@ -1,0 +1,29 @@
+>D
+scnt=0
+res=0
+
+>B
+=>sensor53 r
+
+>F
+scnt+=1
+switch scnt
+case 3
+res=sml(1 0 300)
+res=sml(1 1 "2F3F210D0A")
+case 20
+res=sml(1 1 "063035300D0A")
+case 23
+res=sml(1 0 9600)
+case 60
+scnt=0
+ends
+
+>M 1
++1,5,o,0,9600,AS3500,4
+1,1-1:1.7.0(@0.001,Leistung,W,Power,3
+1,1-1:1.8.0(@1,Verbrauch,kWh,E_in,3
+1,1-1:21.7.0(@0.001,Leistung L1,W,Power_L1,3
+1,1-1:41.7.0(@0.001,Leistung L2,W,Power_L2,3
+1,1-1:61.7.0(@0.001,Leistung L3,W,Power_L3,3
+#

@@ -1,0 +1,26 @@
+>D
+scnt=0
+res=0
+
+>B
+=>sensor53 r
+
+>F
+scnt+=1
+switch scnt
+case 3
+res=sml(1 0 300)
+res=sml(1 1 "2F3F210D0A")
+case 20
+res=sml(1 1 "063035300D0A")
+case 23
+res=sml(1 0 9600)
+case 200
+scnt=0
+ends
+
+>M 1
++1,5,o,0,9600,ZPA314,4
+1,1.8.0(@1,Total In,kWh,Total_in,3
+1,2.8.0(@1,Total Out,kWh,Total_out,3
+#

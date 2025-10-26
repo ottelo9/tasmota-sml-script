@@ -1,0 +1,24 @@
+>D
+res=0
+scnt=0
+
+>B
+=>sensor53 r
+
+>S
+scnt+=1
+switch scnt
+case 1
+res=sml(1 0 1200)
+res=sml(1 1 "3F10020044004A")
+;Abfrage nur 1mal pro Stunde, um Batterie im Zähler nicht leer zu machen.
+case 3600
+scnt=0
+ends
+
+>M 1
++1,5,kN2,0,1200,KSMC403,4
+1,=so3,90
+1,3F100044kstr@i0:1000,Zählerstand,m³,Zählerstand,19
+1,3F10x8xx004Akstr@i0:1,Fließgeschw.,l/h,Flow,0
+#

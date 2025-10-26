@@ -15,14 +15,11 @@ case 18
 res=sml(1 1 "063035300D0A")
 case 20
 res=sml(1 0 9600)
-case 60
+case 80
 scnt=0
 ends
 
-;Iskra MT 174 (OBIS)
 >M 1
-+1,5,o,0,9600,MT174,4
-1,1-0:1.7.0*255(@0.001,Leistung,W,powerIn,0
-1,1-0:1.8.0*255(@1,Verbrauch,kWh,E_in,2
-1,1-0:2.8.0*255(@1,Einspeisung,kWh,E_out,2
++1,5,o,0,9600,MT171,4
+1,1-0:1.8.0*255(@1,Bezug,kWh,1-8-0,2
 #
