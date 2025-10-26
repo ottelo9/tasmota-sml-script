@@ -1,7 +1,3 @@
-// Powermeter List for Tasmota SML Script
-// adapted from this source
-// https://github.com/esplesekopf/Tasmota/blob/development/tasmota/sml_scripts.h
-// and https://bitshake.de/skripte/#hersteller
 {
 	"smartmeter": [
 		{ "label": "Allmess Wasserzähler", "filename": "Allmess/Allmess Wasserzähler.tas" },
