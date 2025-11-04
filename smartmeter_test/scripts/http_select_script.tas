@@ -1,0 +1,123 @@
+>D 100
+cnt=0
+res=0
+fref=0
+str=""
+p:sel=1
+ind=0
+once=0
+fname=""
+smfile="/smartmeter.json"
+rxpin=1
+txpin=3
+p:rxind=2
+p:txind=4
+
+>B
+sensor53 r
+=#gfnam(sel)
+
+
+>S
+if year<2025 {
+	break
+}
+
+if once==0 {
+	fref=fo("temp.txt" w)
+	res=0
+	if fref>=0 {
+		res=frw(fref "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test/smartmeter.json")
+		print %res%
+		fc(fref)
+	}
+	if res==200 {
+		fd(smfile)
+		frn("/temp.txt" smfile)
+	}
+	once=1
+}
+
+if chg[sel]>0 {
+	svars
+	=#gfnam(sel)
+	fref=fo("/temp.txt" w)
+	if fref>=0 {
+		res=frw(fref "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test" fname)
+		fc(fref)
+		if res==200 {
+			fd("/sml_meter.def")
+			frn("/temp.txt" "/sml_meter.def")
+			=>sensor53 r
+		}
+	}
+	
+}
+
+if chg[rxind]>0 {
+	rxpin=rxind-1
+	print %rxpin%
+	svars
+}
+if chg[txind]>0 {
+	txpin=txind-1
+	print %txpin%
+	svars
+}
+
+#gfnam(sel)
+fref=fo(smfile r)
+if fref>=0 {
+	ind=1
+	for cnt 1 500 1
+		res=fr(str fref)					
+		if str!="" {
+			if ins(str "filename")>0 {
+				if ind==sel {
+					fname=st(str '\"' 4)
+					break
+				}
+				ind+=1
+			}
+		}
+	next
+	fc(fref)
+}
+
+#wsub
+; only in webmode 0
+if wm>0 {
+	wcs so(4)
+	wcs <label for="pu_sel">Choose a meter:</label>
+	fref=fo(smfile r)
+	if fref>=0 {
+		wcs <select name="pu_sel" id="pu_sel" onchange='seva(value,"sel")'>
+		ind=1
+		for cnt 1 500 1
+			res=fr(str fref)
+			if ((str!="") and (ins(str "label")>0)) {
+				wcs <option value="%ind%"  
+				if sel==ind {
+					wcs selected
+				}
+				wcs >%st(str '\"' 4)%</option>
+				ind+=1
+			}
+		next
+		fc(fref)
+	}
+	wcs </select>
+	wcf
+	wcs so(0)
+}
+
+>WS
+
+
+>WM
+%=#wsub
+so(17)
+pd(rxind "RX Pin: " 50 "#0-30")
+pd(txind "TX Pin: " 50 "#0-30")
+; im descriptor pin substuieren
+; %0rxpin% bzw %0txpin%
