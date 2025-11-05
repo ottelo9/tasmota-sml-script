@@ -1,4 +1,4 @@
->D 40
+>D 100
 M:p:sday=0 288
 M:p:dcon=0 31
 M:p:dprod=0 31
@@ -11,6 +11,8 @@ p:dval2=0
 p:yval=0
 p:yval2=0
 p:da=1
+p:rxind=2
+p:txind=4
 t:t1=3
 t:t2=30
 t:t3=60
@@ -28,26 +30,15 @@ swesp=0
 swespflg=0
 power2=0
 save=0
-
-cnt=0
-res=0
-fref=0
-str=""
-p:sel=1
-ind=0
-once=0
-fname=""
-smfile="/smartmeter.json"
 rxpin=1
 txpin=3
-p:rxind=2
-p:txind=4
 
 >B
-=>sensor53 r
+rxpin=rxind-1
+txpin=txind-1
+->sensor53 r
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 smlj=0
-=#gfnam(sel)
 
 #init
 dval=sml[2]
@@ -139,51 +130,6 @@ wcs var chart=new google.visualization.ColumnChart(document.getElementById('mont
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
 
-#gfnam(sel)
-fref=fo(smfile r)
-if fref>=0 {
-ind=1
-for cnt 1 500 1
-res=fr(str fref)					
-if str!="" {
-if ins(str "filename")>0 {
-if ind==sel {
-fname=st(str '\"' 4)
-break
-}
-ind+=1
-}
-}
-next
-fc(fref)
-}
-
-#wsub
-if wm>0 {
-wcs so(4)
-wcs <label for="pu_sel">Choose a meter:</label>
-fref=fo(smfile r)
-if fref>=0 {
-wcs <select name="pu_sel" id="pu_sel" onchange='seva(value,"sel")'>
-ind=1
-for cnt 1 500 1
-res=fr(str fref)
-if ((str!="") and (ins(str "label")>0)) {
-wcs <option value="%ind%"  
-if sel==ind {
-wcs selected
-}
-wcs >%st(str '\"' 4)%</option>
-ind+=1
-}
-next
-fc(fref)
-}
-wcs </select>
-wcf
-wcs so(0)
-}
-
 >S
 if (save==1) {
 save=0
@@ -253,44 +199,21 @@ dval2=sml[3]
 svars
 }
 }
-
-if once==0 {
-fref=fo("temp.txt" w)
-res=0
-if fref>=0 {
-res=frw(fref "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test/smartmeter.json")
-print %res%
-fc(fref)
-}
-if res==200 {
-fd(smfile)
-frn("/temp.txt" smfile)
-}
-once=1
-}
-if chg[sel]>0 {
-svars
-=#gfnam(sel)
-fref=fo("/temp.txt" w)
-if fref>=0 {
-res=frw(fref "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test" fname)
-fc(fref)
-if res==200 {
-fd("/sml_meter.def")
-frn("/temp.txt" "/sml_meter.def")
-=>sensor53 r
-}
-}
-}
 if chg[rxind]>0 {
 rxpin=rxind-1
-print %rxpin%
+->sensor53 r
 svars
 }
 if chg[txind]>0 {
 txpin=txind-1
-print %txpin%
+->sensor53 r
 svars
+}
+
+>C
+if eres==1 {
+->sensor53 r
+eres=0
 }
 
 >W
@@ -341,7 +264,7 @@ $</span></center></div>
 
 >WS
 >WM
-%=#wsub
 so(17)
 pd(rxind "RX Pin: " 50 "#0-30")
 pd(txind "TX Pin: " 50 "#0-30")
+smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test" "Stromzählerauswahl")
