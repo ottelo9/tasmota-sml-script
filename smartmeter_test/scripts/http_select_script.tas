@@ -12,26 +12,26 @@ txpin=txind-1
 
 >S
 if year<2025 {
-	break
+break
 }
 
 if chg[rxind]>0 {
-	rxpin=rxind-1
-	->sensor53 r
-	svars
+rxpin=rxind-1
+->sensor53 r
+svars
 }
 if chg[txind]>0 {
-	txpin=txind-1
-	->sensor53 r
-	svars
-} 
+txpin=txind-1
+->sensor53 r
+svars
+}
 
 >C
 if eres==1 {
-	=>sensor53 r
-	svars
-	=> WebRefresh 2000
-	eres=0
+=>sensor53 r
+svars
+=> WebRefresh 2000
+eres=0
 }
 
 >WS
