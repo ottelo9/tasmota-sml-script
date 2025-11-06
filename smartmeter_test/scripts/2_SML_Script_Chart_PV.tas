@@ -13,6 +13,7 @@ p:yval2=0
 p:da=1
 p:rxind=2
 p:txind=4
+p:sel=0
 t:t1=3
 t:t2=30
 t:t3=60
@@ -30,8 +31,8 @@ swesp=0
 swespflg=0
 power2=0
 save=0
-rxpin=1
-txpin=3
+rxpin=3
+txpin=1
 
 >B
 rxpin=rxind-1
@@ -212,7 +213,9 @@ svars
 
 >C
 if eres==1 {
-->sensor53 r
+=>sensor53 r
+svars
+=> WebRefresh 2000
 eres=0
 }
 
@@ -263,6 +266,8 @@ $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
 
 >WS
+time{m}%upsecs%
+
 >WM
 so(17)
 pd(rxind "RX Pin: " 50 "#0-30")
