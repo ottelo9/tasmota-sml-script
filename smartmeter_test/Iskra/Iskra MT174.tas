@@ -1,4 +1,3 @@
-;Iskra MT 174 (OBIS)
 >M 1
 +1,%0rxpin%,o,0,9600,MT174,%0txpin%
 1,1-0:1.7.0*255(@0.001,Leistung,W,powerIn,0
