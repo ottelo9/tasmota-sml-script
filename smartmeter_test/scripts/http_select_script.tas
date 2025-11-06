@@ -41,4 +41,4 @@ time{m}%upsecs%
 so(17)
 pd(rxind "RX Pin: " 50 "#0-30")
 pd(txind "TX Pin: " 50 "#0-30")
-smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test" "Stromzählerauswahl")
+smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test" "Stromzählerauswahl" sel)
