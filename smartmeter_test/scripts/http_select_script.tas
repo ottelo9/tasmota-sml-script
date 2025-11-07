@@ -1,8 +1,9 @@
 >D 100
+; http_select_script
 rxpin=3
 txpin=1
-p:rxind=2
-p:txind=4
+p:rxind=4
+p:txind=2
 p:sel=0
 
 >B
@@ -14,14 +15,8 @@ txpin=txind-1
 if year<2025 {
 break
 }
-
-if chg[rxind]>0 {
+if ((chg[rxind]>0) or (chg[txind]>0)) {
 rxpin=rxind-1
-->sensor53 r
-svars
-}
-if chg[txind]>0 {
-txpin=txind-1
 ->sensor53 r
 svars
 }
@@ -34,9 +29,6 @@ eres=0
 }
 
 >WS
-time{m}%upsecs%
-selected{m}%sel%
-
 >WM
 so(17)
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test" "Stromzählerauswahl" sel)

@@ -1,4 +1,5 @@
 >D 100
+; 2_SML_Script_Chart_PV
 M:p:sday=0 288
 M:p:dcon=0 31
 M:p:dprod=0 31
@@ -11,8 +12,8 @@ p:dval2=0
 p:yval=0
 p:yval2=0
 p:da=1
-p:rxind=2
-p:txind=4
+p:rxind=4
+p:txind=2
 p:sel=0
 t:t1=3
 t:t2=30
@@ -200,13 +201,8 @@ dval2=sml[3]
 svars
 }
 }
-if chg[rxind]>0 {
+if ((chg[rxind]>0) or (chg[txind]>0)) {
 rxpin=rxind-1
-->sensor53 r
-svars
-}
-if chg[txind]>0 {
-txpin=txind-1
 ->sensor53 r
 svars
 }
@@ -215,7 +211,6 @@ svars
 if eres==1 {
 =>sensor53 r
 svars
-=> WebRefresh 2000
 eres=0
 }
 
@@ -266,9 +261,8 @@ $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
 
 >WS
-
 >WM
 so(17)
-pd(rxind "RX Pin: " 50 "#0-30")
-pd(txind "TX Pin: " 50 "#0-30")
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test" "Stromzählerauswahl" sel)
+pd(rxind "RX Pin: " 50 "#g")
+pd(txind "TX Pin: " 50 "#g")
