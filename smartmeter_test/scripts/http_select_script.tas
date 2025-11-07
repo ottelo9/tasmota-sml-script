@@ -9,7 +9,6 @@ p:sel=0
 rxpin=rxind-1
 txpin=txind-1
 ->sensor53 r
-sel=0
 
 >S
 if year<2025 {
