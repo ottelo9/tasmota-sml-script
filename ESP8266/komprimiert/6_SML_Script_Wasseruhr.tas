@@ -1,0 +1,173 @@
+>D 40
+M:p:sday=0 288
+M:p:dcon=0 31
+M:p:mcon=0 12
+M:s4h=0 481
+WaterCon=0
+p:mval=0
+p:dval=0
+p:yval=0
+p:da=1
+t:t1=3
+t:t2=30
+t:t3=60
+tmp=0
+m5=0
+cstr="cnt0/12"
+cstr2="cnth0/120"
+utm="00d 00h 00m"
+hr=0
+save=0
+factor=10000
+>B
+WaterCon=pc[1]/factor
+tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
+smlj=0
+#init
+dval=WaterCon
+for tmp 1 dcon[-1] 1
+dcon[tmp]=0
+next
+mval=WaterCon
+for tmp 1 mcon[-1] 1
+mcon[tmp]=0
+next
+yval=WaterCon
+for tmp 1 sday[-1] 1
+sday[tmp]=0
+next
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
+svars
+#daysub
+if wm>0 {
+wcs <div id="day" style="text-align:center;width:600px;height:400px"></div>
+wcs <script language="JavaScript">function drawChart(){
+wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
+wcs var data=google.visualization.arrayToDataTable([['Tag','Verbrauch [m³]',{role: 'style'}],
+for tmp 1 dcon[-1] 1
+if (tmp==day) {
+wcs [%tmp%,%dcon[tmp]%,'red'],
+}
+if (tmp<day) {
+wcs [%tmp%,%dcon[tmp]%,'green'],
+}
+if (tmp>day) {
+wcs [%tmp%,%dcon[tmp]%,''],
+}
+next
+wcs ]);
+wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:'Tagesverbräuche (Monat %is[month]%)',vAxis:{format:'# m³'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
+wcs var chart=new google.visualization.ColumnChart(document.getElementById('day'));
+wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
+}
+#monthsub
+if wm>0 {
+wcs <div id="month" style="text-align:center;width:600px;height:400px"></div>
+wcs <script language="JavaScript">function drawChart(){
+wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
+wcs var data=google.visualization.arrayToDataTable([['Monat','Verbrauch [m³]',{role: 'style'}],
+for tmp 1 12 1
+if (tmp<month) {
+wcs ['%is[tmp]%',%mcon[tmp]%,'green'],
+}
+if (tmp==month) {
+wcs ['%is[tmp]%',%mcon[tmp]%,'red'],
+}
+if (tmp>month) {
+wcs ['%is[tmp]%',%mcon[tmp]%,'blue'],
+}
+next
+wcs ]);
+wcs var options={chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Verbräuche (Jahr %0(year-1)%/%0year%)',vAxis:{format:'# m³'}};
+wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
+wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
+}
+>S
+if (save==1) {
+save=0
+svars
+}
+if (year<2020) {
+print auf NTP warten
+break
+}
+smlj=1
+if (t2==0) {
+t2=30
+WaterCon=pc[1]/factor
+s4h=WaterCon
+cstr2="cnth"+s(1.0((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1))+"/120"
+}
+if (t3==0) {
+t3=60
+hr=hours
+utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
+dcon[day]=WaterCon-dval
+mcon[month]=WaterCon-mval
+m5=int((((hours*60)+mins)/5)+1)
+sday[0]=m5
+if (chg[m5]>0) {
+sday[m5]=WaterCon
+}
+cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
+if ((chg[hr]>0) and (hr==0)) {
+if (day>1) {
+da=day
+} else {
+for tmp (da+1) 31 1
+dcon[tmp]=0
+next
+mval=WaterCon
+}
+if (day*month==1) {
+yval=WaterCon
+}
+dval=WaterCon
+svars
+}
+}
+>W
+bu(save "gespeichert!" "Daten sofort speichern")
+Tagesverbrauch{m}%4(WaterCon-dval)% m³
+Monatsverbrauch{m}%2(WaterCon-mval)% m³
+Jahresverbrauch{m}%2(WaterCon-yval)% m³
+Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
+Uptime{m}%utm%
+$<div style="margin-left:-30px">
+$<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
+$gc(lt s4h "wr" "Verbrauch [m³]" cstr2)
+$var options = {
+$chartArea:{left:60,right:20,height:'75%%'},
+$legend:'none',
+$vAxis:{format:'# m³'},
+$hAxis:{slantedTextAngle:45},
+$explorer:{actions:['dragToZoom','rightClickToReset']},
+$series: {0: {type: 'area'}},
+$title:'Verbrauch 4 Stunden [m³]'
+$};
+$gc(e)
+$<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
+$gc(lt sday "wr" "Verbrauch [m³]" cstr)
+$var options = {
+$chartArea:{left:60,right:20,height:'75%%'},
+$legend:'none',
+$vAxis:{format:'# m³'},
+$hAxis:{slantedTextAngle:45},
+$explorer:{actions:['dragToZoom', 'rightClickToReset']},
+$series: {0: {type: 'area'}},
+$title:'Verbrauch 24 Stunden [m³]'
+$};
+$gc(e)
+%=#daysub
+%=#monthsub
+$<center><span style="font-size:10px;">
+$Version 29.09.2025 (Wasseruhr) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
+$Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
+$Der Restart Button speichert ebenfalls die Daten.<br>
+$</span></center></div>
+>M 1
++1,21,c,1,-50,
+1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
+#
