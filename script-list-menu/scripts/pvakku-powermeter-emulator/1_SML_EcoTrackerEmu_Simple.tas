@@ -1,0 +1,148 @@
+>D 250
+; Einfaches EcoTracker Emulator Script für ESP8266/ESP32 und Tasmota Image von ottelo
+; Emuliert EcoTracker für Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles (MS-A2)
+; Scriptgröße beim ESP8266 begrenzt: EEP_SCRIPT_SIZE 4096
+; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
+; Script basiert auf https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas
+; Script ist für ein Wifi Tasmota ESP Lesekopf für Stromzähler gedacht, z.B. HichiV1/V2, Bitshake, usw.
+; Der Text kann einfach so in den internen Editor von Tasmota eingefügt werden. Beim ESP8266 sollten alle Kommentare entfernen werden.
+; Die Marstek App sucht nach dem EcoTracker via mdns, der Emulator meldet sich als ecotracker-<mac>
+; !! Es darf kein Passwortschutz in Tasmota aktiv sein !!
+; Der Datenaustausch erfolgt dann via REST API https://everhome.cloud/en/developer/ecotracker alle paar Sek (~13s beim Jupiter C Plus)
+; Zum Test einfach http://IP-TASMOTA/v1/json eingeben
+
+; Zum erstmaligen Einrichten des Scripts folgendes in die Console eingeben (erst wenn auch Werte vom Zähler kommen!)
+;script>=#init
+
+; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch / Einspeisung
+p:dval=0
+p:dval2=0
+p:mval2=0
+p:mval=0
+p:yval=0
+p:yval2=0
+t:t1=60
+hr=0
+save=0
+;-- ECOTRACKER EMULATION --
+res=0
+tmp=0
+cpwr=0
+once=0
+header=""
+json=""
+
+
+>B
+=>sensor53 r
+smlj=0
+
+#init
+dval=sml[2]
+dval2=sml[3]
+mval=sml[2]
+mval2=sml[3]
+yval=sml[2]
+yval2=sml[3]
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
+svars
+
+;-- ECOTRACKER EMULATION --
+>ah
+; bei Änderung in >ah muss Tasmota neugestartet werden
+res=won(1 "/v1/json")
+
+>on1
+;print Ecotracker
+json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0cpwr)+",\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
+tmp=sl(json)
+header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
+wcs so(4)
+wcs %header%
+wcs %json%
+wcf
+
+
+>S
+if (save==1) {
+save=0
+svars
+}
+; Warte auf NTP und Zähler
+if ((year<2020) or (sml[2]==0)) {
+print auf NTP/Zähler warten
+break
+}
+; Starte MQTT erst wenn Daten vom Stromzähler kommen
+smlj=1
+
+; alle 60s
+if (t1==0) {
+t1=60
+hr=hours
+; Tages-, Monats-, Jahresverbrauch um Mitternacht
+; Aktualisiere & speichere Zählerstände
+if ((chg[hr]>0) and (hr==0)) {
+; Tageswechsel
+dval=sml[2]
+dval2=sml[3]
+if (day==1) {
+; Monatswechsel
+mval=sml[2]
+mval2=sml[3]
+}
+if (day*month==1) {
+; Jahreswechsel
+yval=sml[2]
+yval2=sml[3]
+}
+; nur 1x um Mitternacht speichern
+svars
+}
+}
+
+;-- ECOTRACKER EMULATION --
+; starte mDNS damit Marstek den emulierten EcoTracker findet
+if (once==0) {
+res=mdns("ecotracker-" "-" "everhome")
+once=1
+}
+; Peaks reduzieren, verbessert Regelung
+tmp=sml[1]-cpwr
+if (tmp>500) {
+cpwr=sml[1]-(tmp/2)
+} else {
+; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
+;cpwr=sml[1]-50
+cpwr=sml[1]
+}
+
+
+>W
+bu(save "gespeichert!" "Daten sofort speichern")
+Leistung (an Marstek Akku){m}%0cpwr% W
+Tagesverbrauch{m}%2(sml[2]-dval)% kWh
+Monatsverbrauch{m}%2(sml[2]-mval)% kWh
+Jahresverbrauch{m}%2(sml[2]-yval)% kWh
+Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
+Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
+Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
+Uptime{m}%0uptime% min
+$<center><span style="font-size:10px;">
+$Version 24.09.2025 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
+$</span></center>
+
+
+; SML Sektion an euren Stromzähler anpassen
+; Anleitung: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#4c
+; Reihenfolge nicht ändern: 1=(Gesamt)Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]
+; https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-definition
+>M 1
+; Beispiel MT175 mit HichiV2
++1,3,s,0,9600,MT175,1
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
+#

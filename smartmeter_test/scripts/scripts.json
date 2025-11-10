@@ -1,6 +1,0 @@
-{
-	"script": [
-		{ "label": "2_SML_Script_Chart_PV", "filename": "2_SML_Script_Chart_PV.tas" },
-		{ "label": "http_select_script", "filename": "http_select_script.tas" }
-	]
-}
