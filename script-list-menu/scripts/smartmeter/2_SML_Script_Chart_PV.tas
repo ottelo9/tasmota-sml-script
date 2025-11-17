@@ -150,7 +150,10 @@ if eres==1 {
 svars
 eres=0
 }
+>F
+tmp=fe("/sml_ftask.tas")
 >S
+tmp=fe("/sml_stask.tas")
 if (save==1) {
 save=0
 =#save
