@@ -23,6 +23,10 @@ if ((mins==31) and (lnv0==1) {
 lnv0=0
 print lnv0 reset
 }
+if (sml[1] > 0) {
+smlj=1
+print mqtt activated
+}
 
 >M 1
 +1,%0rxpin%,rE1,0,2400,ALLMESS,%0txpin%
