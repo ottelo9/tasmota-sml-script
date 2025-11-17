@@ -8,6 +8,7 @@ p:sel=0
 tmp=0
 
 >B
+smlj=0
 rxpin=rxind-1
 txpin=txind-1
 ->sensor53 r
@@ -19,6 +20,10 @@ tmp=fe("/sml_ftask.tas")
 tmp=fe("/sml_stask.tas")
 if year<2025 {
 break
+}
+if (sml[2]>0) {
+smlj=1
+print enabled MQTT
 }
 if ((chg[rxind]>0) or (chg[txind]>0)) {
 rxpin=rxind-1

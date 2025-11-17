@@ -1,32 +1,5 @@
->B
-smlj=0
-->sensor53 r
-
->BS
-=#readmeter
-
 >S
-if sb(tstamp 14 2)=="30"
-and lnv0==0
-then
-=#readmeter
-lnv0=1
-print lnv0 set
-endif
-if sb(tstamp 14 2)=="31"
-and lnv0==1
-then
-lnv0=0
-print lnv0 reset
-endif
-if sml[1]>0
-and smlj==0
-then
-smlj=1
-print enabled MQTT
-endif
-
-#readmeter
+if ((mins==30) and (lnv0==0) {
 print wakeup start
 ;set serial protocol
 sml(-1 1 "2400:8N1")
@@ -43,6 +16,13 @@ sml(-1 1 "2400:8E1")
 print request data
 ;request data with "105BFE5B16"
 sml(1 1 "105BFE5916")
+lnv0=1
+print lnv0 set
+}
+if ((mins==31) and (lnv0==1) {
+lnv0=0
+print lnv0 reset
+}
 
 >M 1
 +1,%0rxpin%,rE1,0,2400,ALLMESS,%0txpin%

@@ -166,7 +166,6 @@ if (year<2020) {
 print auf NTP warten
 break
 }
-smlj=1
 idx4=int((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1)
 idx24=int(hours*60+mins+1)
 s4h[0]=idx4/5
@@ -181,6 +180,7 @@ rxpin=rxind-1
 if (sml[2]==0) {
 break
 }
+smlj=1
 if (t1==0) {
 t1=5
 avgv+=sml[1]
