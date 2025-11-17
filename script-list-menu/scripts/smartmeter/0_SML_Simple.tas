@@ -5,13 +5,18 @@ txpin=1
 p:rxind=4
 p:txind=2
 p:sel=0
+tmp=0
 
 >B
 rxpin=rxind-1
 txpin=txind-1
 ->sensor53 r
 
+>F
+tmp=fe("/sml_ftask.tas")
+
 >S
+tmp=fe("/sml_stask.tas")
 if year<2025 {
 break
 }
@@ -28,7 +33,7 @@ svars
 eres=0
 }
 
->WM
+>W
 so(17)
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl" sel)
 pd(rxind "RX Pin: " 50 "#g")
