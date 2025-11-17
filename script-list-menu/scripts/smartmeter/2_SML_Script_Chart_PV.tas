@@ -281,6 +281,6 @@ $<button onclick="history.back()">Zurück</button>
 $<hr>
 $<div><button type="submit" onclick="if(confirm('Werte initialisieren?')){seva(1,'rst');}">Tages/Monats/Jahreswerte initialisieren</button></div>
 so(17)
-smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meter-descriptor" "Stromzählerauswahl" sel)
+smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl" sel)
 pd(rxind "RX Pin: " 50 "#g")
 pd(txind "TX Pin: " 50 "#g")
