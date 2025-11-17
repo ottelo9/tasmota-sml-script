@@ -1,9 +1,8 @@
 >D 100
-; 2_SML_Script_Chart_PV
-M:p:sday=0 288
-M:p:dcon=0 31
-M:p:dprod=0 31
-M:p:mcon=0 24
+M:sday=0 1441
+M:dcon=0 31
+M:dprod=0 31
+M:mcon=0 24
 M:s4h=0 481
 p:mval=0
 p:dval=0
@@ -15,13 +14,16 @@ p:da=1
 p:rxind=4
 p:txind=2
 p:sel=0
-t:t1=3
+t:t1=5
 t:t2=30
 t:t3=60
+rxpin=3
+txpin=1
 tmp=0
-m5=0
-cstr="cnt0/12"
-cstr2="cnth0/120"
+idx4=0
+idx24=0
+cstr="cnt0/120"
+cstr2="cnth0/60"
 utm="00d 00h 00m"
 avgv=0
 avgv2=0
@@ -32,37 +34,50 @@ swesp=0
 swespflg=0
 power2=0
 save=0
-rxpin=3
-txpin=1
-
+rst=0
+fr=0
 >B
 rxpin=rxind-1
 txpin=txind-1
 ->sensor53 r
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 smlj=0
-
+=#load
+#save
+print saving arrays
+dp2
+fr=fo("data.csv" w)
+if fr>=0 {
+fwa(s4h fr)
+fwa(sday fr)
+fwa(dcon fr)
+fwa(dprod fr)
+fwa(mcon fr)
+fc(fr)
+} else {
+print file error: %fr%
+}
+svars
+#load
+print loading arrays
+dp2
+fr=fo("data.csv" r)
+fra(s4h fr)
+fra(sday fr)
+fra(dcon fr)
+fra(dprod fr)
+fra(mcon fr)
+fc(fr)
 #init
 dval=sml[2]
 dval2=sml[3]
-for tmp 1 dcon[-1] 1
-dcon[tmp]=0
-dprod[tmp]=0
-next
 mval=sml[2]
 mval2=sml[3]
-for tmp 1 mcon[-1] 1
-mcon[tmp]=0
-next
 yval=sml[2]
 yval2=sml[3]
-for tmp 1 sday[-1] 1
-sday[tmp]=0
-next
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
-svars
-
+=#save
 #daysub
 if wm>0 {
 wcs <div id="day" style="text-align:center;width:600px;height:400px"></div>
@@ -85,7 +100,6 @@ wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('day'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
-
 #dayprod
 if wm>0 {
 wcs <div id="dayp" style="text-align:center;width:600px;height:400px"></div>
@@ -108,7 +122,6 @@ wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('dayp'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
-
 #monthsub
 if wm>0 {
 wcs <div id="month" style="text-align:center;width:600px;height:400px"></div>
@@ -131,22 +144,45 @@ wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
-
+>C
+if eres==1 {
+->sensor53 r
+svars
+eres=0
+}
 >S
 if (save==1) {
 save=0
-svars
+=#save
 }
-if ((year<2020) or (sml[2]==0)) {
-print auf NTP/Zähler warten
+if (rst==1) {
+rst=0
+=#init
+}
+if (year<2020) {
+print auf NTP warten
 break
 }
 smlj=1
+idx4=int((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1)
+idx24=int(hours*60+mins+1)
+s4h[0]=idx4/5
+sday[0]=idx24
+cstr="cnth"+s(0idx4)+"/120"
+cstr2="cnth"+s(0idx24)+"/60"
+if ((chg[rxind]>0) or (chg[txind]>0)) {
+rxpin=rxind-1
+->sensor53 r
+=#save
+}
+if (sml[2]==0) {
+break
+}
 if (t1==0) {
-t1=3
+t1=5
 avgv+=sml[1]
-avgv2+=sml[1]
 avgvc+=1
+avgv2+=sml[1]
 avgvc2+=1
 power2=(0.9*power2)+((1-0.9)*sml[1])
 if (swesp==1) {
@@ -160,10 +196,9 @@ swespflg=0
 }
 if (t2==0) {
 t2=30
-s4h=avgv/avgvc
+s4h[idx4/5]=int(avgv/avgvc)
 avgv=0
 avgvc=0
-cstr2="cnth"+s(1.0((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1))+"/120"
 }
 if (t3==0) {
 t3=60
@@ -173,14 +208,9 @@ dcon[day]=sml[2]-dval
 mcon[month]=sml[2]-mval
 dprod[day]=sml[3]-dval2
 mcon[month+12]=sml[3]-mval2
-m5=int((((hours*60)+mins)/5)+1)
-sday[0]=m5
-if (chg[m5]>0) {
-sday[m5]=int(avgv2/avgvc2)
+sday=int(avgv2/avgvc2)
 avgv2=0
 avgvc2=0
-}
-cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
 if ((chg[hr]>0) and (hr==0)) {
 if (day>1) {
 da=day
@@ -198,22 +228,9 @@ yval2=sml[3]
 }
 dval=sml[2]
 dval2=sml[3]
-svars
+=#save
 }
 }
-if ((chg[rxind]>0) or (chg[txind]>0)) {
-rxpin=rxind-1
-->sensor53 r
-svars
-}
-
->C
-if eres==1 {
-=>sensor53 r
-svars
-eres=0
-}
-
 >W
 bu(save "gespeichert!" "Daten sofort speichern")
 Leistung (gefiltert){m}%0power2% W
@@ -227,7 +244,7 @@ Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2
 Uptime{m}%utm%
 $<div style="margin-left:-30px">
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt s4h "wr" "Leistung [W]" cstr2)
+$gc(lt s4h "wr" "Leistung [W]" cstr)
 $var options = {
 $chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
@@ -239,7 +256,7 @@ $title:'Leistung 4 Stunden [Watt]'
 $};
 $gc(e)
 $<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt sday "wr" "Leistung [W]" cstr)
+$gc(lt sday "wr" "Leistung [W]" cstr2)
 $var options = {
 $chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
@@ -254,15 +271,16 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 29.09.2025 (PV) by ottelo.jimdo.de<br>
+$Version 17.11.2025 (PV) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
-
->WS
->WM
+>w Stromzählerauswahl
+$<button onclick="history.back()">Zurück</button>
+$<hr>
+$<div><button type="submit" onclick="if(confirm('Werte initialisieren?')){seva(1,'rst');}">Tages/Monats/Jahreswerte initialisieren</button></div>
 so(17)
-smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test" "Stromzählerauswahl" sel)
+smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meter-descriptor" "Stromzählerauswahl" sel)
 pd(rxind "RX Pin: " 50 "#g")
 pd(txind "TX Pin: " 50 "#g")

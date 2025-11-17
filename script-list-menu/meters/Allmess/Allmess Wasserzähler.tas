@@ -1,0 +1,53 @@
+>B
+smlj=0
+->sensor53 r
+
+>BS
+=#readmeter
+
+>S
+if sb(tstamp 14 2)=="30"
+and lnv0==0
+then
+=#readmeter
+lnv0=1
+print lnv0 set
+endif
+if sb(tstamp 14 2)=="31"
+and lnv0==1
+then
+lnv0=0
+print lnv0 reset
+endif
+if sml[1]>0
+and smlj==0
+then
+smlj=1
+print enabled MQTT
+endif
+
+#readmeter
+print wakeup start
+;set serial protocol
+sml(-1 1 "2400:8N1")
+;send 0x55 for 2,2 seconds with 8N1 (53x), 2400 baud (wakeup sequence)
+for lnv1 1 53 1
+sml(1 1 "55555555555555555555")
+next
+print wakeup end
+lnv1=1
+print wait for the meter
+delay(800)
+;switch serial protocol
+sml(-1 1 "2400:8E1")
+print request data
+;request data with "105BFE5B16"
+sml(1 1 "105BFE5916")
+
+>M 1
++1,%0rxpin%,rE1,0,2400,ALLMESS,%0txpin%
+1,=so3,16
+1,0411250413uuUU@1000,Zählerstand,m³,qm_total,3
+1,046Dxxxxxxxx0227uuUU@1,Betreibszeit,Tage,oper_days,0
+1,0411xxxxxx0e16uuUU@1,Auslesung,mal,readout,0
+#

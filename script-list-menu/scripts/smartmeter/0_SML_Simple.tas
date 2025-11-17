@@ -1,5 +1,5 @@
 >D 100
-; http_select_script
+; 0_SML_Simple
 rxpin=3
 txpin=1
 p:rxind=4
@@ -28,9 +28,8 @@ svars
 eres=0
 }
 
->WS
 >WM
 so(17)
-smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/smartmeter_test" "Stromzählerauswahl" sel)
+smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl" sel)
 pd(rxind "RX Pin: " 50 "#g")
 pd(txind "TX Pin: " 50 "#g")
