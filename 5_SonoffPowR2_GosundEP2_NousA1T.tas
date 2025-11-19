@@ -76,16 +76,16 @@ smlj=0
 
 ; -- SUBS --
 #init
-dval=enrg[10]
+dval=enrg[0]
 for tmp 1 dcon[-1] 1
 	dcon[tmp]=0
 	dprod[tmp]=0
 next
-mval=enrg[10]
+mval=enrg[0]
 for tmp 1 mcon[-1] 1
 	mcon[tmp]=0
 next
-yval=enrg[10]
+yval=enrg[0]
 for tmp 1 sday[-1] 1
 	sday[tmp]=0
 next
@@ -191,13 +191,13 @@ if (t3==0) {
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
 	; Tagesverbrauch [kWh]
-	dcon[day]=enrg[10]-dval
+	dcon[day]=enrg[0]-dval
 	; Monatsverbrauch [kWh]
-	mcon[month]=enrg[10]-mval
+	mcon[month]=enrg[0]-mval
 	
 	;=>publish stat/%topic%/script/consday %2(dcon[day])%
 	;=>publish stat/%topic%/script/consmonth %2(mcon[month])%
-	;=>publish stat/%topic%/script/consyear %2(enrg[10]-yval)%
+	;=>publish stat/%topic%/script/consyear %2(enrg[0]-yval)%
 
 	; 24h Chart. Berechne Durschnittsleistung [W] der letzten 5min => ins Array[1-288]
 	m5=int((((hours*60)+mins)/5)+1)
@@ -223,14 +223,14 @@ if (t3==0) {
 				dcon[tmp]=0
 			next
 			; monthly values
-			mval=enrg[10]
+			mval=enrg[0]
 		}
 		if (day*month==1) {
 			; Jahreswechsel
-			yval=enrg[10]
+			yval=enrg[0]
 		}
 		; daily values
-		dval=enrg[10]
+		dval=enrg[0]
 		; nur 1x um Mitternacht speichern
 		svars
 	}
@@ -251,9 +251,9 @@ bu(save "gespeichert!" "Daten sofort speichern")
 ;sl(4000 20000 vn "4 kW" "12 kW" "20 kW")
 
 ; Verbrauch
-Tagesverbrauch{m}%2(enrg[10]-dval)% kWh
-Monatsverbrauch{m}%2(enrg[10]-mval)% kWh
-Jahresverbrauch{m}%2(enrg[10]-yval)% kWh
+Tagesverbrauch{m}%2(enrg[0]-dval)% kWh
+Monatsverbrauch{m}%2(enrg[0]-mval)% kWh
+Jahresverbrauch{m}%2(enrg[0]-yval)% kWh
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
@@ -304,8 +304,8 @@ $gc(e)
 
 $<center><span style="font-size:10px;">
 $Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung
-$Version 29.09.2025 by ottelo.jimdo.de<br>
-$Credits to gemu2015 (Tasmota Script Dev)<br>
+$Version 19.11.2025 by ottelo.jimdo.de<br>
+$Credits to gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
