@@ -1,10 +1,10 @@
 >S
-if ((mins==30) and (lnv0==0) {
+if ((mins==30) and (lnv0==0)) {
 =#readmeter
 lnv0=1
 print lnv0 set
 }
-if ((mins==31) and (lnv0==1) {
+if ((mins==31) and (lnv0==1)) {
 lnv0=0
 print lnv0 reset
 }
