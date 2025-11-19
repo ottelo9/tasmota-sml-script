@@ -1,5 +1,19 @@
 >S
 if ((mins==30) and (lnv0==0) {
+=#readmeter
+lnv0=1
+print lnv0 set
+}
+if ((mins==31) and (lnv0==1) {
+lnv0=0
+print lnv0 reset
+}
+if (sml[1] > 0) {
+smlj=1
+print mqtt activated
+}
+
+#readmeter
 print wakeup start
 ;set serial protocol
 sml(-1 1 "2400:8N1")
@@ -16,22 +30,11 @@ sml(-1 1 "2400:8E1")
 print request data
 ;request data with "105BFE5B16"
 sml(1 1 "105BFE5916")
-lnv0=1
-print lnv0 set
-}
-if ((mins==31) and (lnv0==1) {
-lnv0=0
-print lnv0 reset
-}
-if (sml[1] > 0) {
-smlj=1
-print mqtt activated
-}
 
 >M 1
 +1,%0rxpin%,rE1,0,2400,ALLMESS,%0txpin%
 1,=so3,16
 1,0411250413uuUU@1000,Zählerstand,m³,qm_total,3
-1,046Dxxxxxxxx0227uuUU@1,Betreibszeit,Tage,oper_days,0
+1,046Dxxxxxxxx0227uuUU@1,Betriebszeit,Tage,oper_days,0
 1,0411xxxxxx0e16uuUU@1,Auslesung,mal,readout,0
 #
