@@ -305,7 +305,7 @@ $gc(e)
 $<center><span style="font-size:10px;">
 $Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung<br>
 $Version 19.11.2025 by ottelo.jimdo.de<br>
-$Credits to gemu2015 (Tasmota Script Dev)<br>
+$Credits to gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
