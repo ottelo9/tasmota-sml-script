@@ -1,0 +1,6 @@
+>M 1
++1,%0rxpin%,o,0,300,ACE3000,4,150,2F3F210D0A
+1,1.8.0(@1,Leistung,W,power,0
+1,1.8.0(@1,Total_in,KWh,Total_inZ1,2
+1,2.8.0(@1,Total_out,KWh,Total_exZ1,2
+#

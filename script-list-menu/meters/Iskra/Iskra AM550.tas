@@ -1,0 +1,19 @@
+>F
+lnv0+=1
+switch lnv0
+case 6
+sml(1 0 300)
+sml(1 1 "2F3F210D0A")
+case 18
+sml(1 1 "063035300D0A")
+case 20
+sml(1 0 9600)
+case 80
+lnv0=0
+ends
+
+>M 1
++1,%0rxpin%,o,0,9600,Zähler,%0txpin%
+1,1-0:1.8.0(@1,Bezug,kWh,1-8-0,2
+1,1-0:2.8.0(@1,Einspeisung,kWh,2-8-0,2
+#

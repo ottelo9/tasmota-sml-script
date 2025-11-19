@@ -1,0 +1,6 @@
+>M 1
++1,%0rxpin%,o,0,300,ITZ,4,300,2F3F210D0A
+1,1.8.0(@1,Leistung,kWh,E_in,0
+1,1.8.0(@1,Verbrauch,kWh,E_in,2
+1,2.8.0(@1,Einspeisung,kWh,E_out,2
+#

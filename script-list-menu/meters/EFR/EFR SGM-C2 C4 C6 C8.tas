@@ -1,0 +1,17 @@
+>M 1
++1,%0rxpin%,s,0,9600,SGM,%0txpin%
+1,=soC,1024,0
+1,77070100100700ff@1,Leistung,W,Power,0
+1,77070100010800ff@1000,Verbrauch,kWh,E_in,3
+1,77070100020800ff@1000,Einspeisung,kWh,E_out,3
+1,=h--
+1,77070100240700ff@1,Leistung_L1,W,power_L1,0
+1,77070100380700ff@1,Leistung_L2,W,power_L2,0
+1,770701004c0700ff@1,Leistung_L3,W,power_L3,0
+1,77070100200700ff@1,Voltage L1,V,Voltage,1
+1,77070100340700ff@1,Voltage L2,V,Voltage_L2,1
+1,77070100480700ff@1,Voltage L3,V,Voltage_L3,1
+1,770701001f0700ff@1,Current L1,A,Current,2
+1,77070100330700ff@1,Current L2,A,Current_L2,2
+1,77070100470700ff@1,Current L3,A,Current_L3,2
+#

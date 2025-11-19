@@ -1,0 +1,26 @@
+>F
+lnv0+=1
+switch lnv0
+case 6
+sml(1 0 300)
+sml(1 1 "2F3F210D0A")
+case 18
+sml(1 1 "063035300D0A")
+case 20
+sml(1 0 9600)
+case 50
+lnv0=0
+ends
+
+>M 1
++1,%0rxpin%,o,0,9600,T510,%0txpin%
+1,=m 4+5+6 @1,Leistung,W,Power_total,0
+1,1.8.0(@1,Zählerstand,kWh,Total_in,3
+1,=h--
+1,21.7.0(@0.001,Leistung Phase 1,W,Power_L1,0
+1,41.7.0(@0.001,Leistung Phase 2,W,Power_L2,0
+1,61.7.0(@0.001,Leistung Phase 3,W,Power_L3,0
+1,31.7.0(@1,Strom Phase 1,A,Current_L1,2
+1,51.7.0(@1,Strom Phase 2,A,Current_L2,2
+1,71.7.0(@1,Strom Phase 3,A,Current_L3,2
+#

@@ -1,0 +1,17 @@
+>S
+lnv0+=1
+switch lnv0
+case 1
+sml(1 0 1200)
+sml(1 1 "3F10020044004A")
+;Abfrage nur 1mal pro Stunde, um Batterie im Zähler nicht leer zu machen.
+case 3600
+lnv0=0
+ends
+
+>M 1
++1,%0rxpin%,kN2,0,1200,KSMC403,%0txpin%
+1,=so3,90
+1,3F100044kstr@i0:1000,Zählerstand,m³,Zählerstand,19
+1,3F10x8xx004Akstr@i0:1,Fließgeschw.,l/h,Flow,0
+#

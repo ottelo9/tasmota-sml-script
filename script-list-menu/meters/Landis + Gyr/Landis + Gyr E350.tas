@@ -1,0 +1,20 @@
+>F
+lnv0+=1
+switch lnv0
+case 6
+sml(1 0 300)
+sml(1 1 "2F3F210D0A")
+case 18
+sml(1 1 "063035300D0A")
+case 20
+sml(1 0 9600)
+case 50
+lnv0=0
+ends
+
+>M 1
++1,%0rxpin%,o,0,9600,E350,%0txpin%
+1,16.7(@1,Current power,kW,Power_in,2
+1,1.8.0(@1,Total Consumed,kWh,Total_in,3
+1,2.8.0(@1,Total Delivered,kWh,Total_out,3
+#

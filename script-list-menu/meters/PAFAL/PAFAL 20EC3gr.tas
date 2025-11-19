@@ -1,0 +1,8 @@
+>M 1
++1,%0rxpin%,o,0,300,PAFAL,%0txpin%,30,2F3F210D0A,063030300D0A
+1,1.8.0*00(@1),Leistung,W,power,0
+1,1.8.0*00(@1),Gesamtverbrauch,kWh,E_in,2
+1,2.8.0*00(@1),Einspeisung,kWh,Total_OUT,2
+1,1.8.1*00(@1),Gesamtverbrauch_HT,kWh,E_in-HT,2
+1,1.8.2*00(@1),Gesamtverbrauch_NT,kWh,E_in-NT,2
+#

@@ -1,0 +1,16 @@
+>F
+lnv0+=1
+switch lnv0
+case 3
+sml(1 0 300)
+sml(1 1 "2F3F210D0A")
+case 3000
+lnv0=0
+ends
+
+>M 1
++1,%0rxpin%,o,0,300,EMH,%0txpin%
+1,0.0.0(@1,Zähler-Nr.,,0_0_0,0
+1,1.8.0(@1,WirkEnBezug,kWh,1_8_0,3
+1,2.8.0(@1,WirkEnEinsp,kWh,2_8_0,3
+#

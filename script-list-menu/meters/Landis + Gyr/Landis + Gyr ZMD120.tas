@@ -1,0 +1,23 @@
+>F
+lnv0+=1
+switch lnv0
+case 6
+sml(1 0 300)
+sml(1 1 "2F3F210D0A")
+case 18
+sml(1 1 "063034300D0A")
+case 20
+sml(1 0 4800)
+case 50
+lnv0=0
+ends
+
+>M 1
++1,%0rxpin%,o,0,4800,ZMD120,%0txpin%
+1,1.8.1(@1,Leistung,W,power,0
+1,1.8.1(@1,Verbrauch HT,kWh,EinHT,3
+1,2.8.1(@1,Einspeisung HT,kWh,EoutHZ,3
+1,=h===================
+1,1.8.2(@1,Verbrauch NT,kWh,EinNT,3
+1,2.8.2(@1,Einspeisung NT,kWh,EoutNT,3
+#

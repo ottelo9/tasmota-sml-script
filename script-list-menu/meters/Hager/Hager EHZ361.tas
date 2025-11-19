@@ -1,0 +1,15 @@
+>M 1
++1,%0rxpin%,o,0,9600,EHZ361,%0txpin%
+1,1-0:31.7.0*255(@1,Leistung,W,power,0
+1,1-0:1.8.0*255(@1,Verbrauch,kWh,Pin,4
+1,1-0:2.8.0*255(@1,Einspeisung,kWh,Pout,4
+1,1-0:32.7.0*255(@1,Volt_L1,V,volt_l1,2
+1,1-0:52.7.0*255(@1,Volt_L2,V,volt_l2,2
+1,1-0:72.7.0*255(@1,Volt_L3,V,volt_l3,2
+1,1-0:31.7.0*255(@1,Ampere_L1,A,curr_L1,2
+1,1-0:51.7.0*255(@1,Ampere_L2,A,curr_L2,2
+1,1-0:71.7.0*255(@1,Ampere_L3,A,curr_L3,2
+1,1-0:21.7.0*255(@1,Watt_L1,W,watt_l1,0
+1,1-0:41.7.0*255(@1,Watt_L2,W,watt_l2,0
+1,1-0:61.7.0*255(@1,Watt_L3,W,watt_l3,0
+#
