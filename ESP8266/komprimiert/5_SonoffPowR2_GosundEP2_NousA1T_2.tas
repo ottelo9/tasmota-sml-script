@@ -24,16 +24,16 @@ save=0
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 smlj=0
 #init
-dval=enrg[10]
+dval=enrg[0]
 for tmp 1 dcon[-1] 1
 dcon[tmp]=0
 dprod[tmp]=0
 next
-mval=enrg[10]
+mval=enrg[0]
 for tmp 1 mcon[-1] 1
 mcon[tmp]=0
 next
-yval=enrg[10]
+yval=enrg[0]
 for tmp 1 sday[-1] 1
 sday[tmp]=0
 next
@@ -108,8 +108,8 @@ if (t3==0) {
 t3=60
 hr=hours
 utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
-dcon[day]=enrg[10]-dval
-mcon[month]=enrg[10]-mval
+dcon[day]=enrg[0]-dval
+mcon[month]=enrg[0]-mval
 m5=int((((hours*60)+mins)/5)+1)
 sday[0]=m5
 if (chg[m5]>0) {
@@ -125,20 +125,20 @@ da=day
 for tmp (da+1) 31 1
 dcon[tmp]=0
 next
-mval=enrg[10]
+mval=enrg[0]
 }
 if (day*month==1) {
-yval=enrg[10]
+yval=enrg[0]
 }
-dval=enrg[10]
+dval=enrg[0]
 svars
 }
 }
 >W
 bu(save "gespeichert!" "Daten sofort speichern")
-Tagesverbrauch{m}%2(enrg[10]-dval)% kWh
-Monatsverbrauch{m}%2(enrg[10]-mval)% kWh
-Jahresverbrauch{m}%2(enrg[10]-yval)% kWh
+Tagesverbrauch{m}%2(enrg[0]-dval)% kWh
+Monatsverbrauch{m}%2(enrg[0]-mval)% kWh
+Jahresverbrauch{m}%2(enrg[0]-yval)% kWh
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
 Uptime{m}%utm%
 $<div style="margin-left:-30px">
@@ -169,8 +169,8 @@ $gc(e)
 %=#daysub
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung
-$Version 29.09.2025 by ottelo.jimdo.de<br>
+$Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung<br>
+$Version 19.11.2025 by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
