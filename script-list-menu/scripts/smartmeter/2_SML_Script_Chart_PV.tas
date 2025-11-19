@@ -151,9 +151,9 @@ svars
 eres=0
 }
 >F
-tmp=fe("/sml_ftask.tas")
+tmp=fe("sml_ftask.tas")
 >S
-tmp=fe("/sml_stask.tas")
+tmp=fe("sml_stask.tas")
 if (save==1) {
 save=0
 =#save
@@ -274,8 +274,8 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 17.11.2025 (PV) by ottelo.jimdo.de<br>
-$Credits to gemu2015 (Tasmota Script Dev)<br>
+$Version 19.11.2025 (PV) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
