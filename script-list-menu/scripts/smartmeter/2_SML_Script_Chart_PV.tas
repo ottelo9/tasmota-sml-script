@@ -1,5 +1,5 @@
 >D 100
-M:sday=0 1441
+M:sday=0 1440
 M:dcon=0 31
 M:dprod=0 31
 M:mcon=0 24
@@ -22,8 +22,8 @@ txpin=1
 tmp=0
 idx4=0
 idx24=0
-cstr="cnt0/120"
-cstr2="cnth0/60"
+cstr="cnth0/120"
+cstr2="cnth0/30"
 utm="00d 00h 00m"
 avgv=0
 avgv2=0
@@ -167,11 +167,11 @@ print auf NTP warten
 break
 }
 idx4=int((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1)
-idx24=int(hours*60+mins+1)
+idx24=int(hours*30+mins+1)
 s4h[0]=idx4/5
 sday[0]=idx24
 cstr="cnth"+s(0idx4)+"/120"
-cstr2="cnth"+s(0idx24)+"/60"
+cstr2="cnth"+s(0idx24)+"/30"
 if ((chg[rxind]>0) or (chg[txind]>0)) {
 rxpin=rxind-1
 ->sensor53 r
@@ -274,7 +274,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 19.11.2025 (PV) by ottelo.jimdo.de<br>
+$Version 26.11.2025 (PV) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
