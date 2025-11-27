@@ -3,7 +3,7 @@ M:sday=0 1440
 M:dcon=0 31
 M:dprod=0 31
 M:mcon=0 24
-M:s4h=0 481
+M:s4h=0 480
 p:mval=0
 p:dval=0
 p:mval2=0
@@ -75,6 +75,8 @@ mval=sml[2]
 mval2=sml[3]
 yval=sml[2]
 yval2=sml[3]
+acp(sday 0)
+acp(dcon 0)
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
@@ -166,12 +168,16 @@ if (year<2020) {
 print auf NTP warten
 break
 }
-idx4=int((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1)
-idx24=int(hours*30+mins+1)
-s4h[0]=idx4/5
+tmp=hours-4
+if (tmp<0) {
+tmp+=24
+}
+idx4=tmp*120+(mins*2)
+idx24=(hours*60+mins)
+s4h[0]=idx4
 sday[0]=idx24
 cstr="cnth"+s(0idx4)+"/120"
-cstr2="cnth"+s(0idx24)+"/30"
+cstr2="cnth"+s(0idx24)+"/60"
 if ((chg[rxind]>0) or (chg[txind]>0)) {
 rxpin=rxind-1
 ->sensor53 r
