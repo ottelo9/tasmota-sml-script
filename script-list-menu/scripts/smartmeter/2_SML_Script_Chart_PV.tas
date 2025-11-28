@@ -173,8 +173,8 @@ if (tmp<0) {
 tmp+=24
 }
 idx4=tmp*120+(mins*2)
+s4h[0]=idx4%s4h[-1]
 idx24=(hours*60+mins)
-s4h[0]=idx4
 sday[0]=idx24
 cstr="cnth"+s(0idx4)+"/120"
 cstr2="cnth"+s(0idx24)+"/60"
@@ -205,7 +205,7 @@ swespflg=0
 }
 if (t2==0) {
 t2=30
-s4h[idx4/5]=int(avgv/avgvc)
+s4h=int(avgv/avgvc)
 avgv=0
 avgvc=0
 }
@@ -280,7 +280,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 26.11.2025 (PV) by ottelo.jimdo.de<br>
+$Version 28.11.2025 (PV) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
 $Der Restart Button speichert ebenfalls die Daten.<br>
