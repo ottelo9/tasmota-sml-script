@@ -1,9 +1,9 @@
 >D 100
-M:sday=0 1440
+M:s4h=0 480
+M:s24h=0 1440
 M:dcon=0 31
 M:dprod=0 31
 M:mcon=0 24
-M:s4h=0 480
 p:mval=0
 p:dval=0
 p:mval2=0
@@ -49,7 +49,7 @@ dp2
 fr=fo("data.csv" w)
 if fr>=0 {
 fwa(s4h fr)
-fwa(sday fr)
+fwa(s24h fr)
 fwa(dcon fr)
 fwa(dprod fr)
 fwa(mcon fr)
@@ -63,7 +63,7 @@ print loading arrays
 dp2
 fr=fo("data.csv" r)
 fra(s4h fr)
-fra(sday fr)
+fra(s24h fr)
 fra(dcon fr)
 fra(dprod fr)
 fra(mcon fr)
@@ -75,8 +75,8 @@ mval=sml[2]
 mval2=sml[3]
 yval=sml[2]
 yval2=sml[3]
-acp(sday 0)
-acp(dcon 0)
+acp(s4h 0)
+acp(s24h 0)
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
@@ -168,16 +168,6 @@ if (year<2020) {
 print auf NTP warten
 break
 }
-tmp=hours-4
-if (tmp<0) {
-tmp+=24
-}
-idx4=tmp*120+(mins*2)
-s4h[0]=idx4%s4h[-1]
-idx24=(hours*60+mins)
-sday[0]=idx24
-cstr="cnth"+s(0idx4)+"/120"
-cstr2="cnth"+s(0idx24)+"/60"
 if ((chg[rxind]>0) or (chg[txind]>0)) {
 rxpin=rxind-1
 ->sensor53 r
@@ -205,6 +195,16 @@ swespflg=0
 }
 if (t2==0) {
 t2=30
+tmp=hours-4
+if (tmp<0) {
+tmp+=24
+}
+idx4=tmp*120+(mins*2)+int(secs/30)
+s4h[0]=idx4%s4h[-1]
+idx24=(hours*60+mins)
+s24h[0]=idx24
+cstr="cnth"+s(0idx4)+"/720"
+cstr2="cnth"+s(0idx24)+"/60"
 s4h=int(avgv/avgvc)
 avgv=0
 avgvc=0
@@ -217,7 +217,7 @@ dcon[day]=sml[2]-dval
 mcon[month]=sml[2]-mval
 dprod[day]=sml[3]-dval2
 mcon[month+12]=sml[3]-mval2
-sday=int(avgv2/avgvc2)
+s24h=int(avgv2/avgvc2)
 avgv2=0
 avgvc2=0
 if ((chg[hr]>0) and (hr==0)) {
@@ -265,7 +265,7 @@ $title:'Leistung 4 Stunden [Watt]'
 $};
 $gc(e)
 $<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt sday "wr" "Leistung [W]" cstr2)
+$gc(lt s24h "wr" "Leistung [W]" cstr2)
 $var options = {
 $chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
@@ -280,10 +280,9 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 28.11.2025 (PV) by ottelo.jimdo.de<br>
-$Credits to gemu2015 (ScriptEngine V%vers%)<br>
-$Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
-$Der Restart Button speichert ebenfalls die Daten.<br>
+$Version 28.11.2025 (PV) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Hinweis: Alle Werte werden immer nur um Mitternacht automatisch gespeichert!<br>
+$4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
 >w Stromzählerauswahl
 $<button onclick="history.back()">Zurück</button>
