@@ -197,6 +197,7 @@ s24h=s24hf
 cstr="cnth"+s(0idx4)+"/120"
 cstr2="cnth"+s(0idx24)+"/60"
 power2=(0.9*power2)+((1-0.9)*sml[1])
+=>publish stat/%topic%/script/power2 %power2%
 if (swesp==1) {
 if ((power2<-300) and (swespflg==0)) {
 swespflg=1

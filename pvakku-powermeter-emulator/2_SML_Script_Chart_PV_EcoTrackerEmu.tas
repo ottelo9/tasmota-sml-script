@@ -293,7 +293,7 @@ if (t1==0) {
 	
 	; Optional: stark gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
 	power2=(0.9*power2)+((1-0.9)*sml[1])
-	;=>publish stat/%topic%/script/power2 %power2%
+	=>publish stat/%topic%/script/power2 %power2%
 
 	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
