@@ -2,6 +2,6 @@
 	"script": [
 		{ "label": "0_SML_Simple", "filename": "smartmeter/0_SML_Simple.tas" },
 		{ "label": "2_SML_Script_Chart_PV", "filename": "smartmeter/2_SML_Script_Chart_PV.tas" },
-		{ "label": "2_SML_Script_Chart_PV_EcoTrackerEmu", "filename": "pvakku-powermeter-emulator/2_SML_Script_Chart_PV_EcoTrackerEmu.tas" },
+		{ "label": "2_SML_Script_Chart_PV_EcoTrackerEmu", "filename": "pvakku-powermeter-emulator/2_SML_Script_Chart_PV_EcoTrackerEmu.tas" }
 	]
 }
