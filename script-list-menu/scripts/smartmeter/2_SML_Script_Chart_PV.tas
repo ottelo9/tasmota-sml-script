@@ -220,7 +220,6 @@ dval2=sml[3]
 }
 }
 >W
-bu(_save "" "Daten sofort speichern")
 Leistung (gefiltert){m}%0power2% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
@@ -266,8 +265,8 @@ $</span></center></div>
 >w Stromzählerauswahl
 $<button onclick="history.back()">Zurück</button>
 $<hr>
-$<div>
-$<button type="submit" onclick="if(confirm('Werte initialisieren?')){seva(1,'_init');}">Tages/Monats/Jahreswerte initialisieren</button></div>
+$<div><button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button><br>
+$<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>
 so(17)
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl" sel)
 pd(rxind "RX Pin: " 50 "#g")
