@@ -1,9 +1,9 @@
 >D 100
 ; 0_SML_Simple
-rxpin=3
-txpin=1
-p:rxind=4
-p:txind=2
+rxpin=0
+txpin=0
+p:rxind=1
+p:txind=1
 p:sel=0
 tmp=0
 

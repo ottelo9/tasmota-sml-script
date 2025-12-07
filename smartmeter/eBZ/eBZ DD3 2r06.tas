@@ -1,0 +1,19 @@
+>D
+
+>B
+=>sensor53 r
+tper=10
+
+>M 1
++1,3,s,16,9600,eBZ,1
+1,77070100100700ff@1,aktuelle Leistung,W,Power,0
+1,77070100010800ff@100000000,Energie Verbrauch,kWh,E_in,3
+1,77070100020800ff@100000000,Energie Einspeisung,kWh,E_out,3
+1,=h--
+1,77070100240700FF@1,Leistung L1,W,36_7_0,0
+1,77070100380700FF@1,Leistung L2,W,56_7_0,0
+1,770701004C0700FF@1,Leistung L3,W,76_7_0,0
+1,77070100200700FF@1,Spannung L1,V,32_7_0,1
+1,77070100340700FF@1,Spannung L2,V,52_7_0,1
+1,77070100480700FF@1,Spannung L3,V,72_7_0,1
+#
