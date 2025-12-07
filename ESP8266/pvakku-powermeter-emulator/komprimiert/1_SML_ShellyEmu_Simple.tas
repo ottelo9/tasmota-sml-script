@@ -1,0 +1,118 @@
+>D 250
+p:dval=0
+p:dval2=0
+p:mval2=0
+p:mval=0
+p:yval=0
+p:yval2=0
+t:t1=60
+tmp=0
+save=0
+hr=0
+res=0
+c1p=0
+c2p=0
+c3p=0
+c1c=0
+c2c=0
+c3c=0
+cpwr=0
+str=""
+mstr1=""
+mstr2=""
+header=""
+once=0
+throttle=1
+>B
+=>sensor53 r
+smlj=0
+header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
+#init
+dval=sml[2]
+dval2=sml[3]
+mval=sml[2]
+mval2=sml[3]
+yval=sml[2]
+yval2=sml[3]
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
+svars
+#getstat
+dp(0 2)
+mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
+mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
+mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
+mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
+>S
+if (save==1) {
+save=0
+svars
+}
+if ((year<2020) or (sml[2]==0)) {
+print auf NTP/Zähler warten
+break
+}
+smlj=1
+if (t1==0) {
+t1=60
+hr=hours
+if ((chg[hr]>0) and (hr==0)) {
+dval=sml[2]
+dval2=sml[3]
+if (day==1) {
+mval=sml[2]
+mval2=sml[3]
+}
+if (day*month==1) {
+yval=sml[2]
+yval2=sml[3]
+}
+svars
+}
+}
+if (once==0) {
+res=mdns("shellypro3em-" "-" "shelly")
+res=udp(0 1010)
+once=1
+}
+if (upsecs%throttle!=0) {
+break;
+}
+tmp=sml[1]-cpwr
+if (tmp>500) {
+cpwr=sml[1]-(tmp/2)
+} else {
+cpwr=sml[1]
+}
+c1p=cpwr
+c1c=c1p/230
+str=udp(1)
+if (str!="") {
+res=ins(str "EM.GetStatus")
+if (res>=0) {
+=#getstat
+udp(2 header mstr1 mstr2)
+break
+}
+} else {
+}
+>W
+bu(save "gespeichert!" "Daten sofort speichern")
+Leistung (an Marstek Akku){m}%0cpwr% W
+Tagesverbrauch{m}%2(sml[2]-dval)% kWh
+Monatsverbrauch{m}%2(sml[2]-mval)% kWh
+Jahresverbrauch{m}%2(sml[2]-yval)% kWh
+Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
+Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
+Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
+Uptime{m}%0uptime% min
+$<center><span style="font-size:10px;">
+$Version 02.10.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
+$</span></center>
+>M 1
++1,3,s,0,9600,MT175,1
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
+#

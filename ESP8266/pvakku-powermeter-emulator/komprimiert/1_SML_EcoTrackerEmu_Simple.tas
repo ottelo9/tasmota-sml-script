@@ -1,0 +1,96 @@
+>D 250
+p:dval=0
+p:dval2=0
+p:mval2=0
+p:mval=0
+p:yval=0
+p:yval2=0
+t:t1=60
+hr=0
+save=0
+res=0
+tmp=0
+cpwr=0
+once=0
+header=""
+json=""
+>B
+=>sensor53 r
+smlj=0
+#init
+dval=sml[2]
+dval2=sml[3]
+mval=sml[2]
+mval2=sml[3]
+yval=sml[2]
+yval2=sml[3]
+->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
+svars
+>ah
+res=won(1 "/v1/json")
+>on1
+json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0cpwr)+",\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
+tmp=sl(json)
+header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
+wcs so(4)
+wcs %header%
+wcs %json%
+wcf
+>S
+if (save==1) {
+save=0
+svars
+}
+if ((year<2020) or (sml[2]==0)) {
+print auf NTP/Zähler warten
+break
+}
+smlj=1
+if (t1==0) {
+t1=60
+hr=hours
+if ((chg[hr]>0) and (hr==0)) {
+dval=sml[2]
+dval2=sml[3]
+if (day==1) {
+mval=sml[2]
+mval2=sml[3]
+}
+if (day*month==1) {
+yval=sml[2]
+yval2=sml[3]
+}
+svars
+}
+}
+if (once==0) {
+res=mdns("ecotracker-" "-" "everhome")
+once=1
+}
+tmp=sml[1]-cpwr
+if (tmp>500) {
+cpwr=sml[1]-(tmp/2)
+} else {
+cpwr=sml[1]
+}
+>W
+bu(save "gespeichert!" "Daten sofort speichern")
+Leistung (an Marstek Akku){m}%0cpwr% W
+Tagesverbrauch{m}%2(sml[2]-dval)% kWh
+Monatsverbrauch{m}%2(sml[2]-mval)% kWh
+Jahresverbrauch{m}%2(sml[2]-yval)% kWh
+Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
+Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
+Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
+Uptime{m}%0uptime% min
+$<center><span style="font-size:10px;">
+$Version 24.09.2025 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
+$</span></center>
+>M 1
++1,3,s,0,9600,MT175,1
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
+#
