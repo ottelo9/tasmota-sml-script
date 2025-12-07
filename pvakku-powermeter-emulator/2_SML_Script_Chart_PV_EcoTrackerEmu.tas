@@ -2,12 +2,6 @@
 ; IP for external ScriptEditor
 IP=192.168.178.31
 
-; ACHTUNG: KRITISCHE ÄNDERUNG AB SCRIPT VERSION 01.12.2025
-; DIAGRAMM DATEN MÜSSEN VOR DEM UPGRADE AUF DIESE VERSION GESICHERT WERDEN!
-; NACH DEM UPDATE KÖNNEN DIE DATEN WIEDER IMPORTIERT WERDEN
-; ANLEITUNG: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#14
-; Die Daten werden nun in einer extra Datei "data.csv" gespeichert und können so jederzeit gesichert werden!
-
 
 ; (1) Beschreibung:
 ; Skript Version ganz unten
@@ -16,6 +10,7 @@ IP=192.168.178.31
 ; Dann müsst ihr natürlich noch die SML Sektion (>M) auf euren Zähler anpassen, die Reihenfolge muss eingehalten werden!
 ; Mehr Infos unter https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a oder www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgelöst) und Leistung der letzten 24h (grob aufgelöst)
+; Das 4h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befüllt
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
 ; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
 ; Optional im Skript enthalten: (Op1) Schalte zweiten ESP (z.B. Poolpumpe) bei Netzeinspeisung (Op2) Daten an www.clever-pv.com senden. Zum Aktivieren nach (OpX) suchen und inkl ; entfernen.
@@ -44,21 +39,19 @@ IP=192.168.178.31
 ; Zum Importieren müssen sie dann mit z.B. script>dcon={x x x x ...} eingeben werden. Am Ende speichern.
 
 
-; -- ARRAYS (max:10, MAXFILT) --
-; 4h Diagramm, neuer Wert alle 30s, 480+1=Optimierung X-Achse
-M:s4h=0 481
-M:s4hf=0 6
-; 24h Diagramm, neuer Wert alle 60s, 1440+1=Optimierung X-Achse
-M:s24h=0 1441
-M:s24hf=0 12
+; -- ARRAYS --
+; 24h power chart
+M:p:sday=0 288
 ; Tagesnetzbezug Tabelle 1-31
-M:dcon=0 31
+M:p:dcon=0 31
 ; Tagesnetzeinspeisung Tabelle 1-31
-M:dprod=0 31
+M:p:dprod=0 31
 ; Monatsverbrauch Tabelle 1-12, Einspeisung 13-24
-M:mcon=0 24
+M:p:mcon=0 24
+; 4h Chart, Neuer Wert alle 30s
+M:s4h=0 481
 ; -- VARS --
-; PermVars (max:1536bytes=384vars)
+; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch / Einspeisung
 p:mval=0
 p:dval=0
 p:mval2=0
@@ -66,25 +59,24 @@ p:dval2=0
 p:yval=0
 p:yval2=0
 p:da=1
-p:rxind=1
-p:txind=1
-p:sel=0
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
-t:t1=5
-t:t2=60
-rxpin=0
-txpin=0
+t:t1=3
+t:t2=30
+t:t3=60
 tmp=0
-idx4=0
-idx24=0
-cstr="cnth0/120"
-cstr2="cnth0/30"
+m5=0
+cstr="cnt0/12"
+cstr2="cnth0/120"
 utm="00d 00h 00m"
+avgv=0
+avgv2=0
+avgvc=0
+avgvc2=0
 hr=0
 swesp=0
 swespflg=0
 power2=0
-fr=0
+save=0
 ;-- ECOTRACKER EMULATION --
 res=0
 cpwr=0
@@ -95,55 +87,33 @@ json=""
 
 ; -- BOOT --
 >B
-rxpin=rxind-1
-txpin=txind-1
-->sensor53 r
+=>sensor53 r
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
 smlj=0
-=#load
 
 
 ; -- SUBS --
-#save
-print saving arrays
-dp2
-fr=fo("data.csv" w)
-if fr>=0 {
-fwa(s4h fr)
-fwa(s24h fr)
-fwa(dcon fr)
-fwa(dprod fr)
-fwa(mcon fr)
-fc(fr)
-} else {
-print file error: %fr%
-}
-svars
-
-#load
-print loading arrays
-dp2
-fr=fo("data.csv" r)
-fra(s4h fr)
-fra(s24h fr)
-fra(dcon fr)
-fra(dprod fr)
-fra(mcon fr)
-fc(fr)
-
 #init
 dval=sml[2]
 dval2=sml[3]
+for tmp 1 dcon[-1] 1
+	dcon[tmp]=0
+	dprod[tmp]=0
+next
 mval=sml[2]
 mval2=sml[3]
+for tmp 1 mcon[-1] 1
+	mcon[tmp]=0
+next
 yval=sml[2]
 yval2=sml[3]
-acp(s4h 0)
-acp(s24h 0)
+for tmp 1 sday[-1] 1
+	sday[tmp]=0
+next
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
-=#save
+svars
 
 ; Tagesverbrauch Tabelle
 #daysub
@@ -233,67 +203,32 @@ wcs %json%
 wcf
 
 
-; -- USE_HTML_CALLBACK --
->C
-if eres==1 {
-	->sensor53 r
-	svars
-	eres=0
-}
-
-
-; -- JEDE 100MS --
->F
-tmp=fe("sml_ftask.tas")
-
-
 ; -- JEDE SEKUNDE --
 >S
-tmp=fe("sml_stask.tas")
-; Warte auf NTP
-if (year<2020) {
-	print auf NTP warten
-	break
+; Daten sofort speichern Button
+if (save==1) {
+	save=0
+	svars
 }
-; Pinauswahl
-if ((chg[rxind]>0) or (chg[txind]>0)) {
-	rxpin=rxind-1
-	->sensor53 r
-	=#save
-}
-; Warte auf Zähler
-if (sml[2]==0) {
+; Warte auf NTP und Zähler
+if ((year<2020) or (sml[2]==0)) {
+	print auf NTP/Zähler warten
 	break
 }
 ; Starte MQTT erst wenn Daten vom Stromzähler kommen
 smlj=1
 
-; alle 5s
+; alle 3s
 if (t1==0) {
-	t1=5
-	; Moving average filter für 4h/24h Diagramm
-	s4hf=sml[1]
-	s24hf=sml[1]
-	
-	; 4h/24h Array idx setzen
-	tmp=hours-4
-	if (tmp<0) {
-		tmp+=24
-	}
-	idx4=tmp*120+(mins*2)+int(secs/30)
-	idx24=(hours*60+mins)
-	; 4h Chart. Durschnittsleistung [W] der letzten 30s => s4h[1-480]
-	s4h[0]=idx4%s4h[-1]
-	s4h=s4hf
-	; 24h Chart. Durschnittsleistung [W] der letzten 60s => s24h[1-1440]
-	s24h[0]=idx24
-	s24h=s24hf
-	cstr="cnth"+s(0idx4)+"/120"
-	cstr2="cnth"+s(0idx24)+"/60"
-	
-	; Optional: stark gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
+	t1=3
+	; Leistung aufsummieren 4h/24h Diagramm
+	avgv+=sml[1]
+	avgv2+=sml[1]
+	avgvc+=1
+	avgvc2+=1
+	; Optional: gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
 	power2=(0.9*power2)+((1-0.9)*sml[1])
-	=>publish stat/%topic%/script/power2 %power2%
+	;=>publish stat/%topic%/script/power2 %power2%
 
 	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
@@ -312,9 +247,22 @@ if (t1==0) {
 	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0sml[1]%}
 }
 
-; alle 60s
+; alle 30s
 if (t2==0) {
-	t2=60
+	t2=30
+	; 4h chart. idx wird automatisch gesetzt
+	s4h=avgv/avgvc
+	avgv=0
+	avgvc=0
+
+	; Setze 4h Chart X-Achse alle 30s => /120 Werte pro Stunde. Arraygrösse = 480
+	; tasmota calc [hh:mm] via cnthX/Y. mm = X%Y * 60/Y. hh = X/Y
+	cstr2="cnth"+s(1.0((((hours+20)*120)+(mins*2)+(int(secs/30)))%2880+1))+"/120"
+}
+
+; alle 60s
+if (t3==0) {
+	t3=60
 	hr=hours
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
@@ -334,6 +282,20 @@ if (t2==0) {
 	;=>publish stat/%topic%/script/yieldmonth %2(mcon[month+12])%
 	;=>publish stat/%topic%/script/consyear %2(sml[2]-yval)%
 	;=>publish stat/%topic%/script/yielyear %2(sml[3]-yval2)%
+
+	; 24h Chart. Berechne Durschnittsleistung [W] der letzten 5min => ins Array[1-288]
+	m5=int((((hours*60)+mins)/5)+1)
+	; set idx (pointer starts from 0)
+	sday[0]=m5
+	if (chg[m5]>0) {
+		sday[m5]=int(avgv2/avgvc2)
+		avgv2=0
+		avgvc2=0
+	}
+
+	; Aktualisiere 24h Chart alle 5Min => Arraygröße 288
+	; tasmota calc [hh:mm] via cnthX/Y. mm = X%Y * 60/Y. hh = X/Y
+	cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
 
 	; Tagesverbrauch & Einspeisung Berechnung um Mitternacht
 	if ((chg[hr]>0) and (hr==0)) {
@@ -358,7 +320,7 @@ if (t2==0) {
 		dval=sml[2]
 		dval2=sml[3]
 		; nur 1x um Mitternacht speichern
-		=#save
+		svars
 	}
 }
 
@@ -388,7 +350,7 @@ if (tmp>500) {
 ;<style>form button{display:none}</style>
 
 ; web button
-bu(_save "" "Daten sofort speichern")
+bu(save "gespeichert!" "Daten sofort speichern")
 ; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >S Sektion.
 ;bu(swesp "PV Steckdose aktivieren" "PV Steckdose deaktivieren")
 ; optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
@@ -415,7 +377,7 @@ $<div style="margin-left:-30px">
 
 ; 4h Leistung Diagramm
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt s4h "wr" "Leistung [W]" cstr)
+$gc(lt s4h "wr" "Leistung [W]" cstr2)
 $var options = {
 $chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
@@ -431,7 +393,7 @@ $gc(e)
 
 ; 24h Leistung Diagramm
 $<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt s24h "wr" "Leistung [W]" cstr2)
+$gc(lt sday "wr" "Leistung [W]" cstr)
 $var options = {
 $chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
@@ -457,22 +419,24 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 01.12.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
-$Hinweis: Alle Werte werden immer nur um Mitternacht automatisch gespeichert!<br>
-$4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
+$Version 29.09.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Credits to gemu2015 (Tasmota Script Dev)<br>
+$Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
+$Der Restart Button speichert ebenfalls die Daten.<br>
 $</span></center></div>
 
 
->w Stromzählerauswahl
-$<button onclick="history.back()">Zurück</button>
-$<hr>
-$<div>
-$<button type="submit" onclick="if(confirm('Werte initialisieren?')){seva(1,'_init');}">Tages/Monats/Jahreswerte initialisieren</button></div>
-;WSO_NOCENTER + WSO_FORCEGUI
-so(17)
-smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl" sel)
-pd(rxind "RX Pin: " 50 "#g")
-pd(txind "TX Pin: " 50 "#g")
-
-
-; SMARTMETER DESCRIPTOR (>M) AB 01.12.2025 VIA DROP-DOWN MENÜ ! (wird in sml_meter.def gespeichert)
+;-- SML --
+; SML Sektion an euren Stromzähler anpassen
+;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
+; Anleitung: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#4c
+; Reihenfolge nicht ändern: 1=(Gesamt)Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]
+; Medianfilter <flag> = 16 nicht verwenden, verbessert Marstek Regelung
+; https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-definition
+>M 1
+; Beispiel MT175 mit bitShake SmartMeterReader-Air
++1,5,s,0,9600,MT175,4
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
+1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
+#
