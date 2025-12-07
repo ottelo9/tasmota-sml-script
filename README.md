@@ -7,6 +7,8 @@ Für eine Anleitung, Beschreibung sowie passende Tasmota Images siehe mein Blog:
 Eine kleine Anleitung befindet sich auch im Script selbst.
 
 ### Scriptauswahl
+Scripte für den ESP8266 findet ihr nun in einem extra Ordner, da ich diese nicht mehr weiterentwickeln werde. Alle anderen Scripte aktualisiere ich nun (01.12.2025) nur noch für den ESP32, der einfach mehr Power hat und Tasmota mehr Features dafür bietet.  
+  
 Die SML Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauchs. Und zwar fein aufgelöst für die letzten 4 Stunden, grob aufgelöst für die letzten 24 Stunden und dann Tages und Monatsverbräuche als Balkendiagramm. Ich habe über die Zeit einige Varianten des Scriptes erstellt, die alle durch unterschiedliche Nutzeranfragen auf meinem Blog entstanden sind.  
 
 **Hauptverzeichnis**
