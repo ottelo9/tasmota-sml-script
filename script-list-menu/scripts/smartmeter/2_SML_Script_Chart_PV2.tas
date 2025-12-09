@@ -1,6 +1,6 @@
 >D 100
-;2_SML_Script_Chart_PV
-M:s4h=0 481
+;2_SML_Script_Chart_PV2
+M:s4h=0 721
 M:s4hf=0 6
 M:s24h=0 1441
 M:s24hf=0 12
@@ -24,7 +24,7 @@ txpin=0
 tmp=0
 idx4=0
 idx24=0
-cstr="cnth0/120"
+cstr="cnth0/720"
 cstr2="cnth0/30"
 utm="00d 00h 00m"
 hr=0
@@ -169,11 +169,11 @@ if (t1==0) {
 t1=5
 s4hf=sml[1]
 s24hf=sml[1]
-tmp=hours-4
+tmp=hours-1
 if (tmp<0) {
 tmp+=24
 }
-idx4=tmp*120+(mins*2)+int(secs/30)
+idx4=tmp*720+(mins*12)+int(secs/5)
 idx24=(hours*60+mins)
 s4h[0]=idx4%s4h[-1]
 s4h=s4hf
@@ -240,7 +240,7 @@ $vAxis:{format:'# W'},
 $hAxis:{slantedTextAngle:45},
 $explorer:{actions:['dragToZoom','rightClickToReset']},
 $series: {0: {type: 'area'}},
-$title:'Leistung 4 Stunden [Watt]'
+$title:'Leistung 1 Stunde [Watt]'
 $};
 $gc(e)
 $<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
@@ -259,9 +259,9 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 01.12.2025 (PV) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 01.12.2025 (PV2) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
-$4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
+$4h Diagramm aktualisiert sich alle 5s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
 >w Stromzähler konfigurieren / Daten sichern
 $<button onclick="history.back()">Zurück</button>

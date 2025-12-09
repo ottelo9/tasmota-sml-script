@@ -1,5 +1,5 @@
 >D 100
-;2_SML_Script_Chart_PV
+;2_SML_Script_Chart_PV3
 M:s4h=0 481
 M:s4hf=0 6
 M:s24h=0 1441
@@ -7,6 +7,8 @@ M:s24hf=0 12
 M:dcon=0 31
 M:dprod=0 31
 M:mcon=0 24
+M:wcon=0 53
+M:wprod=0 53
 p:mval=0
 p:dval=0
 p:mval2=0
@@ -17,6 +19,9 @@ p:da=1
 p:rxind=1
 p:txind=1
 p:sel=0
+p:wval=0
+p:wval2=0
+p:cw=1
 t:t1=5
 t:t2=60
 rxpin=0
@@ -49,6 +54,8 @@ fwa(s24h fr)
 fwa(dcon fr)
 fwa(dprod fr)
 fwa(mcon fr)
+fwa(wcon fr)
+fwa(wprod fr)
 fc(fr)
 } else {
 print file error: %fr%
@@ -63,6 +70,8 @@ fra(s24h fr)
 fra(dcon fr)
 fra(dprod fr)
 fra(mcon fr)
+fra(wcon fr)
+fra(wprod fr)
 fc(fr)
 #init
 dval=sml[2]
@@ -71,6 +80,8 @@ mval=sml[2]
 mval2=sml[3]
 yval=sml[2]
 yval2=sml[3]
+wval=sml[2]
+wval2=sml[3]
 acp(s4h 0)
 acp(s24h 0)
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
@@ -127,19 +138,25 @@ wcs <script language="JavaScript">function drawChart(){
 wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
 wcs var data=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]','Einspeisung[kWh]'],
 for tmp 1 12 1
-if (tmp<month) {
 wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
-}
-if (tmp==month) {
-wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
-}
-if (tmp>month) {
-wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
-}
 next
 wcs ]);
-wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Verbräuche / Einspeisungen (Jahr %0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
+wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Bezug/Einspeisung Gesamtjahr (%0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
+wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
+}
+#weeksub
+if wm>0 {
+wcs <div id="week" style="text-align:center;width:600px;height:400px"></div>
+wcs <script language="JavaScript">function drawChart(){
+wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
+wcs var data=google.visualization.arrayToDataTable([['KW','Verbrauch [kWh]','Einspeisung[kWh]'],
+for tmp 1 53 1
+wcs ['%0tmp%',%wcon[tmp]%,%wprod[tmp]%],
+next
+wcs ]);
+wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,width:'80%%'},legend:'none',title:'Bezug/Einspeisung Wochen (KW:%0cw% %0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
+wcs var chart=new google.visualization.ColumnChart(document.getElementById('week'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
 >C
@@ -197,8 +214,10 @@ t2=60
 hr=hours
 utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 dcon[day]=sml[2]-dval
+wcon[cw]=sml[2]-wval
 mcon[month]=sml[2]-mval
 dprod[day]=sml[3]-dval2
+wprod[cw]=sml[3]-wval2
 mcon[month+12]=sml[3]-mval2
 if ((chg[hr]>0) and (hr==0)) {
 if (day>1) {
@@ -211,9 +230,17 @@ next
 mval=sml[2]
 mval2=sml[3]
 }
+if (wday==2) {
+if (cw<53) {
+cw+=1
+}
+wval=sml[2]
+wval2=sml[3]
+}
 if (day*month==1) {
 yval=sml[2]
 yval2=sml[3]
+cw=1
 }
 dval=sml[2]
 dval2=sml[3]
@@ -222,10 +249,13 @@ dval2=sml[3]
 }
 >W
 Leistung (gefiltert){m}%0power2% W
+Kalenderwoche{m}%0cw%
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
+Wochenverbrauch{m}%2(sml[2]-wval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
 Jahresverbrauch{m}%2(sml[2]-yval)% kWh
 Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
+Wocheneinspeisung{m}%2(sml[3]-wval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
@@ -257,9 +287,10 @@ $};
 $gc(e)
 %=#daysub
 %=#dayprod
+%=#weeksub
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 01.12.2025 (PV) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 01.12.2025 (PV3) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
