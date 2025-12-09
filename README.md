@@ -12,13 +12,15 @@ Scripte für den ESP8266 findet ihr nun in einem extra Ordner, da ich diese nich
 Die SML Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauchs. Und zwar fein aufgelöst für die letzten 4 Stunden, grob aufgelöst für die letzten 24 Stunden und dann Tages und Monatsverbräuche als Balkendiagramm. Ich habe über die Zeit einige Varianten des Scriptes erstellt, die alle durch unterschiedliche Nutzeranfragen auf meinem Blog entstanden sind.  
 
 **Hauptverzeichnis**
+- `0_SML_Simple`  
+  einfaches Zählerscript ohne Diagramme, zeigt nur die reinen Werte vom Zähler an
 - `1_SML_Script_Chart`  
   wenn ihr keine PV-Anlage / Balkonkraftwerk BKW habt (ohne Einspeisung)
 - `2_SML_Script_Chart_PV`  
   wenn ihr eure Einspeisung sehen möchtet und euer Zähler das unterstützt (2-Richtungszähler)
-- `2_SML_Script_Chart_PV_2`  
+- `2_SML_Script_Chart_PV2`  
   wie _PV Script aber mit sehr hoch aufgelöstem 4h-Leistungs-Diagramm (alle 5s ein Wert)
-- `2_SML_Script_Chart_PV_3`  
+- `2_SML_Script_Chart_PV3`  
   wie _PV Script aber mit Kalenderwochenübersicht über das ganze Jahr, Bezug und Einspeisung = 53 Wochen
 - `3_SML_Script_Chart_PV_1-Richtungszaehler`  
   wie _PV Script aber für 1-Richtungszähler (Netzeinspeisung in kWh wird berechnet)
