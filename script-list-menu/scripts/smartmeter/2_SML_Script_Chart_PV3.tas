@@ -1,5 +1,4 @@
 >D 100
-;2_SML_Script_Chart_PV3
 M:s4h=0 481
 M:s4hf=0 6
 M:s24h=0 1441
@@ -21,7 +20,6 @@ p:txind=1
 p:sel=0
 p:wval=0
 p:wval2=0
-p:cw=1
 t:t1=5
 t:t2=60
 rxpin=0
@@ -231,16 +229,12 @@ mval=sml[2]
 mval2=sml[3]
 }
 if (wday==2) {
-if (cw<53) {
-cw+=1
-}
 wval=sml[2]
 wval2=sml[3]
 }
 if (day*month==1) {
 yval=sml[2]
 yval2=sml[3]
-cw=1
 }
 dval=sml[2]
 dval2=sml[3]
