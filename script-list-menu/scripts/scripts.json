@@ -1,11 +1,12 @@
 {
 	"script": [
-		{ "label": "---Smartmeter Scripte---", "filename": "" },
+		{ "label": "A)Smartmeter Scripte:", "filename": "" },
 		{ "label": "0_SML_Simple", "filename": "smartmeter/0_SML_Simple.tas" },
 		{ "label": "2_SML_Script_Chart_PV", "filename": "smartmeter/2_SML_Script_Chart_PV.tas" },
 		{ "label": "2_SML_Script_Chart_PV2", "filename": "smartmeter/2_SML_Script_Chart_PV2.tas" },
 		{ "label": "2_SML_Script_Chart_PV3", "filename": "smartmeter/2_SML_Script_Chart_PV3.tas" },
-		{ "label": "---PV-Akku Powermeter Emulator Scripte---", "filename": "" },
+		{ "label": "----------------------", "filename": "" },
+		{ "label": "B)PV-Akku Powermeter Emulator Scripte:", "filename": "" },
 		{ "label": "2_SML_Script_Chart_PV_EcoTrackerEmu", "filename": "pvakku-powermeter-emulator/2_SML_Script_Chart_PV_EcoTrackerEmu.tas" }
 	]
 }
