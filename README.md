@@ -118,4 +118,12 @@ oder einfach nur
 
 ------------------
 Bedanken möchte ich mich besonders bei [gemu2015](https://github.com/gemu2015), der das Tasmota Scripting und SML entwickelt hat und mir immer sofort bei Problemen geholfen hat. Und natürlich beim restlichen [Tasmota Entwickler-Team](https://tasmota.github.io/docs/About/), für das grandiose Tasmota :).  
+
+Die Stromzähler Meter Definition habe ich teilweise von folgenden Quellen übernommen und modifiziert:  
+[Tasmota SML Wiki](https://tasmota.github.io/docs/Smart-Meter-Interface/#smart-meter-descriptors)  
+[Stromleser.tasmota Scripte](https://stromleser.de/pages/scripts)  
+[bitshake](https://bitshake.de/skripte/)  
+DANKE !
+
+
 [Offizielle Tasmota Github Seite](https://github.com/arendst/Tasmota)
