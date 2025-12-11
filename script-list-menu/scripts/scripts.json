@@ -5,6 +5,8 @@
 		{ "label": "2_SML_Script_Chart_PV", "filename": "smartmeter/2_SML_Script_Chart_PV.tas" },
 		{ "label": "2_SML_Script_Chart_PV2", "filename": "smartmeter/2_SML_Script_Chart_PV2.tas" },
 		{ "label": "2_SML_Script_Chart_PV3", "filename": "smartmeter/2_SML_Script_Chart_PV3.tas" },
+		{ "label": "3_SML_Script_Chart_PV_1-Richtungszaehler", "filename": "smartmeter/3_SML_Script_Chart_PV_1-Richtungszaehler.tas" },
+		{ "label": "4_SML_Script_Chart_PV_no_4h24h", "filename": "smartmeter/4_SML_Script_Chart_PV_no_4h24h.tas" },
 		{ "label": "B) PV-Akku Powermeter Emulator Scripte:", "filename": "" },
 		{ "label": "2_SML_Script_Chart_PV_EcoTrackerEmu", "filename": "pvakku-powermeter-emulator/2_SML_Script_Chart_PV_EcoTrackerEmu.tas" }
 	]
