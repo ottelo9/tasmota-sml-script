@@ -1,0 +1,48 @@
+Ausführliche Anleitung auf meinem Blog:
+ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
+
+Info:
+Diese Scripte sind nur für das Tasmota Image von ottelo ab V15.1.0 & ESP32.
+Ältere Versionen ohne DropDown Zählerauswahlmenü auf meiner github Seite.
+Diese laufen auch noch auf einem ESP8266, ist aber nicht zu empfehlen!
+github: ESP8266/pvakku-powermeter-emulator
+
+Kurzanleitung:
+1) Script wählen
+2) Save drücken
+3) Im Hauptmenü auf "Stromzähler konfigurieren / Daten sichern" klicken
+4) Euren Stromzähler und die Pins von der IR-Sende/Empfangsdiode wählen
+5) Zurück und schauen ob Daten ankommen, sonst Tasmota neustarten
+6) Wenn Daten ankommen im Untermenü (Auswahl Zähler) auf Initialisieren klicken
+7) In Tasmota Configuration > Other > HTTP API aktivieren
+
+
+1_SML_EcoTrackerEmu_Simple  <- empfohlen
+--------------------------
+Sehr kleines und wirklich einfaches Script zum Emulieren eines EcoTracker von
+everHome. Getestet mit Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles MS-A2.
+Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte +
+Tages/Monats/Jahreswerte) an. Benötigt mein Tasmota Image V15.1.0 oder höher.
+Im Script ist eine grobe Beschreibung, wie ihr das alles zum Laufen bekommt.
+
+1_SML_ShellyEmu_Simple
+--------------------------
+Einfaches Script zum Emulieren eines Shelly Pro 3EM (getestet mit Marstek Akkus
+Jupiter, Venus, B2500) Es hat keine Diagramme sondern zeigt nur das nötigste
+(Zählerwerte + Tages/Monats/Jahreswerte) an.
+
+2_SML_Script_Chart_PV_EcoTrackerEmu  <- empfohlen (mit Diagramme)
+-----------------------------------
+Wie 2_SML_Script_Chart_PV aber mit EcoTracker Emulation. Getestet mit Marstek
+Akkus (Jupiter, Venus, B2500) und Hoymiles MS-A2. Es ist kleiner als das
+2_SML_Script_Chart_PV_ShellyEmu und läuft bei mir aktuell auf dem bitShake
+ESP32-C3 Lesekopf zusammen mit dem Marstek Jupiter C Plus Akku einwandfrei.
+
+2_SML_Script_Chart_PV_ShellyEmu
+-------------------------------
+Wie 2_SML_Script_Chart_PV aber mit Shelly Pro 3EM Emulation
+(getestet mit Marstek Akkus Jupiter, Venus, B2500).
+
+
+
+Quelle: https://github.com/ottelo9/tasmota-sml-script

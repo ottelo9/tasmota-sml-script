@@ -1,0 +1,67 @@
+Ausführliche Anleitung auf meinem Blog:
+ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/
+
+Info:
+Diese Scripte sind nur für das Tasmota Image von ottelo ab V15.1.0 & ESP32.
+Ältere Versionen ohne DropDown Zählerauswahlmenü auf meiner github Seite.
+Diese laufen auch noch auf einem ESP8266!
+github: ESP8266
+
+Kurzanleitung:
+1) Script wählen
+2) Save drücken
+3) Im Hauptmenü auf "Stromzähler konfigurieren / Daten sichern" klicken
+4) Euren Stromzähler und die Pins von der IR-Sende/Empfangsdiode wählen
+5) Zurück und schauen ob Daten ankommen, sonst Tasmota neustarten
+6) Wenn Daten ankommen im Untermenü (Auswahl Zähler) auf Initialisieren klicken
+
+
+0_SML_Simple
+------------
+einfaches Zählerscript ohne Diagramme, zeigt nur die reinen Werte vom Zähler an
+
+1_SML_Script_Chart
+------------------
+wenn ihr keine PV-Anlage / Balkonkraftwerk BKW habt (ohne Einspeisung)
+
+2_SML_Script_Chart_PV
+---------------------
+wenn ihr eure Einspeisung sehen möchtet und euer Zähler das unterstützt
+(2-Richtungszähler)
+
+2_SML_Script_Chart_PV2
+----------------------
+wie _PV Script aber mit sehr hoch aufgelöstem 4h-Leistungs-Diagramm
+
+2_SML_Script_Chart_PV3
+----------------------
+wie _PV Script aber mit Kalenderwochenübersicht über das ganze Jahr,
+Bezug und Einspeisung = 53 Wochen
+
+3_SML_Script_Chart_PV_Bezugszaehler
+-----------------------------------
+wie _PV Script aber für 1-Richtungszähler
+(Netzeinspeisung in kWh wird berechnet)
+
+4_SML_Script_Chart_PV_no_4h24h
+------------------------------
+wie _PV Script aber ohne 4h und 24h Diagramme
+
+5_SteckdoseLeistungsmesser_1
+----------------------------
+wie 1_ Script jedoch für Energiemess-Steckdosen (z.B. Sonoff POW Elite, 
+SONOFF POW320D, NOUS A8T) Script nicht mehr für ESP8266/8685
+(Sonoff Pow R2, Nous A1T), schaut dazu in den Ordner ESP8266
+
+5_SteckdoseLeistungsmesser_2
+----------------------------
+wie 5_ Script aber mit sehr hoch aufgelöstem 4h-Leistungs-Diagramm
+(alle 5s ein Wert)
+
+6_SML_Script_Wasseruhr
+----------------------
+Wasseruhr Script mit Diagrammen (Impulse)
+
+
+
+Quelle: https://github.com/ottelo9/tasmota-sml-script
