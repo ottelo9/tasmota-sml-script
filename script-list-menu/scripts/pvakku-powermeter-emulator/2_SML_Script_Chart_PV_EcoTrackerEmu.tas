@@ -290,7 +290,7 @@ $gc(e)
 %=#monthsub
 $<center><span style="font-size:10px;">
 $Version 01.12.2025 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
-&und gemu2015 (ScriptEngine V%vers%)<br>
+$und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>

@@ -149,7 +149,7 @@ Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
 $<center><span style="font-size:10px;">
 $Version 01.12.2025 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
-&und gemu2015 (ScriptEngine V%vers%)<br>
+$und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
 
