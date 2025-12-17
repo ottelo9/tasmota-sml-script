@@ -1,7 +1,7 @@
 {
 	"script": [
 		{ "label": "A) Smartmeter Scripte:", "filename": "" },
-		{ "label": "Anleitung", "filename": "smartmeter/_Anleitung.txt" },
+		{ "label": "Anleitung", "filename": "smartmeter/_Anleitung.tas" },
 		{ "label": "0_SML_Simple", "filename": "smartmeter/0_SML_Simple.tas" },
 		{ "label": "1_SML_Script_Chart", "filename": "smartmeter/1_SML_Script_Chart.tas" },
 		{ "label": "2_SML_Script_Chart_PV", "filename": "smartmeter/2_SML_Script_Chart_PV.tas" },
@@ -13,7 +13,7 @@
 		{ "label": "5_SteckdoseLeistungsmesser_2", "filename": "smartmeter/5_SteckdoseLeistungsmesser_2.tas" },
 		{ "label": "6_SML_Script_Wasseruhr", "filename": "smartmeter/6_SML_Script_Wasseruhr.tas" },
 		{ "label": "B) PV-Akku Powermeter Emulator Scripte:", "filename": "" },
-		{ "label": "Anleitung", "filename": "pvakku-powermeter-emulator/_Anleitung.txt" },
+		{ "label": "Anleitung", "filename": "pvakku-powermeter-emulator/_Anleitung.tas" },
 		{ "label": "1_SML_EcoTrackerEmu_Simple", "filename": "pvakku-powermeter-emulator/1_SML_EcoTrackerEmu_Simple.tas" }
 		{ "label": "1_SML_ShellyEmu_Simple", "filename": "pvakku-powermeter-emulator/1_SML_ShellyEmu_Simple.tas" }
 		{ "label": "2_SML_Script_Chart_PV_EcoTrackerEmu", "filename": "pvakku-powermeter-emulator/2_SML_Script_Chart_PV_EcoTrackerEmu.tas" }
