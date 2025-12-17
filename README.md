@@ -12,6 +12,15 @@ Scripte für den ESP8266 findet ihr nun in einem extra Ordner, da ich diese nich
 Die Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauches (Leistung [W]). Und zwar fein aufgelöst für die letzten 4 Stunden, grob aufgelöst für die letzten 24 Stunden und dann Tages und Monatsverbräuche [kWh] als Balkendiagramm. 
 Ich habe über die Zeit einige Varianten des Scriptes erstellt, die alle durch unterschiedliche Nutzeranfragen auf meinem Blog entstanden sind.  
 
+Scriptauswahl:  
+<img width="467" height="308" alt="image" src="https://github.com/user-attachments/assets/d6c8114e-da35-49ba-9ba2-47df5fd1c3fb" />  
+Stromzähler/Pin-Auswahl:  
+<img width="378" height="219" alt="image" src="https://github.com/user-attachments/assets/7f1cb028-b11e-4ac5-a606-062692db51e6" />
+
+
+
+
+
 ***ACHTUNG: KRITISCHE ÄNDERUNG AB SCRIPT VERSION 01.12.2025***  
 Diagramm-Daten müssen vor dem Upgrade auf diese Version gesichert werden. Nach dem Update können die Daten wieder importiert werden.  
 Anleitung: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#14  
