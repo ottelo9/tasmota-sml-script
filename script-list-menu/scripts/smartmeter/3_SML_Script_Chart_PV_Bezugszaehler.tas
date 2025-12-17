@@ -1,14 +1,19 @@
 >D 100
-;1_SML_Script_Chart.tas
+;3_SML_Script_Chart_PV_Bezugszaehler.tas
 M:s4h=0 481
 M:s4hf=0 6
 M:s24h=0 1441
 M:s24hf=0 12
 M:dcon=0 31
-M:mcon=0 12
+M:dprod=0 31
+M:mcon=0 24
+p:sml3=0
 p:mval=0
 p:dval=0
+p:mval2=0
+p:dval2=0
 p:yval=0
+p:yval2=0
 p:da=1
 p:rxind=1
 p:txind=1
@@ -24,6 +29,10 @@ cstr="cnth0/120"
 cstr2="cnth0/30"
 utm="00d 00h 00m"
 hr=0
+swesp=0
+swespflg=0
+PToGridS=0
+power2=0
 fr=0
 >B
 rxpin=rxind-1
@@ -40,6 +49,7 @@ if fr>=0 {
 fwa(s4h fr)
 fwa(s24h fr)
 fwa(dcon fr)
+fwa(dprod fr)
 fwa(mcon fr)
 fc(fr)
 } else {
@@ -53,16 +63,23 @@ fr=fo("data.csv" r)
 fra(s4h fr)
 fra(s24h fr)
 fra(dcon fr)
+fra(dprod fr)
 fra(mcon fr)
 fc(fr)
 #init
+sml3=0
 dval=sml[2]
+dval2=sml3
 mval=sml[2]
+mval2=sml3
 yval=sml[2]
+yval2=sml3
 acp(s4h 0)
 acp(s24h 0)
 dcon[day]=dval
+dprod[day]=dval2
 mcon[month]=mval
+mcon[12+month]=mval2
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
@@ -88,25 +105,47 @@ wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('day'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
+#dayprod
+if wm>0 {
+wcs <div id="dayp" style="text-align:center;width:600px;height:400px"></div>
+wcs <script language="JavaScript">function drawChart(){
+wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
+wcs var data=google.visualization.arrayToDataTable([['Tag','Energie [kWh]',{role: 'style'}],
+for tmp 1 dprod[-1] 1
+if (tmp==day) {
+wcs [%tmp%,%dprod[tmp]%,'red'],
+}
+if (tmp<day) {
+wcs [%tmp%,%dprod[tmp]%,'green'],
+}
+if (tmp>day) {
+wcs [%tmp%,%dprod[tmp]%,''],
+}
+next
+wcs ]);
+wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:'Tageseinspeisung (Monat %is[month]%)',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
+wcs var chart=new google.visualization.ColumnChart(document.getElementById('dayp'));
+wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
+}
 #monthsub
 if wm>0 {
 wcs <div id="month" style="text-align:center;width:600px;height:400px"></div>
 wcs <script language="JavaScript">function drawChart(){
 wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
-wcs var data=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]',{role: 'style'}],
+wcs var data=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]','Einspeisung[kWh]'],
 for tmp 1 12 1
 if (tmp<month) {
-wcs ['%is[tmp]%',%mcon[tmp]%,'green'],
+wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
 }
 if (tmp==month) {
-wcs ['%is[tmp]%',%mcon[tmp]%,'red'],
+wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
 }
 if (tmp>month) {
-wcs ['%is[tmp]%',%mcon[tmp]%,'blue'],
+wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
 }
 next
 wcs ]);
-wcs var options={chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Verbräuche (Jahr %0(year-1)%/%0year%)',vAxis:{format:'# kWh'}};
+wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Verbräuche / Einspeisungen (Jahr %0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
@@ -149,33 +188,70 @@ s24h[0]=idx24
 s24h=int(s24hf)
 cstr="cnth"+s(0idx4)+"/120"
 cstr2="cnth"+s(0idx24)+"/60"
+power2=(0.9*power2)+((1-0.9)*sml[1])
+=>publish stat/%topic%/script/power2 %power2%
+if (sml[1]<0) {
+PToGridS-=sml[1]
+}
+if (swesp==1) {
+if ((power2<-300) and (swespflg==0)) {
+swespflg=1
+}
+if ((power2>100) and (swespflg==1)) {
+swespflg=0
+}
+}
 }
 if (t2==0) {
 t2=60
 hr=hours
 utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
+if (PToGridS>0)
+{
+sml3+=PToGridS/(12*60*1000)
+PToGridS=0
+}
 dcon[day]=sml[2]-dval
 mcon[month]=sml[2]-mval
+dprod[day]=sml3-dval2
+mcon[month+12]=sml3-mval2
+m5=int((((hours*60)+mins)/5)+1)
+sday[0]=m5
+if (chg[m5]>0) {
+sday[m5]=int(avgv2/avgvc2)
+avgv2=0
+avgvc2=0
+}
+cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
 if ((chg[hr]>0) and (hr==0)) {
 if (day>1) {
 da=day
 } else {
 for tmp (da+1) 31 1
 dcon[tmp]=0
+dprod[tmp]=0
 next
 mval=sml[2]
+mval2=sml3
 }
 if (day*month==1) {
 yval=sml[2]
+yval2=sml3
 }
 dval=sml[2]
+dval2=sml3
 =#save
 }
 }
 >W
+Leistung (gefiltert){m}%0power2% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
 Jahresverbrauch{m}%2(sml[2]-yval)% kWh
+Tageseinspeisung{m}%2(sml3-dval2)% kWh
+Monatseinspeisung{m}%2(sml3-mval2)% kWh
+Gesamteinspeisung{m}%2(sml3)% kWh
+Jahreseinspeisung{m}%2(sml3-yval2)% kWh
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
 Uptime{m}%utm%
 $<div style="margin-left:-30px">
@@ -204,9 +280,10 @@ $title:'Leistung 24 Stunden [Watt]'
 $};
 $gc(e)
 %=#daysub
+%=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 01.12.2025 by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 01.12.2025 (PV-1Z) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>

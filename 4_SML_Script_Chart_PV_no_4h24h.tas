@@ -1,6 +1,14 @@
->D 40
+>D 100
 ; IP for external ScriptEditor
-IP=192.168.178.31
+IP=192.168.178.132
+
+; ACHTUNG: KRITISCHE ÄNDERUNG AB SCRIPT VERSION 01.12.2025
+; DIAGRAMM DATEN MÜSSEN VOR DEM UPGRADE AUF DIESE VERSION GESICHERT WERDEN!
+; NACH DEM UPDATE KÖNNEN DIE DATEN WIEDER IMPORTIERT WERDEN
+; ANLEITUNG: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#14
+; Die Daten werden nun in einer extra Datei "data.csv" gespeichert und können so jederzeit gesichert werden!
+; DIESES SCRIPT IST NUR NOCH FÜR DEN ESP32
+; TASMOTA (ottelo) IMAGE ab v15.1.0 (07.12.2025) NOTWENDIG
 
 
 ; (1) Beschreibung:
@@ -13,37 +21,21 @@ IP=192.168.178.31
 
 ; (2) Anleitung:
 ; http://ottelo.jimdo.de/
-; (a) Skript an euren Zähler anpassen:
-; ganz unten >M Sektion anpassen
-; https://tasmota.github.io/docs/Smart-Meter-Interface/
-; (b) Script übertragen
-; Ich empfehle das Script mit dem ext. Editor zu "komprimieren" (Kommentare entfernen). Script laden -> Window -> Export to documents folder. Dann einfach in Tasmota einfügen.
-; ScriptEditor runterladen um dieses Skript auf den ESP zu übertragen. Der Editor entfernt alle Kommentare und leere Zeilen
-; https://tasmota.github.io/docs/Scripting-Language/#optional-external-editor
-; IP eures ESPs oben im Script eingeben, damit der Editor das Skript korrekt senden kann
-; Hinweis Dateiformat Scriptdatei: UTF8, LF (\n) als Zeilenende (Unix EOL), damit der ext. Editor keine doppelten Leerzeichen anzeigt. Einstellbar in Notepad++ (Edit->EOL->Unix).
-; (c) Initialisieren
-; Wenn die Werte vom Stromzähler korrekt angezeigt werden, muss das Script einmalig initialisiert werden. Folgendes in die Tasmota Console eingeben - Achtung alle Daten im Diagramm/Tabelle werden gelöscht!
-; script>=#init
-; Zählerstand beim Jahreswechsel: Falls ihr den Jahresverbrauch für das aktuelle Jahr korrekt anzeigen wollt, könnt ihr den Zählerstand (kWh) vom 1.1. via Console nachträglich setzen (danach speichern):
-;backlog script>yval=Zählerstand-Bezug; script>yval2=Zählerstand-Einspeisung
-; (d) Um später fehlende oder falsche Werte in den Tabellen zu ändern, können folgende Befehle in der Console eingegeben werden:
-;script?var       beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
-;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
-; (e) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
-;script?dval   script?dval2   script?dcon   script?dprod   script?mval   script?mval2   script?mcon   script?yval   script?yval2
-; Zum Importieren müssen sie dann mit z.B. script>dcon={x x x x ...} eingeben werden. Am Ende speichern.
+; (a) Script übertragen
+; Dieses Script kann ab Tasmota 15.1.0-ottelo bequem via DropDown Menü unter Tools > Edit Script ausgewählt werden.
+; Anschließend könnt ihr über den Button "Stromzähler konfigurieren / Daten sichern" euren Stromzähler wählen und die Werte initialisieren.
+; Ansonsten müsst ihr es vor dem Einfügen in Tasmota verkleinern/komprimieren. Anleitung siehe Link oben.
 
 
-; -- ARRAYS --
+; -- ARRAYS (max:10, MAXFILT) --
 ; Tagesnetzbezug Tabelle 1-31
-M:p:dcon=0 31
+M:dcon=0 31
 ; Tagesnetzeinspeisung Tabelle 1-31
-M:p:dprod=0 31
+M:dprod=0 31
 ; Monatsverbrauch Tabelle 1-12, Einspeisung 13-24
-M:p:mcon=0 24
+M:mcon=0 24
 ; -- VARS --
-; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch / Einspeisung
+; PermVars (max:1536bytes=384vars)
 p:mval=0
 p:dval=0
 p:mval2=0
@@ -51,46 +43,72 @@ p:dval2=0
 p:yval=0
 p:yval2=0
 p:da=1
+p:rxind=1
+p:txind=1
+p:sel=0
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
-t:t1=3
-t:t3=60
+t:t1=5
+t:t2=60
+rxpin=0
+txpin=0
 tmp=0
 utm="00d 00h 00m"
-avgv2=0
-avgvc2=0
 hr=0
 swesp=0
 swespflg=0
 power2=0
-save=0
+fr=0
 
 
 ; -- BOOT --
 >B
-=>sensor53 r
+rxpin=rxind-1
+txpin=txind-1
+->sensor53 r
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
 smlj=0
+=#load
 
 
 ; -- SUBS --
+#save
+print saving arrays
+dp2
+fr=fo("data.csv" w)
+if fr>=0 {
+fwa(dcon fr)
+fwa(dprod fr)
+fwa(mcon fr)
+fc(fr)
+} else {
+print file error: %fr%
+}
+svars
+
+#load
+print loading arrays
+dp2
+fr=fo("data.csv" r)
+fra(dcon fr)
+fra(dprod fr)
+fra(mcon fr)
+fc(fr)
+
 #init
 dval=sml[2]
 dval2=sml[3]
-for tmp 1 dcon[-1] 1
-	dcon[tmp]=0
-	dprod[tmp]=0
-next
 mval=sml[2]
 mval2=sml[3]
-for tmp 1 mcon[-1] 1
-	mcon[tmp]=0
-next
 yval=sml[2]
 yval2=sml[3]
+dcon[day]=dval
+dprod[day]=dval2
+mcon[month]=mval
+mcon[12+month]=mval2
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
-svars
+=#save
 
 ; Tagesverbrauch Tabelle
 #daysub
@@ -165,27 +183,47 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 }
 
 
+; -- USE_HTML_CALLBACK --
+>C
+if eres==1 {
+	->sensor53 r
+	svars
+	eres=0
+}
+
+
+; -- JEDE 100MS --
+>F
+tmp=fe("sml_ftask.tas")
+
+
 ; -- JEDE SEKUNDE --
 >S
-; Daten sofort speichern Button
-if (save==1) {
-	save=0
-	svars
+tmp=fe("sml_stask.tas")
+; Warte auf NTP
+if (year<2020) {
+	print auf NTP warten
+	break
 }
-; Warte auf NTP und Zähler
-if ((year<2020) or (sml[2]==0)) {
-	print auf NTP/Zähler warten
+; Pinauswahl
+if ((chg[rxind]>0) or (chg[txind]>0)) {
+	rxpin=rxind-1
+	->sensor53 r
+	=#save
+}
+; Warte auf Zähler
+if (sml[2]==0) {
 	break
 }
 ; Starte MQTT erst wenn Daten vom Stromzähler kommen
 smlj=1
 
-; alle 3s
+; alle 5s
 if (t1==0) {
-	t1=3
-	; Optional: gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
+	t1=5
+	; Optional: stark gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
 	power2=(0.9*power2)+((1-0.9)*sml[1])
-	;=>publish stat/%topic%/script/power2 %power2%
+	=>publish stat/%topic%/script/power2 %power2%
 
 	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
@@ -205,8 +243,8 @@ if (t1==0) {
 }
 
 ; alle 60s
-if (t3==0) {
-	t3=60
+if (t2==0) {
+	t2=60
 	hr=hours
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
@@ -250,7 +288,7 @@ if (t3==0) {
 		dval=sml[2]
 		dval2=sml[3]
 		; nur 1x um Mitternacht speichern
-		svars
+		=#save
 	}
 }
 
@@ -264,7 +302,6 @@ if (t3==0) {
 ;<style>form button{display:none}</style>
 
 ; web button
-bu(save "gespeichert!" "Daten sofort speichern")
 ; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >S Sektion.
 ;bu(swesp "PV Steckdose aktivieren" "PV Steckdose deaktivieren")
 ; optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
@@ -304,23 +341,24 @@ $<script type="text/javascript">google.charts.load('current',{packages:['corecha
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 29.09.2025 (PV no4/24) by ottelo.jimdo.de<br>
-$Credits to gemu2015 (Tasmota Script Dev)<br>
-$Hinweis: Die Daten werden um Mitternacht gespeichert!<br>
-$Der Restart Button speichert ebenfalls die Daten.<br>
+$Version 01.12.2025 (PV no4/24) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center></div>
 
 
-;-- SML --
-; SML Sektion an euren Stromzähler anpassen
-;1=meter1 5=GPIO5 s=SML 0=filterOff 16=filterOn 9600=baud MT175=Name 4=TX-GPIO
-; Anleitung: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#4c
-; Reihenfolge nicht ändern: 1=(Gesamt)Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]
-; https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-definition
->M 1
-; Beispiel MT175 mit bitShake SmartMeterReader-Air
-+1,5,s,16,9600,MT175,4
-1,77070100100700ff@1,Leistung,W,Power_curr,0
-1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
-#
+>w Stromzähler konfigurieren / Daten sichern
+$<button onclick="history.back()">Zurück</button>
+$<hr>
+$<div><button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button><br>
+$<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>
+;WSO_NOCENTER + WSO_FORCEGUI
+so(17)
+smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl" sel)
+pd(rxind "RX Pin: " 50 "#g")
+pd(txind "TX Pin: " 50 "#g")
+
+
+; >M SMARTMETER DESCRIPTOR / ZÄHLER AUSWAHL AB 01.12.2025 VIA DROP-DOWN MENÜ:
+; gewählter Zähler wird in Tools > Manage Filesystem > sml_meter.def geladen
+; TASMOTA (ottelo) IMAGE ab v15.1.0 (07.12.2025) NOTWENDIG
+; ODER >M SEKTION MANUELL HINZUFÜGEN ODER sml_deter.def EDITIEREN

@@ -1,95 +1,108 @@
->D 40
+>D 100
 ; IP for external ScriptEditor
-IP=192.168.178.31
+IP=192.168.178.132
 
-; Tasmota Script für SonoffPow(R2), GosundEP2, Nous A1T Energiemess/smarte Steckdosen "Variante 2"
-; Diese Variante bietet im Gegensatz zum anderen Script ein sehr hoch aufgelöstes Diagramm für die Momentanleistung der letzten Stunde (alle 5s ein Wert)
+; ACHTUNG: KRITISCHE ÄNDERUNG AB SCRIPT VERSION 01.12.2025
+; DIAGRAMM DATEN MÜSSEN VOR DEM UPGRADE AUF DIESE VERSION GESICHERT WERDEN!
+; NACH DEM UPDATE KÖNNEN DIE DATEN WIEDER IMPORTIERT WERDEN
+; ANLEITUNG: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#14
+; Die Daten werden nun in einer extra Datei "data.csv" gespeichert und können so jederzeit gesichert werden!
+; DIESES SCRIPT IST NUR NOCH FÜR DEN ESP32
+; TASMOTA (ottelo) IMAGE ab v15.1.0 (07.12.2025) NOTWENDIG
+
+
 ; (1) Beschreibung:
 ; Skript Version ganz unten
-; Tasmota SML Skript mit Google Chart (Diagramme) für Sonoff Pow (R2) / Gosund EP2 Energiemess-Steckdosen
-; 2 Liniendiagramme: Leistung der letzten Stunde (sehr fein aufgelöst, 5s) und Leistung der letzten 24h (grob aufgelöst)
-; Das 1h Diagramm wird nicht gespeichert und ist nach jedem Neustart neu befüllt
-; Tabellen mit Anzeige des Verbrauchs pro Tag und pro Monat
-; Diagramme und Tabelle benötigen ca. 60s nach einem Neustart um korrekt dargestellt zu werden
+; Tasmota Script für smarte Steckdosen / Energiemesssteckdosen (z.B. Sonoff POW Elite, SONOFF POW320D, NOUS A8T)
+; Script nicht mehr für ESP8266/8685 (Sonoff Pow R2, Nous A1T), nutzt dazu das Script https://github.com/ottelo9/tasmota-sml-script/blob/main/ESP8266/5_SonoffPowR2_GosundEP2_NousA1T.tas
+; Diese Variante 2 bietet im Gegensatz zum anderen Script (1) ein sehr fein aufgelöstes Diagramm für die Momentanleistung der letzten Stunde (alle 5s ein Wert)
+; Tasmota Skript mit Google Chart (Diagramme)
+; 2 Liniendiagramme: Leistung der letzten Stunde (fein aufgelöst, 5s) und Leistung der letzten 24h (grob aufgelöst, 60s)
+; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
 ; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
-; Dieses Skript benoetigt ein angepasstes Tasmota Image kompiliert mit USE_ENERGY_SENSOR und andere #defines. Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#SkriptDownloadUser
-; Optional im Skript enthalten: (Op1) Daten an www.clever-pv.com senden
+; Optional im Skript enthalten: (Op1) Daten an www.clever-pv.com senden. Zum Aktivieren nach (OpX) suchen und inkl ; entfernen.
 
 ; (2) Anleitung:
 ; http://ottelo.jimdo.de/
 ; (a) Script übertragen
-; Ich empfehle das Script mit dem ext. Editor zu "komprimieren" (Kommentare entfernen). Script laden -> Window -> Export to documents folder. Dann einfach in Tasmota einfügen.
-; ScriptEditor runterladen um dieses Skript auf den ESP zu übertragen. Der Editor entfernt alle Kommentare und leere Zeilen
-; https://tasmota.github.io/docs/Scripting-Language/#optional-external-editor
-; IP eures ESPs oben im Script eingeben, damit der Editor das Skript korrekt senden kann
-; Hinweis Dateiformat Scriptdatei: UTF8, LF (\n) als Zeilenende (Unix EOL), damit der ext. Editor keine doppelten Leerzeichen anzeigt. Einstellbar in Notepad++ (Edit->EOL->Unix).
-; (b) Initialisieren
-; Wenn die Werte von der Steckdose korrekt angezeigt werden, muss das Script einmalig initialisiert werden. Folgendes in die Tasmota Console eingeben - Achtung alle Daten im Diagramm/Tabelle werden gelöscht!
-; script>=#init
-; (c) Um später fehlende oder falsche Werte in den Tabellen zu ändern, können folgende Befehle in der Console eingegeben werden:
-;script?var       beliebige Variable auslesen z.B. script?dcon[1] (erster Tag in Monatstabelle lesen)
-;script>var=1     beliebige Variable schreiben z.B. script >dcon[1]=10 (erster Tag in Monatstabelle = 10 kWh)
-; (d) Um eure Diagrammdaten zu exportieren/sichern könnt ihr folgendes hintereinander eingeben. Die ausgegebenen Daten einfach markieren und in eine Textdatei kopieren:
-;script?dval   script?dcon   script?mval   script?mcon   script?yval
-; Zum Importieren müssen sie dann mit z.B. script>dcon={x x x x ...} eingeben werden. Am Ende speichern.
+; Dieses Script kann ab Tasmota 15.1.0-ottelo bequem via DropDown Menü unter Tools > Edit Script ausgewählt werden.
+; Anschließend könnt ihr über den Button "Werte initialisieren / Daten sichern" die Werte initialisieren.
+; Ansonsten müsst ihr es vor dem Einfügen in Tasmota verkleinern/komprimieren. Anleitung siehe Link oben.
 
 
-; -- ARRAYS --
-; 24h power chart
-M:p:sday=0 288
-; Tagesverbrauch Tabelle 1-31
-M:p:dcon=0 31
-; Monatsverbrauch Tabelle 1-12
-M:p:mcon=0 12
-; 4h Chart, Neuer Wert alle 30s
+; -- ARRAYS (max:10, MAXFILT) --
+; 1h Diagramm, neuer Wert alle 5s, 720+1=Optimierung X-Achse
 M:s4h=0 721
+M:s4hf=0 6
+; 24h Diagramm, neuer Wert alle 60s, 1440+1=Optimierung X-Achse
+M:s24h=0 1441
+M:s24hf=0 12
+; Monatsverbrauch Tabelle 1-12
+M:mcon=0 12
 ; -- VARS --
-; PermVars (max:1536bytes=384vars): Tages, Monats, Jahres Verbrauch / Einspeisung
+; PermVars (max:1536bytes=384vars)
 p:mval=0
 p:dval=0
 p:yval=0
 p:da=1
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
-t:t1=3
-t:t2=5
-t:t3=60
+t:t1=5
+t:t2=60
 tmp=0
-m5=0
-cstr="cnt0/12"
-cstr2="cnth0/720"
+idx4=0
+idx24=0
+cstr="cnth0/720"
+cstr2="cnth0/30"
 utm="00d 00h 00m"
-avgv2=0
-avgvc2=0
 hr=0
-save=0
+fr=0
 
 
 ; -- BOOT --
 >B
-=>sensor53 r
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
 smlj=0
+=#load
 
 
 ; -- SUBS --
+#save
+print saving arrays
+dp2
+fr=fo("data.csv" w)
+if fr>=0 {
+fwa(s4h fr)
+fwa(s24h fr)
+fwa(dcon fr)
+fwa(mcon fr)
+fc(fr)
+} else {
+print file error: %fr%
+}
+svars
+
+#load
+print loading arrays
+dp2
+fr=fo("data.csv" r)
+fra(s4h fr)
+fra(s24h fr)
+fra(dcon fr)
+fra(mcon fr)
+fc(fr)
+
 #init
 dval=enrg[0]
-for tmp 1 dcon[-1] 1
-	dcon[tmp]=0
-	dprod[tmp]=0
-next
 mval=enrg[0]
-for tmp 1 mcon[-1] 1
-	mcon[tmp]=0
-next
 yval=enrg[0]
-for tmp 1 sday[-1] 1
-	sday[tmp]=0
-next
+acp(s4h 0)
+acp(s24h 0)
+dcon[day]=dval
+mcon[month]=mval
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
-svars
+=#save
 
 ; Tagesverbrauch Tabelle
 #daysub
@@ -142,48 +155,56 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 
 ; -- JEDE SEKUNDE --
 >S
-; Daten sofort speichern Button
-if (save==1) {
-	save=0
-	svars
-}
-; Warte auf NTP und Zähler
-if ((year<2020) or (enrg[1]==0)) {
-	print auf NTP/Zähler warten
+; Warte auf NTP
+if (year<2020) {
+	print auf NTP warten
 	break
 }
-; Starte MQTT erst wenn Daten vom Stromzähler kommen
+; Warte auf Steckdose
+if (enrg[1]==0) {
+	break
+}
+; Starte MQTT erst wenn Daten von der Steckdose kommen
 smlj=1
 
-; alle 3s
+; alle 5s
 if (t1==0) {
-	t1=3
+	t1=5
 	; enrg[n] = hole Wert vom energy register n 0=Gesamtverbrauch, 1..3 Spannung von Phase 1..3, 4..6 aktuell von Phase 1..3, 7..9 Leistung von Phase 1..3, 10=Verbrauch ab Start, 11=Tagesverbrauch, 12=Verbrauch Gestern (USE_ENERGY_SENSOR)
-	; Leistung aufsummieren 4h/24h Diagramm
-	avgv2+=enrg[7]
-	avgvc2+=1
+	; Moving average filter für 4h/24h Diagramm
+	s4hf=enrg[7]
+	s24hf=enrg[7]
+	
+	; 4h/24h Array idx setzen
+	; Wie wird idx4 (bzw. cstr) für 4h X-Achse errechnet
+	; setze 1h Chart X-Achse alle 5s => /720 Werte pro Stunde = Array
+	; (aktuelle Stunde-1) * (720 Werte pro Stunde) + (aktuelle Minute * 12 Werte pro Minute) + (aktuelle Sekunde * 1 Wert /5)
+	tmp=hours-1
+	if (tmp<0) {
+		tmp+=24
+	}
+	idx4=tmp*720+(mins*12)+int(secs/5)
+	idx24=(hours*60+mins)
+	; 4h Chart. Durschnittsleistung [W] der letzten 30s => s4h[1-480]
+	s4h[0]=idx4%s4h[-1]
+	s4h=int(s4hf)
+	; 24h Chart. Durschnittsleistung [W] der letzten 60s => s24h[1-1440]
+	s24h[0]=idx24
+	s24h=int(s24hf)
+	cstr="cnth"+s(0idx4)+"/120"
+	cstr2="cnth"+s(0idx24)+"/60"
+	
+	; Optional: stark gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
+	power2=(0.9*power2)+((1-0.9)*enrg[7])
+	=>publish stat/%topic%/script/power2 %power2%
+
 	; (Op1) Siehe https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#8
 	;->WebQuery EURE-PUSH-API-URL POST [Content-Type:application/json] {"watt": %0enrg[7]%}
 }
 
-; alle 5s
-if (t2==0) {
-	t2=5
-	; 1h chart. idx wird automatisch gesetzt
-	s4h=enrg[7]
-
-	; Setze 1h Chart X-Achse alle 5s => /720 Werte pro Stunde. Arraygrösse = 720
-	; 2880: 720 Werte pro Stunde * 24h => modulo
-	; (hours+23)*720: hours=0-23 * 720, da pro Stunde 720 Werte
-	;                 +23 = Offset, da das Diagramm 24-1h in die Vergangenheit reichen soll
-	; mins*2: (mins=0-59), *12 da pro Minute 12 Werte
-	; secs/5: (secs=0-59), /5 da pro 5s ein Wert
-	cstr2="cnth"+s(1.0((((hours+23)*720)+(mins*12)+(int(secs/5)))%17280+1))+"/720"
-}
-
 ; alle 60s
-if (t3==0) {
-	t3=60
+if (t2==0) {
+	t2=60
 	hr=hours
 	;Zeit seit letztem Boot
 	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
@@ -196,20 +217,6 @@ if (t3==0) {
 	;=>publish stat/%topic%/script/consday %2(dcon[day])%
 	;=>publish stat/%topic%/script/consmonth %2(mcon[month])%
 	;=>publish stat/%topic%/script/consyear %2(enrg[0]-yval)%
-
-	; 24h Chart. Berechne Durschnittsleistung [W] der letzten 5min => ins Array[1-288]
-	m5=int((((hours*60)+mins)/5)+1)
-	; set idx (pointer starts from 0)
-	sday[0]=m5
-	if (chg[m5]>0) {
-		sday[m5]=int(avgv2/avgvc2)
-		avgv2=0
-		avgvc2=0
-	}
-
-	; Aktualisiere 24h Chart alle 5Min => Arraygröße 288
-	; tasmota calc [hh:mm] via cnthX/Y. mm = X%Y * 60/Y. hh = X/Y
-	cstr="cnth"+s(1.0(((hours)*12)+int(mins/5))+1)+"/12"
 
 	; Tagesverbrauch Berechnung um Mitternacht
 	if ((chg[hr]>0) and (hr==0)) {
@@ -230,7 +237,7 @@ if (t3==0) {
 		; daily values
 		dval=enrg[0]
 		; nur 1x um Mitternacht speichern
-		svars
+		=#save
 	}
 }
 
@@ -244,9 +251,11 @@ if (t3==0) {
 ;<style>form button{display:none}</style>
 
 ; web button
-bu(save "gespeichert!" "Daten sofort speichern")
 ; optional um per Slider Y-Achse Werte zu begrenzen, suche im Skript nach vn
 ;sl(4000 20000 vn "4 kW" "12 kW" "20 kW")
+
+; Filtered power
+Leistung (gefiltert){m}%0power2% W
 
 ; Verbrauch
 Tagesverbrauch{m}%2(enrg[0]-dval)% kWh
@@ -260,7 +269,7 @@ $<div style="margin-left:-30px">
 
 ; 1h hochaufgelöstes Leistung Diagramm (5s Raster)
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt s4h "wr" "Leistung [W]" cstr2)
+$gc(lt s4h "wr" "Leistung [W]" cstr)
 $var options = {
 $chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
@@ -276,7 +285,7 @@ $gc(e)
 
 ; 24h Leistung Diagramm
 $<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt sday "wr" "Leistung [W]" cstr)
+$gc(lt s24h "wr" "Leistung [W]" cstr2)
 $var options = {
 $chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
@@ -301,9 +310,15 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Tasmota Script fuer Sonoff Pow (R2) / Gosund EP2 Steckdosen mit Energiemessung
-$Version 19.11.2025 by ottelo.jimdo.de<br>
-$Credits to gemu2015 (ScriptEngine V%vers%)<br>
-$Hinweis: Die Daten (ohne 4h Chart) werden um Mitternacht gespeichert!<br>
-$Der Restart Button speichert ebenfalls die Daten.<br>
+$Tasmota Script fuer Steckdosen mit Energiemessung (2)
+$Version 01.12.2025 by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%<br>
+$Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
+$4h Diagramm aktualisiert sich alle 5s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
+
+
+>w Werte initialisieren / Daten sichern
+$<button onclick="history.back()">Zurück</button>
+$<hr>
+$<div><button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button><br>
+$<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>

@@ -1,0 +1,52 @@
+>D 100
+; 0_SML_Simple
+; TASMOTA (ottelo) IMAGE ab v15.1.0 (07.12.2025) NOTWENDIG
+rxpin=0
+txpin=0
+p:rxind=1
+p:txind=1
+p:sel=0
+tmp=0
+
+>B
+smlj=0
+rxpin=rxind-1
+txpin=txind-1
+->sensor53 r
+
+>F
+tmp=fe("sml_ftask.tas")
+
+>S
+tmp=fe("sml_stask.tas")
+if (year<2020) {
+break
+}
+if (sml[2]>0) {
+smlj=1
+print enabled MQTT
+}
+if ((chg[rxind]>0) or (chg[txind]>0)) {
+rxpin=rxind-1
+->sensor53 r
+svars
+}
+
+>C
+if eres==1 {
+=>sensor53 r
+svars
+eres=0
+}
+
+>W
+so(17)
+smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl" sel)
+pd(rxind "RX Pin: " 50 "#g")
+pd(txind "TX Pin: " 50 "#g")
+
+
+; >M SMARTMETER DESCRIPTOR / ZÄHLER AUSWAHL AB 01.12.2025 VIA DROP-DOWN MENÜ:
+; gewählter Zähler wird in Tools > Manage Filesystem > sml_meter.def geladen
+; TASMOTA (ottelo) IMAGE ab v15.1.0 (07.12.2025) NOTWENDIG
+; ODER >M SEKTION MANUELL HINZUFÜGEN ODER sml_deter.def EDITIEREN
