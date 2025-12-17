@@ -17,6 +17,6 @@
 		{ "label": "1_SML_EcoTrackerEmu_Simple", "filename": "pvakku-powermeter-emulator/1_SML_EcoTrackerEmu_Simple.tas" },
 		{ "label": "1_SML_ShellyEmu_Simple", "filename": "pvakku-powermeter-emulator/1_SML_ShellyEmu_Simple.tas" },
 		{ "label": "2_SML_Script_Chart_PV_EcoTrackerEmu", "filename": "pvakku-powermeter-emulator/2_SML_Script_Chart_PV_EcoTrackerEmu.tas" },
-		{ "label": "2_SML_Script_Chart_PV_ShellyEmu", "filename": "pvakku-powermeter-emulator/2_SML_Script_Chart_PV_ShellyEmu.tas" },
+		{ "label": "2_SML_Script_Chart_PV_ShellyEmu", "filename": "pvakku-powermeter-emulator/2_SML_Script_Chart_PV_ShellyEmu.tas" }
 	]
 }
