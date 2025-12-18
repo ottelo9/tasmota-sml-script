@@ -201,7 +201,7 @@ s24h=int(s24hf)
 cstr="cnth"+s(0idx4)+"/120"
 cstr2="cnth"+s(0idx24)+"/60"
 power2=(0.9*power2)+((1-0.9)*sml[1])
-=>publish stat/%topic%/script/power2 %power2%
+=>publish stat/%topic%/script/power2 %0power2%
 if (swesp==1) {
 if ((power2<-300) and (swespflg==0)) {
 swespflg=1
@@ -249,6 +249,7 @@ cpwr=sml[1]-(tmp/2)
 } else {
 cpwr=sml[1]
 }
+=>publish stat/%topic%/script/cpwr %0cpwr%
 >W
 Leistung (gefiltert){m}%0power2% W
 Leistung (an Marstek Akku){m}%0cpwr% W
