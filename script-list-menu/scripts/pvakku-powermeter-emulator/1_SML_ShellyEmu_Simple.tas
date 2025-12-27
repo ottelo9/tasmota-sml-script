@@ -122,7 +122,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
 $<center><span style="font-size:10px;">
-$Version 01.12.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 27.12.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
@@ -132,6 +132,6 @@ $<hr>
 $<div><button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte zurücksetzen?')){seva(1,'_init');}">Zählerwerte initialisieren</button><br>
 $<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Daten speichern</button></div>
 so(17)
-smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl" sel)
+smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
 pd(rxind "RX Pin: " 50 "#g")
 pd(txind "TX Pin: " 50 "#g")
