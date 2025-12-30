@@ -14,7 +14,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,s,0,9600,Q3A
++1,%0rxpin%,s,16,9600,Q3A
 1,=soC,1024,0
 1,77070100100700ff@1,Leistung,W,Power,0
 1,77070100010800ff@1000,Verbrauch,kWh,E_in,3

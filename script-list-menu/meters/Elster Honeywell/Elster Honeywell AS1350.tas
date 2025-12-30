@@ -13,7 +13,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,0,9600,AS1350,%0txpin%
++1,%0rxpin%,o,16,9600,AS1350,%0txpin%
 1,1.7.0(@0.001,Power In,W,power_in,0
 1,2.7.0(@0.001,Power Out,W,power_out,0
 1,2.8.0(@1,Total Out,kWh,E_out,3

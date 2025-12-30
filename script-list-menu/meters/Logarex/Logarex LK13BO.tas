@@ -13,7 +13,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,0,9600,LK13BO,%0txpin%
++1,%0rxpin%,o,16,9600,LK13BO,%0txpin%
 1,1.8.0(@1,Leistung,W,power,0
 1,1.8.0(@1,Verbrauch,KWh,Total_in,3
 1,1.8.1(@1,Verbrauch HT,KWh,Total_inHT,3

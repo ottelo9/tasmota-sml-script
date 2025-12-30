@@ -13,7 +13,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,0,9600,T510,%0txpin%
++1,%0rxpin%,o,16,9600,T510,%0txpin%
 1,=m 4+5+6 @1,Leistung,W,Power_total,0
 1,1.8.0(@1,Zählerstand,kWh,Total_in,3
 1,=h--

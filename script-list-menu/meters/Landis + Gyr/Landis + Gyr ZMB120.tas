@@ -13,7 +13,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,0,9600,ZMB120,%0txpin%
++1,%0rxpin%,o,16,9600,ZMB120,%0txpin%
 1,16.7.0(@1,Leistung,kW,kW_L1+L2+L3,2
 1,1.8.0(@1,HT+NT Zählerstand,kWh,Total_in,3
 1,1.8.1(@1,HT,kWh,HT_Total_in,3

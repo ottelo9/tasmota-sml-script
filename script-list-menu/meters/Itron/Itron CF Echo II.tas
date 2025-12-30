@@ -34,7 +34,7 @@ print request data
 sml(1 1 "105BFE5916")
 
 >M 1
-+1,%0rxpin%,rE1,0,2400,WAERME,%0txpin%
++1,%0rxpin%,rE1,16,2400,WAERME,%0txpin%
 1,=so3,16
 1,=soC,1024,3
 1,0C14xxxxxxxx0B2Dbcd6@10,Current power,kW,current_power,0

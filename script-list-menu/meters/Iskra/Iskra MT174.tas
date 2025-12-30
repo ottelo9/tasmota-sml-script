@@ -1,5 +1,5 @@
 >M 1
-+1,%0rxpin%,o,0,9600,MT174,%0txpin%
++1,%0rxpin%,o,16,9600,MT174,%0txpin%
 1,1-0:1.7.0*255(@0.001,Leistung,W,powerIn,0
 1,1-0:1.8.0*255(@1,Verbrauch,kWh,E_in,2
 1,1-0:2.8.0*255(@1,Einspeisung,kWh,E_out,2
