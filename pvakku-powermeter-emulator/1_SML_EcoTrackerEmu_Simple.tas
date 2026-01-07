@@ -1,11 +1,10 @@
 >D 250
-; Einfaches EcoTracker Emulator Script für ESP8266/ESP32 und Tasmota Image von ottelo
+; Einfaches EcoTracker Emulator Script für ESP32 und Tasmota Image (ab V15.1.0) von ottelo
 ; Emuliert EcoTracker für Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles (MS-A2)
-; Scriptgröße beim ESP8266 begrenzt: EEP_SCRIPT_SIZE 4096
 ; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
 ; Script basiert auf https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas
-; Script ist für ein Wifi Tasmota ESP Lesekopf für Stromzähler gedacht, z.B. HichiV1/V2, Bitshake, usw.
-; Der Text kann einfach so in den internen Editor von Tasmota eingefügt werden. Beim ESP8266 sollten alle Kommentare entfernen werden.
+; Script ist für ein Wifi Tasmota ESP Lesekopf für Stromzähler gedacht, z.B. HichiV2 (nicht V1), Bitshake, usw.
+; Der Text kann einfach so in den internen Editor von Tasmota eingefügt werden.
 ; Die Marstek App sucht nach dem EcoTracker via mdns, der Emulator meldet sich als ecotracker-<mac>
 ; !! Es darf kein Passwortschutz in Tasmota aktiv sein !!
 ; Der Datenaustausch erfolgt dann via REST API https://everhome.cloud/en/developer/ecotracker alle paar Sek (~13s beim Jupiter C Plus)
