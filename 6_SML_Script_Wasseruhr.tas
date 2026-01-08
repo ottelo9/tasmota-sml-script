@@ -46,13 +46,8 @@ p:mval=0
 p:dval=0
 p:yval=0
 p:da=1
-p:rxind=1
-p:txind=1
-p:sel=0
 t:t1=5
 t:t2=60
-rxpin=0
-txpin=0
 tmp=0
 idx4=0
 idx24=0
@@ -70,8 +65,6 @@ fr=0
 
 ; -- BOOT --
 >B
-rxpin=rxind-1
-txpin=txind-1
 WaterCon=pc[1]/factor
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
@@ -166,33 +159,12 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 }
 
 
-; -- USE_HTML_CALLBACK --
->C
-if eres==1 {
-	->sensor53 r
-	svars
-	eres=0
-}
-
-
-; -- JEDE 100MS --
->F
-tmp=fe("sml_ftask.tas")
-
-
 ; -- JEDE SEKUNDE --
 >S
-tmp=fe("sml_stask.tas")
 ; Warte auf NTP
 if (year<2020) {
 	print auf NTP warten
 	break
-}
-; Pinauswahl
-if ((chg[rxind]>0) or (chg[txind]>0)) {
-	rxpin=rxind-1
-	->sensor53 r
-	=#save
 }
 ; Starte MQTT erst jetzt
 smlj=1
@@ -320,7 +292,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 27.12.2025 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 08.01.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -335,19 +307,8 @@ $</span></center></div>
 1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
 #
 
->w Stromzähler konfigurieren / Daten sichern
+>w Werte initialisieren / Daten sichern
 $<button onclick="history.back()">Zurück</button>
 $<hr>
 $<div><button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button><br>
 $<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>
-;WSO_NOCENTER + WSO_FORCEGUI
-so(17)
-smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
-pd(rxind "RX Pin: " 50 "#g")
-pd(txind "TX Pin: " 50 "#g")
-
-
-; >M SMARTMETER DESCRIPTOR / ZÄHLER AUSWAHL AB 01.12.2025 VIA DROP-DOWN MENÜ:
-; gewählter Zähler wird in Tools > Manage Filesystem > sml_meter.def geladen
-; TASMOTA (ottelo) IMAGE ab v15.1.0 (07.12.2025) NOTWENDIG
-; ODER >M SEKTION MANUELL HINZUFÜGEN ODER sml_deter.def EDITIEREN
