@@ -2,15 +2,15 @@
 ; m=Modbus  1=100ms TX-period  01040034=01 SlaveID 04=InputReg 0034=Register in Hex
 +1,%0rxpin%,m,0,9600,SDM630,%0txpin%,1,01040034,01040048,0104004A,0104000C,0104000E,01040010,0104002A,01040000,01040002,01040004
 1,010404ffffffff@i0:1,Leistung,W,Total_system_power,0
-1,010404ffffffff@i8:1,Verbrauch,kWh,Total_Import,2
-1,010404ffffffff@i8:1,Einspeisung,kWh,Total_Export,2
+1,010404ffffffff@i1:1,Verbrauch,kWh,Total_Import,2
+1,010404ffffffff@i2:1,Einspeisung,kWh,Total_Export,2
 1,=h--
-1,010404ffffffff@i1:1,L1_Power_act,W,L1_Power,0
-1,010404ffffffff@i2:1,L2_Power_act,W,L2_Power,0
-1,010404ffffffff@i3:1,L3_Power_act,W,L3_Power,0
+1,010404ffffffff@i3:1,L1_Power_act,W,L1_Power,0
+1,010404ffffffff@i4:1,L2_Power_act,W,L2_Power,0
+1,010404ffffffff@i5:1,L3_Power_act,W,L3_Power,0
 1,=h--
-1,010404ffffffff@i4:1,L-N_Voltage,V,L-N_Voltage,1
-1,010404ffffffff@i5:1,L1-N_Voltage,V,L1-N_Voltage,1
-1,010404ffffffff@i6:1,L2-N_Voltage,V,L2-N_Voltage,1
-1,010404ffffffff@i7:1,L3-N_Voltage,V,L3-N_Voltage,1
+1,010404ffffffff@i6:1,L-N_Voltage,V,L-N_Voltage,1
+1,010404ffffffff@i7:1,L1-N_Voltage,V,L1-N_Voltage,1
+1,010404ffffffff@i8:1,L2-N_Voltage,V,L2-N_Voltage,1
+1,010404ffffffff@i9:1,L3-N_Voltage,V,L3-N_Voltage,1
 #
