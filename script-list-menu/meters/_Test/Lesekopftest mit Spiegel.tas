@@ -17,11 +17,8 @@ sml(1 1 lnv2+hx(26712.92*10000)+"01")
 ; sende Zählerstand Einspeisung Total [Wh]
 sml(1 1 lnv3+hx(657.85*10000)+"01")
 
->F
-lnv0=lnv0
-
 >M 1
-+1,%0rxpin%,s,0,9600,TEST,%0txpin%,10,
++1,%0rxpin%,s,0,9600,TEST,%0txpin%
 1,77070100100700ff@1,Leistung,W,Power_curr,0
 1,77070100010800ff@1000,Verbrauch,kWh,Total_in,2
 1,77070100020800ff@1000,Einspeisung,kWh,Total_out,2
