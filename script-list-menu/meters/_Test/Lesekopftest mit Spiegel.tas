@@ -1,0 +1,9 @@
+; Der Abstand zum Spiegel sollte 3cm betragen (den Lesekopf nicht auf den Spiegel auflegen,
+; Raum sollte nicht zu hell sein). In der Console dann eingeben: sensor53 d1. Kommt dann 
+; etwas an? Nach dem Test wieder sensor53 d0 eingeben.
+>M 1
++1,%0rxpin%,o,0,9600,TEST,%0txpin%,10,2F3F210D0A
+1,1-0:1.8.1*255(@1,Total Consumed,KWh,Total_in,3
+1,1-0:2.8.1*255(@1,Total Delivered,KWh,Total_out,3
+1,1-0:0.0.0*255(@#),Meter Number,,Meter_number,0
+#
