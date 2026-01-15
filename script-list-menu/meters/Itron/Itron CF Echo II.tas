@@ -36,7 +36,6 @@ sml(1 1 "105BFE5916")
 >M 1
 +1,%0rxpin%,rE1,16,2400,WAERME,%0txpin%
 1,=so3,16
-1,=soC,1024,3
 1,0C14xxxxxxxx0B2Dbcd6@10,Current power,kW,current_power,0
 1,0C78xxxxxxxx0406uuUUuuUUs@1000,Total energy,MWh,total_energy,3
 1,0406xxxxxxxx0C14bcd8@100,Total volume,m³,total_volume,2
