@@ -1,9 +1,28 @@
+; Lesekopf Testscript
+; sendet & empfängt MT175 Stromzähler Werte zum Testen des Lesekopfes
 ; Der Abstand zum Spiegel sollte 3cm betragen (den Lesekopf nicht auf den Spiegel auflegen,
 ; Raum sollte nicht zu hell sein). In der Console dann eingeben: sensor53 d1. Kommt dann 
 ; etwas an? Nach dem Test wieder sensor53 d0 eingeben.
+>S
+if (lnv0==0) {
+lnv0=1
+lnv1="77070100100700ff0101621b520055"
+lnv2="77070100010800ff650001018201621e52ff5900000000"
+lnv3="77070100020800ff0101621e52ff5900000000"
+}
+; sende Zufalls-Wirkleistung [W]
+sml(1 1 lnv1+hx(rnd(1000)-500)+"01")
+; sende Zählerstand Bezug Total [Wh]
+sml(1 1 lnv2+hx(26712.92*10000)+"01")
+; sende Zählerstand Einspeisung Total [Wh]
+sml(1 1 lnv3+hx(657.85*10000)+"01")
+
+>F
+lnv0=lnv0
+
 >M 1
-+1,%0rxpin%,o,0,9600,TEST,%0txpin%,10,2F3F210D0A
-1,1-0:1.8.1*255(@1,Total Consumed,KWh,Total_in,3
-1,1-0:2.8.1*255(@1,Total Delivered,KWh,Total_out,3
-1,1-0:0.0.0*255(@#),Meter Number,,Meter_number,0
++1,%0rxpin%,s,0,9600,TEST,%0txpin%,10,
+1,77070100100700ff@1,Leistung,W,Power_curr,0
+1,77070100010800ff@1000,Verbrauch,kWh,Total_in,2
+1,77070100020800ff@1000,Einspeisung,kWh,Total_out,2
 #
