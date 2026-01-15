@@ -3,22 +3,20 @@
 ; Der Abstand zum Spiegel sollte 3cm betragen (den Lesekopf nicht auf den Spiegel auflegen,
 ; Raum sollte nicht zu hell sein). In der Console dann eingeben: sensor53 d1. Kommt dann 
 ; etwas an? Nach dem Test wieder sensor53 d0 eingeben.
->F
-lnv0=lnv0
-
 >S
 if (lnv0==0) {
 lnv0=1
-lnv1="77070100100700ff0101621b520055"
-lnv2="77070100010800ff650001018201621e52ff5900000000"
-lnv3="77070100020800ff0101621e52ff5900000000"
+lsv0="77070100100700ff0101621b520055"
+lsv1="77070100010800ff650001018201621e52ff5900000000"
+lsv2="77070100020800ff0101621e52ff5900000000"
 }
 ; sende Zufalls-Wirkleistung [W]
-sml(1 1 lnv1+hx(rnd(1000)-500)+"01")
+lnv1=rnd(1000)-500
+sml(1 1 lsv0+hx(lnv1)+"01")
 ; sende Zählerstand Bezug Total [Wh]
-sml(1 1 lnv2+hx(26712.92*10000)+"01")
+sml(1 1 lsv1+hx(26712.92*10000)+"01")
 ; sende Zählerstand Einspeisung Total [Wh]
-sml(1 1 lnv3+hx(657.85*10000)+"01")
+sml(1 1 lsv2+hx(657.85*10000)+"01")
 
 >M 1
 +1,%0rxpin%,s,0,9600,TEST,%0txpin%
