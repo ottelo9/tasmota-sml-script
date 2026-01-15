@@ -14,6 +14,6 @@
 1,77070100480700ff@1,Voltage L3,V,Volt_L3_curr,1
 1,=h--
 1,770701001f0700ff@1,Amperage L1,A,curr_L1,2
-1,77070100330700ff@1,Amperage L2,A,curr_L1,2
-1,77070100470700ff@1,Amperage L3,A,curr_L1,2
+1,77070100330700ff@1,Amperage L2,A,curr_L2,2
+1,77070100470700ff@1,Amperage L3,A,curr_L3,2
 #
