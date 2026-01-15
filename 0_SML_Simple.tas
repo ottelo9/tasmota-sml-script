@@ -9,16 +9,17 @@ p:sel=0
 tmp=0
 
 >B
+sota()
 smlj=0
 rxpin=rxind-1
 txpin=txind-1
 ->sensor53 r
 
 >F
-tmp=fe("sml_ftask.tas")
+fe("sml_ftask.tas")
 
 >S
-tmp=fe("sml_stask.tas")
+fe("sml_stask.tas")
 if (year<2020) {
 break
 }
@@ -45,6 +46,10 @@ smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-
 pd(rxind "RX Pin: " 50 "#g")
 pd(txind "TX Pin: " 50 "#g")
 
+so(1)
+$<center><span style="font-size:10px;">
+$Version 15.01.2026<br>by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)
+$</span></center>
 
 ; >M SMARTMETER DESCRIPTOR / ZÄHLER AUSWAHL AB 01.12.2025 VIA DROP-DOWN MENÜ:
 ; gewählter Zähler wird in Tools > Manage Filesystem > sml_meter.def geladen

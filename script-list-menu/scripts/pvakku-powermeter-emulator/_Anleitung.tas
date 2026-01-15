@@ -23,13 +23,34 @@ Sehr kleines und wirklich einfaches Script zum Emulieren eines EcoTracker von
 everHome. Getestet mit Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles MS-A2.
 Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte +
 Tages/Monats/Jahreswerte) an. Benötigt mein Tasmota Image V15.1.0 oder höher.
-Im Script ist eine grobe Beschreibung, wie ihr das alles zum Laufen bekommt.
+Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
+Script basiert auf https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas
+Script ist für ein Wifi Tasmota ESP Lesekopf für Stromzähler gedacht, z.B. HichiV2
+(nicht V1), Bitshake, usw. Die Marstek App sucht nach dem EcoTracker via mdns, 
+der Emulator meldet sich als ecotracker-<mac>
+!! Es darf kein Passwortschutz in Tasmota aktiv sein !!
+Der Datenaustausch erfolgt dann via REST API https://everhome.cloud/en/developer/ecotracker
+alle paar Sek (~13s beim Jupiter C Plus). Zum Test einfach http://IP-TASMOTA/v1/json eingeben
 
 1_SML_ShellyEmu_Simple
 --------------------------
 Einfaches Script zum Emulieren eines Shelly Pro 3EM (getestet mit Marstek Akkus
 Jupiter, Venus, B2500) Es hat keine Diagramme sondern zeigt nur das nötigste
 (Zählerwerte + Tages/Monats/Jahreswerte) an.
+Die Marstek App sucht nach dem Shelly via mDNS, der Emulator meldet sich als shellypro3em-<mac>
+Der Datenaustausch erfolgt dann via UDP alle paar Sek (~2-4s beim Jupiter C Plus)
+Hinweise zum Konfigurieren des Scriptes (gilt auch für Script mit Charts):
+a) Standardmäßig ist der UDP Port auf 1010 eingestellt. Für B2500 kann es sein, dass
+   dieser auf 2220 eingestellt werden muss. Dafür im Script nach res=udp(0 1010)
+   suchen und ändern!
+   "throttle=1" Marstek Abfrage verzögern, throttle=1 => sekündlich senden
+b) Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
+   Suche nach "udp(2 header mstr1 mstr2)". Füge zwischen "} else {" und "}" folgendes ein:   
+   =#getstat
+   udp(2 header mstr1 mstr2)
+c) reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W 
+   herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
+   Suche nach "cpwr=sml[1]" ändern in "cpwr=sml[1]-50"
 
 2_SML_Script_Chart_PV_EcoTrackerEmu  <- empfohlen (mit Diagramme)
 -----------------------------------

@@ -79,6 +79,7 @@ fr=0
 
 ; -- BOOT --
 >B
+sota("")
 rxpin=rxind-1
 txpin=txind-1
 ->sensor53 r
@@ -131,14 +132,15 @@ wval=sml[2]
 wval2=sml[3]
 acp(s4h 0)
 acp(s24h 0)
-dcon[day]=dval
-dprod[day]=dval2
-mcon[month]=mval
-mcon[12+month]=mval2
-wcon[cw]=wval
-wprod[cw]=wval2
-->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
+=#save
+
+#init2
+acp(dcon 0)
+acp(dprod 0)
+acp(mcon 0)
+acp(wcon 0)
+acp(wprod 0)
 =#save
 
 ; Tagesverbrauch Tabelle
@@ -233,12 +235,12 @@ if eres==1 {
 
 ; -- JEDE 100MS --
 >F
-tmp=fe("sml_ftask.tas")
+fe("sml_ftask.tas")
 
 
 ; -- JEDE SEKUNDE --
 >S
-tmp=fe("sml_stask.tas")
+fe("sml_stask.tas")
 ; Warte auf NTP
 if (year<2020) {
 	print auf NTP warten
@@ -452,7 +454,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 27.12.2025 (PV3) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 15.01.2026 (PV3) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -461,13 +463,17 @@ $</span></center></div>
 >w Stromzähler konfigurieren / Daten sichern
 $<button onclick="history.back()">Zurück</button>
 $<hr>
-$<div><button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button><br>
-$<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>
+$<style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
+$<div class=button-group>
+$<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button>
+$<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
+$<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button>
+$<a href="/ufse?file=/sml_meter.def">Stromzähler Script</a></div>
 ;WSO_NOCENTER + WSO_FORCEGUI
 so(17)
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
-pd(rxind "RX Pin: " 50 "#g")
-pd(txind "TX Pin: " 50 "#g")
+pd(rxind "RX Pin: " 50 "#gr")
+pd(txind "TX Pin: " 50 "#gr")
 
 
 ; >M SMARTMETER DESCRIPTOR / ZÄHLER AUSWAHL AB 01.12.2025 VIA DROP-DOWN MENÜ:
