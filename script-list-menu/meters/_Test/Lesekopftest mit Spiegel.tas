@@ -3,6 +3,9 @@
 ; Der Abstand zum Spiegel sollte 3cm betragen (den Lesekopf nicht auf den Spiegel auflegen,
 ; Raum sollte nicht zu hell sein). In der Console dann eingeben: sensor53 d1. Kommt dann 
 ; etwas an? Nach dem Test wieder sensor53 d0 eingeben.
+>F
+lnv0=lnv0
+
 >S
 if (lnv0==0) {
 lnv0=1
