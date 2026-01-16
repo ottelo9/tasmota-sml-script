@@ -79,6 +79,7 @@ eres=0
 fe("sml_ftask.tas")
 
 >S
+fe("sml_stask.tas")
 ; Pinauswahl
 if ((chg[rxind]>0) or (chg[txind]>0)) {
 rxpin=rxind-1

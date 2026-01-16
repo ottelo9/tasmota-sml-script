@@ -42,6 +42,8 @@ throttle=1
 
 >B
 sota("")
+rxpin=rxind-1
+txpin=txind-1
 ->sensor53 r
 smlj=0
 header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
@@ -79,6 +81,7 @@ eres=0
 fe("sml_ftask.tas")
 
 >S
+fe("sml_stask.tas")
 ; Pinauswahl
 if ((chg[rxind]>0) or (chg[txind]>0)) {
 rxpin=rxind-1
@@ -181,7 +184,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
 $<center><span style="font-size:10px;">
-$Version 27.12.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 15.01.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
