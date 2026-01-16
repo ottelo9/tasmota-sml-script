@@ -9,7 +9,7 @@ p:sel=0
 tmp=0
 
 >B
-sota()
+sota("")
 smlj=0
 rxpin=rxind-1
 txpin=txind-1
