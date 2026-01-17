@@ -1,6 +1,6 @@
 {
 	"smartmeter": [
-		{ "label": "Zählerauswahl:", "filename": "" },
+		{ "label": "Kein Zähler gewählt", "filename": "" },
 		{ "label": "> Lesekopftest mit Spiegel <", "filename": "_Test/Lesekopftest mit Spiegel.tas" },
 		{ "label": "Allmess Wasserzähler", "filename": "Allmess/Allmess Wasserzähler.tas" },
 		{ "label": "Apator 12EC3 12EC3g", "filename": "Apator/Apator 12EC3 12EC3g.tas" },
