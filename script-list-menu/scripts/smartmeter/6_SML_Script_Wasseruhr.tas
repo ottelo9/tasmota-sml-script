@@ -195,12 +195,28 @@ $</span></center></div>
 +1,21,c,1,-50,
 1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
 #
->w Werte initialisieren / Daten sichern
+>w Stromzähler konfigurieren / Daten sichern
 <button onclick="history.back()">Zurück</button>
 <hr>
+<style>
+.flex-container {
+display: flex;
+justify-content: center;
+}
+.center-flex-horizontally {
+width: 270px;
+background-color: #f0f0f0;
+text-align: left;
+padding: 20px;
+border: 2px solid #ccc;
+}
+</style>
+<div class="flex-container">
+<div class="center-flex-horizontally">
 <style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
 <div class=button-group>
-<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Werte initialisieren</button>
+<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button>
 <button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
-<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button>
+<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>
+</div>
 </div>
