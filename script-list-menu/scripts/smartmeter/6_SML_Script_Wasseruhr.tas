@@ -187,7 +187,7 @@ $gc(e)
 %=#daysub
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 08.01.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 15.01.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -196,11 +196,11 @@ $</span></center></div>
 1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
 #
 >w Werte initialisieren / Daten sichern
-$<button onclick="history.back()">Zurück</button>
-$<hr>
-$<style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
-$<div class=button-group>
-$<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Werte initialisieren</button>
-$<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
-$<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button>
-$</div>
+<button onclick="history.back()">Zurück</button>
+<hr>
+<style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
+<div class=button-group>
+<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Werte initialisieren</button>
+<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
+<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button>
+</div>

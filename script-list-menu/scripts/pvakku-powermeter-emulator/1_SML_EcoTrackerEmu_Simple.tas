@@ -9,6 +9,7 @@ p:yval2=0
 p:rxind=1
 p:txind=1
 p:sel=0
+p:pwroffset=0
 t:t1=60
 rxpin=0
 txpin=0
@@ -91,7 +92,7 @@ tmp=sml[1]-cpwr
 if (tmp>500) {
 cpwr=sml[1]-(tmp/2)
 } else {
-cpwr=sml[1]
+cpwr=sml[1]-pwroffset
 }
 >W
 Leistung (an Marstek Akku){m}%0cpwr% W
@@ -108,14 +109,19 @@ $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
 >w Stromzähler konfigurieren / Daten sichern
-$<button onclick="history.back()">Zurück</button>
-$<hr>
-$<style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
-$<div class=button-group>
-$<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte zurücksetzen?')){seva(1,'_init');}">Zählerwerte initialisieren</button>
-$<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button>
-$<a href="/ufse?file=/sml_meter.def">Stromzähler Script</a></div>
+<button onclick="history.back()">Zurück</button>
+<hr>
+<style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
+<div class=button-group>
+<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte zurücksetzen?')){seva(1,'_init');}">Zählerwerte initialisieren</button>
+<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Daten speichern</button></div>
+so(5)
+<hr>
+Offset für Nulleinspeisung [W]:
+nm(-100 100 1 pwroffset "" 50 0)
+<hr>
 so(17)
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
 pd(rxind "RX Pin: " 50 "#gr")
 pd(txind "TX Pin: " 50 "#gr")
+<a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
