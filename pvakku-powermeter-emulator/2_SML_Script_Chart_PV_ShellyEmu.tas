@@ -58,6 +58,8 @@ p:da=1
 p:rxind=1
 p:txind=1
 p:sel=0
+p:pwroffset=0
+p:pwrforce=0
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
 t:t1=5
 t:t2=60
@@ -386,9 +388,8 @@ tmp=sml[1]-cpwr
 if (tmp>500) {
 	cpwr=sml[1]-(tmp/2)
 } else {
-	; reduziere die Leistung um 50W, damit die Regelung nicht um 0W, sondern um 50W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
-	;cpwr=sml[1]-50
-	cpwr=sml[1]
+	; Nulleinspeisung-Offset: reduziere die Leistung damit die Regelung nicht um 0W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
+	cpwr=sml[1]-pwroffset
 }
 =>publish stat/%topic%/script/cpwr %0cpwr%
 
@@ -415,8 +416,9 @@ if (str!="") {
 	}
 } else {
 	; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
-	;=#getstat
-	;udp(2 header mstr1 mstr2)
+	if (pwrforce>0) {
+	=#getstat
+	udp(2 header mstr1 mstr2)
 }
 
 
@@ -505,19 +507,25 @@ $</span></center></div>
 
 
 >w Stromzähler konfigurieren / Daten sichern
-$<button onclick="history.back()">Zurück</button>
-$<hr>
-$<style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
-$<div class=button-group>
-$<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button>
-$<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
-$<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button>
-$<a href="/ufse?file=/sml_meter.def">Stromzähler Script</a></div>
-;WSO_NOCENTER + WSO_FORCEGUI
+<button onclick="history.back()">Zurück</button>
+<hr>
+<style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
+<div class=button-group>
+<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button>
+<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
+<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>
+so(5)
+<hr>
+Offset für Nulleinspeisung [W]:
+nm(-100 100 1 pwroffset "" 50 0)
+Datenübertragung zum Akku erzwingen:
+ck(pwrforce "")
+<hr>
 so(17)
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
 pd(rxind "RX Pin: " 50 "#gr")
 pd(txind "TX Pin: " 50 "#gr")
+<a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
 
 
 ; >M SMARTMETER DESCRIPTOR / ZÄHLER AUSWAHL AB 01.12.2025 VIA DROP-DOWN MENÜ:
@@ -531,14 +539,3 @@ pd(txind "TX Pin: " 50 "#gr")
 ; +1,%0rxpin%,s,16,9600,MT175,%0txpin%
 ; Standardmäßig ist der Medianfilter "16" aktiviert, diesen solltet ihr auf 0 ändern, verbessert Regelung
 ; https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-definition
-;
-; Beispiel MT175 mit bitShake SmartMeterReader-Air
-+1,5,s,0,9600,MT175,4
-1,77070100100700ff@1,Leistung,W,Power_curr,0
-1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
-;optional - Falls euer Zähler die Leistung aller 3 Phasen ausgibt solltet ihr sowas in der sml_meter.def sehen:
-;1,77070100240700ff@1,L1,W,L1,0
-;1,77070100380700ff@1,L2,W,L2,0
-;1,770701004C0700ff@1,L3,W,L3,0
-; Siehe dazu Anleitung (b) https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
