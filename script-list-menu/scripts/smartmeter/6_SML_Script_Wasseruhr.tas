@@ -19,7 +19,6 @@ WaterCon=0
 factor=10000
 cstr="cnth0/120"
 cstr2="cnth0/30"
-utm="00d 00h 00m"
 hr=0
 fr=0
 >B
@@ -134,7 +133,6 @@ cstr2="cnth"+s(0idx24)+"/60"
 if (t2==0) {
 t2=60
 hr=hours
-utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 dcon[day]=WaterCon-dval
 mcon[month]=WaterCon-mval
 if ((chg[hr]>0) and (hr==0)) {
@@ -158,7 +156,7 @@ Tagesverbrauch{m}%4(WaterCon-dval)% m³
 Monatsverbrauch{m}%2(WaterCon-mval)% m³
 Jahresverbrauch{m}%2(WaterCon-yval)% m³
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0(uptime/24/60)%d %0(uptime%(24*60)/60)%h %0(uptime%60)%m
 $<div style="margin-left:-30px">
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
 $gc(lt s4h "wr" "Verbrauch [m³]" cstr)

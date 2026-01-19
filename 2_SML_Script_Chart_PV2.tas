@@ -63,7 +63,6 @@ idx4=0
 idx24=0
 cstr="cnth0/720"
 cstr2="cnth0/30"
-utm="00d 00h 00m"
 hr=0
 swesp=0
 swespflg=0
@@ -288,8 +287,6 @@ if (t1==0) {
 if (t2==0) {
 	t2=60
 	hr=hours
-	;Zeit seit letztem Boot
-	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
 	; Tagesverbrauch [kWh]
 	dcon[day]=sml[2]-dval
@@ -364,7 +361,7 @@ Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0(uptime/24/60)%d %0(uptime%(24*60)/60)%h %0(uptime%60)%m
 $<div style="margin-left:-30px">
 
 ; 1h hochaufgelöstes Leistung Diagramm (5s Raster)

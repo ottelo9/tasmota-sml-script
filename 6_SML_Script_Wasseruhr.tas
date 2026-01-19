@@ -58,7 +58,6 @@ factor=10000
 ; -----------------------------
 cstr="cnth0/120"
 cstr2="cnth0/30"
-utm="00d 00h 00m"
 hr=0
 fr=0
 
@@ -205,8 +204,6 @@ if (t1==0) {
 if (t2==0) {
 	t2=60
 	hr=hours
-	;Zeit seit letztem Boot
-	utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
 	; Tagesverbrauch [m³]
 	dcon[day]=WaterCon-dval
@@ -257,7 +254,7 @@ Jahresverbrauch{m}%2(WaterCon-yval)% m³
 
 ; Zeit
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0(uptime/24/60)%d %0(uptime%(24*60)/60)%h %0(uptime%60)%m
 $<div style="margin-left:-30px">
 
 ; 4h Leistung Diagramm

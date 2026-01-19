@@ -18,7 +18,6 @@ t:t2=60
 rxpin=0
 txpin=0
 tmp=0
-utm="00d 00h 00m"
 hr=0
 swesp=0
 swespflg=0
@@ -172,7 +171,6 @@ swespflg=0
 if (t2==0) {
 t2=60
 hr=hours
-utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 dcon[day]=sml[2]-dval
 mcon[month]=sml[2]-mval
 dprod[day]=sml[3]-dval2
@@ -206,7 +204,7 @@ Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%utm%
+Uptime{m}%0(uptime/24/60)%d %0(uptime%(24*60)/60)%h %0(uptime%60)%m
 $<div style="margin-left:-30px">
 $<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 $<script type="text/javascript">google.charts.load('current',{packages:['corechart']});</script>
