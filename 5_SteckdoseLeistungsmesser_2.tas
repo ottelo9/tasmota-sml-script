@@ -37,6 +37,8 @@ M:s4hf=0 6
 ; 24h Diagramm, neuer Wert alle 60s, 1440+1=Optimierung X-Achse
 M:s24h=0 1441
 M:s24hf=0 12
+; Tagesnetzbezug Tabelle 1-31
+M:dcon=0 31
 ; Monatsverbrauch Tabelle 1-12
 M:mcon=0 12
 ; -- VARS --
@@ -313,8 +315,8 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Tasmota Script fuer Steckdosen mit Energiemessung (2)
-$Version 15.01.2026 by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%<br>
+$Tasmota Script für Steckdosen mit Energiemessung (2)
+$Version 15.01.2026 by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 5s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -340,6 +342,7 @@ border: 2px solid #ccc;
 <div class="center-flex-horizontally">  
 <style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
 <div class=button-group>
+<b>5_SteckdosenLeistungsmesser_2.tas</b>
 <button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Werte initialisieren</button>
 <button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
 <button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>

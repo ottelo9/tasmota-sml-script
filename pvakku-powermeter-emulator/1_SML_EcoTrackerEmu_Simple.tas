@@ -167,6 +167,7 @@ padding: 20px;
 border: 2px solid #ccc;
 }
 </style>
+so(17+4)
 <div class="flex-container">
 <div class="center-flex-horizontally">  
 <style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
@@ -174,7 +175,6 @@ border: 2px solid #ccc;
 <button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte zurücksetzen?')){seva(1,'_init');}">Zählerwerte initialisieren</button>
 <button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Daten speichern</button></div>
 <hr>
-so(5)
 Offset für Nulleinspeisung [W]:
 nm(-100 100 1 pwroffset "" 50 0)
 <hr>
