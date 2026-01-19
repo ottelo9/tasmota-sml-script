@@ -1,11 +1,11 @@
 >D 100
 ; 0_SML_Simple
 ; TASMOTA (ottelo) IMAGE ab v15.1.0 (07.12.2025) NOTWENDIG
-rxpin=0
-txpin=0
 p:rxind=1
 p:txind=1
 p:sel=0
+rxpin=0
+txpin=0
 tmp=0
 
 >B

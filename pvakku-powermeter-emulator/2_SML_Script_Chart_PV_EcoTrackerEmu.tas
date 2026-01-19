@@ -480,6 +480,7 @@ so(17+4)
 <div class="center-flex-horizontally">  
 <style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
 <div class=button-group>
+<b>2_SML..Chart_PV_EcoTrackerEmu.tas</b>
 <button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button>
 <button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
 <button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>

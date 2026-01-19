@@ -315,7 +315,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Tasmota Script für Steckdosen mit Energiemessung (2)
+$Tasmota Script für Steckdosen mit Energiemessung (2)<br>
 $Version 15.01.2026 by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 5s, 24h Diagramm alle 60s.<br>

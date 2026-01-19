@@ -1,10 +1,10 @@
 >D 100
 ;0_SML_Simple.tas
-rxpin=0
-txpin=0
 p:rxind=1
 p:txind=1
 p:sel=0
+rxpin=0
+txpin=0
 tmp=0
 >B
 sota("")
