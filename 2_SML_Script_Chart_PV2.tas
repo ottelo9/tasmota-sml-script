@@ -10,6 +10,10 @@ IP=192.168.178.132
 ; DIESES SCRIPT IST NUR NOCH FÜR DEN ESP32
 ; TASMOTA (ottelo) IMAGE ab v15.1.0 (07.12.2025) NOTWENDIG
 
+; MODIFIKATION: Historie in history.csv
+; Speichert je nach Einstellung: Stündlich/Täglich/Monatlich/Jährlich
+; Detaillevel wählbar über Dropdown im Konfigurationsmenü
+; 1=Aus, 2=Jährlich, 3=Monatlich, 4=Täglich, 5=Stündlich
 
 ; (1) Beschreibung:
 ; Skript Version ganz unten
@@ -53,6 +57,13 @@ p:da=1
 p:rxind=1
 p:txind=1
 p:sel=0
+; History Detail Level (1=Aus, 2=Jährlich, 3=Monatlich, 4=Täglich, 5=Stündlich)
+p:hlvl=1
+; Letzter gespeicherter Tag/Monat/Jahr (um Doppelspeicherung zu vermeiden)
+p:lhr=-1
+p:lday=0
+p:lmon=0
+p:lyear=0
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
 t:t1=5
 t:t2=60
@@ -68,6 +79,7 @@ swesp=0
 swespflg=0
 power2=0
 fr=0
+res=0
 
 
 ; -- BOOT --
@@ -127,6 +139,16 @@ acp(dcon 0)
 acp(dprod 0)
 acp(mcon 0)
 =#save
+
+; History Eintrag schreiben
+#loghist
+fr=fo("history.csv" a)
+if fr>=0 {
+	; Format: Stunde;Tag;Monat;Jahr;Zählerstand_Bezug_kWh;Zählerstand_Einspeisung_kWh;Leistung_W
+	res=fw(s(0hours)+";"+s(0day)+";"+s(0month)+";"+s(0year)+";"+s(2sml[2])+";"+s(2sml[3])+";"+s(0sml[1])+"\n" fr)
+	fc(fr)
+	print History: %0hours%h %0day%.%0month%.%0year% (Level %0hlvl%)
+}
 
 ; Tagesverbrauch Tabelle
 #daysub
@@ -229,6 +251,11 @@ if ((chg[rxind]>0) or (chg[txind]>0)) {
 	->sensor53 r
 	=#save
 }
+; History Level geändert -> speichern
+if (chg[hlvl]>1) {
+	svars
+	print History Level: %0hlvl%
+}
 ; Warte auf Zähler
 if (sml[2]==0) {
 	break
@@ -287,6 +314,33 @@ if (t1==0) {
 if (t2==0) {
 	t2=60
 	hr=hours
+
+	; History speichern je nach Level
+	; 1=Aus, 2=Jährlich, 3=Monatlich, 4=Täglich, 5=Stündlich
+	
+	; Level 5: Stündlich (bei jedem Stundenwechsel)
+	if ((hlvl==5) and (hours!=lhr)) {
+		lhr=hours
+		=#loghist
+	}
+	
+	; Level 4: Täglich (um Mitternacht)
+	if ((hlvl==4) and (hours==0) and (day!=lday)) {
+		lday=day
+		=#loghist
+	}
+	
+	; Level 3: Monatlich (am 1. um Mitternacht)
+	if ((hlvl==3) and (day==1) and (hours==0) and (month!=lmon)) {
+		lmon=month
+		=#loghist
+	}
+	
+	; Level 2: Jährlich (am 1.1. um Mitternacht)
+	if ((hlvl==2) and (day==1) and (month==1) and (hours==0) and (year!=lyear)) {
+		lyear=year
+		=#loghist
+	}
 
 	; Tagesverbrauch [kWh]
 	dcon[day]=sml[2]-dval
@@ -411,43 +465,52 @@ $<center><span style="font-size:10px;">
 $Version 15.01.2026 (PV2) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 5s, 24h Diagramm alle 60s.<br>
+$MODIFIZIERT: Historie mit wählbarem Detail-Level<br>
 $</span></center></div>
 
 
->w Stromzähler konfigurieren / Daten sichern
-<button onclick="history.back()">Zurück</button>
+>w Stromzähler konfigurieren / Daten sichern / Logging
+<button onclick="history.back()">⬅️ Zurück</button>
 <hr>
 <style>
-.flex-container {
-display: flex;
-justify-content: center;
+.flex-container{
+display:flex;
+justify-content:center;
 }
-.center-flex-horizontally {
+.center-flex-horizontally{
 width: 270px;
-background-color: #f0f0f0;
-text-align: left;
-padding: 20px;
-border: 2px solid #ccc;
+background-color:#f0f0f0;
+text-align:left;
+padding:20px;
+border:2px solid #ccc;
 }
+.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}
 </style>
 so(17+4)
 <div class="flex-container">
 <div class="center-flex-horizontally">  
-<style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
 <div class=button-group>
-<b>2_SML_Script_Chart_PV2.tas</b>
-<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button>
-<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
-<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>
+<b>📄 2_SML_Script_Chart_PV2.tas</b>
+<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">🔄 Zählerwerte initialisieren</button>
+<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">📊 Reset Balkendiagramme</button>
+<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">💾 Diagrammdaten speichern</button>
+</div>
 <hr>
+<b>⚡ Stromzählerkonfiguration</b><br>
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
 pd(rxind "RX Pin: " 50 "#gr")
 pd(txind "TX Pin: " 50 "#gr")
 <span style="font-size:9px">
 RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
-RX=5 TX=4: bitShake<br></span>
+RX=5 TX=4: bitShake</span><br><br>
+<button type="button" onclick="location.href='/ufse?file=/sml_meter.def';">📝 Stromzähler Script editieren</button><br>
+<hr>
+<b>📊 Lokales History Logging</b><br><br>
+<span>💽 Freier Speicher: %fsi(1)% KB</span><br><br>
+pd(hlvl "Detail-Level: " 160 "Aus" "Jahr (~0.2KB/10J)" "Monat (~2KB/10J)" "Tag (~60KB/10J)" "Stunde (~1.4MB/10J)")
 <br>
-<a href="/ufse?file=/sml_meter.def">=> Stromzähler Script</a>
+<button type="button" onclick="location.href='/ufse?file=/history.csv';">📄 History anzeigen</button>
+<button type="button" onclick="if(confirm('History löschen?')){fetch('/ufs?delete=history.csv');}">🗑️ Löschen</button>
 </div>
 </div>
 
