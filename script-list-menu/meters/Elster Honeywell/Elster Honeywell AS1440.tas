@@ -15,9 +15,9 @@ ends
 >M 1
 +1,%0rxpin%,o,16,9600,AS1440,%0txpin%
 1,=m 5-6 @1,Power,W,power,16
-1,1-1:1.8.2(@1,Total_HT In,KWh,Total_in_HT,1
-1,1-1:2.8.0(@1,Total Out,KWh,Total_out,1
-1,1-1:1.8.1(@1,Total_NT In,KWh,Total_in_NT,1
+1,1-1:1.8.2(@1,Total_HT In,KWh,Total_in_HT,2
+1,1-1:2.8.0(@1,Total Out,KWh,Total_out,2
+1,1-1:1.8.1(@1,Total_NT In,KWh,Total_in_NT,2
 1,=h--
 1,1-1:1.7.0(@0.001,Power In,W,power_in,0
 1,1-1:2.7.0(@0.001,Power Out,W,power_out,0

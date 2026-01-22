@@ -14,8 +14,8 @@ ends
 
 >M 1
 +1,%0rxpin%,o,16,9600,T510,%0txpin%
-1,=m 4+5+6 @1,Leistung,W,Power_total,0
-1,1.8.0(@1,Zählerstand,kWh,Total_in,3
+1,=m 3+4+5 @1,Leistung,W,Power_total,0
+1,1.8.0(@1,Zählerstand,kWh,Total_in,2
 1,=h--
 1,21.7.0(@0.001,Leistung Phase 1,W,Power_L1,0
 1,41.7.0(@0.001,Leistung Phase 2,W,Power_L2,0
