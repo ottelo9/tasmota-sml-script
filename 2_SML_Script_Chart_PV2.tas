@@ -469,7 +469,7 @@ $MODIFIZIERT: Historie mit wählbarem Detail-Level<br>
 $</span></center></div>
 
 
->w Stromzähler konfigurieren / Daten sichern / Logging
+>w Stromzähler konf. / Daten sichern / Logging
 <button onclick="history.back()">⬅️ Zurück</button>
 <hr>
 <style>
