@@ -259,7 +259,7 @@ Wocheneinspeisung{m}%2(sml[3]-wval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
-Uptime{m}%0(int(uptime/1440))%d %0(int((uptime%1440)/60))%h %0(uptime%60)%m
+Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<div style="margin-left:-30px">
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
 $gc(lt s4h "wr" "Leistung [W]" cstr)

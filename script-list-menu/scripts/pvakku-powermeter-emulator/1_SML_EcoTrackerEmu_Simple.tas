@@ -102,7 +102,7 @@ Jahresverbrauch{m}%2(sml[2]-yval)% kWh
 Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
-Uptime{m}%0(int(uptime/1440))%d %0(int((uptime%1440)/60))%h %0(uptime%60)%m
+Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
 $Version 15.01.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
