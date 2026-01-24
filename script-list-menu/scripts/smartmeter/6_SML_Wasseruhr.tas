@@ -1,41 +1,29 @@
 >D 100
-;2_SML_Script_Chart_PV.tas
+;6_SML_Wasseruhr.tas
 M:s4h=0 481
 M:s4hf=0 6
 M:s24h=0 1441
 M:s24hf=0 12
 M:dcon=0 31
-M:dprod=0 31
-M:mcon=0 24
+M:mcon=0 12
 p:mval=0
 p:dval=0
-p:mval2=0
-p:dval2=0
 p:yval=0
-p:yval2=0
 p:da=1
-p:rxind=1
-p:txind=1
-p:sel=0
 t:t1=5
 t:t2=60
-rxpin=0
-txpin=0
 tmp=0
 idx4=0
 idx24=0
+WaterCon=0
+factor=10000
 cstr="cnth0/120"
 cstr2="cnth0/30"
 hr=0
-swesp=0
-swespflg=0
-power2=0
 fr=0
 >B
 sota("")
-rxpin=rxind-1
-txpin=txind-1
-->sensor53 r
+WaterCon=pc[1]/factor
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 smlj=0
 =#load
@@ -47,7 +35,6 @@ if fr>=0 {
 fwa(s4h fr)
 fwa(s24h fr)
 fwa(dcon fr)
-fwa(dprod fr)
 fwa(mcon fr)
 fc(fr)
 } else {
@@ -61,23 +48,18 @@ fr=fo("data.csv" r)
 fra(s4h fr)
 fra(s24h fr)
 fra(dcon fr)
-fra(dprod fr)
 fra(mcon fr)
 fc(fr)
 #init
 dval=sml[2]
-dval2=sml[3]
 mval=sml[2]
-mval2=sml[3]
 yval=sml[2]
-yval2=sml[3]
 acp(s4h 0)
 acp(s24h 0)
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
 #init2
 acp(dcon 0)
-acp(dprod 0)
 acp(mcon 0)
 =#save
 #daysub
@@ -85,7 +67,7 @@ if wm>0 {
 wcs <div id="day" style="text-align:center;width:600px;height:400px"></div>
 wcs <script language="JavaScript">function drawChart(){
 wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
-wcs var data=google.visualization.arrayToDataTable([['Tag','Energie [kWh]',{role: 'style'}],
+wcs var data=google.visualization.arrayToDataTable([['Tag','Verbrauch [m³]',{role: 'style'}],
 for tmp 1 dcon[-1] 1
 if (tmp==day) {
 wcs [%tmp%,%dcon[tmp]%,'red'],
@@ -98,30 +80,8 @@ wcs [%tmp%,%dcon[tmp]%,''],
 }
 next
 wcs ]);
-wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:'Tagesverbräuche (Monat %is[month]%)',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
+wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:'Tagesverbräuche (Monat %is[month]%)',vAxis:{format:'# m³'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('day'));
-wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
-}
-#dayprod
-if wm>0 {
-wcs <div id="dayp" style="text-align:center;width:600px;height:400px"></div>
-wcs <script language="JavaScript">function drawChart(){
-wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
-wcs var data=google.visualization.arrayToDataTable([['Tag','Energie [kWh]',{role: 'style'}],
-for tmp 1 dprod[-1] 1
-if (tmp==day) {
-wcs [%tmp%,%dprod[tmp]%,'red'],
-}
-if (tmp<day) {
-wcs [%tmp%,%dprod[tmp]%,'green'],
-}
-if (tmp>day) {
-wcs [%tmp%,%dprod[tmp]%,''],
-}
-next
-wcs ]);
-wcs var options={chartArea:{left:40,right:30,height:'75%%'},legend:'none',title:'Tageseinspeisung (Monat %is[month]%)',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}};
-wcs var chart=new google.visualization.ColumnChart(document.getElementById('dayp'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
 #monthsub
@@ -129,50 +89,34 @@ if wm>0 {
 wcs <div id="month" style="text-align:center;width:600px;height:400px"></div>
 wcs <script language="JavaScript">function drawChart(){
 wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
-wcs var data=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]','Einspeisung[kWh]'],
+wcs var data=google.visualization.arrayToDataTable([['Monat','Verbrauch [m³]',{role: 'style'}],
 for tmp 1 12 1
 if (tmp<month) {
-wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
+wcs ['%is[tmp]%',%mcon[tmp]%,'green'],
 }
 if (tmp==month) {
-wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
+wcs ['%is[tmp]%',%mcon[tmp]%,'red'],
 }
 if (tmp>month) {
-wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
+wcs ['%is[tmp]%',%mcon[tmp]%,'blue'],
 }
 next
 wcs ]);
-wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Verbräuche / Einspeisungen (Jahr %0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
+wcs var options={chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Verbräuche (Jahr %0(year-1)%/%0year%)',vAxis:{format:'# m³'}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
->C
-if eres==1 {
-->sensor53 r
-svars
-eres=0
-}
->F
-fe("sml_ftask.tas")
 >S
-fe("sml_stask.tas")
 if (year<2020) {
 print auf NTP warten
-break
-}
-if ((chg[rxind]>0) or (chg[txind]>0)) {
-rxpin=rxind-1
-->sensor53 r
-=#save
-}
-if (sml[2]==0) {
 break
 }
 smlj=1
 if (t1==0) {
 t1=5
-s4hf=sml[1]
-s24hf=sml[1]
+WaterCon=pc[1]/factor
+s4hf=WaterCon
+s24hf=WaterCon
 tmp=hours-4
 if (tmp<0) {
 tmp+=24
@@ -185,87 +129,70 @@ s24h[0]=idx24
 s24h=int(s24hf)
 cstr="cnth"+s(0idx4)+"/120"
 cstr2="cnth"+s(0idx24)+"/60"
-power2=(0.9*power2)+((1-0.9)*sml[1])
-=>publish stat/%topic%/script/power2 %0power2%
-if (swesp==1) {
-if ((power2<-300) and (swespflg==0)) {
-swespflg=1
-}
-if ((power2>100) and (swespflg==1)) {
-swespflg=0
-}
-}
 }
 if (t2==0) {
 t2=60
 hr=hours
-dcon[day]=sml[2]-dval
-mcon[month]=sml[2]-mval
-dprod[day]=sml[3]-dval2
-mcon[month+12]=sml[3]-mval2
+dcon[day]=WaterCon-dval
+mcon[month]=WaterCon-mval
 if ((chg[hr]>0) and (hr==0)) {
 if (day>1) {
 da=day
 } else {
 for tmp (da+1) 31 1
 dcon[tmp]=0
-dprod[tmp]=0
 next
-mval=sml[2]
-mval2=sml[3]
+mval=WaterCon
 }
 if (day*month==1) {
-yval=sml[2]
-yval2=sml[3]
+yval=WaterCon
 }
-dval=sml[2]
-dval2=sml[3]
+dval=WaterCon
 =#save
 }
 }
 >W
-Leistung (gefiltert){m}%0power2% W
-Tagesverbrauch{m}%2(sml[2]-dval)% kWh
-Monatsverbrauch{m}%2(sml[2]-mval)% kWh
-Jahresverbrauch{m}%2(sml[2]-yval)% kWh
-Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
-Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
-Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
+Tagesverbrauch{m}%4(WaterCon-dval)% m³
+Monatsverbrauch{m}%2(WaterCon-mval)% m³
+Jahresverbrauch{m}%2(WaterCon-yval)% m³
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<div style="margin-left:-30px">
 $<div id="chart1" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt s4h "wr" "Leistung [W]" cstr)
+$gc(lt s4h "wr" "Verbrauch [m³]" cstr)
 $var options = {
 $chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
-$vAxis:{format:'# W'},
+$vAxis:{format:'# m³'},
 $hAxis:{slantedTextAngle:45},
 $explorer:{actions:['dragToZoom','rightClickToReset']},
 $series: {0: {type: 'area'}},
-$title:'Leistung 4 Stunden [Watt]'
+$title:'Verbrauch 4 Stunden [m³]'
 $};
 $gc(e)
 $<div id="chart2" style="text-align:center;width:600px;height:400px"></div>
-$gc(lt s24h "wr" "Leistung [W]" cstr2)
+$gc(lt s24h "wr" "Verbrauch [m³]" cstr2)
 $var options = {
 $chartArea:{left:60,right:20,height:'75%%'},
 $legend:'none',
-$vAxis:{format:'# W'},
+$vAxis:{format:'# m³'},
 $hAxis:{slantedTextAngle:45},
 $explorer:{actions:['dragToZoom', 'rightClickToReset']},
 $series: {0: {type: 'area'}},
-$title:'Leistung 24 Stunden [Watt]'
+$title:'Verbrauch 24 Stunden [m³]'
 $};
 $gc(e)
 %=#daysub
-%=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 15.01.2026 (PV) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 15.01.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
+>M 1
++1,21,c,1,-50,
+1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
+#
 >w Stromzähler konfigurieren / Daten sichern
 <button onclick="history.back()">Zurück</button>
 <hr>
@@ -282,23 +209,13 @@ padding: 20px;
 border: 2px solid #ccc;
 }
 </style>
-so(17+4)
 <div class="flex-container">
 <div class="center-flex-horizontally">
 <style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
 <div class=button-group>
-<b>2_SML_Script_Chart_PV.tas</b>
+<b>6_SML_Script_Wasseruhr.tas</b>
 <button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button>
 <button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
 <button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>
-<hr>
-smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
-pd(rxind "RX Pin: " 50 "#gr")
-pd(txind "TX Pin: " 50 "#gr")
-<span style="font-size:9px">
-RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
-RX=5 TX=4: bitShake<br></span>
-<br>
-<a href="/ufse?file=/sml_meter.def">=> Stromzähler Script</a>
 </div>
 </div>

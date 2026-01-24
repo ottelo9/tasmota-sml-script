@@ -1,5 +1,5 @@
->D 250
-;2_SML_Script_Chart_PV_ShellyEmu.tas
+>D 100
+;2_SML_Chart_PV3.tas
 M:s4h=0 481
 M:s4hf=0 6
 M:s24h=0 1441
@@ -7,6 +7,8 @@ M:s24hf=0 12
 M:dcon=0 31
 M:dprod=0 31
 M:mcon=0 24
+M:wcon=0 53
+M:wprod=0 53
 p:mval=0
 p:dval=0
 p:mval2=0
@@ -17,9 +19,8 @@ p:da=1
 p:rxind=1
 p:txind=1
 p:sel=0
-p:pwroffset=0
-p:pwrforce=0
-p:throttle=1
+p:wval=0
+p:wval2=0
 t:t1=5
 t:t2=60
 rxpin=0
@@ -34,20 +35,6 @@ swesp=0
 swespflg=0
 power2=0
 fr=0
-res=0
-c1p=0
-c2p=0
-c3p=0
-c1c=0
-c2c=0
-c3c=0
-cpwr=0
-str=""
-tstr=""
-mstr1=""
-mstr2=""
-header=""
-once=0
 >B
 sota("")
 rxpin=rxind-1
@@ -56,19 +43,6 @@ txpin=txind-1
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 smlj=0
 =#load
-header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
-if (throttle>60) {
-throttle=60
-}
-if (throttle<1) {
-throttle=1
-}
-if (pwroffset>200) {
-pwroffset=200
-}
-if (pwroffset<-200) {
-pwroffset=-200
-}
 #save
 print saving arrays
 dp2
@@ -79,6 +53,8 @@ fwa(s24h fr)
 fwa(dcon fr)
 fwa(dprod fr)
 fwa(mcon fr)
+fwa(wcon fr)
+fwa(wprod fr)
 fc(fr)
 } else {
 print file error: %fr%
@@ -93,6 +69,8 @@ fra(s24h fr)
 fra(dcon fr)
 fra(dprod fr)
 fra(mcon fr)
+fra(wcon fr)
+fra(wprod fr)
 fc(fr)
 #init
 dval=sml[2]
@@ -101,6 +79,8 @@ mval=sml[2]
 mval2=sml[3]
 yval=sml[2]
 yval2=sml[3]
+wval=sml[2]
+wval2=sml[3]
 acp(s4h 0)
 acp(s24h 0)
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
@@ -109,6 +89,8 @@ acp(s24h 0)
 acp(dcon 0)
 acp(dprod 0)
 acp(mcon 0)
+acp(wcon 0)
+acp(wprod 0)
 =#save
 #daysub
 if wm>0 {
@@ -161,27 +143,27 @@ wcs <script language="JavaScript">function drawChart(){
 wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
 wcs var data=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]','Einspeisung[kWh]'],
 for tmp 1 12 1
-if (tmp<month) {
 wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
-}
-if (tmp==month) {
-wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
-}
-if (tmp>month) {
-wcs ['%is[tmp]%',%mcon[tmp]%,%mcon[tmp+12]%],
-}
 next
 wcs ]);
-wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Verbräuche / Einspeisungen (Jahr %0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
+wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,right:40,height:'75%%'},legend:'none',title:'Bezug/Einspeisung Gesamtjahr (%0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
 wcs var chart=new google.visualization.ColumnChart(document.getElementById('month'));
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
-#getstat
-dp(0 2)
-mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
-mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
-mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
-mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
+#weeksub
+if wm>0 {
+wcs <div id="week" style="text-align:center;width:600px;height:400px"></div>
+wcs <script language="JavaScript">function drawChart(){
+wcs var cssc={'headerRow':'hRow','rowNumberCell':'hCol','tableCell':'tCell'};
+wcs var data=google.visualization.arrayToDataTable([['KW','Verbrauch [kWh]','Einspeisung[kWh]'],
+for tmp 1 53 1
+wcs ['%0tmp%',%wcon[tmp]%,%wprod[tmp]%],
+next
+wcs ]);
+wcs var options={series:{0:{targetAxisIndex:0},1:{targetAxisIndex:1}},chartArea:{left:40,width:'80%%'},legend:'none',title:'Bezug/Einspeisung Wochen (KW:%0cw% %0(year-1)%/%0year%)',vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}}};
+wcs var chart=new google.visualization.ColumnChart(document.getElementById('week'));
+wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
+}
 >C
 if eres==1 {
 ->sensor53 r
@@ -222,7 +204,7 @@ s24h=int(s24hf)
 cstr="cnth"+s(0idx4)+"/120"
 cstr2="cnth"+s(0idx24)+"/60"
 power2=(0.9*power2)+((1-0.9)*sml[1])
-=>publish stat/%topic%/script/power2 %0power2%
+=>publish stat/%topic%/script/power2 %power2%
 if (swesp==1) {
 if ((power2<-300) and (swespflg==0)) {
 swespflg=1
@@ -236,8 +218,10 @@ if (t2==0) {
 t2=60
 hr=hours
 dcon[day]=sml[2]-dval
+wcon[cw]=sml[2]-wval
 mcon[month]=sml[2]-mval
 dprod[day]=sml[3]-dval2
+wprod[cw]=sml[3]-wval2
 mcon[month+12]=sml[3]-mval2
 if ((chg[hr]>0) and (hr==0)) {
 if (day>1) {
@@ -250,6 +234,10 @@ next
 mval=sml[2]
 mval2=sml[3]
 }
+if (wday==2) {
+wval=sml[2]
+wval2=sml[3]
+}
 if (day*month==1) {
 yval=sml[2]
 yval2=sml[3]
@@ -259,43 +247,15 @@ dval2=sml[3]
 =#save
 }
 }
-if (once==0) {
-res=mdns("shellypro3em-" "-" "shelly")
-res=udp(0 1010)
-once=1
-}
-if (upsecs%throttle!=0) {
-break;
-}
-tmp=sml[1]-cpwr
-if (tmp>500) {
-cpwr=sml[1]-(tmp/2)
-} else {
-cpwr=sml[1]-pwroffset
-}
-=>publish stat/%topic%/script/cpwr %0cpwr%
-c1p=cpwr
-c1c=c1p/230
-str=udp(1)
-if (str!="") {
-res=ins(str "EM.GetStatus")
-if (res>=0) {
-=#getstat
-udp(2 header mstr1 mstr2)
-break
-}
-} else {
-if (pwrforce>0) {
-=#getstat
-udp(2 header mstr1 mstr2)
-}
 >W
 Leistung (gefiltert){m}%0power2% W
-Leistung (an Marstek Akku){m}%0cpwr% W
+Kalenderwoche{m}%0cw%
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
+Wochenverbrauch{m}%2(sml[2]-wval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
 Jahresverbrauch{m}%2(sml[2]-yval)% kWh
 Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
+Wocheneinspeisung{m}%2(sml[3]-wval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
@@ -327,27 +287,27 @@ $};
 $gc(e)
 %=#daysub
 %=#dayprod
+%=#weeksub
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 24.01.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
-$und gemu2015 (ScriptEngine V%vers%)<br>
+$Version 15.01.2026 (PV3) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
->w &#x2699;&#xFE0F; Stromzähler / Daten / Akku
-<button onclick="history.back()">&#x2B05;&#xFE0F; Zurück</button>
+>w Stromzähler konfigurieren / Daten sichern
+<button onclick="history.back()">Zurück</button>
 <hr>
 <style>
-.flex-container{
-display:flex;
-justify-content:center;
+.flex-container {
+display: flex;
+justify-content: center;
 }
-.center-flex-horizontally{
-width:270px;
-background-color:#f0f0f0;
-text-align:left;
-padding:20px;
-border:2px solid #ccc;
+.center-flex-horizontally {
+width: 270px;
+background-color: #f0f0f0;
+text-align: left;
+padding: 20px;
+border: 2px solid #ccc;
 }
 </style>
 so(17+4)
@@ -355,20 +315,11 @@ so(17+4)
 <div class="center-flex-horizontally">
 <style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
 <div class=button-group>
-<b>&#x1F4C4; 2_SML_Chart_PV_Shelly</b>
-<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">&#x1F504; Zählerwerte initialisieren</button>
-<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">&#x1F4CA; Reset Balkendiagramme</button>
-<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">&#x1F4BE; Diagrammdaten speichern</button></div>
+<b>2_SML_Script_Chart_PV3.tas</b>
+<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button>
+<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
+<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>
 <hr>
-<b>&#x1F50B; Akku</b><br><br>
-Offset für Nulleinspeisung [W]:
-nm(-200 200 1 pwroffset "" 50 0)
-Datenübertragungsintervall [s]:
-nm(1 60 1 throttle "" 50 0)
-Datenübertragung erzwingen:
-ck(pwrforce "")
-<hr>
-<b>&#x26A1; Stromzähler</b><br>
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
 pd(rxind "RX Pin: " 50 "#gr")
 pd(txind "TX Pin: " 50 "#gr")
@@ -376,6 +327,6 @@ pd(txind "TX Pin: " 50 "#gr")
 RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
 RX=5 TX=4: bitShake<br></span>
 <br>
-&#x1F4DD; <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
+<a href="/ufse?file=/sml_meter.def">=> Stromzähler Script</a>
 </div>
 </div>
