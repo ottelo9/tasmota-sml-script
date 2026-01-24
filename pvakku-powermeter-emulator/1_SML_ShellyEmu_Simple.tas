@@ -20,6 +20,7 @@ p:txind=1
 p:sel=0
 p:pwroffset=0
 p:pwrforce=0
+p:throttle=1
 t:t1=60
 rxpin=0
 txpin=0
@@ -39,7 +40,6 @@ mstr1=""
 mstr2=""
 header=""
 once=0
-throttle=1
 
 
 >B
@@ -49,6 +49,18 @@ txpin=txind-1
 ->sensor53 r
 smlj=0
 header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
+if (throttle>60) {
+throttle=60
+}
+if (throttle<1) {
+throttle=1
+}
+if (pwroffset>200) {
+pwroffset=200
+}
+if (pwroffset<-200) {
+pwroffset=-200
+}
 
 #save
 svars
@@ -185,28 +197,28 @@ Jahresverbrauch{m}%2(sml[2]-yval)% kWh
 Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
-Uptime{m}%0(int(uptime/1440))%d %0(int((uptime%1440)/60))%h %0(uptime%60)%m
+Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 15.01.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 24.01.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
 
 
->w Stromzähler konfigurieren / Daten sichern
-<button onclick="history.back()">Zurück</button>
+>w &#x2699;&#xFE0F; Stromzähler / Daten / Akku
+<button onclick="history.back()">&#x2B05;&#xFE0F; Zurück</button>
 <hr>
 <style>
-.flex-container {
-display: flex;
-justify-content: center;
+.flex-container{
+display:flex;
+justify-content:center;
 }
-.center-flex-horizontally {
-width: 270px;
-background-color: #f0f0f0;
-text-align: left;
-padding: 20px;
-border: 2px solid #ccc;
+.center-flex-horizontally{
+width:270px;
+background-color:#f0f0f0;
+text-align:left;
+padding:20px;
+border:2px solid #ccc;
 }
 </style>
 so(17+4)
@@ -214,15 +226,19 @@ so(17+4)
 <div class="center-flex-horizontally">  
 <style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
 <div class=button-group>
-<b>1_SML_ShellyEmu_Simple.tas</b>
-<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte zurücksetzen?')){seva(1,'_init');}">Zählerwerte initialisieren</button>
-<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Daten speichern</button></div>
+<b>&#x1F4C4; 1_SML_ShellyEmu_Simple.tas</b>
+<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte zurücksetzen?')){seva(1,'_init');}">&#x1F504; Zählerwerte initialisieren</button>
+<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">&#x1F4BE; Daten speichern</button></div>
 <hr>
+<b>&#x1F50B; Akku</b><br><br>
 Offset für Nulleinspeisung [W]:
-nm(-100 100 1 pwroffset "" 50 0)
+nm(-200 200 1 pwroffset "" 50 0)
+Datenübertragungsintervall [s]:
+nm(1 60 1 throttle "" 50 0)
 Datenübertragung erzwingen:
 ck(pwrforce "")
 <hr>
+<b>&#x26A1; Stromzähler</b><br>
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
 pd(rxind "RX Pin: " 50 "#gr")
 pd(txind "TX Pin: " 50 "#gr")
@@ -230,7 +246,7 @@ pd(txind "TX Pin: " 50 "#gr")
 RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
 RX=5 TX=4: bitShake<br></span>
 <br>
-<a href="/ufse?file=/sml_meter.def">=> Stromzähler Script</a>
+&#x1F4DD; <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
 </div>
 </div>
 
