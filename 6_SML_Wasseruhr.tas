@@ -292,7 +292,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 15.01.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 24.01.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -307,29 +307,29 @@ $</span></center></div>
 1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
 #
 
->w Stromzähler konfigurieren / Daten sichern
-<button onclick="history.back()">Zurück</button>
+>w &#x2699;&#xFE0F; Daten sichern / initialisieren
+<button onclick="history.back()">&#x2B05;&#xFE0F; Zurück</button>
 <hr>
 <style>
-.flex-container {
-display: flex;
-justify-content: center;
+.flex-container{
+display:flex;
+justify-content:center;
 }
-.center-flex-horizontally {
-width: 270px;
-background-color: #f0f0f0;
-text-align: left;
-padding: 20px;
-border: 2px solid #ccc;
+.center-flex-horizontally{
+width:270px;
+background-color:#f0f0f0;
+text-align:left;
+padding:20px;
+border:2px solid #ccc;
 }
 </style>
 <div class="flex-container">
 <div class="center-flex-horizontally">  
 <style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
 <div class=button-group>
-<b>6_SML_Script_Wasseruhr.tas</b>
-<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">Zählerwerte initialisieren</button>
-<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">Reset Balkendiagramme</button>
-<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">Diagrammdaten speichern</button></div>
+<b>&#x1F4C4; 6_SML_Wasseruhr.tas</b>
+<button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">&#x1F504; Zählerwerte initialisieren</button>
+<button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">&#x1F4CA; Reset Balkendiagramme</button>
+<button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">&#x1F4BE; Diagrammdaten speichern</button></div>
 </div>
 </div>
