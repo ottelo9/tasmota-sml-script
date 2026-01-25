@@ -12,6 +12,7 @@ p:sel=0
 p:pwroffset=0
 p:pwrforce=0
 p:throttle=1
+p:port=1
 t:t1=60
 rxpin=0
 txpin=0
@@ -37,18 +38,8 @@ txpin=txind-1
 ->sensor53 r
 smlj=0
 header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
-if (throttle>60) {
-throttle=60
-}
-if (throttle<1) {
-throttle=1
-}
-if (pwroffset>200) {
-pwroffset=200
-}
-if (pwroffset<-200) {
-pwroffset=-200
-}
+throttle=mp(throttle <1 1 >60 60)
+pwroffset=mp(pwroffset <-200 -200 >200 200)
 #save
 svars
 #init
@@ -105,7 +96,11 @@ yval2=sml[3]
 }
 if (once==0) {
 res=mdns("shellypro3em-" "-" "shelly")
-res=udp(0 1010)
+if (port==2) {
+udp(0 2220)
+} else {
+udp(0 1010)
+}
 once=1
 }
 if (upsecs%throttle!=0) {
@@ -143,7 +138,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 24.01.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 25.01.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
@@ -177,6 +172,8 @@ Offset für Nulleinspeisung [W]:
 nm(-200 200 1 pwroffset "" 50 0)
 Datenübertragungsintervall [s]:
 nm(1 60 1 throttle "" 50 0)
+UDP-Port (Neustart notwendig):
+rb(port "" "1010" "2220")
 Datenübertragung erzwingen:
 ck(pwrforce "")
 <hr>

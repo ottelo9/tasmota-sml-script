@@ -61,6 +61,7 @@ p:sel=0
 p:pwroffset=0
 p:pwrforce=0
 p:throttle=1
+p:port=1
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
 t:t1=5
 t:t2=60
@@ -104,18 +105,8 @@ tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 smlj=0
 =#load
 header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
-if (throttle>60) {
-	throttle=60
-}
-if (throttle<1) {
-	throttle=1
-}
-if (pwroffset>200) {
-	pwroffset=200
-}
-if (pwroffset<-200) {
-	pwroffset=-200
-}
+throttle=mp(throttle <1 1 >60 60)
+pwroffset=mp(pwroffset <-200 -200 >200 200)
 
 
 ; -- SUBS --
@@ -382,7 +373,11 @@ if (once==0) {
 	res=mdns("shellypro3em-" "-" "shelly")
 	; start UDP für Datenkommunikation
 	; Port 1010 oder ggf. 2220 für B2500
-	res=udp(0 1010)
+	if (port==2) {
+		udp(0 2220)
+	} else {
+		udp(0 1010)
+	}
 	once=1
 }
 
@@ -508,7 +503,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 24.01.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 25.01.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
@@ -546,6 +541,8 @@ Offset für Nulleinspeisung [W]:
 nm(-200 200 1 pwroffset "" 50 0)
 Datenübertragungsintervall [s]:
 nm(1 60 1 throttle "" 50 0)
+UDP-Port (Neustart notwendig):
+rb(port "" "1010" "2220")
 Datenübertragung erzwingen:
 ck(pwrforce "")
 <hr>
