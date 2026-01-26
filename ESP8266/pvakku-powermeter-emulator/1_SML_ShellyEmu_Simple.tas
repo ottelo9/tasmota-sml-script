@@ -19,6 +19,7 @@ p:mval2=0
 p:mval=0
 p:yval=0
 p:yval2=0
+p:throttle=1
 t:t1=60
 tmp=0
 save=0
@@ -37,7 +38,6 @@ mstr1=""
 mstr2=""
 header=""
 once=0
-throttle=1
 
 
 >B
@@ -65,6 +65,18 @@ mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"
 mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
 mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
 
+>F
+;-- SHELLY EMULATION --
+; UDP Anfrage beantworten
+str=udp(1)
+if (str!="") {
+;print udp rpc payload=%str%
+res=ins(str "EM.GetStatus")
+if (res>=0) {
+=#getstat
+udp(2 header mstr1 mstr2)
+}
+}
 
 >S
 if (save==1) {
@@ -115,10 +127,7 @@ once=1
 }
 
 ; Marstek Abfrage verzögern, throttle=1 => sekündlich senden
-if (upsecs%throttle!=0) {
-break;
-}
-
+if (upsecs%throttle==0) {
 ; Peaks reduzieren, verbessert Regelung
 tmp=sml[1]-cpwr
 if (tmp>500) {
@@ -140,17 +149,6 @@ c1c=c1p/230
 ;c2c=c2p/230
 ;c3c=c3p/230
 
-; UDP Anfrage bearbeiten
-str=udp(1)
-if (str!="") {
-;print udp rpc payload=%str%
-res=ins(str "EM.GetStatus")
-if (res>=0) {
-=#getstat
-udp(2 header mstr1 mstr2)
-break
-}
-} else {
 ; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
 ;=#getstat
 ;udp(2 header mstr1 mstr2)
@@ -168,7 +166,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
 $<center><span style="font-size:10px;">
-$Version 02.10.2025 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 26.01.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 
