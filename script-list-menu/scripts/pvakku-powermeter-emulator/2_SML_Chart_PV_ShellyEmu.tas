@@ -188,11 +188,6 @@ if (res>=0) {
 =#getstat
 udp(2 header mstr1 mstr2)
 }
-} else {
-if (pwrforce>0) {
-=#getstat
-udp(2 header mstr1 mstr2)
-}
 }
 >S
 fe("sml_stask.tas")
@@ -282,6 +277,10 @@ cpwr=sml[1]-pwroffset
 }
 c1p=cpwr
 c1c=c1p/230
+if (pwrforce>0) {
+=#getstat
+udp(2 header mstr1 mstr2)
+}
 }
 >W
 Leistung (gefiltert){m}%0power2% W

@@ -94,12 +94,6 @@ if (res>=0) {
 =#getstat
 udp(2 header mstr1 mstr2)
 }
-} else {
-; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
-if (pwrforce>0) {
-=#getstat
-udp(2 header mstr1 mstr2)
-}
 }
 
 >S
@@ -178,6 +172,12 @@ c1p=cpwr
 c1c=c1p/230
 ;c2c=c2p/230
 ;c3c=c3p/230
+
+; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
+if (pwrforce>0) {
+=#getstat
+udp(2 header mstr1 mstr2)
+}
 }
 
 >W
