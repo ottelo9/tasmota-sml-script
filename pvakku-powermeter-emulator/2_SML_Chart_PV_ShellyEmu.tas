@@ -249,6 +249,23 @@ if eres==1 {
 ; -- JEDE 100MS --
 >F
 fe("sml_ftask.tas")
+;-- SHELLY EMULATION
+; UDP Anfrage beantworten
+str=udp(1)
+if (str!="") {
+	;print udp rpc payload=%str%
+	res=ins(str "EM.GetStatus")
+	if (res>=0) {
+		=#getstat
+		udp(2 header mstr1 mstr2)
+	}
+} else {
+	; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
+	if (pwrforce>0) {
+	=#getstat
+	udp(2 header mstr1 mstr2)
+	}
+}
 
 
 ; -- JEDE SEKUNDE --
@@ -301,6 +318,8 @@ if (t1==0) {
 	; Optional: stark gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
 	power2=(0.9*power2)+((1-0.9)*sml[1])
 	=>publish stat/%topic%/script/power2 %0power2%
+	; Leistung die an den Akku gesendet wird
+	=>publish stat/%topic%/script/cpwr %0cpwr%
 
 	; (Op1) Schalte anderen ESP bei Netzeinspeisung. Schaue in die >W Sektion.
 	if (swesp==1) {
@@ -366,11 +385,10 @@ if (t2==0) {
 		=#save
 	}
 }
-
 ;-- SHELLY EMULATION
 if (once==0) {
 	; starte mDNS damit Marstek den emulierten Shelly findet
-	res=mdns("shellypro3em-" "-" "shelly")
+	mdns("shellypro3em-" "-" "shelly")
 	; start UDP für Datenkommunikation
 	; Port 1010 oder ggf. 2220 für B2500
 	if (port==2) {
@@ -381,48 +399,28 @@ if (once==0) {
 	once=1
 }
 
-; Marstek Abfrage verzögern, throttle=1 => sekündlich senden
-if (upsecs%throttle!=0) {
-break;
-}
-
-; Standard: Zähler übermittelt nur Gesamtleistung
-; Peaks reduzieren, verbessert Regelung
-tmp=sml[1]-cpwr
-if (tmp>500) {
-	cpwr=sml[1]-(tmp/2)
-} else {
-	; Nulleinspeisung-Offset: reduziere die Leistung damit die Regelung nicht um 0W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
-	cpwr=sml[1]-pwroffset
-}
-=>publish stat/%topic%/script/cpwr %0cpwr%
-
-; Standard: Zähler sendet nur Gesamtleistung
-c1p=cpwr
-; Optional: Wenn Zähler auch Einzelleistungen sendet (L1-3). Marstek prüft dann, auf welcher Phase er verbunden ist. ; entfernen um zu verwenden.
-;c1p=sml[4]
-;c2p=sml[5]
-;c3p=sml[6]
-; Ströme berechnen
-c1c=c1p/230
-;c2c=c2p/230
-;c3c=c3p/230
-
-; UDP Anfrage bearbeiten
-str=udp(1)
-if (str!="") {
-	;print udp rpc payload=%str%
-	res=ins(str "EM.GetStatus")
-	if (res>=0) {
-		=#getstat
-		udp(2 header mstr1 mstr2)
-		break
+; Werte nur alle x Sek updaten (throttle=1 => sekündlich)
+if (upsecs%throttle==0) {
+	; Standard: Zähler übermittelt nur Gesamtleistung
+	; Peaks reduzieren, verbessert Regelung
+	tmp=sml[1]-cpwr
+	if (tmp>500) {
+		cpwr=sml[1]-(tmp/2)
+	} else {
+		; Nulleinspeisung-Offset: reduziere die Leistung damit die Regelung nicht um 0W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
+		cpwr=sml[1]-pwroffset
 	}
-} else {
-	; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
-	if (pwrforce>0) {
-	=#getstat
-	udp(2 header mstr1 mstr2)
+
+	; Standard: Zähler sendet nur Gesamtleistung
+	c1p=cpwr
+	; Optional: Wenn Zähler auch Einzelleistungen sendet (L1-3). Marstek prüft dann, auf welcher Phase er verbunden ist. ; entfernen um zu verwenden.
+	;c1p=sml[4]
+	;c2p=sml[5]
+	;c3p=sml[6]
+	; Ströme berechnen
+	c1c=c1p/230
+	;c2c=c2p/230
+	;c3c=c3p/230
 }
 
 
@@ -503,7 +501,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 25.01.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 26.01.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
@@ -539,7 +537,7 @@ so(17+4)
 <b>&#x1F50B; Akku</b><br><br>
 Offset für Nulleinspeisung [W]:
 nm(-200 200 1 pwroffset "" 50 0)
-Datenübertragungsintervall [s]:
+Update der Werte verzögern [s]:
 nm(1 60 1 throttle "" 50 0)
 UDP-Port (Neustart notwendig):
 rb(port "" "1010" "2220")

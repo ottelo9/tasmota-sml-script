@@ -84,6 +84,23 @@ eres=0
 
 >F
 fe("sml_ftask.tas")
+;-- SHELLY EMULATION --
+; UDP Anfrage beantworten
+str=udp(1)
+if (str!="") {
+;print udp rpc payload=%str%
+res=ins(str "EM.GetStatus")
+if (res>=0) {
+=#getstat
+udp(2 header mstr1 mstr2)
+}
+} else {
+; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
+if (pwrforce>0) {
+=#getstat
+udp(2 header mstr1 mstr2)
+}
+}
 
 >S
 fe("sml_stask.tas")
@@ -129,7 +146,7 @@ yval2=sml[3]
 ;-- SHELLY EMULATION --
 if (once==0) {
 ; starte mDNS damit Marstek den emulierten Shelly findet
-res=mdns("shellypro3em-" "-" "shelly")
+mdns("shellypro3em-" "-" "shelly")
 ; start UDP für Datenkommunikation
 ; Port 1010 oder ggf. 2220 für B2500
 if (port==2) {
@@ -140,11 +157,8 @@ udp(0 1010)
 once=1
 }
 
-; Marstek Abfrage verzögern, throttle=1 => sekündlich senden
-if (upsecs%throttle!=0) {
-break;
-}
-
+; Werte nur alle x Sek updaten (throttle=1 => sekündlich)
+if (upsecs%throttle==0) {
 ; Peaks reduzieren, verbessert Regelung
 tmp=sml[1]-cpwr
 if (tmp>500) {
@@ -164,25 +178,7 @@ c1p=cpwr
 c1c=c1p/230
 ;c2c=c2p/230
 ;c3c=c3p/230
-
-; UDP Anfrage bearbeiten
-str=udp(1)
-if (str!="") {
-;print udp rpc payload=%str%
-res=ins(str "EM.GetStatus")
-if (res>=0) {
-=#getstat
-udp(2 header mstr1 mstr2)
-break
 }
-} else {
-; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
-if (pwrforce>0) {
-=#getstat
-udp(2 header mstr1 mstr2)
-}
-}
-
 
 >W
 Leistung (an Marstek Akku){m}%0cpwr% W
@@ -194,7 +190,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 25.01.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 26.01.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
@@ -228,7 +224,7 @@ so(17+4)
 <b>&#x1F50B; Akku</b><br><br>
 Offset für Nulleinspeisung [W]:
 nm(-200 200 1 pwroffset "" 50 0)
-Datenübertragungsintervall [s]:
+Update der Werte verzögern [s]:
 nm(1 60 1 throttle "" 50 0)
 UDP-Port (Neustart notwendig):
 rb(port "" "1010" "2220")

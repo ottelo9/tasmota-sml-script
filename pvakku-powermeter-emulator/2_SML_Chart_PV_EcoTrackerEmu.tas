@@ -363,7 +363,7 @@ if (t2==0) {
 ;-- ECOTRACKER EMULATION
 if (once==0) {
 	; starte mDNS damit Marstek den emulierten EcoTracker findet
-	res=mdns("ecotracker-" "-" "everhome")
+	mdns("ecotracker-" "-" "everhome")
 	once=1
 }
 

@@ -246,7 +246,7 @@ dval2=sml[3]
 }
 }
 if (once==0) {
-res=mdns("ecotracker-" "-" "everhome")
+mdns("ecotracker-" "-" "everhome")
 once=1
 }
 tmp=sml[1]-cpwr

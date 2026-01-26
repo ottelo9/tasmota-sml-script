@@ -181,6 +181,19 @@ eres=0
 }
 >F
 fe("sml_ftask.tas")
+str=udp(1)
+if (str!="") {
+res=ins(str "EM.GetStatus")
+if (res>=0) {
+=#getstat
+udp(2 header mstr1 mstr2)
+}
+} else {
+if (pwrforce>0) {
+=#getstat
+udp(2 header mstr1 mstr2)
+}
+}
 >S
 fe("sml_stask.tas")
 if (year<2020) {
@@ -214,6 +227,7 @@ cstr="cnth"+s(0idx4)+"/120"
 cstr2="cnth"+s(0idx24)+"/60"
 power2=(0.9*power2)+((1-0.9)*sml[1])
 =>publish stat/%topic%/script/power2 %0power2%
+=>publish stat/%topic%/script/cpwr %0cpwr%
 if (swesp==1) {
 if ((power2<-300) and (swespflg==0)) {
 swespflg=1
@@ -251,7 +265,7 @@ dval2=sml[3]
 }
 }
 if (once==0) {
-res=mdns("shellypro3em-" "-" "shelly")
+mdns("shellypro3em-" "-" "shelly")
 if (port==2) {
 udp(0 2220)
 } else {
@@ -259,30 +273,15 @@ udp(0 1010)
 }
 once=1
 }
-if (upsecs%throttle!=0) {
-break;
-}
+if (upsecs%throttle==0) {
 tmp=sml[1]-cpwr
 if (tmp>500) {
 cpwr=sml[1]-(tmp/2)
 } else {
 cpwr=sml[1]-pwroffset
 }
-=>publish stat/%topic%/script/cpwr %0cpwr%
 c1p=cpwr
 c1c=c1p/230
-str=udp(1)
-if (str!="") {
-res=ins(str "EM.GetStatus")
-if (res>=0) {
-=#getstat
-udp(2 header mstr1 mstr2)
-break
-}
-} else {
-if (pwrforce>0) {
-=#getstat
-udp(2 header mstr1 mstr2)
 }
 >W
 Leistung (gefiltert){m}%0power2% W
@@ -324,7 +323,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 25.01.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 26.01.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
@@ -358,7 +357,7 @@ so(17+4)
 <b>&#x1F50B; Akku</b><br><br>
 Offset für Nulleinspeisung [W]:
 nm(-200 200 1 pwroffset "" 50 0)
-Datenübertragungsintervall [s]:
+Update der Werte verzögern [s]:
 nm(1 60 1 throttle "" 50 0)
 UDP-Port (Neustart notwendig):
 rb(port "" "1010" "2220")
