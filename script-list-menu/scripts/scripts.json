@@ -5,6 +5,7 @@
 		{ "label": "0_SML_Simple", "filename": "smartmeter/0_SML_Simple.tas" },
 		{ "label": "1_SML_Chart", "filename": "smartmeter/1_SML_Chart.tas" },
 		{ "label": "2_SML_Chart_PV", "filename": "smartmeter/2_SML_Chart_PV.tas" },
+		{ "label": "2_SML_Chart_PV_Modbus", "filename": "smartmeter/2_SML_Chart_PV_Modbus.tas" },
 		{ "label": "2_SML_Chart_PV2", "filename": "smartmeter/2_SML_Chart_PV2.tas" },
 		{ "label": "2_SML_Chart_PV3", "filename": "smartmeter/2_SML_Chart_PV3.tas" },
 		{ "label": "3_SML_Chart_PV_Bezugszaehler", "filename": "smartmeter/3_SML_Chart_PV_Bezugszaehler.tas" },

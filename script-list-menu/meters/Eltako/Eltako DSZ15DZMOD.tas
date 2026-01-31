@@ -1,0 +1,18 @@
+>M 1
++1,%0rxpin%,m,16,9600,DSZ15DZ,%0txpin%,4,01040034,01040048,0104004A,01040000,01040002,01040004,01040006,01040008,0104000A,0104000C,0104000E,01040010
+1,010404SSssSSss@i0:1,Leistung Total,W,Power_Tot,0
+1,010404SSssSSss@i1:100,Verbrauch,kWh,Energy_Tot,2
+1,010404SSssSSss@i2:100,Einspeisung,kWh,Energy_Tot,2
+1,=h--
+1,010404SSssSSss@i3:100,Spannung L1,V,Voltage_L1,0
+1,010404SSssSSss@i4:100,Spannung L2,V,Voltage_L2,0
+1,010404SSssSSss@i5:100,Spannung L3,V,Voltage_L3,0
+1,=h--
+1,010404SSssSSss@i6:100,Strom L1,A,Current_L1,2
+1,010404SSssSSss@i7:100,Strom L2,A,Current_L2,2
+1,010404SSssSSss@i8:100,Strom L3,A,Current_L3,2
+1,=h--
+1,010404SSssSSss@i9:1,Leistung L1,W,Power_L1,0
+1,010404SSssSSss@i10:1,Leistung L2,W,Power_L2,0
+1,010404SSssSSss@i11:1,Leistung L3,W,Power_L3,0
+#
