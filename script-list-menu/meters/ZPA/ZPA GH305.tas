@@ -14,4 +14,11 @@
 1,77070100340700ff@1,Spannung L2,V,Volt_p2,1
 1,77070100480700ff@1,Spannung L3,V,Volt_p3,1
 1,770701000e0700ff@1,Frequenz,Hz,freq,1
+;1,=h--
+;1,77070100510701ff@1,Phaseangle L2-L1,deg,phase_angle_L2_L1,0
+;1,77070100510702ff@1,Phaseangle L3-L1,deg,phase_angle_L3_L1,0
+;1,77070100510704ff@1,Phaseangle I/U L1,deg,phase_angle_L1,1 
+;1,7707010051070fff@1,Phaseangle I/U L2,deg,phase_angle_L2,1  
+;1,7707010051071aff@1,Phaseangle I/U L3,deg,phase_angle_L3,1 
+;1,770701000e0700ff@1,Frequency,Hz,Freq,1
 #
