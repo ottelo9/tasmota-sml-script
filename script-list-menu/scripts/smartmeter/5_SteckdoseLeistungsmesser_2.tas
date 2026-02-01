@@ -10,6 +10,7 @@ p:mval=0
 p:dval=0
 p:yval=0
 p:da=1
+p:sndpwr=0
 t:t1=5
 t:t2=60
 tmp=0
@@ -18,6 +19,7 @@ idx24=0
 cstr="cnth0/720"
 cstr2="cnth0/30"
 hr=0
+power2=0
 fr=0
 >B
 sota("")
@@ -129,7 +131,9 @@ s24h=int(s24hf)
 cstr="cnth"+s(0idx4)+"/120"
 cstr2="cnth"+s(0idx24)+"/60"
 power2=(0.9*power2)+((1-0.9)*enrg[7])
-=>publish stat/%topic%/script/power2 %power2%
+if (sndpwr>0) {
+=>publish stat/%topic%/script/power2 %0power2%
+}
 }
 if (t2==0) {
 t2=60
@@ -188,7 +192,7 @@ $gc(e)
 %=#monthsub
 $<center><span style="font-size:10px;">
 $Tasmota Script für Steckdosen mit Energiemessung (2)<br>
-$Version 24.01.2026 by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 01.02.2026 by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 5s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -216,5 +220,9 @@ border:2px solid #ccc;
 <button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">&#x1F504; Werte initialisieren</button>
 <button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">&#x1F4CA; Reset Balkendiagramme</button>
 <button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">&#x1F4BE; Diagrammdaten speichern</button></div>
+<hr>
+<b>&#x1F527; Optionen</b><br><br>
+MQTT: Gemittelte Leistung senden:
+ck(sndpwr "")
 </div>
 </div>

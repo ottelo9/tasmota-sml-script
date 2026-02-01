@@ -53,6 +53,7 @@ p:da=1
 p:rxind=1
 p:txind=1
 p:sel=0
+p:sndpwr=0
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
 t:t1=5
 t:t2=60
@@ -266,7 +267,9 @@ if (t1==0) {
 	
 	; Optional: stark gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
 	power2=(0.9*power2)+((1-0.9)*sml[1])
-	=>publish stat/%topic%/script/power2 %power2%
+    if (sndpwr>0) {
+	=>publish stat/%topic%/script/power2 %0power2%
+    }
 
     if (sml[1]<0) {
 		;Virtueller Einspeisungszaehler
@@ -440,7 +443,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 24.01.2026 (PV-1Z) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 01.02.2026 (PV-1Z) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -471,6 +474,10 @@ so(17+4)
 <button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">&#x1F504; Zählerwerte initialisieren</button>
 <button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">&#x1F4CA; Reset Balkendiagramme</button>
 <button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">&#x1F4BE; Diagrammdaten speichern</button></div>
+<hr>
+<b>&#x1F527; Optionen</b><br><br>
+MQTT: Gemittelte Leistung senden:
+ck(sndpwr "")
 <hr>
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
 pd(rxind "RX Pin: " 50 "#gr")
