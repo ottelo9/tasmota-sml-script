@@ -343,7 +343,7 @@ if (t2==0) {
 ; Addresse 40004 = Einspeisung [kWh] (sml[3])
 ; FC03 ReadHoldingReg 
 if (once==0) {
-	; start modbus server
+	print start modbus server
 	wso(502)
 	once=1
 }
@@ -486,7 +486,7 @@ so(17+4)
 <div class="center-flex-horizontally">  
 <style>.button-group{display:flex;flex-direction:column;align-items:flex-start;gap:10px;}</style>
 <div class=button-group>
-<b>&#x1F4C4; 2_SML_Chart_PV.tas</b>
+<b>&#x1F4C4; 2_SML_Chart_PV_Modbus.tas</b>
 <button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">&#x1F504; Zählerwerte initialisieren</button>
 <button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">&#x1F4CA; Reset Balkendiagramme</button>
 <button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">&#x1F4BE; Diagrammdaten speichern</button></div>
