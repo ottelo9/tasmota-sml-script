@@ -36,6 +36,8 @@ Dieses Script ist nur noch für den __ESP32__. Tasmota (ottelo) Image ab v15.1.0
   wenn ihr keine PV-Anlage / Balkonkraftwerk BKW habt (ohne Einspeisung)
 - `2_SML_Script_Chart_PV`  
   wenn ihr eure Einspeisung sehen möchtet und euer Zähler das unterstützt (2-Richtungszähler)
+- `2_SML_Script_Chart_PV_Modbus`  
+  wie das vorherige Script aber mit ModbusTCP Server (Slave) Support. Leistung, Verbrauch und Einspeisung werden auf den Modbus Adressen 40000-40006 ausgegeben.  
 - `2_SML_Script_Chart_PV2`  
   wie _PV Script aber mit sehr hoch aufgelöstem 4h-Leistungs-Diagramm (alle 5s ein Wert)
 - `2_SML_Script_Chart_PV3`  
