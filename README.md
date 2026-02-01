@@ -15,7 +15,9 @@ Ich habe über die Zeit einige Varianten des Scriptes erstellt, die alle durch u
 Scriptauswahl:  
 <img width="467" height="308" alt="image" src="https://github.com/user-attachments/assets/d6c8114e-da35-49ba-9ba2-47df5fd1c3fb" />  
 Stromzähler/Pin-Auswahl:  
-<img width="378" height="219" alt="image" src="https://github.com/user-attachments/assets/7f1cb028-b11e-4ac5-a606-062692db51e6" />
+<img width="300" height="393" alt="image" src="https://github.com/user-attachments/assets/308c6d35-80e5-4a78-88da-adc573ad1b8b" />
+
+
 
 
 
@@ -95,7 +97,9 @@ Hast du einen ESP8266 (z.B. im Hichi V1 Lesekopf oder in Sonoff / Gosund Steckdo
 Editor "komprimiert" werden. D.h. es werden alle Kommentare und Leerzeichen entfernt. Der Editor überträgt das Script dann auch gleich.  
 
 ### Anleitung
-Ein passendes Tasmota Image von mir herunterladen. Dann kann das Script unter Tools -> Edit Script ausgewählt werden. Danach wählt ihr euren Zähler und die PINs (IR-Sende/Empfangsdiode eures Lesekopfes) aus. Die Daten können bequem über den Button initialisiert werden.
+Ein passendes Tasmota Image von mir herunterladen. Dann kann das Script unter Tools -> Edit Script ausgewählt werden. Danach wählt ihr euren Zähler und die PINs (IR-Sende/Empfangsdiode eures Lesekopfes) aus. Die Daten können bequem über den Button initialisiert werden. Wenn Tasmota und das Script läuft und ihr auch eure Zählerwerte (Leistung, Bezug und ggf. Einspeisung) sehen könnt, dann müsst ihr das Script einmal initialisieren, damit die Tages-, Monats-, und Jahreswerte und die Diagramme stimmen. Dazu tippt einfach auf den Button Zählerwerte initialisieren und Reset Balkendiagramme. Alle Werte sind dann auf 0 zurückgesetzt! Wollt ihr die Werte von einem vorherigen ESP oder alten Script übertragen? Dazu habe ich eine sehr [ausführliche Anleitung](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#14) geschrieben. Wollt ihr Änderungen an dem Zählerscript vornehmen weil was fehlt? Dann klickt auf den Link Stromzähler Script.  
+<img width="400" height="524" alt="image" src="https://github.com/user-attachments/assets/339d57e7-62b6-4624-bae9-d2f7a4d4302f" />
+
 
 Für die "alten" Scripte im ESP8266 Ordner gilt: Skript herunterladen und z.B. mit dem Windows Editor öffnen (öffnen mit). 
 Es gibt auch für die Tasmota Skripte einen speziellen Editor vom Tasmota Script Entwickler [gemu2015](https://github.com/gemu2015) 
@@ -103,25 +107,22 @@ den ihr [hier](https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota
 Dieser kann die Scripte direkt auf euren ESP übertragen und entfernt dabei alle Kommentare und leere Zeilen um Platz zu sparen! 
 Eine genauere Anleitung findet ihr auf meinem Blog oder auch in jedem Script.  
 
-GILT NUR FÜR DIE ESP8266 SCRIPTE:
 
-**Die Skripte müssen von euch auf euren Zähler angepasst werden**  
+**ESP8266: Die Skripte müssen von euch auf euren Zähler angepasst werden**  
+Die älteren Scripte vor 01.12.2025 sind auch für den ESP8266. Dort könnt ihr euren Zähler nicht via DropDown wählen. Den Zähler müsst ihr im Script editieren.  
 Sucht die Zeile  
 `>M 1`
 
 Dort müsst ihr den SML Descriptor für euren Zähler anpassen. Weitere Details auf meiner Seite!  
 Wenn ihr SML Zeilen entfernt oder hinzufügt, dann müsst ihr auch die Variablen im Script anpassen. Wenn die erste SML Zeile im Script z.B. `1,77070100100700ff@1,Leistung,W,Power_curr,0` ist, dann wird im Hintergrund von Tasmota die aktuelle Leistung `Power_curr` des Zählers in die Variable `sml[1]` geschrieben. Die 2te und 3te Zeile (im Script ist das der Verbrauch und die Netzeinspeisung) werden in `sml[2]` und `sml[3]` geschrieben.  
 
-**Init**  
-Wenn Tasmota und das Script läuft und ihr auch eure Zählerwerte (Leistung, Bezug und ggf. Einspeisung) sehen könnt, dann müsst ihr das Script einmal initialisieren, damit die Tages-, Monats-, und Jahreswerte und die Diagramme stimmen. Dazu geht zur Tasmota Console und tippt ein `script>=#init`. Anschließend sollte alles stimmen.  
- 
-Wichtig noch die korrekte Uhrzeit (Zeitzone, Winter/Sommer) festlegen (via Console),  
-ab Script 18.08.2025 wird dies automatisch beim #init erledigt!  
-`Backlog0 Timezone 99; TimeStd 0,0,10,1,3,60; TimeDst 0,0,3,1,2,120` <- Europe/Berlin  
-Den Befehl müsst ihr ggf. auf euren Ort anpassen! https://tasmotatimezone.com  bzw. https://tasmota.github.io/docs/Timezone-Table/  
+Wenn Tasmota und das Script läuft und ihr auch eure Zählerwerte (Leistung, Bezug und ggf. Einspeisung) sehen könnt, dann müsst ihr das Script einmal initialisieren, damit die Tages-, Monats-, und Jahreswerte und die Diagramme stimmen. Dazu geht zur Tasmota Console und tippt ein script>=#init. Anschließend sollte alles stimmen.
 
-So sieht das Google Chart Script in Natura aus:  
-![screencapture-192-168-178-31-2024-12-28-15_41_15](https://github.com/user-attachments/assets/cc1d8a8f-62c9-4609-839c-d90ff3d4c089)
+Wichtig noch die korrekte Uhrzeit (Zeitzone, Winter/Sommer) festlegen (via Console),
+ab Script 18.08.2025 wird dies automatisch beim #init erledigt!
+Backlog0 Timezone 99; TimeStd 0,0,10,1,3,60; TimeDst 0,0,3,1,2,120 <- Europe/Berlin
+Den Befehl müsst ihr ggf. auf euren Ort anpassen! https://tasmotatimezone.com bzw. https://tasmota.github.io/docs/Timezone-Table/
+
 
 ### Debuggen oder Daten loggen
 Falls ihr vielleicht im Script irgendwas loggen wollt (Zustände oder Werte in eine Datei mit Zeitstempel schreiben), dann gibt es eine schöne einfache Methode via Script. Erstellt dazu einfach ein neuen #Sub, da wo bereits Subs sind, ansonsten ist es egal wo:
@@ -148,7 +149,10 @@ str="Leistung: "+s(sml[1])+" W"
 oder einfach nur
 =#log(s(sml[1]))
 ```
-
+  
+So sieht das Google Chart Script in Natura aus:  
+<img width="400" height="1950" alt="image" src="https://github.com/user-attachments/assets/d758e131-e4c6-4fdb-96e1-b05acf67c3dc" />
+  
 ------------------
 Bedanken möchte ich mich besonders bei [gemu2015](https://github.com/gemu2015), der das Tasmota Scripting und SML entwickelt hat und mir immer sofort bei Problemen geholfen hat. Und natürlich beim restlichen [Tasmota Entwickler-Team](https://tasmota.github.io/docs/About/), für das grandiose Tasmota :).  
 
