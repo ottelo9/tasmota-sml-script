@@ -239,13 +239,14 @@ smlj=1
 
 ; alle 5s
 if (t1==0) {
-	t1=5
-	; Moving average filter für 4h/24h Diagramm
+    ; t1 mit secs synchron halten
+	t1=5-(secs%5)
+	; Moving average filter für 1h/24h Diagramm
 	s4hf=sml[1]
 	s24hf=sml[1]
 	
-	; 4h/24h Array idx setzen
-	; Wie wird idx4 (bzw. cstr) für 4h X-Achse errechnet
+	; 1h/24h Array idx setzen
+	; Wie wird idx4 (bzw. cstr) für 1h X-Achse errechnet
 	; setze 1h Chart X-Achse alle 5s => /720 Werte pro Stunde = Array
 	; (aktuelle Stunde-1) * (720 Werte pro Stunde) + (aktuelle Minute * 12 Werte pro Minute) + (aktuelle Sekunde * 1 Wert /5)
 	tmp=hours-1
@@ -254,13 +255,13 @@ if (t1==0) {
 	}
 	idx4=tmp*720+(mins*12)+int(secs/5)
 	idx24=(hours*60+mins)
-	; 4h Chart. Durschnittsleistung [W] der letzten 30s => s4h[1-480]
+	; 1h Chart. Durschnittsleistung [W] der letzten 30s => s4h[1-480]
 	s4h[0]=idx4%s4h[-1]
 	s4h=int(s4hf)
 	; 24h Chart. Durschnittsleistung [W] der letzten 60s => s24h[1-1440]
 	s24h[0]=idx24
 	s24h=int(s24hf)
-	cstr="cnth"+s(0idx4)+"/120"
+	cstr="cnth"+s(0idx4)+"/720"
 	cstr2="cnth"+s(0idx24)+"/60"
 	
 	; Optional: stark gemittelte Leistung für z.B. opendtu-onbattery DPL: http://192.168.178.31/cm?user=admin&password=joke&cmnd=script?power2
@@ -411,9 +412,9 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 01.02.2026 (PV2) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 03.02.2026 (PV2) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
-$4h Diagramm aktualisiert sich alle 5s, 24h Diagramm alle 60s.<br>
+$1h Diagramm aktualisiert sich alle 5s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
 
 

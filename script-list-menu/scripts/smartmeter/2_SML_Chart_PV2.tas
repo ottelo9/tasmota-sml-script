@@ -171,7 +171,7 @@ break
 }
 smlj=1
 if (t1==0) {
-t1=5
+t1=5-(secs%5)
 s4hf=sml[1]
 s24hf=sml[1]
 tmp=hours-1
@@ -184,7 +184,7 @@ s4h[0]=idx4%s4h[-1]
 s4h=int(s4hf)
 s24h[0]=idx24
 s24h=int(s24hf)
-cstr="cnth"+s(0idx4)+"/120"
+cstr="cnth"+s(0idx4)+"/720"
 cstr2="cnth"+s(0idx24)+"/60"
 power2=(0.9*power2)+((1-0.9)*sml[1])
 if (sndpwr>0) {
@@ -265,9 +265,9 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 01.02.2026 (PV2) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 03.02.2026 (PV2) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
-$4h Diagramm aktualisiert sich alle 5s, 24h Diagramm alle 60s.<br>
+$1h Diagramm aktualisiert sich alle 5s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
 >w &#x2699;&#xFE0F; Stromzähler / Daten
 <button onclick="history.back()">&#x2B05;&#xFE0F; Zurück</button>
