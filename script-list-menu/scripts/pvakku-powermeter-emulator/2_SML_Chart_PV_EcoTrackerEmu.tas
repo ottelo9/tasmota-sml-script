@@ -33,6 +33,7 @@ swesp=0
 swespflg=0
 power2=0
 fr=0
+power3=0
 res=0
 cpwr=0
 header=""
@@ -162,7 +163,7 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 >ah
 res=won(1 "/v1/json")
 >on1
-json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0cpwr)+",\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
+json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
 tmp=sl(json)
 header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
 wcs so(4)
@@ -259,6 +260,7 @@ cpwr=sml[1]-(tmp/2)
 } else {
 cpwr=sml[1]-pwroffset
 }
+power3=(0.9*power3)+((1-0.9)*cpwr)
 =>publish stat/%topic%/script/cpwr %0cpwr%
 >W
 Leistung (gefiltert){m}%0power2% W
@@ -300,7 +302,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 01.02.2026 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Version 04.02.2026 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>

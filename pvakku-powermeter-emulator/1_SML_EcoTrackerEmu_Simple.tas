@@ -26,6 +26,7 @@ rxpin=0
 txpin=0
 hr=0
 ;-- ECOTRACKER EMULATION --
+power3=0
 res=0
 tmp=0
 cpwr=0
@@ -67,7 +68,7 @@ res=won(1 "/v1/json")
 
 >on1
 ;print Ecotracker
-json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0cpwr)+",\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
+json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
 tmp=sl(json)
 header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
 wcs so(4)
@@ -140,6 +141,8 @@ cpwr=sml[1]-(tmp/2)
 ; Nulleinspeisung-Offset: reduziere die Leistung damit die Regelung nicht um 0W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
 cpwr=sml[1]-pwroffset
 }
+; stark gemittelte Leistung für powerAvg (EcoTrackerEmu)
+power3=(0.9*power3)+((1-0.9)*cpwr)
 
 >W
 Leistung (an Marstek Akku){m}%0cpwr% W
@@ -151,7 +154,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 26.01.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Version 04.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
