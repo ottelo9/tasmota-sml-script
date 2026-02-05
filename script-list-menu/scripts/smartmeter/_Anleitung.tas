@@ -29,6 +29,17 @@ wenn ihr keine PV-Anlage / Balkonkraftwerk BKW habt (ohne Einspeisung)
 wenn ihr eure Einspeisung sehen möchtet und euer Zähler das unterstützt
 (2-Richtungszähler)
 
+2_SML_Script_Chart_PV_Modbus
+---------------------
+wie _PV Script aber mit ModbusTCP Server (Slave) Support. Leistung, Verbrauch
+und Einspeisung werden auf den Modbus Adressen 40000-40006 ausgegeben. Port 502.
+Addresse 40000 mbtx[1] = Leistung [W] (sml[1])
+Addresse 40002 mbtx[2] = Verbrauch [kWh] (sml[2])
+Addresse 40004 mbtx[3] = Einspeisung [kWh] (sml[3])
+FC03 ReadHoldingReg 
+Änderungen können vorgenommen werden, runterscrollen zu mbtx
+
+
 2_SML_Script_Chart_PV2
 ----------------------
 wie _PV Script aber mit sehr hoch aufgelöstem 4h-Leistungs-Diagramm

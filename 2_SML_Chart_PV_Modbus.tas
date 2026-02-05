@@ -13,11 +13,13 @@ IP=192.168.178.132
 
 ; (1) Beschreibung:
 ; Skript Version ganz unten
-; Tasmota SML Skript mit Google Chart (Diagramme)
+; Tasmota SML Skript mit Google Chart (Diagramme) und Modbus TCP Server (Slave)
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgelöst, 30s) und Leistung der letzten 24h (grob aufgelöst, 60s)
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
 ; Tasmota muss mit dem Internet verbunden sein um die aktuelle Uhrzeit via NTP zu erhalten. Ansonsten muss das Skript angepasst werden.
 ; Optional im Skript enthalten: (Op1) Schalte zweiten ESP (z.B. Poolpumpe) bei Netzeinspeisung (Op2) Daten an www.clever-pv.com senden. Zum Aktivieren nach (OpX) suchen und inkl ; entfernen.
+; wie 2_SML_Chart_PV.tas aber mit ModbusTCP Server (Slave) Support. Leistung, Verbrauch und Einspeisung werden auf den Modbus Adressen 40000-40006 ausgegeben. Port 502.
+; Änderungen können vorgenommen werden, runterscrollen zu ; MODBUS TCP SERVER
 
 ; (2) Anleitung:
 ; http://ottelo.jimdo.de/
