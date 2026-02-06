@@ -158,6 +158,52 @@ eres=0
 }
 >F
 fe("sml_ftask.tas")
+if (once==0) {
+print start modbus server
+wso(502)
+once=1
+}
+tmp=wsa()
+if (tmp==12) {
+wsra(mbrx)
+mbtx[1]=mbrx[1]
+mbtx[2]=mbrx[2]
+mbtx[3]=0
+mbtx[4]=0
+mbtx[7]=mbrx[7]
+if (mbrx[8]==3) {
+if ((mbrx[12]+mbrx[10]<=6) and (mbrx[12]%2==0) and (mbrx[10]%2==0)) {
+mbtx[5]=0
+mbtx[6]=mbrx[12]*2+3
+mbtx[8]=mbrx[8]
+mbtx[9]=mbrx[12]*2
+wswa(mbtx 9)
+tmp=1
+for fr (mbrx[10]/2+1) ((mbrx[12]/2)+(mbrx[10]/2)) 1
+mbtx[tmp]=sml[fr]
+tmp+=1
+next
+wswa(mbtx (mbrx[12]/2) 3)
+} else {
+mbtx[5]=0
+mbtx[6]=3
+mbtx[8]=mbrx[8]|0x80
+mbtx[9]=0x02
+wswa(mbtx 9)
+}
+} else {
+mbtx[5]=0
+mbtx[6]=3
+mbtx[8]=mbrx[8]|0x80
+mbtx[9]=0x01
+wswa(mbtx 9)
+}
+wsf()
+} else {
+if (tmp>12) {
+wsf()
+}
+}
 >S
 fe("sml_stask.tas")
 if (year<2020) {
@@ -229,34 +275,6 @@ dval2=sml[3]
 =#save
 }
 }
-if (once==0) {
-print start modbus server
-wso(502)
-once=1
-}
-tmp=wsa()
-if (tmp==12) {
-wsra(mbrx)
-if ((mbrx[8]==3) and (mbrx[12]<=6) and (mbrx[10]<3)) {
-mbtx[1]=mbrx[1]
-mbtx[2]=mbrx[2]
-mbtx[3]=0
-mbtx[4]=0
-mbtx[5]=0
-mbtx[6]=mbrx[12]*2+3
-mbtx[7]=mbrx[7]
-mbtx[8]=mbrx[8]
-mbtx[9]=mbrx[12]*2
-wswa(mbtx 9)
-mbtx[1]=sml[1]
-mbtx[2]=sml[2]
-mbtx[3]=sml[3]
-wswa(mbtx 3 3)
-}
-}
-if (tmp>12) {
-wsf()
-}
 >W
 Leistung (gefiltert){m}%0power2% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
@@ -296,7 +314,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 01.02.2026 (PV+MB) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 06.02.2026 (PV+MB) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>

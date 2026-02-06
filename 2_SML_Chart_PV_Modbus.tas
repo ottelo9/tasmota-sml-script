@@ -220,6 +220,100 @@ if eres==1 {
 >F
 fe("sml_ftask.tas")
 
+; MODBUS TCP SERVER
+; Nur FC03
+; Addresse 40000 = Leistung [W] (sml[1])
+; Addresse 40002 = Verbrauch [kWh] (sml[2])
+; Addresse 40004 = Einspeisung [kWh] (sml[3])
+;----------------------------------
+;Aufbau einer Client Anfrage Beispiel FC03 3Register:
+;mbrx[12] =
+;0x00, 0x01,	Transaction ID
+;0x00, 0x00,	Protocol ID
+;0x00, 0x06,	Length
+;0x01,			Unit ID
+;0x03,			Function Code (Read Holding Registers)
+;0x00, 0x00,	Start Address (40000 = 0x0000)
+;0x00, 0x06 	Quantity = 6 Register
+;----------------------------------
+;Aufbau einer Server Antwort:
+;mbtx[9] =
+;0x00, 0x01,	Transaction ID
+;0x00, 0x00,	Protocol ID
+;0x00, 0x0F,	Length = 6*2+3
+;0x01,			Unit ID 1
+;0x03,			FC03
+;0x0C,			Payload = 6*2
+;data...
+;Falsche Anfrage, Antwort:
+;0x83,		FC03 | 0x80
+;0x02		Illegal Data Address
+;----------------------------------
+if (once==0) {
+	print start modbus server
+	wso(502)
+	once=1
+}
+tmp=wsa()
+;return bytes available on tcp stream
+;print TCP Stream data: %0tmp%
+if (tmp==12) {
+	;read tcp stream into array
+	wsra(mbrx)
+	; transaction id
+	mbtx[1]=mbrx[1]
+	mbtx[2]=mbrx[2]
+	; protool id
+	mbtx[3]=0
+	mbtx[4]=0
+	; Unit ID
+	mbtx[7]=mbrx[7]
+	
+	;FC03
+	if (mbrx[8]==3) {
+		if ((mbrx[12]+mbrx[10]<=6) and (mbrx[12]%2==0) and (mbrx[10]%2==0)) {
+			;print reg: 4000%0mbrx[10]%, cnt: %0mbrx[12]%, fc: %0mbrx[8]%
+			; length
+			mbtx[5]=0
+			mbtx[6]=mbrx[12]*2+3
+			; FC
+			mbtx[8]=mbrx[8]
+			; payload len
+			mbtx[9]=mbrx[12]*2
+			; write response header
+			wswa(mbtx 9)
+			; write data
+			tmp=1
+			for fr (mbrx[10]/2+1) ((mbrx[12]/2)+(mbrx[10]/2)) 1
+			mbtx[tmp]=sml[fr]
+			tmp+=1
+			next
+			; wswa() write data, 0=uint8, 1=uint16, 2=sint16, 3=float
+			wswa(mbtx (mbrx[12]/2) 3)
+		} else {
+			;Illegal Data Address
+			mbtx[5]=0
+			mbtx[6]=3
+			mbtx[8]=mbrx[8]|0x80
+			mbtx[9]=0x02
+			wswa(mbtx 9)
+		}
+		
+	} else {
+		;Illegal Function
+		mbtx[5]=0
+		mbtx[6]=3
+		mbtx[8]=mbrx[8]|0x80
+		mbtx[9]=0x01
+		wswa(mbtx 9)
+	}
+	wsf()
+} else {
+	if (tmp>12) {
+	wsf()
+	}
+}
+
 
 ; -- JEDE SEKUNDE --
 >S
@@ -339,51 +433,6 @@ if (t2==0) {
 	}
 }
 
-; MODBUS TCP SERVER
-; Addresse 40000 = Leistung [W] (sml[1])
-; Addresse 40002 = Verbrauch [kWh] (sml[2])
-; Addresse 40004 = Einspeisung [kWh] (sml[3])
-; FC03 ReadHoldingReg 
-if (once==0) {
-	print start modbus server
-	wso(502)
-	once=1
-}
-tmp=wsa()
-;print TCP Stream data: %0tmp%
-if (tmp==12) {
-	;read tcp stream into array
-	wsra(mbrx)
-	if ((mbrx[8]==3) and (mbrx[12]<=6) and (mbrx[10]<3)) {
-		;print reg: 4000%0mbrx[10]%, cnt: %0mbrx[12]%, fc: %0mbrx[8]%
-		; transaction id
-		mbtx[1]=mbrx[1]
-		mbtx[2]=mbrx[2]
-		; protocol id
-		mbtx[3]=0
-		mbtx[4]=0
-		; length
-		mbtx[5]=0
-		mbtx[6]=mbrx[12]*2+3
-		; device address
-		mbtx[7]=mbrx[7]
-		; function code
-		mbtx[8]=mbrx[8]
-		; payload len
-		mbtx[9]=mbrx[12]*2
-		; write response header
-		wswa(mbtx 9)
-		; wswa() write data, 0=uint8, 1=uint16, 2=sint16, 3=float
-		mbtx[1]=sml[1]
-		mbtx[2]=sml[2]
-		mbtx[3]=sml[3]
-		wswa(mbtx 3 3)
-	}
-}
-if (tmp>12) {
-wsf()
-}
-
 
 ; WEB INTERFACE
 >W
@@ -461,7 +510,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 01.02.2026 (PV+MB) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 06.02.2026 (PV+MB) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
