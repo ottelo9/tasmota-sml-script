@@ -40,6 +40,7 @@ header=""
 once=0
 json=""
 >B
+->SetOption57 0
 sota("")
 rxpin=rxind-1
 txpin=txind-1
@@ -163,7 +164,7 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 >ah
 res=won(1 "/v1/json")
 >on1
-json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
+json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0cpwr)+",\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
 tmp=sl(json)
 header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
 wcs so(4)
@@ -302,7 +303,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 04.02.2026 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Version 12.02.2026 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
@@ -350,5 +351,8 @@ RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
 RX=5 TX=4: bitShake<br></span>
 <br>
 &#x1F4DD; <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
+<hr>
+<b>&#x2139;&#xFE0F; System</b><br>
+Script %0slen%/16384 chars | FS %0fsi(1)%/%0fsi(0)% KB
 </div>
 </div>

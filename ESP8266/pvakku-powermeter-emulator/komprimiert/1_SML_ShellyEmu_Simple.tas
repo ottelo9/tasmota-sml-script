@@ -1,4 +1,5 @@
 >D 250
+;1_SML_ShellyEmu_Simple.tas
 p:dval=0
 p:dval2=0
 p:mval2=0
@@ -24,6 +25,7 @@ mstr2=""
 header=""
 once=0
 >B
+->SetOption57 0
 =>sensor53 r
 smlj=0
 header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
@@ -105,7 +107,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
 $<center><span style="font-size:10px;">
-$Version 26.01.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 12.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 >M 1

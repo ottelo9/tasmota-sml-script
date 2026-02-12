@@ -72,6 +72,9 @@ wie 5_ Script aber mit sehr hoch aufgelöstem 4h-Leistungs-Diagramm
 6_SML_Script_Wasseruhr
 ----------------------
 Wasseruhr Script mit Diagrammen (Impulse)
+Variable factor=10000 an eure Wasseruhr anpassen. 10000 bedeutet 1 Puls = 0.0001m³
+Aktuellen Zählerstand der Uhr übertragen via Console: sensor53 c1 ZÄHLERSTAND
+Bei einer Auflösung von 1 Liter den Zählerstand x 1000 nehmen
 
 
 

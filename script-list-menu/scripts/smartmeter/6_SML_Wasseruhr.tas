@@ -185,7 +185,7 @@ $gc(e)
 %=#daysub
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 24.01.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 12.02.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -217,5 +217,8 @@ border:2px solid #ccc;
 <button type="submit" onclick="if(confirm('Tages/Monats/Jahreswerte und beide Diagramme (4/24h) zurücksetzen? Die Balkendiagramme bleiben erhalten.')){seva(1,'_init');}">&#x1F504; Zählerwerte initialisieren</button>
 <button type="submit" onclick="if(confirm('Balkendiagramme zurücksetzen?')){seva(1,'_init2');}">&#x1F4CA; Reset Balkendiagramme</button>
 <button type="button" onclick="seva(1,'_save');alert('Daten wurden gespeichert!');">&#x1F4BE; Diagrammdaten speichern</button></div>
+<hr>
+<b>&#x2139;&#xFE0F; System</b><br>
+Script %0slen%/16384 chars | FS %0fsi(1)%/%0fsi(0)% KB
 </div>
 </div>

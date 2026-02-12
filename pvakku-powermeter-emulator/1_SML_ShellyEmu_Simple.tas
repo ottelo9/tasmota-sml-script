@@ -42,8 +42,8 @@ mstr2=""
 header=""
 once=0
 
-
 >B
+->SetOption57 0
 sota("")
 rxpin=rxind-1
 txpin=txind-1
@@ -190,7 +190,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 26.01.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 12.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
@@ -240,6 +240,9 @@ RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
 RX=5 TX=4: bitShake<br></span>
 <br>
 &#x1F4DD; <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
+<hr>
+<b>&#x2139;&#xFE0F; System</b><br>
+Script %0slen%/16384 chars | FS %0fsi(1)%/%0fsi(0)% KB
 </div>
 </div>
 

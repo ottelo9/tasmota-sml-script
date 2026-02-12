@@ -25,6 +25,7 @@ t:t1=60
 hr=0
 save=0
 ;-- ECOTRACKER EMULATION --
+power3=0
 res=0
 tmp=0
 cpwr=0
@@ -34,6 +35,7 @@ json=""
 
 
 >B
+->SetOption57 0
 =>sensor53 r
 smlj=0
 
@@ -55,7 +57,7 @@ res=won(1 "/v1/json")
 
 >on1
 ;print Ecotracker
-json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0cpwr)+",\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
+json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0cpwr)+",\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
 tmp=sl(json)
 header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
 wcs so(4)
@@ -117,6 +119,8 @@ cpwr=sml[1]-(tmp/2)
 ;cpwr=sml[1]-50
 cpwr=sml[1]
 }
+; stark gemittelte Leistung für powerAvg (EcoTrackerEmu)
+power3=(0.9*power3)+((1-0.9)*cpwr)
 
 
 >W
@@ -130,7 +134,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
 $<center><span style="font-size:10px;">
-$Version 24.09.2025 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Version 12.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 
