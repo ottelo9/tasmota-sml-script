@@ -41,12 +41,7 @@ rxpin=rxind-1
 txpin=txind-1
 ->sensor53 r
 smlj=0
-if (pwroffset>200) {
-pwroffset=200
-}
-if (pwroffset<-200) {
-pwroffset=-200
-}
+pwroffset=mp(pwroffset <-200 -200 >200 200)
 
 #save
 svars
@@ -154,7 +149,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 12.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Version 13.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
