@@ -43,19 +43,19 @@ eres=0
 >W
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 so(17+4)
-<b>⚡ Stromzähler</b>
-smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
+<b>&#x26A1; Stromzähler</b><br>
+smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Auswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
 pd(rxind "RX Pin: " 50 "#g")
 pd(txind "TX Pin: " 50 "#g")
 so(1)
 $<span style="font-size:9px">
 $RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
 $RX=5 TX=4: bitShake<br><br></span>
-$📝 <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
+$&#x1F4DD; <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
 $<hr>
 $<center><span style="font-size:10px;">
 $<b>0_SML_Simple.tas</b><br>
-$Version 24.01.2026<br>by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)
+$Version 13.02.2026<br>by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)
 $</span></center>
 
 ; >M SMARTMETER DESCRIPTOR / ZÄHLER AUSWAHL AB 01.12.2025 VIA DROP-DOWN MENÜ:

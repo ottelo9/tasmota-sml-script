@@ -185,12 +185,12 @@ $gc(e)
 %=#daysub
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 12.02.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 13.02.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
 >M 1
-+1,21,c,1,-50,
++1,21,c,1,-50,Wasser
 1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
 #
 >w &#x2699;&#xFE0F; Daten sichern / initialisieren

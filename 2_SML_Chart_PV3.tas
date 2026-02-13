@@ -454,7 +454,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 12.02.2026 (PV3) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 13.02.2026 (PV3) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -490,7 +490,8 @@ so(17+4)
 MQTT: Gemittelte Leistung senden:
 ck(sndpwr "")
 <hr>
-smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
+<b>&#x26A1; Stromzähler</b><br>
+smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Auswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)
 pd(rxind "RX Pin: " 50 "#gr")
 pd(txind "TX Pin: " 50 "#gr")
 <span style="font-size:9px">

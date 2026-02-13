@@ -294,7 +294,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 12.02.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 13.02.2026 (Wasseruhr) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -304,8 +304,8 @@ $</span></center></div>
 ; https://tasmota.github.io/docs/Smart-Meter-Interface/#meter-metrics
 >M 1
 ;1=meter1, 21=GPIO21, c=Counter, 1=counter-with-pullup -50=debounce-time-ms and irq counter
-+1,21,c,1,-50,
-;1-0:1.8.0*255 for counter, %factor% = Faktor z.B. 10000 = 0.0001m³, 4 = Dezimalstellen
++1,21,c,1,-50,Wasser
+; Zähler/Counter @%factor%=Faktor z.B. 1000 = 1/1000kWh pro Count, 4 = Dezimalstellen
 1,1-0:1.8.0*255(@%factor%,Wasseruhr,m³,Wasseruhr,4)
 #
 
