@@ -6,6 +6,8 @@ p:mval2=0
 p:mval=0
 p:yval=0
 p:yval2=0
+p:pwroffset=0
+p:pwrforce=0
 p:throttle=1
 t:t1=60
 tmp=0
@@ -29,6 +31,8 @@ once=0
 =>sensor53 r
 smlj=0
 header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
+throttle=mp(throttle <1 1 >60 60)
+pwroffset=mp(pwroffset <-200 -200 >200 200)
 #init
 dval=sml[2]
 dval2=sml[3]
@@ -91,10 +95,13 @@ tmp=sml[1]-cpwr
 if (tmp>500) {
 cpwr=sml[1]-(tmp/2)
 } else {
-cpwr=sml[1]
+cpwr=sml[1]-pwroffset
 }
 c1p=cpwr
 c1c=c1p/230
+if (pwrforce>0) {
+=#getstat
+udp(2 header mstr1 mstr2)
 }
 >W
 bu(save "gespeichert!" "Daten sofort speichern")
@@ -106,8 +113,15 @@ Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
-$<center><span style="font-size:10px;">
-$Version 12.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$<span style="font-size:10px;">
+$<b>Einstellungen / Status</b><br>
+$Ändern der [Variable] via Console: script>var=x<br>
+$- Update der Werte verzögern [throttle]: %0throttle% s<br>
+$- Offset für Nulleinspeisung [pwroffset]: %0pwroffset% W<br>
+$- Datenübertragung erzwingen [pwrforce]: %0pwrforce% s<br>
+$Scriptspeicher: %0slen% chars / 4096(1M) 8192(4M)
+$<hr>
+$<center>Version 13.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 >M 1

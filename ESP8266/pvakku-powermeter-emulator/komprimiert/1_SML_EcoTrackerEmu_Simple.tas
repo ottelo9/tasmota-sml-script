@@ -6,6 +6,7 @@ p:mval2=0
 p:mval=0
 p:yval=0
 p:yval2=0
+p:pwroffset=0
 t:t1=60
 hr=0
 save=0
@@ -20,6 +21,7 @@ json=""
 ->SetOption57 0
 =>sensor53 r
 smlj=0
+pwroffset=mp(pwroffset <-200 -200 >200 200)
 #init
 dval=sml[2]
 dval2=sml[3]
@@ -75,7 +77,7 @@ tmp=sml[1]-cpwr
 if (tmp>500) {
 cpwr=sml[1]-(tmp/2)
 } else {
-cpwr=sml[1]
+cpwr=sml[1]-pwroffset
 }
 power3=(0.9*power3)+((1-0.9)*cpwr)
 >W
@@ -88,8 +90,13 @@ Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
-$<center><span style="font-size:10px;">
-$Version 12.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$<span style="font-size:10px;">
+$<b>Einstellungen / Status</b><br>
+$Ändern der [Variable] via Console: script>var=x<br>
+$- Offset für Nulleinspeisung [pwroffset]: %0pwroffset% W<br>
+$Scriptspeicher: %0slen%/4096(1M),8192(4M) chars
+$<hr>
+$<center>Version 13.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 >M 1
