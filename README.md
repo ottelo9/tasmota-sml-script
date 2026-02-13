@@ -69,20 +69,20 @@ Alle Scripte in der alten Version für den kleinen ESP8266 und ohne Zähler-Drop
 
 **pvakku-powermeter-emulator (ESP32)**    
 - `1_SML_EcoTrackerEmu_Simple`  
-  Sehr kleines und wirklich einfaches Script zum Emulieren eines EcoTracker von everHome. Getestet mit Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles MS-A2.
+  Sehr kleines und wirklich einfaches Script zum Emulieren eines EcoTracker von everHome. Getestet mit Marstek Akkus (Jupiter, Venus, B2500), Hoymiles (MS-A2, HiBattery 1920 AC).
   Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte + Tages/Monats/Jahreswerte) an.
   Benötigt mein Tasmota Image [V15.0.1](https://github.com/ottelo9/tasmota-sml-images/releases/) oder höher. Im Script ist eine grobe Beschreibung, wie ihr das alles zum Laufen bekommt.
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 - `1_SML_ShellyEmu_Simple`  
-  Einfaches Script zum Emulieren eines Shelly Pro 3EM (getestet mit Marstek Akkus Jupiter, Venus, B2500)
+  Einfaches Script zum Emulieren eines Shelly Pro 3EM. Getestet mit Marstek Akkus (Jupiter, Venus, B2500).
   Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte + Tages/Monats/Jahreswerte) an.
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 - `2_SML_Script_Chart_PV_EcoTrackerEmu`  
-  Wie 2_SML_Script_Chart_PV aber mit EcoTracker Emulation. Getestet mit Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles MS-A2.
+  Wie 1_SML_EcoTrackerEmu_Simple aber Diagrammen (wie 2_SML_Script_Chart_PV).
   Es ist kleiner als das 2_SML_Script_Chart_PV_ShellyEmu und läuft bei mir aktuell auf dem bitShake ESP32-C3 Lesekopf zusammen mit dem Marstek Jupiter C Plus Akku einwandfrei. 
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!  
 - `2_SML_Script_Chart_PV_ShellyEmu`  
-  Wie 2_SML_Script_Chart_PV aber mit Shelly Pro 3EM Emulation (getestet mit Marstek Akkus Jupiter, Venus, B2500).
+  Wie 1_SML_ShellyEmu_Simple aber Diagrammen (wie 2_SML_Script_Chart_PV).
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 
 **script-list-menu (ESP32)**  
