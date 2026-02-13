@@ -161,6 +161,7 @@ cpwr=sml[1]-(tmp/2)
 ; Nulleinspeisung-Offset: reduziere die Leistung damit die Regelung nicht um 0W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
 cpwr=sml[1]-pwroffset
 }
+}
 
 ; Standard: Zähler sendet nur Gesamtleistung
 c1p=cpwr
@@ -178,7 +179,6 @@ if (pwrforce>0) {
 =#getstat
 udp(2 header mstr1 mstr2)
 }
-}
 
 >W
 Leistung (an Marstek Akku){m}%0cpwr% W
@@ -190,7 +190,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 12.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 13.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
