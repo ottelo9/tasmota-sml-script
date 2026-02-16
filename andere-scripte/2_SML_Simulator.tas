@@ -32,27 +32,25 @@ cPow="77070100100700ff0101621b520055"
 t:t1=5
 t:t2=60
 ; Vars
-RndPwr=0
+I:iPwr=0
+fPwr=0
 utm="00d 00h 00m"
 PwrToGrd=0
 PwrFrGrd=0
-save=0
 
 >B
-->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
+->DeviceName Stromzähler Simulator (MT175 SML)
+sota("")
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 ->sensor53 r
 ; sets decimal precision to 0
 dp0
 
->S
-;Daten speichern Button
-if (save==1) {
-save=0
+#save
 svars
 print Daten wurden gespeichert
-}
 
+>S
 ;Zeit seit letztem Boot
 utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
 
@@ -62,28 +60,28 @@ case 1
 ; Zufallszahl
 if t1==0 {
 t1=5
-RndPwr=rnd(1000)-500
+fPwr=rnd(1000)-500
 }
 case 2
 ; Festwert via Slider
-RndPwr=pwrsld-1000
+fPwr=pwrsld
 case 3
 ; Rampe
 if t1==0 {
 t1=60
-if RndPwr>1000 {
-RndPwr=-1000
+if fPwr>1000 {
+fPwr=-1000
 } else {
-RndPwr+=20
+fPwr+=20
 }
 }
 ends 
 
 ; alle 1s: Leistung W jede Sekunde addieren, damit Bezug/Einspeisung korrekt erhöht wird
-if (RndPwr<0) {
-PwrToGrd-=RndPwr
+if (fPwr<0) {
+PwrToGrd-=fPwr
 } else {
-PwrFrGrd+=RndPwr
+PwrFrGrd+=fPwr
 }
 
 ; alle 60s: Arbeit/Energie berechnen
@@ -115,17 +113,23 @@ sml(1 1 cEnOut1+hx(EnToGrd*10000)+"01")
 ; Zählerstand Einspeisung Tarif 2 = 0Wh
 sml(1 1 "77070100020802ff0101621e52ff59000000000000000001")
 ; aktuelle Wirkleistung
-sml(1 1 cPow+hx(RndPwr)+"01")
+iPwr=i(fPwr)
+if fPwr<0 {
+;float kann nur 23Bit deshalb uint32 variable iPwr nutzen
+iPwr=#4294967296
+iPwr-=i(-fPwr)
+}
+sml(1 1 cPow+hxi(iPwr)+"01")
 
 >W
 ; web button
-bu(save "gespeichert!" "Daten speichern")
+bu(_save "" "&#x1F4BE; Daten speichern")
 ; Simulierte Leistung via Slider
-sl(0 2000 pwrsld "-1000 W" "0 W" "1000 W")
+sl(-1000 1000 pwrsld "-1000 W" "0 W" "1000 W")
 pd(mode "Modus wählen: " 80 "Zufall" "Fest" "Rampe")
 
 Simulierte Zählerwerte:{m}
-aktuelle Wirkleistung{m}%0RndPwr% W
+aktuelle Wirkleistung{m}%fPwr% W
 Bezug{m}%2EnFrGrd% kWh
 Einspeisung{m}%2EnToGrd% kWh
 
@@ -135,7 +139,7 @@ Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2
 Uptime{m}%utm%
 
 $<center><span style="font-size:10px;">
-$Version 14.02.2026 (SML Simulator) by ottelo.jimdo.de<br>
+$Version 15.02.2026 (SML Simulator) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden nicht automatisch gespeichert!<br>
 $Speichern über Button oder Restart.<br>
 $</span></center>
