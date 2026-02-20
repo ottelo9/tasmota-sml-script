@@ -38,13 +38,14 @@ cpwr=0
 str=""
 mstr1=""
 mstr2=""
+mstr3=""
 header=""
 once=0
 
 
 >B
 ->SetOption57 0
-=>sensor53 r
+->sensor53 r
 smlj=0
 header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
 throttle=mp(throttle <1 1 >60 60)
@@ -62,24 +63,81 @@ yval2=sml[3]
 svars
 
 ;-- SHELLY EMULATION --
+>ah
+res=won(1 "/rpc/*")
+
+>on1
+str=warg
+if (str!="") {
+;print RPC: %str%
+
+res=ins(str "EM.GetStatus")
+if res>=0 {
+=#getstat
+tmp=sl(mstr1)+sl(mstr2)
+header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
+wcs so(4)
+wcs %header%
+wcs %mstr1%
+wcs %mstr2%
+wcf
+break
+}
+
+res=ins(str "Shelly.GetStatus")
+if res>=0 {
+=#getshellystat
+tmp=sl(mstr1)+sl(mstr2)+sl(mstr3)
+header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
+wcs so(4)
+wcs %header%
+wcs %mstr1%
+wcs %mstr2%
+wcs %mstr3%
+wcf
+break
+}
+print unknown rpc request: %str%
+}
+
 #getstat
-;B2500 benötigt unbedingt 2 Dezimalstellen
+;EM.GetStatus
 dp(0 2)
-mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
-mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
-mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
-mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
+;mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
+;mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
+;mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
+;mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
+mstr1="{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+","
+mstr2="\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"}}"
+
+#getshellystat
+;Shelly.GetStatus, Beispiel Ausgabe https://forum.openwb.de/viewtopic.php?t=7444
+dp(0 2)
+mstr1="{\"em:0\":{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+",\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"},"
+;mstr2="\"emdata:0\":{\"id\":0,\"a_total_act_energy\":0,\"a_total_act_ret_energy\":0,\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,\"total_act\":0,\"total_act_ret\":0}}"
+mstr2="\"emdata:0\":{\"id\":0,\"a_total_act_energy\":"+s(sml[2])+",\"a_total_act_ret_energy\":"+s(sml[3])+",\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,"
+mstr3="\"total_act\":"+s(sml[2])+",\"total_act_ret\":"+s(sml[3])+"}}"
 
 >F
 ;-- SHELLY EMULATION --
 ; UDP Anfrage beantworten
 str=udp(1)
 if (str!="") {
-;print udp rpc payload=%str%
+;print UDP: %str%
+header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
 res=ins(str "EM.GetStatus")
 if (res>=0) {
 =#getstat
 udp(2 header mstr1 mstr2)
+break
+}
+res=ins(str "Shelly.GetStatus")
+if res>=0 {
+=#getshellystat
+;mstr3+="}"
+udp(2 header mstr1 mstr2)
+udp(2 mstr3)
+break
 }
 }
 
@@ -124,10 +182,10 @@ svars
 ;-- SHELLY EMULATION --
 if (once==0) {
 ; starte mDNS damit Marstek den emulierten Shelly findet
-res=mdns("shellypro3em-" "-" "shelly")
+mdns("shellypro3em-" "-" "shelly")
 ; start UDP für Datenkommunikation
 ; Port 1010 oder ggf. 2220 für B2500
-res=udp(0 1010)
+udp(0 1010)
 once=1
 }
 
@@ -178,7 +236,7 @@ $- Offset für Nulleinspeisung [pwroffset]: %0pwroffset% W<br>
 $- Datenübertragung erzwingen [pwrforce]: %0pwrforce% s<br>
 $Scriptspeicher: %0slen% chars / 4096(1M) 8192(4M)
 $<hr>
-$<center>Version 13.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$<center>Version 20.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 
