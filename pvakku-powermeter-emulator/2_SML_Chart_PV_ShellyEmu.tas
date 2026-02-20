@@ -32,6 +32,28 @@ IP=192.168.178.132
 ; Anschließend könnt ihr über den Button "Stromzähler konfigurieren / Daten sichern" euren Stromzähler wählen und die Werte initialisieren.
 ; Ansonsten müsst ihr es vor dem Einfügen in Tasmota verkleinern/komprimieren. Anleitung siehe Link oben.
 
+; Beispiel Ausgabe HTTP API rpc/shelly.getstatus
+;{
+;	"em:0": {
+;		"id": 0,
+;		"a_act_power": 1000,
+;		"b_act_power": 0,
+;		"c_act_power": 0,
+;		"total_act_power": 1000
+;	},
+;	"emdata:0": {
+;		"id": 0,
+;		"a_total_act_energy": 0,
+;		"a_total_act_ret_energy": 0,
+;		"b_total_act_energy": 0,
+;		"b_total_act_ret_energy": 0,
+;		"c_total_act_energy": 0,
+;		"c_total_act_ret_energy": 0,
+;		"total_act": 0,
+;		"total_act_ret": 0
+;	}
+;}
+
 
 ; -- ARRAYS (max:10, MAXFILT) --
 ; 4h Diagramm, neuer Wert alle 30s, 480+1=Optimierung X-Achse
@@ -91,6 +113,7 @@ str=""
 tstr=""
 mstr1=""
 mstr2=""
+mstr3=""
 header=""
 once=0
 
@@ -106,7 +129,6 @@ tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
 ;Deaktiviere MQTT beim Start, verhindert das falsche Werte gesendet werden
 smlj=0
 =#load
-header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
 throttle=mp(throttle <1 1 >60 60)
 pwroffset=mp(pwroffset <-200 -200 >200 200)
 
@@ -230,13 +252,58 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 }
 
 ;-- SHELLY EMULATION --
+>ah
+res=won(1 "/rpc/*")
+
+>on1
+str=warg
+if (str!="") {
+;print RPC: %str%
+res=ins(str "EM.GetStatus")
+if res>=0 {
+=#getstat
+tmp=sl(mstr1)+sl(mstr2)
+header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
+wcs so(4)
+wcs %header%
+wcs %mstr1%
+wcs %mstr2%
+wcf
+break
+}
+res=ins(str "Shelly.GetStatus")
+if res>=0 {
+=#getshellystat
+tmp=sl(mstr1)+sl(mstr2)+sl(mstr3)
+header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
+wcs so(4)
+wcs %header%
+wcs %mstr1%
+wcs %mstr2%
+wcs %mstr3%
+wcf
+break
+}
+print unknown rpc request: %str%
+}
+
 #getstat
-;B2500 benötigt unbedingt 2 Dezimalstellen
+;EM.GetStatus
 dp(0 2)
-mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
-mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
-mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
-mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
+;mstr1="{\"id\":0,\"a_current\":"+s(c1c)+",\"a_voltage\":230,\"a_act_power\":"+s(c1p)+",\"a_aprt_power\":"+s(c1p)+",\"a_pf\":1,\"a_freq\":50,"
+;mstr1+="\"b_current\":"+s(c2c)+",\"b_voltage\":230,\"b_act_power\":"+s(c2p)+",\"b_aprt_power\":"+s(c2p)+",\"b_pf\":1,\"b_freq\":50,"
+;mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
+;mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
+mstr1="{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+","
+mstr2="\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"}}"
+
+#getshellystat
+;Shelly.GetStatus Beispiel Ausgabe https://forum.openwb.de/viewtopic.php?t=7444
+dp(0 2)
+mstr1="{\"em:0\":{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+",\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"},"
+;mstr2="\"emdata:0\":{\"id\":0,\"a_total_act_energy\":0,\"a_total_act_ret_energy\":0,\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,\"total_act\":0,\"total_act_ret\":0}}"
+mstr2="\"emdata:0\":{\"id\":0,\"a_total_act_energy\":"+s(sml[2])+",\"a_total_act_ret_energy\":"+s(sml[3])+",\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,"
+mstr3="\"total_act\":"+s(sml[2])+",\"total_act_ret\":"+s(sml[3])+"}}"
 
 
 ; -- USE_HTML_CALLBACK --
@@ -251,15 +318,25 @@ if eres==1 {
 ; -- JEDE 100MS --
 >F
 fe("sml_ftask.tas")
-;-- SHELLY EMULATION
+;-- SHELLY EMULATION --
 ; UDP Anfrage beantworten
 str=udp(1)
 if (str!="") {
-	;print udp rpc payload=%str%
+	;print UDP: %str%
+	header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
 	res=ins(str "EM.GetStatus")
 	if (res>=0) {
 		=#getstat
 		udp(2 header mstr1 mstr2)
+		break
+	}
+	res=ins(str "Shelly.GetStatus")
+	if res>=0 {
+		=#getshellystat
+		;mstr3+="}"
+		udp(2 header mstr1 mstr2)
+		udp(2 mstr3)
+		break
 	}
 }
 
@@ -505,7 +582,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 12.02.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 20.02.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
