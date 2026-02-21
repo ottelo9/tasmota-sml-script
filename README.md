@@ -1,4 +1,5 @@
-# Tasmota Scripte zum Auslesen und Anzeigen (Diagramme) von smarten Stromzählern / Sonoff / Gosund-Steckdosen
+## Tasmota Scripte für Stromzähler Leseköpfe / smarte Steckdosen / Zähler [by ottelo]
+### Werte grafisch darstellen, Verbraucher steuern, Nulleinspeisung für smarte Akkus realisieren
 Tasmota Script with SML and Google Charts for Energy / Grid meter or energy measuring plugs.  
 Tasmota Skripte mit SML und Google Charts für smarte Stromzähler / Energiezähler oder smarte Steckdosen.  
 
