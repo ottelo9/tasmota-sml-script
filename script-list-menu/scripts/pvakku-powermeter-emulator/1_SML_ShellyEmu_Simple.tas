@@ -13,7 +13,9 @@ p:pwroffset=0
 p:pwrforce=0
 p:throttle=1
 p:port=1
+p:smlfo=0
 t:t1=60
+smlf=0
 rxpin=0
 txpin=0
 hr=0
@@ -96,6 +98,15 @@ mstr3="\"total_act\":"+s(sml[2]*1000)+",\"total_act_ret\":"+s(sml[3]*1000)+"}}"
 #header
 header="HTTP/1.1 200 OK\r\nServer: ShellyHTTP/1.0.0\r\nContent-Type: application/json\r\nContent-Length: "+s(0tmp)+"\r\nConnection: close\r\n\r\n"
 >C
+if chg[smlfo]>0 {
+if smlfo>0 {
+smlf=16
+} else {
+smlf=0
+}
+->sensor53 r
+svars
+}
 if eres==1 {
 ->sensor53 r
 svars
@@ -229,7 +240,9 @@ pd(txind "TX Pin: " 50 "#gr")
 <span style="font-size:9px">
 RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
 RX=5 TX=4: bitShake<br></span>
-<br>
+<hr>
+SML Median Filter aktivieren:
+ck(smlfo "")
 &#x1F4DD; <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
 <hr>
 <b>&#x2139;&#xFE0F; System</b><br>

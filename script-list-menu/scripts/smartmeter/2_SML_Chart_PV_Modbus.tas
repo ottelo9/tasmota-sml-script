@@ -20,8 +20,10 @@ p:rxind=1
 p:txind=1
 p:sel=0
 p:sndpwr=0
+p:smlfo=0
 t:t1=5
 t:t2=60
+smlf=0
 rxpin=0
 txpin=0
 tmp=0
@@ -35,6 +37,8 @@ swespflg=0
 power2=0
 fr=0
 once=0
+>R
+=#save
 >B
 sota("")
 rxpin=rxind-1
@@ -151,6 +155,15 @@ wcs var chart=new google.visualization.ColumnChart(document.getElementById('mont
 wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</script>
 }
 >C
+if chg[smlfo]>0 {
+if smlfo>0 {
+smlf=16
+} else {
+smlf=0
+}
+->sensor53 r
+svars
+}
 if eres==1 {
 ->sensor53 r
 svars
@@ -314,7 +327,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 13.02.2026 (PV+MB) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 21.02.2026 (PV+MB) by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>
@@ -355,7 +368,9 @@ pd(txind "TX Pin: " 50 "#gr")
 <span style="font-size:9px">
 RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
 RX=5 TX=4: bitShake<br></span>
-<br>
+<hr>
+SML Median Filter aktivieren:
+ck(smlfo "")
 &#x1F4DD; <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
 <hr>
 <b>&#x2139;&#xFE0F; System</b><br>

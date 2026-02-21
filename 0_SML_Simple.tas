@@ -4,6 +4,8 @@
 p:rxind=1
 p:txind=1
 p:sel=0
+p:smlfo=0
+smlf=0
 rxpin=0
 txpin=0
 tmp=0
@@ -34,6 +36,15 @@ svars
 }
 
 >C
+if chg[smlfo]>0 {
+if smlfo>0 {
+smlf=16
+} else {
+smlf=0
+}
+->sensor53 r
+svars
+}
 if eres==1 {
 =>sensor53 r
 svars
@@ -51,11 +62,14 @@ so(1)
 $<span style="font-size:9px">
 $RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
 $RX=5 TX=4: bitShake<br><br></span>
+$<hr>
+$SML Median Filter aktivieren:
+$ck(smlfo "")
 $&#x1F4DD; <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
 $<hr>
 $<center><span style="font-size:10px;">
 $<b>0_SML_Simple.tas</b><br>
-$Version 13.02.2026<br>by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)
+$Version 21.02.2026<br>by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)
 $</span></center>
 
 ; >M SMARTMETER DESCRIPTOR / ZÄHLER AUSWAHL AB 01.12.2025 VIA DROP-DOWN MENÜ:

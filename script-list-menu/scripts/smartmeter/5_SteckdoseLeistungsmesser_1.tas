@@ -21,6 +21,8 @@ cstr2="cnth0/30"
 hr=0
 power2=0
 fr=0
+>R
+=#save
 >B
 sota("")
 tmp=is(0 "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez|")
@@ -192,7 +194,7 @@ $gc(e)
 %=#monthsub
 $<center><span style="font-size:10px;">
 $Tasmota Script für Steckdosen mit Energiemessung (1)<br>
-$Version 12.02.2026 by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
+$Version 21.02.2026 by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
 $</span></center></div>

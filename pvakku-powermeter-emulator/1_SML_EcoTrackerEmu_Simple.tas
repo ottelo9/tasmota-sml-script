@@ -21,7 +21,9 @@ p:rxind=1
 p:txind=1
 p:sel=0
 p:pwroffset=0
+p:smlfo=0
 t:t1=60
+smlf=0
 rxpin=0
 txpin=0
 hr=0
@@ -72,6 +74,15 @@ wcs %json%
 wcf
 
 >C
+if chg[smlfo]>0 {
+if smlfo>0 {
+smlf=16
+} else {
+smlf=0
+}
+->sensor53 r
+svars
+}
 if eres==1 {
 ->sensor53 r
 svars
@@ -149,7 +160,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 13.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Version 21.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
@@ -191,7 +202,9 @@ pd(txind "TX Pin: " 50 "#gr")
 <span style="font-size:9px">
 RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>
 RX=5 TX=4: bitShake<br></span>
-<br>
+<hr>
+SML Median Filter aktivieren:
+ck(smlfo "")
 &#x1F4DD; <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
 <hr>
 <b>&#x2139;&#xFE0F; System</b><br>
