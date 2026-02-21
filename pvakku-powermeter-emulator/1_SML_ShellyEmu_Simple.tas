@@ -100,7 +100,7 @@ res=ins(str "EM.GetStatus")
 if res>=0 {
 =#getstat
 tmp=sl(mstr1)+sl(mstr2)
-header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
+=#header
 wcs so(4)
 wcs %header%
 wcs %mstr1%
@@ -112,7 +112,7 @@ res=ins(str "Shelly.GetStatus")
 if res>=0 {
 =#getshellystat
 tmp=sl(mstr1)+sl(mstr2)+sl(mstr3)
-header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
+=#header
 wcs so(4)
 wcs %header%
 wcs %mstr1%
@@ -142,6 +142,10 @@ mstr1="{\"em:0\":{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+"
 mstr2="\"emdata:0\":{\"id\":0,\"a_total_act_energy\":"+s(sml[2])+",\"a_total_act_ret_energy\":"+s(sml[3])+",\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,"
 mstr3="\"total_act\":"+s(sml[2])+",\"total_act_ret\":"+s(sml[3])+"}}"
 
+#header
+; Beispiel https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/HTTP/#httpget-example
+header="HTTP/1.1 200 OK\r\nServer: ShellyHTTP/1.0.0\r\nContent-Type: application/json\r\nContent-Length: "+s(0tmp)+"\r\nConnection: close\r\n\r\n"
+
 >C
 if eres==1 {
 ->sensor53 r
@@ -166,7 +170,7 @@ break
 res=ins(str "Shelly.GetStatus")
 if res>=0 {
 =#getshellystat
-;mstr3+="}"
+mstr3+="}"
 udp(2 header mstr1 mstr2)
 udp(2 mstr3)
 break
@@ -267,7 +271,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 20.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 21.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
