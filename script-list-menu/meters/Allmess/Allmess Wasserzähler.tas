@@ -28,7 +28,7 @@ print request data
 sml(1 1 "105BFE5916")
 
 >M 1
-+1,%0rxpin%,rE1,16,2400,ALLMESS,%0txpin%
++1,%0rxpin%,rE1,%smlf%,2400,ALLMESS,%0txpin%
 1,=so3,16
 1,0411250413uuUU@1000,Zählerstand,m³,qm_total,3
 1,046Dxxxxxxxx0227uuUU@1,Betriebszeit,Tage,oper_days,0

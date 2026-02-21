@@ -1,6 +1,6 @@
 >M 1
-;+1,%0rxpin%,o,16,9600,LK13BD,%0txpin%,30,2F3F210D0A,063035300D0A
-+1,%0rxpin%,o,16,9600,LK13BD,%0txpin%,30,2F3F210D0A,063030300D0A
+;+1,%0rxpin%,o,%smlf%,9600,LK13BD,%0txpin%,30,2F3F210D0A,063035300D0A
++1,%0rxpin%,o,%smlf%,9600,LK13BD,%0txpin%,30,2F3F210D0A,063030300D0A
 1,1.8.0(@1,Leistung,W,power,0
 1,1.8.0(@1,Verbrauch,kWh,E_in,3
 1,2.8.0(@1,Einspeisung,kWh,E_out,3

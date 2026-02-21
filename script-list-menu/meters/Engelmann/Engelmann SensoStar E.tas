@@ -22,7 +22,7 @@ sml(1 1 "107BFE7916")
 }
 
 >M 1
-+1,%0rxpin%,rE1,16,2400,WAERME,%0txpin%
++1,%0rxpin%,rE1,%smlf%,2400,WAERME,%0txpin%
 1,=so3,32
 1,042bu32s@1,Leistung,W,Leistung,0
 1,0406u32s@1000,Energie,MWh,Energie,3

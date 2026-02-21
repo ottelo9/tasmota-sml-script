@@ -13,7 +13,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,16,9600,ACE6000,%0txpin%
++1,%0rxpin%,o,%smlf%,9600,ACE6000,%0txpin%
 1,1-0:1.8.0(@1,Leistung,W,1-8-0,0
 1,1-0:1.8.0(@1,Bezug,kWh,1-8-0,2
 1,1-0:2.8.0(@1,Einspeisung,kWh,2-8-0,2

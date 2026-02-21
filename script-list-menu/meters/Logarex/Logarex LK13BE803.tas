@@ -1,5 +1,5 @@
 >M 1
-+1,%0rxpin%,o,16,9600,LK13BE,%0txpin%,30,2F3F210D0A,063035310D0A
++1,%0rxpin%,o,%smlf%,9600,LK13BE,%0txpin%,30,2F3F210D0A,063035310D0A
 1,1-0:16.7.0*255(@1,Leistung,W,current,0
 1,1-0:1.8.0*255(@1,Verbrauch,kWh,total,2
 1,1-0:2.8.0*255(@1,Einspeisung,kWh,total_out,4
