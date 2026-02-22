@@ -222,14 +222,17 @@ wcs chart.draw(data,options);}google.charts.setOnLoadCallback(drawChart);</scrip
 res=won(1 "/v1/json")
 
 >on1
-;print Ecotracker
-json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0cpwr)+",\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
-tmp=sl(json)
-header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
-wcs so(4)
-wcs %header%
-wcs %json%
-wcf
+json=warg
+if (json!="") {
+	;print HTTP GET: %json%
+	json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0cpwr)+",\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
+	tmp=sl(json)
+	header="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "+s(0tmp)+"\r\nConnection: close\r\n\r\n"
+	wcs so(4)
+	wcs %header%
+	wcs %json%
+	wcf
+}
 
 
 ; -- USE_HTML_CALLBACK --
@@ -472,7 +475,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 21.02.2026 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Version 22.02.2026 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>

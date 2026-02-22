@@ -35,13 +35,16 @@ svars
 >ah
 res=won(1 "/v1/json")
 >on1
+json=warg
+if (json!="") {
 json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0cpwr)+",\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
 tmp=sl(json)
-header="HTTP/1.1 200 OK\r\nContent-Length: "+s(0tmp)+"\r\nContent-Type: application/json\r\n\r\n"
+header="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "+s(0tmp)+"\r\nConnection: close\r\n\r\n"
 wcs so(4)
 wcs %header%
 wcs %json%
 wcf
+}
 >S
 if (save==1) {
 save=0
@@ -96,7 +99,7 @@ $Ändern der [Variable] via Console: script>var=x<br>
 $- Offset für Nulleinspeisung [pwroffset]: %0pwroffset% W<br>
 $Scriptspeicher: %0slen%/4096(1M),8192(4M) chars
 $<hr>
-$<center>Version 13.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$<center>Version 22.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 >M 1
