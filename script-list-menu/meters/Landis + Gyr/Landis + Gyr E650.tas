@@ -12,7 +12,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,%smlf%,4800,E650,%0txpin%
++1,%0rxpin%,o,%0smlf%,4800,E650,%0txpin%
 1,1-1:1.5.0(@1,power_IN,kW,1-5-0,3
 1,1-1:1.8.0(@1,Verbrauch,kWh,1-8-0,3
 1,1-1:2.8.0@1,Einspeisung,kWh,2-8-0,3

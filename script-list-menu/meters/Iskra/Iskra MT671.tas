@@ -1,5 +1,5 @@
 >M 1
-+1,%0rxpin%,o,%smlf%,9600,MT671,%0txpin%
++1,%0rxpin%,o,%0smlf%,9600,MT671,%0txpin%
 1,1-0:1.8.1*255(@1, Verbrauch,kWh,E_in,%0txpin%
 1,1-0:0.0.0*255(@#),Zählernummer,,Meter_number,0
 #

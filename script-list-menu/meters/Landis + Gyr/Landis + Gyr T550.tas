@@ -22,7 +22,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,%smlf%,2400,T550,%0txpin%
++1,%0rxpin%,o,%0smlf%,2400,T550,%0txpin%
 1,=so2,0
 1,6.26(@1,Durchlauf,m³,m3_throughput,2
 1,6.8(@1,Zählerstand,MWh,mwh_count,3

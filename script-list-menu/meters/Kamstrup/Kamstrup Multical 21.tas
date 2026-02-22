@@ -10,7 +10,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,kN2,%smlf%,1200,KSMC403,%0txpin%
++1,%0rxpin%,kN2,%0smlf%,1200,KSMC403,%0txpin%
 1,=so3,90
 1,3F100044kstr@i0:1000,Zählerstand,m³,Zählerstand,19
 1,3F10x8xx004Akstr@i0:1,Fließgeschw.,l/h,Flow,0

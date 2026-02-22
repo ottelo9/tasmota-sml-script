@@ -13,7 +13,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,%smlf%,9600,AS1440,%0txpin%
++1,%0rxpin%,o,%0smlf%,9600,AS1440,%0txpin%
 1,=m 5-6 @1,Power,W,power,16
 1,1-1:1.8.2(@1,Total_HT In,KWh,Total_in_HT,2
 1,1-1:2.8.0(@1,Total Out,KWh,Total_out,2

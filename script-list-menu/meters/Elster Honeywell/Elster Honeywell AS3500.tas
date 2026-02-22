@@ -13,7 +13,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,%smlf%,9600,AS3500,%0txpin%
++1,%0rxpin%,o,%0smlf%,9600,AS3500,%0txpin%
 1,1-1:1.7.0(@0.001,Leistung,W,Power,3
 1,1-1:1.8.0(@1,Verbrauch,kWh,E_in,3
 1,1-1:21.7.0(@0.001,Leistung L1,W,Power_L1,3

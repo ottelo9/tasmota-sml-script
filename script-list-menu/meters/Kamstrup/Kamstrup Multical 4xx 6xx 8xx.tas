@@ -10,7 +10,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,kN2,%smlf%,1200,KSMC403,%0txpin%
++1,%0rxpin%,kN2,%0smlf%,1200,KSMC403,%0txpin%
 1,=so3,90
 1,3F10003Ckstr@i0:1000,Wärmemenge,MWh,HeatEnergyE1,3
 1,3F10x08xx0056kstr@i0:100,Vorlauftemp.,°C,PreTemp,2

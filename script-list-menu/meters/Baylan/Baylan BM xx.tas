@@ -13,7 +13,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,%smlf%,9600,baylan,%0txpin%
++1,%0rxpin%,o,%0smlf%,9600,baylan,%0txpin%
 1,1.8.0(@1,Verbrauch,kWh,E_in,3
 1,2.8.0(@1,Einspeisung,kWh,E_out,3
 #
