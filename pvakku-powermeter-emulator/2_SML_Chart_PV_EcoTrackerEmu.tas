@@ -14,7 +14,7 @@ IP=192.168.178.132
 ; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
-; Diese Variante des Scriptes beinhaltet die Emulation vom EcoTracker von everHome damit die Nulleinspeisung mit Marstek Akkus (Jupiter, Venus, B2500) / Hoymiles MS-A2 realisiert werden kann (dieses Script ist nur für den ESP32!)
+; Diese Variante des Scriptes beinhaltet die Emulation vom EcoTracker von everHome damit die Nulleinspeisung mit PV-Akkus (Jupiter, Venus, B2500) / Hoymiles MS-A2 realisiert werden kann (dieses Script ist nur für den ESP32!)
 ; Mehr Infos unter https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a oder www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgelöst, 30s) und Leistung der letzten 24h (grob aufgelöst, 60s)
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
@@ -416,7 +416,7 @@ power3=(0.9*power3)+((1-0.9)*cpwr)
 
 ; Filtered power
 Leistung (gefiltert){m}%0power2% W
-Leistung (an Marstek Akku){m}%0cpwr% W
+Leistung (an PV-Akku){m}%0cpwr% W
 
 ; Verbrauch
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh

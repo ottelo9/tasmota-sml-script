@@ -14,7 +14,7 @@ IP=192.168.178.132
 ; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
-; Diese Variante des Scriptes beinhaltet die Emulation vom Shelly Pro 3EM damit die Nulleinspeisung mit Marstek Akkus (Jupiter, Venus, B2500) / Hoymiles MS-A2 realisiert werden kann (dieses Script ist nur für den ESP32!)
+; Diese Variante des Scriptes beinhaltet die Emulation vom Shelly Pro 3EM damit die Nulleinspeisung mit PV-Akkus (Jupiter, Venus, B2500) / Hoymiles MS-A2 realisiert werden kann (dieses Script ist nur für den ESP32!)
 ; Wenn ihr einen Jupiter oder Venus Akku habt, sollte der Marstek Akku den Emulator bereits finden. Beim B2500 Akku müsst ihr ggf. noch den Port anpassen, sucht hier nach "udp(0 1010)" und ändert 1010 -> 2220.
 ; Habt ihr einen Zähler, der die Leistung/Ströme aller 3 Phasen einzeln ausgeben kann
 ; dann könnt ihr das Script dafür anpassen. Sucht nach "cpwr=sml[1]". Dort könnt ihr die ; entfernen um alle 3 Phasen korrekt an den Akku zu senden. Der Akku kann dann nämlich erkennen, an welcher Phase er hängt.
@@ -537,7 +537,7 @@ if (upsecs%throttle==0) {
 
 ; Filtered power
 Leistung (gefiltert){m}%0power2% W
-Leistung (an Marstek Akku){m}%0cpwr% W
+Leistung (an PV-Akku){m}%0cpwr% W
 
 ; Verbrauch
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh

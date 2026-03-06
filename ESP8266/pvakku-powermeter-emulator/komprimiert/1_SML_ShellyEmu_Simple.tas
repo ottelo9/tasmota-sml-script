@@ -147,13 +147,14 @@ cpwr=sml[1]-pwroffset
 }
 c1p=cpwr
 c1c=c1p/230
+}
 if (pwrforce>0) {
 =#getstat
 udp(2 header mstr1 mstr2)
 }
 >W
 bu(save "gespeichert!" "Daten sofort speichern")
-Leistung (an Marstek Akku){m}%0cpwr% W
+Leistung (an PV-Akku){m}%0cpwr% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
 Jahresverbrauch{m}%2(sml[2]-yval)% kWh

@@ -1,6 +1,6 @@
 >D 250
 ; Einfaches EcoTracker Emulator Script für ESP32 und Tasmota Image (ab V15.1.0) von ottelo
-; Emuliert EcoTracker für Marstek Akkus (Jupiter, Venus, B2500) und Hoymiles (MS-A2)
+; Emuliert EcoTracker für PV-Akkus (Jupiter, Venus, B2500) und Hoymiles (MS-A2)
 ; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
 ; Script basiert auf https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas
 ; Script ist für ein Wifi Tasmota ESP Lesekopf für Stromzähler gedacht, z.B. HichiV2 (nicht V1), Bitshake, usw.
@@ -156,7 +156,7 @@ cpwr=sml[1]-pwroffset
 power3=(0.9*power3)+((1-0.9)*cpwr)
 
 >W
-Leistung (an Marstek Akku){m}%0cpwr% W
+Leistung (an PV-Akku){m}%0cpwr% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
 Jahresverbrauch{m}%2(sml[2]-yval)% kWh

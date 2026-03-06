@@ -276,7 +276,7 @@ power3=(0.9*power3)+((1-0.9)*cpwr)
 =>publish stat/%topic%/script/cpwr %0cpwr%
 >W
 Leistung (gefiltert){m}%0power2% W
-Leistung (an Marstek Akku){m}%0cpwr% W
+Leistung (an PV-Akku){m}%0cpwr% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
 Jahresverbrauch{m}%2(sml[2]-yval)% kWh
