@@ -4,5 +4,9 @@
 1,77070100100700ff@1,Leistung,W,Power,0
 1,77070100010800ff@1000,Verbrauch,kWh,E_in,3
 1,77070100020800ff@1000,Einspeisung,kWh,E_out,3
+1,77070100010801ff@1000,Verbr. (1.8.1),kWh,E_in,3
+1,77070100010802ff@1000,Verbr. (1.8.2),kWh,E_in,3
+1,77070100020801ff@1000,Einsp. (2.8.1),kWh,E_out,3
+1,77070100020802ff@1000,Einsp. (2.8.2),kWh,E_out,3
 1,770701000f0700ff@1,Leistung2,W,Power2,0
 #
