@@ -152,6 +152,7 @@ if (pwrforce>0) {
 =#getstat
 udp(2 header pwrstr)
 }
+}
 >W
 bu(save "gespeichert!" "Daten sofort speichern")
 Leistung (an PV Speicher){m}%0cpwr% W
