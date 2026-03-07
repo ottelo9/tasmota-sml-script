@@ -7,6 +7,9 @@ Für eine Anleitung, Beschreibung sowie passende Tasmota Images siehe mein Blog:
 [https://ottelo.jimdo.de](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/)  
 Eine kleine Anleitung befindet sich auch im Script selbst.
 
+**WICHTIG:  
+Damit die Scripte funktionieren müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!**
+
 ### Scriptauswahl
 Scripte für den ESP8266 findet ihr nun in einem extra Ordner, da ich diese nicht mehr weiterentwickeln werde. Alle anderen Scripte aktualisiere ich nun (ab 01.12.2025) nur noch für den ESP32, der einfach mehr Power hat und Tasmota mehr Features dafür bietet.  
   
