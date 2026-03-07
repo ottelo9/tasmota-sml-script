@@ -22,17 +22,13 @@ fe("sml_ftask.tas")
 
 >S
 fe("sml_stask.tas")
-if (year<2020) {
-break
-}
-if (sml[2]>0) {
-smlj=1
-print enabled MQTT
-}
 if ((chg[rxind]>0) or (chg[txind]>0)) {
 rxpin=rxind-1
 ->sensor53 r
 svars
+}
+if (sml[2]>0) {
+smlj=1
 }
 
 >C
@@ -69,7 +65,7 @@ $&#x1F4DD; <a href="/ufse?file=/sml_meter.def">Stromzähler Script</a>
 $<hr>
 $<center><span style="font-size:10px;">
 $<b>0_SML_Simple.tas</b><br>
-$Version 21.02.2026<br>by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)
+$Version 06.03.2026<br>by ottelo.jimdo.de & gemu2015 (ScriptEngine V%vers%)
 $</span></center>
 
 ; >M SMARTMETER DESCRIPTOR / ZÄHLER AUSWAHL AB 01.12.2025 VIA DROP-DOWN MENÜ:

@@ -1,6 +1,6 @@
 >D 250
 ; Einfaches Shelly Emulator Script für ESP8266/ESP32 und Tasmota Image von ottelo
-; Emuliert Shelly Pro 3EM für Marstek Akku Jupiter, Venus, B2500
+; Emuliert Shelly Pro 3EM für PV-Akkus Jupiter, Venus, B2500
 ; Scriptgröße beim ESP8266 begrenzt: EEP_SCRIPT_SIZE 4096
 ; Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a
 ; Script basiert auf https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/shelly_emu_script.tas
@@ -214,6 +214,7 @@ c1p=cpwr
 c1c=c1p/230
 ;c2c=c2p/230
 ;c3c=c3p/230
+}
 
 ; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
 if (pwrforce>0) {
@@ -224,7 +225,7 @@ udp(2 header mstr1 mstr2)
 
 >W
 bu(save "gespeichert!" "Daten sofort speichern")
-Leistung (an Marstek Akku){m}%0cpwr% W
+Leistung (an PV-Akku){m}%0cpwr% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
 Jahresverbrauch{m}%2(sml[2]-yval)% kWh

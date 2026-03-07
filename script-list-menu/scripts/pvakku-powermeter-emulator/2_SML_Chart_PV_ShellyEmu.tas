@@ -253,14 +253,14 @@ break
 }
 >S
 fe("sml_stask.tas")
-if (year<2020) {
-print auf NTP warten
-break
-}
 if ((chg[rxind]>0) or (chg[txind]>0)) {
 rxpin=rxind-1
 ->sensor53 r
 =#save
+}
+if (year<2020) {
+print auf NTP warten
+break
 }
 if (sml[2]==0) {
 break
@@ -348,7 +348,7 @@ udp(2 header mstr1 mstr2)
 }
 >W
 Leistung (gefiltert){m}%0power2% W
-Leistung (an Marstek Akku){m}%0cpwr% W
+Leistung (an PV-Akku){m}%0cpwr% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
 Jahresverbrauch{m}%2(sml[2]-yval)% kWh
@@ -386,7 +386,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 21.02.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 06.03.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>

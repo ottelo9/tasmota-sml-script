@@ -14,7 +14,7 @@ IP=192.168.178.132
 ; (1) Beschreibung:
 ; Skript Version ganz unten
 ; Tasmota SML Skript mit Google Chart (Diagramme)
-; Diese Variante des Scriptes beinhaltet die Emulation vom EcoTracker von everHome damit die Nulleinspeisung mit Marstek Akkus (Jupiter, Venus, B2500) / Hoymiles MS-A2 realisiert werden kann (dieses Script ist nur für den ESP32!)
+; Diese Variante des Scriptes beinhaltet die Emulation vom EcoTracker von everHome damit die Nulleinspeisung mit PV-Akkus (Jupiter, Venus, B2500) / Hoymiles MS-A2 realisiert werden kann (dieses Script ist nur für den ESP32!)
 ; Mehr Infos unter https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a oder www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf
 ; 2 Liniendiagramme: Leistung der letzten 4 Stunden (fein aufgelöst, 30s) und Leistung der letzten 24h (grob aufgelöst, 60s)
 ; Tabellen mit Anzeige des Netzbezugs bzw. Netzeinspeisung (bei PV) pro Tag und pro Monat
@@ -225,6 +225,8 @@ res=won(1 "/v1/json")
 json=warg
 if (json!="") {
 	;print HTTP GET: %json%
+	;zusätzliche Werte HT/NT Energy Values
+	;json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0cpwr)+",\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+",\"energyCounterInT1\":"+s(0sml[4]*1000)+",\"energyCounterInT2\":"+s(0sml[5]*1000)+"}"
 	json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0cpwr)+",\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
 	tmp=sl(json)
 	header="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "+s(0tmp)+"\r\nConnection: close\r\n\r\n"
@@ -261,16 +263,16 @@ fe("sml_ftask.tas")
 ; -- JEDE SEKUNDE --
 >S
 fe("sml_stask.tas")
-; Warte auf NTP
-if (year<2020) {
-	print auf NTP warten
-	break
-}
 ; Pinauswahl
 if ((chg[rxind]>0) or (chg[txind]>0)) {
 	rxpin=rxind-1
 	->sensor53 r
 	=#save
+}
+; Warte auf NTP
+if (year<2020) {
+	print auf NTP warten
+	break
 }
 ; Warte auf Zähler
 if (sml[2]==0) {
@@ -414,7 +416,7 @@ power3=(0.9*power3)+((1-0.9)*cpwr)
 
 ; Filtered power
 Leistung (gefiltert){m}%0power2% W
-Leistung (an Marstek Akku){m}%0cpwr% W
+Leistung (an PV-Akku){m}%0cpwr% W
 
 ; Verbrauch
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
@@ -475,7 +477,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 22.02.2026 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
+$Version 06.03.2026 (PV+EcoTrackerEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
