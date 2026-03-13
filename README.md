@@ -94,6 +94,10 @@ Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akk
   Wie 1_SML_ShellyEmu_Simple aber Diagrammen (wie 2_SML_Script_Chart_PV).
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 
+Ihr könnt die Emus mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen:
+
+
+
 **script-list-menu (ESP32)**  
 Hier liegen die Scripte, die via DropDown direkt über Tasmota auswählbar sind.
 - `meters` = "Stromzähler konfigurieren / Daten sichern" Button -> DropDown Menü
