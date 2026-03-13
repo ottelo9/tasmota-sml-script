@@ -3,8 +3,8 @@ Add-Type -AssemblyName System.Drawing
 
 # --- Hauptfenster ---
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester (UDP / HTTP Client)"
-$form.Size = New-Object System.Drawing.Size(780, 870)
+$form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester (UDP / HTTP Client)  -  UDP"
+$form.Size = New-Object System.Drawing.Size(780, 900)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedSingle"
 $form.MaximizeBox = $false
@@ -112,9 +112,17 @@ $form.Controls.Add($btnPreset1)
 $btnPreset2 = New-StyledButton "EM.GetStatus" 340 117 200 28 $bgButton
 $form.Controls.Add($btnPreset2)
 
-$btnPresetHTTP = New-StyledButton "json/v1" 130 117 200 28 $bgButton
+$btnPresetHTTP = New-StyledButton "json/v1" 130 117 150 28 $bgButton
 $btnPresetHTTP.Visible = $false
 $form.Controls.Add($btnPresetHTTP)
+
+$btnPresetHTTP2 = New-StyledButton "Shelly.GetStatus" 290 117 150 28 $bgButton
+$btnPresetHTTP2.Visible = $false
+$form.Controls.Add($btnPresetHTTP2)
+
+$btnPresetHTTP3 = New-StyledButton "EM.GetStatus" 450 117 150 28 $bgButton
+$btnPresetHTTP3.Visible = $false
+$form.Controls.Add($btnPresetHTTP3)
 
 # ===================== Intervall-Bereich =====================
 $lblInterval = New-StyledLabel "Intervall (Sek.):" 15 158 110 22
@@ -179,6 +187,18 @@ $txtJson.ReadOnly = $true; $txtJson.WordWrap = $false
 $txtJson.BackColor = $bgField; $txtJson.ForeColor = [System.Drawing.Color]::FromArgb(130, 180, 255)
 $txtJson.Font = New-Object System.Drawing.Font("Consolas", 9.5)
 $form.Controls.Add($txtJson)
+
+# ===================== Website-Link =====================
+$linkLabel = New-Object System.Windows.Forms.LinkLabel
+$linkLabel.Text = "https://ottelo.jimdofree.com/"
+$linkLabel.Location = New-Object System.Drawing.Point(15, 778)
+$linkLabel.Size = New-Object System.Drawing.Size(300, 20)
+$linkLabel.LinkColor = [System.Drawing.Color]::FromArgb(100, 180, 255)
+$linkLabel.ActiveLinkColor = [System.Drawing.Color]::FromArgb(150, 210, 255)
+$linkLabel.VisitedLinkColor = [System.Drawing.Color]::FromArgb(100, 180, 255)
+$linkLabel.BackColor = $bgDark
+$linkLabel.Add_LinkClicked({ Start-Process "https://ottelo.jimdofree.com/" })
+$form.Controls.Add($linkLabel)
 
 # ===================== Statusbar =====================
 $statusBar = New-Object System.Windows.Forms.StatusStrip
@@ -355,7 +375,9 @@ function Update-ModeUI {
         $btnPreset1.Visible = $true
         $btnPreset2.Visible = $true
         $btnPresetHTTP.Visible = $false
-        $form.Text = "UDP / HTTP Client  -  UDP"
+        $btnPresetHTTP2.Visible = $false
+        $btnPresetHTTP3.Visible = $false
+        $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester (UDP / HTTP Client)  -  UDP"
     } else {
         $lblModeIndicator.Text = "[ HTTP-Modus ]"
         $lblModeIndicator.ForeColor = $accentHTTP
@@ -367,7 +389,9 @@ function Update-ModeUI {
         $btnPreset1.Visible = $false
         $btnPreset2.Visible = $false
         $btnPresetHTTP.Visible = $true
-        $form.Text = "UDP / HTTP Client  -  HTTP GET"
+        $btnPresetHTTP2.Visible = $true
+        $btnPresetHTTP3.Visible = $true
+        $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester (UDP / HTTP Client)  -  HTTP GET"
     }
 }
 
@@ -385,6 +409,8 @@ $txtCommand.Add_KeyDown({
 $btnPreset1.Add_Click({ $txtCommand.Text = 'Shelly.GetStatus' })
 $btnPreset2.Add_Click({ $txtCommand.Text = 'EM.GetStatus' })
 $btnPresetHTTP.Add_Click({ $txtCommand.Text = '/v1/json' })
+$btnPresetHTTP2.Add_Click({ $txtCommand.Text = '/rpc/Shelly.GetStatus' })
+$btnPresetHTTP3.Add_Click({ $txtCommand.Text = '/rpc/EM.GetStatus' })
 
 $btnClearLog.Add_Click({ $txtLog.Text = ""; $statusLabel.Text = "Log geleert." })
 $btnClearJson.Add_Click({ $txtJson.Text = "" })
