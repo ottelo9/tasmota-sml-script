@@ -79,7 +79,7 @@ print unknown rpc request: %str%
 #getstat
 dp(0 2)
 mstr1="{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+","
-mstr2="\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"}}"
+mstr2="\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"}"
 #getshellystat
 dp(0 2)
 mstr1="{\"em:0\":{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+",\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"},"
@@ -94,6 +94,7 @@ header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
 res=ins(str "EM.GetStatus")
 if (res>=0) {
 =#getstat
+mstr2+="}"
 udp(2 header mstr1 mstr2)
 break
 }
@@ -170,7 +171,7 @@ $- Offset für Nulleinspeisung [pwroffset]: %0pwroffset% W<br>
 $- Datenübertragung erzwingen [pwrforce]: %0pwrforce% s<br>
 $Scriptspeicher: %0slen% chars / 4096(1M) 8192(4M)
 $<hr>
-$<center>Version 21.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$<center>Version 13.03.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 >M 1

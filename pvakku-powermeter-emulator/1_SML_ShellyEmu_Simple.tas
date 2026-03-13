@@ -134,7 +134,7 @@ dp(0 2)
 ;mstr2="\"c_current\":"+s(c3c)+",\"c_voltage\":230,\"c_act_power\":"+s(c3p)+",\"c_aprt_power\":"+s(c3p)+",\"c_pf\":1,\"c_freq\":50,"
 ;mstr2+="\"total_current\":"+s(c1c+c2c+c3c)+",\"total_act_power\":"+s(cpwr)+",\"total_aprt_power\":"+s(cpwr)+"}}"
 mstr1="{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+","
-mstr2="\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"}}"
+mstr2="\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"}"
 
 #getshellystat
 ;Shelly.GetStatus Beispiel Ausgabe https://forum.openwb.de/viewtopic.php?t=7444
@@ -175,6 +175,7 @@ header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
 res=ins(str "EM.GetStatus")
 if (res>=0) {
 =#getstat
+mstr2+="}"
 udp(2 header mstr1 mstr2)
 break
 }
@@ -282,7 +283,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 21.02.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 13.03.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
