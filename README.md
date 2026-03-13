@@ -7,6 +7,9 @@ Für eine Anleitung, Beschreibung sowie passende Tasmota Images siehe mein Blog:
 [https://ottelo.jimdo.de](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/)  
 Eine kleine Anleitung befindet sich auch im Script selbst.
 
+**WICHTIG:  
+Damit die Scripte funktionieren müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!**
+
 ### Scriptauswahl
 Scripte für den ESP8266 findet ihr nun in einem extra Ordner, da ich diese nicht mehr weiterentwickeln werde. Alle anderen Scripte aktualisiere ich nun (ab 01.12.2025) nur noch für den ESP32, der einfach mehr Power hat und Tasmota mehr Features dafür bietet.  
   
@@ -70,6 +73,8 @@ Alle Scripte in der alten Version für den kleinen ESP8266 und ohne Zähler-Drop
 
 **pvakku-powermeter-emulator (ESP32)**  
 Diese Scripte emulieren einen Shelly Pro 3EM oder Ecotracker, die mit smarten Akkus verbunden werden (zur Nulleinspeisung). Das Script ist direkt auf dem Lesekopf lauffähig und übernimmt neben dem Stromzähler auslesen die Emulation.  
+Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akkus getestet wurden. Beispiele:  
+[3 Marstek (2 × B2500 und einmal Venus A) im Parallelbetrieb](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773)
 - `1_SML_EcoTrackerEmu_Simple`  
   Sehr kleines und wirklich einfaches Script zum Emulieren eines EcoTracker von everHome.  
   Getestet mit folgenden Akkus: Marstek (Jupiter, Venus, B2500), Hoymiles (MS-A2, HiBattery 1920 AC), Growatt (NOAH 2000).  
