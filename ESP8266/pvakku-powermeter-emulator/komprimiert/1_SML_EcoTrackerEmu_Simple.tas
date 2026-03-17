@@ -9,7 +9,6 @@ p:yval2=0
 p:pwroffset=0
 t:t1=60
 hr=0
-save=0
 power3=0
 res=0
 tmp=0
@@ -29,9 +28,13 @@ mval=sml[2]
 mval2=sml[3]
 yval=sml[2]
 yval2=sml[3]
+pwroffset=0
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 svars
+#save
+svars
+print gespeichert!
 >ah
 res=won(1 "/v1/json")
 >on1
@@ -46,10 +49,6 @@ wcs %json%
 wcf
 }
 >S
-if (save==1) {
-save=0
-svars
-}
 if ((year<2020) or (sml[2]==0)) {
 print auf NTP/Zähler warten
 break
@@ -69,7 +68,7 @@ if (day*month==1) {
 yval=sml[2]
 yval2=sml[3]
 }
-svars
+=#save
 }
 }
 if (once==0) {
@@ -84,7 +83,7 @@ cpwr=sml[1]-pwroffset
 }
 power3=(0.9*power3)+((1-0.9)*cpwr)
 >W
-bu(save "gespeichert!" "Daten sofort speichern")
+bu(_save "" "Daten speichern")
 Leistung (an PV-Akku){m}%0cpwr% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
 Monatsverbrauch{m}%2(sml[2]-mval)% kWh
@@ -93,13 +92,14 @@ Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
+$<button type="submit" onclick="if(confirm('init?')){seva(1,'_init');}">Daten initialisieren</button>
 $<span style="font-size:10px;">
 $<b>Einstellungen / Status</b><br>
 $Ändern der [Variable] via Console: script>var=x<br>
-$- Offset für Nulleinspeisung [pwroffset]: %0pwroffset% W<br>
+$- Offset für Nulleinspeisung [pwroffset]: %0pwroffset% W (Initwert = 0 W AUS)<br>
 $Scriptspeicher: %0slen%/4096(1M),8192(4M) chars
 $<hr>
-$<center>Version 22.02.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$<center>Version 17.03.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 >M 1
