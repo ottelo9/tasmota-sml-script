@@ -222,6 +222,7 @@ c1c=c1p/230
 ; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
 if (pwrforce>0) {
 =#getstat
+mstr2+="}"
 udp(2 header mstr1 mstr2)
 }
 
@@ -245,7 +246,7 @@ $- Offset für Nulleinspeisung [pwroffset]: %0pwroffset% W (Initwert = 0 W AUS)<
 $- Datenübertragung erzwingen [pwrforce]: %0pwrforce% (Initwert = 0 AUS)<br>
 $Scriptspeicher: %0slen% chars / 4096(1M) 8192(4M)
 $<hr>
-$<center>Version 17.03.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$<center>Version 19.03.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 

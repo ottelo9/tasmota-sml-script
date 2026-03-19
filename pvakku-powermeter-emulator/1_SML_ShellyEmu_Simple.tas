@@ -87,6 +87,10 @@ mval=sml[2]
 mval2=sml[3]
 yval=sml[2]
 yval2=sml[3]
+pwroffset=0
+pwrforce=0
+throttle=1
+smlfo=0
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
 
@@ -270,6 +274,7 @@ c1c=c1p/230
 ; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
 if (pwrforce>0) {
 =#getstat
+mstr2+="}"
 udp(2 header mstr1 mstr2)
 }
 
@@ -283,7 +288,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 13.03.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 19.03.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
