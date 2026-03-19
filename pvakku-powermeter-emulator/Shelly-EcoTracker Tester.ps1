@@ -312,6 +312,7 @@ $script:pingLogFile  = $null
 $colorGreen  = [System.Drawing.Color]::FromArgb(100, 255, 180)
 $colorRed    = [System.Drawing.Color]::FromArgb(255, 80, 80)
 $colorYellow = [System.Drawing.Color]::FromArgb(255, 220, 100)
+$colorOrange = [System.Drawing.Color]::FromArgb(255, 165, 50)
 
 function Write-Log([string]$text, [System.Drawing.Color]$color) {
     $txtLog.SelectionStart = 0
@@ -323,16 +324,44 @@ function Write-Log([string]$text, [System.Drawing.Color]$color) {
 }
 
 function Process-Response([string]$response, [string]$timestamp, [string]$label, [System.Drawing.Color]$successColor) {
-    $logEntry = "[$timestamp]  $label`r`n$response`r`n" + ("-" * 80) + "`r`n"
-    Write-Log $logEntry $successColor
+    $isDuplicate = $false
+    $firstJson = $null
 
+    # Zuerst pruefen ob es gueltiges einzelnes JSON ist
     try {
         $jsonObj = $response | ConvertFrom-Json -ErrorAction Stop
-        $formatted = $jsonObj | ConvertTo-Json -Depth 20
-        $txtJson.Text = "# $timestamp`r`n# $label`r`n`r`n$formatted"
-        $txtJson.SelectionStart = 0; $txtJson.ScrollToCaret()
+        $firstJson = $jsonObj
     }
     catch {
+        # Kein gueltiges JSON - pruefen ob mehrere JSON-Objekte aneinandergereiht sind
+        # Suche nach }{ Pattern (Ende eines Objekts, Anfang des naechsten)
+        $idx = $response.IndexOf("}{")
+        if ($idx -gt 0) {
+            $firstPart = $response.Substring(0, $idx + 1)
+            try {
+                $jsonObj = $firstPart | ConvertFrom-Json -ErrorAction Stop
+                $firstJson = $jsonObj
+                $isDuplicate = $true
+            } catch { }
+        }
+    }
+
+    if ($isDuplicate) {
+        # Doppeltes Paket: Log in Orange mit Hinweis
+        $logEntry = "[$timestamp]  $label`r`n[HINWEIS] Paket doppelt erhalten!`r`n$response`r`n" + ("-" * 80) + "`r`n"
+        Write-Log $logEntry $colorOrange
+    } else {
+        $logEntry = "[$timestamp]  $label`r`n$response`r`n" + ("-" * 80) + "`r`n"
+        Write-Log $logEntry $successColor
+    }
+
+    # JSON-Anzeige (immer nur das erste gueltige Objekt)
+    if ($firstJson) {
+        $formatted = $firstJson | ConvertTo-Json -Depth 20
+        $dupHint = if ($isDuplicate) { "`r`n# HINWEIS: Paket doppelt erhalten - nur erstes JSON angezeigt" } else { "" }
+        $txtJson.Text = "# $timestamp`r`n# $label${dupHint}`r`n`r`n$formatted"
+        $txtJson.SelectionStart = 0; $txtJson.ScrollToCaret()
+    } else {
         $txtJson.Text = "# $timestamp`r`n# Antwort ist kein gueltiges JSON.`r`n`r`n$response"
     }
 }
