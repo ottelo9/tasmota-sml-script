@@ -2,7 +2,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # --- Hauptfenster ---
-$appVersion = "v2026-03-19 11:39"
+$appVersion = "v2026-03-19 12:08"
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  UDP"
 $form.Size = New-Object System.Drawing.Size(780, 900)
