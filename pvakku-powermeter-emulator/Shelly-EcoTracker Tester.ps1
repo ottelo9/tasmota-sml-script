@@ -2,7 +2,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # --- Hauptfenster ---
-$appVersion = "v2026-03-19 12:08"
+$appVersion = "v2026-03-19 17:50"
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  UDP"
 $form.Size = New-Object System.Drawing.Size(780, 900)
@@ -133,6 +133,15 @@ $form.Controls.Add($btnPresetHTTP2)
 $btnPresetHTTP3 = New-StyledButton "EM.GetStatus" 450 117 150 28 $bgButton
 $btnPresetHTTP3.Visible = $false
 $form.Controls.Add($btnPresetHTTP3)
+
+# UDP Listener Checkbox
+$chkUdpListener = New-Object System.Windows.Forms.CheckBox
+$chkUdpListener.Text = "UDP Listener"
+$chkUdpListener.Location = New-Object System.Drawing.Point(585, 119)
+$chkUdpListener.Size = New-Object System.Drawing.Size(140, 22)
+$chkUdpListener.ForeColor = [System.Drawing.Color]::FromArgb(180, 130, 255)
+$chkUdpListener.FlatStyle = "Flat"
+$form.Controls.Add($chkUdpListener)
 
 # ===================== Intervall-Bereich (UDP/HTTP) =====================
 $lblInterval = New-StyledLabel "Intervall (Sek.):" 15 158 110 22
@@ -313,6 +322,13 @@ $colorGreen  = [System.Drawing.Color]::FromArgb(100, 255, 180)
 $colorRed    = [System.Drawing.Color]::FromArgb(255, 80, 80)
 $colorYellow = [System.Drawing.Color]::FromArgb(255, 220, 100)
 $colorOrange = [System.Drawing.Color]::FromArgb(255, 165, 50)
+$colorPurple = [System.Drawing.Color]::FromArgb(180, 130, 255)
+
+# UDP Listener
+$script:udpListenerClient = $null
+$udpListenerTimer = New-Object System.Windows.Forms.Timer
+$udpListenerTimer.Interval = 200
+$udpListenerTimer.Enabled = $false
 
 function Write-Log([string]$text, [System.Drawing.Color]$color) {
     $txtLog.SelectionStart = 0
@@ -366,6 +382,71 @@ function Process-Response([string]$response, [string]$timestamp, [string]$label,
     }
 }
 
+# ===================== UDP Listener Funktionen =====================
+function Start-UdpListener {
+    if ($script:udpListenerClient) { return }
+    try {
+        # Persistenter Client - OS vergibt freien lokalen Port
+        $script:udpListenerClient = New-Object System.Net.Sockets.UdpClient(0)
+        $script:udpListenerClient.Client.ReceiveBufferSize = 65535
+        $localPort = ([System.Net.IPEndPoint]$script:udpListenerClient.Client.LocalEndPoint).Port
+        $udpListenerTimer.Enabled = $true
+        $statusLabel.Text = "UDP Listener aktiv (lokaler Port: $localPort)"
+    }
+    catch {
+        $statusLabel.Text = "Listener-Fehler: $($_.Exception.Message)"
+        $chkUdpListener.Checked = $false
+        $script:udpListenerClient = $null
+    }
+}
+
+function Stop-UdpListener {
+    $udpListenerTimer.Enabled = $false
+    if ($script:udpListenerClient) {
+        try { $script:udpListenerClient.Close() } catch { }
+        $script:udpListenerClient = $null
+    }
+    $statusLabel.Text = "UDP Listener gestoppt."
+}
+
+function Poll-UdpListener {
+    if (-not $script:udpListenerClient) { return }
+    if ($script:udpSending) { return }  # Nicht pollen waehrend aktivem Senden
+    try {
+        $remoteEP = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
+        while ($script:udpListenerClient.Available -gt 0) {
+            $receiveBytes = $script:udpListenerClient.Receive([ref]$remoteEP)
+            $response = [System.Text.Encoding]::UTF8.GetString($receiveBytes)
+            $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff"
+
+            # Log in Lila
+            $logEntry = "[$timestamp]  LISTENER << Erzwungenes Paket vom Server erhalten ($($remoteEP.Address):$($remoteEP.Port), $($receiveBytes.Length) Bytes)`r`n$response`r`n" + ("-" * 80) + "`r`n"
+            Write-Log $logEntry $colorPurple
+
+            # JSON-Anzeige (erstes gueltiges Objekt)
+            $firstJson = $null
+            try {
+                $firstJson = $response | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                $idx = $response.IndexOf("}{")
+                if ($idx -gt 0) {
+                    try { $firstJson = $response.Substring(0, $idx + 1) | ConvertFrom-Json -ErrorAction Stop } catch { }
+                }
+            }
+            if ($firstJson) {
+                $formatted = $firstJson | ConvertTo-Json -Depth 20
+                $txtJson.Text = "# $timestamp`r`n# LISTENER: Erzwungenes Paket`r`n`r`n$formatted"
+                $txtJson.SelectionStart = 0; $txtJson.ScrollToCaret()
+            }
+        }
+    }
+    catch { }  # Timeout oder kein Paket = normal
+}
+
+$udpListenerTimer.Add_Tick({ Poll-UdpListener })
+
+$script:udpSending = $false
+
 # ===================== UDP Sende-Funktion =====================
 function Send-UDPRequest {
     $host_target = $txtHost.Text.Trim()
@@ -386,11 +467,22 @@ function Send-UDPRequest {
     $statusLabel.Text = "UDP: Sende an ${host_target}:${port_target} ..."
     $form.Refresh()
 
+    # Listener-Modus: persistenten Client nutzen, sonst temporaeren erstellen
+    $useListener = ($script:udpListenerClient -ne $null)
+    $udpClient = $null
+
     try {
-        $udpClient = New-Object System.Net.Sockets.UdpClient
-        $udpClient.Client.SendTimeout = 3000
-        $udpClient.Client.ReceiveTimeout = 3000
-        $udpClient.Client.ReceiveBufferSize = 65535
+        $script:udpSending = $true
+
+        if ($useListener) {
+            $udpClient = $script:udpListenerClient
+            $udpClient.Client.ReceiveTimeout = 3000
+        } else {
+            $udpClient = New-Object System.Net.Sockets.UdpClient
+            $udpClient.Client.SendTimeout = 3000
+            $udpClient.Client.ReceiveTimeout = 3000
+            $udpClient.Client.ReceiveBufferSize = 65535
+        }
 
         $sendBytes = [System.Text.Encoding]::UTF8.GetBytes($command)
         $udpClient.Send($sendBytes, $sendBytes.Length, $host_target, $port_target) | Out-Null
@@ -411,7 +503,8 @@ function Send-UDPRequest {
         $responseBytes = $allBytes.ToArray()
         $allBytes.Dispose()
         $response = [System.Text.Encoding]::UTF8.GetString($responseBytes)
-        $udpClient.Close()
+
+        if (-not $useListener) { $udpClient.Close() }
 
         Process-Response $response $timestamp "UDP <<  $command" $colorGreen
         $statusLabel.Text = "UDP: Antwort von $($remoteEP.Address):$($remoteEP.Port)  ($($responseBytes.Length) Bytes)"
@@ -425,6 +518,9 @@ function Send-UDPRequest {
         $logEntry = "[$timestamp]  UDP <<  $command`r`n[FEHLER] $($_.Exception.Message)`r`n" + ("-" * 80) + "`r`n"
         Write-Log $logEntry $colorRed
         $statusLabel.Text = "UDP Fehler: $($_.Exception.Message)"
+    }
+    finally {
+        $script:udpSending = $false
     }
 }
 
@@ -598,6 +694,7 @@ function Send-Request {
 # Sammlung aller modusabhaengigen Controls
 $udpHttpControls = @($lblCmd, $txtCommand, $btnSend, $lblPresets,
     $btnPreset1, $btnPreset2, $btnPresetHTTP, $btnPresetHTTP2, $btnPresetHTTP3,
+    $chkUdpListener,
     $lblInterval, $txtInterval, $btnStartInterval, $btnStopInterval, $lblIntervalStatus)
 
 $pingControls = @($lblPingInterval, $txtPingInterval, $lblPingHint1,
@@ -606,6 +703,12 @@ $pingControls = @($lblPingInterval, $txtPingInterval, $lblPingHint1,
     $btnPingStart, $btnPingStop, $lblPingStatus)
 
 function Update-ModeUI {
+    # Listener stoppen bei Moduswechsel
+    if ($chkUdpListener.Checked -and -not $radioUDP.Checked) {
+        $chkUdpListener.Checked = $false
+        Stop-UdpListener
+    }
+
     if ($radioPing.Checked) {
         # Ping-Modus: UDP/HTTP Controls ausblenden
         foreach ($c in $udpHttpControls) { $c.Visible = $false }
@@ -641,6 +744,7 @@ function Update-ModeUI {
             $btnPresetHTTP.Visible = $false
             $btnPresetHTTP2.Visible = $false
             $btnPresetHTTP3.Visible = $false
+            $chkUdpListener.Visible = $true
             $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  UDP"
         } else {
             $lblModeIndicator.Text = "[ HTTP-Modus ]"
@@ -655,6 +759,7 @@ function Update-ModeUI {
             $btnPresetHTTP.Visible = $true
             $btnPresetHTTP2.Visible = $true
             $btnPresetHTTP3.Visible = $true
+            $chkUdpListener.Visible = $false
             $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  HTTP GET"
         }
     }
@@ -681,6 +786,15 @@ $btnPresetHTTP3.Add_Click({ $txtCommand.Text = '/rpc/EM.GetStatus' })
 
 $btnClearLog.Add_Click({ $txtLog.Text = ""; $statusLabel.Text = "Log geleert." })
 $btnClearJson.Add_Click({ $txtJson.Text = "" })
+
+# UDP Listener ein/aus
+$chkUdpListener.Add_CheckedChanged({
+    if ($chkUdpListener.Checked) {
+        Start-UdpListener
+    } else {
+        Stop-UdpListener
+    }
+})
 
 # Intervall starten (UDP/HTTP)
 $btnStartInterval.Add_Click({
@@ -803,6 +917,8 @@ $pingTimer.Add_Tick({ Send-SinglePing })
 $form.Add_FormClosing({
     $timer.Enabled = $false; $timer.Dispose()
     $pingTimer.Enabled = $false; $pingTimer.Dispose()
+    $udpListenerTimer.Enabled = $false; $udpListenerTimer.Dispose()
+    if ($script:udpListenerClient) { try { $script:udpListenerClient.Close() } catch { } }
 })
 
 # ===================== Anzeige =====================
