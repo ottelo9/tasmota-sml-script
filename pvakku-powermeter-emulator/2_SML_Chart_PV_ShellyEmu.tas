@@ -118,6 +118,8 @@ mstr2=""
 mstr3=""
 header=""
 once=0
+udpsent=0
+udpapi=0
 
 >R
 =#save
@@ -341,24 +343,37 @@ fe("sml_ftask.tas")
 ;-- SHELLY EMULATION --
 ; UDP Anfrage beantworten
 str=udp(1)
-if (str!="") {
-	;print UDP: %str%
-	header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
-	res=ins(str "EM.GetStatus")
-	if (res>=0) {
-		=#getstat
-		mstr2+="}"
-		udp(2 header mstr1 mstr2)
+if (str=="") {
+	if (udpsent==0 or udpapi==0) {
 		break
 	}
-	res=ins(str "Shelly.GetStatus")
-	if res>=0 {
-		=#getshellystat
-		mstr3+="}"
-		udp(2 header mstr1 mstr2)
-		udp(2 mstr3)
-		break
-	}
+	switch udpapi
+	case 1
+	str="EM.GetStatus"
+	case 2
+	str="Shelly.GetStatus"
+	ends
+}
+;print UDP: %str%
+header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
+res=ins(str "EM.GetStatus")
+if (res>=0) {
+	=#getstat
+	mstr2+="}"
+	udp(2 header mstr1 mstr2)
+	udpapi=1
+	udpsent=0
+	break
+}
+res=ins(str "Shelly.GetStatus")
+if res>=0 {
+	=#getshellystat
+	mstr3+="}"
+	udp(2 header mstr1 mstr2)
+	udp(2 mstr3)
+	udpapi=2
+	udpsent=0
+	break
 }
 
 
@@ -520,9 +535,7 @@ if (upsecs%throttle==0) {
 	
 	; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
 	if (pwrforce>0) {
-	=#getstat
-	mstr2+="}"
-	udp(2 header mstr1 mstr2)
+		udpsent=1
 	}
 }
 

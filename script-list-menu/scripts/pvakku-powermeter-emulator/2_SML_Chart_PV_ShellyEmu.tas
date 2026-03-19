@@ -53,6 +53,8 @@ mstr2=""
 mstr3=""
 header=""
 once=0
+udpsent=0
+udpapi=0
 >R
 =#save
 >B
@@ -238,13 +240,25 @@ eres=0
 >F
 fe("sml_ftask.tas")
 str=udp(1)
-if (str!="") {
+if (str=="") {
+if (udpsent==0 or udpapi==0) {
+break
+}
+switch udpapi
+case 1
+str="EM.GetStatus"
+case 2
+str="Shelly.GetStatus"
+ends
+}
 header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
 res=ins(str "EM.GetStatus")
 if (res>=0) {
 =#getstat
 mstr2+="}"
 udp(2 header mstr1 mstr2)
+udpapi=1
+udpsent=0
 break
 }
 res=ins(str "Shelly.GetStatus")
@@ -253,8 +267,9 @@ if res>=0 {
 mstr3+="}"
 udp(2 header mstr1 mstr2)
 udp(2 mstr3)
+udpapi=2
+udpsent=0
 break
-}
 }
 >S
 fe("sml_stask.tas")
@@ -347,9 +362,7 @@ cpwr=sml[1]-pwroffset
 c1p=cpwr
 c1c=c1p/230
 if (pwrforce>0) {
-=#getstat
-mstr2+="}"
-udp(2 header mstr1 mstr2)
+udpsent=1
 }
 }
 >W
