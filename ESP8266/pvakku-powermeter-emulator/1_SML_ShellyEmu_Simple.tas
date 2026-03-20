@@ -119,7 +119,7 @@ mstr1="{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+","
 mstr2="\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"}"
 
 #getshellystat
-;Shelly.GetStatus, Beispiel Ausgabe https://forum.openwb.de/viewtopic.php?t=7444
+;Shelly.GetStatus Beispiel Ausgabe https://forum.openwb.de/viewtopic.php?t=7444
 dp(0 2)
 mstr1="{\"em:0\":{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+",\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"},"
 ;mstr2="\"emdata:0\":{\"id\":0,\"a_total_act_energy\":0,\"a_total_act_ret_energy\":0,\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,\"total_act\":0,\"total_act_ret\":0}}"
@@ -131,6 +131,7 @@ mstr3="\"total_act\":"+s(sml[2]*1000)+",\"total_act_ret\":"+s(sml[3]*1000)+"}}"
 header="HTTP/1.1 200 OK\r\nServer: ShellyHTTP/1.0.0\r\nContent-Type: application/json\r\nContent-Length: "+s(0tmp)+"\r\nConnection: close\r\n\r\n"
 
 >F
+;-- SHELLY EMULATION --
 ; UDP Anfrage beantworten
 str=udp(1)
 if (str=="") {
