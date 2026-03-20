@@ -103,10 +103,10 @@ Aktualisiert die Momentanleistung, die an den Akku gesendet wird, nur alle x Sek
 Je nach Akkutyp unterschiedlich. Eignetlich nur bei Marstek B2500 notwendig (je nach Firmwarestand). Standard 1010.  
 <ins>Datenübertragung erzwingen:</ins>  
 EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten:  
-<img width="300" height="356" alt="image" src="https://github.com/user-attachments/assets/9511659b-fe76-4e4e-9013-88f00f3be8e9" />
+<img width="400" height="356" alt="image" src="https://github.com/user-attachments/assets/9511659b-fe76-4e4e-9013-88f00f3be8e9" />
 
 <ins>SML Median Filter aktivieren:</ins> Vergleich EIN (links) und AUS (rechts)  
-<img width="300" height="455" alt="image" src="https://github.com/user-attachments/assets/3d16fd34-7f22-4e33-9448-0e1a6a4458b5" />  
+<img width="400" height="455" alt="image" src="https://github.com/user-attachments/assets/3d16fd34-7f22-4e33-9448-0e1a6a4458b5" />  
 Ohne SML Filter zeigt sich ein besseres Einschwingverhalten. Das könnte bei anderen Akkus natürlich ganz anders aussehen!  
 
 
