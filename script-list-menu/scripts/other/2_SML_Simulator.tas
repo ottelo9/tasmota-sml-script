@@ -1,74 +1,43 @@
 >D 128
-; SML Simulator Script von ottelo.jimdo.de
-; Script zum Simulieren von zwei Stromzählern
-; Es erzeugt eine simulierte Wirkleistung in W und errechnet damit Netzbezug und Netzeinspeisung
-; Momentan simuliert das Script einen MT175 Stromzähler. Damit das Script läuft muss ein angepasstes Tasmota Image
-; mit SML Support + #define SCRIPT_MAXSSIZE 128 verwendet werden. Das biete ich
-; auf meiner Seite an. Dann benötigt man ein IR Lesekopf mit ESP32 oder 8266.
-; Die zufallsgenerierte Leistung/Arbeit/Energie wird unten in der >S Sektion
-; zum String hinzugefügt und dann als SML Binary gesendet.
-; Die Leistung wird jede Sekunde addiert. Wenn positiv dann +PwrFrGrd, wenn negativ dann
-; +PwrToGrd. Nach 60s wird die Arbeit/Energie für den Zähler errechnet = EnFrGrd EnToGrd.
-
-; Startwert Stromzählerwert kWh (Netzbezug)
+;2_SML_Simulator.tas
 p:EnFrGrd=26712.92
-; Startwert Stromzählerwert kWh (Netzeinspeisung)
 p:EnToGrd=657.85
 p:mode=1
 p:pwrsld=1000
-; OBIS binary SML MT175 Stromzähler
-; OBIS (hex) Dumps (erstellt mit echtem Zähler via sensor53 d1). Die letzten 10 Hex Zahlen werden generiert
-; Zählerstand Bezug Total [Wh]
 cEnIn="77070100010800ff650001018201621e52ff5900000000"
-; Zählerstand Bezug Tarif 1 [Wh]
 cEnIn1="77070100010801ff0101621e52ff5900000000"
-; Zählerstand Einspeisung Total [Wh]
 cEnOut="77070100020800ff0101621e52ff5900000000"
-; Zählerstand Einspeisung Tarif 1 [Wh]
 cEnOut1="77070100020801ff0101621e52ff5900000000"
-; Aktuelle Wirkleistung Watt
 cPow="77070100100700ff0101621b520055"
 cTmp=""
-; Countdown Timer 5s and 60s
 t:t1=5
 t:t2=60
-; Vars
 I:iPwr=0
 fPwr=0
 utm="00d 00h 00m"
 PwrToGrd=0
 PwrFrGrd=0
 t1t=5
-
 >B
 ->DeviceName Stromzähler Simulator (MT175 SML)
 sota("")
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 ->sensor53 r
-; sets decimal precision to 0
 dp0
-
 #save
 svars
 print Daten wurden gespeichert
-
 >S
-;Zeit seit letztem Boot
 utm=s(2.0(int(uptime/1440)))+"d "+s(2.0(int(uptime/60)%24))+"h "+s(2.0(uptime%60))+"m"
-
-; Simulation Leistung
 switch mode
 case 1
-; Zufallszahl
 if t1==0 {
 t1=t1t
 fPwr=rnd(1000)-500
 }
 case 2
-; Festwert via Slider
 fPwr=pwrsld
 case 3
-; Rampe
 if t1==0 {
 t1=t1t
 if fPwr>1000 {
@@ -77,16 +46,12 @@ fPwr=-1000
 fPwr+=20
 }
 }
-ends 
-
-; alle 1s: Leistung W jede Sekunde addieren, damit Bezug/Einspeisung korrekt erhöht wird
+ends
 if (fPwr<0) {
 PwrToGrd-=fPwr
 } else {
 PwrFrGrd+=fPwr
 }
-
-; alle 60s: Arbeit/Energie berechnen
 if (t2==0) {
 t2=60
 if (PwrFrGrd>0) {
@@ -98,69 +63,48 @@ EnToGrd+=PwrToGrd/3600000
 PwrToGrd=0
 }
 }
-
-; alle 1s: SML Werte senden (Hex String als binary)
-; Geräteidentifikation
 cTmp="77070100000009ff010101010b090149534b00047ffe7801"
 sml(1 1 cTmp)
 sml(2 1 cTmp)
-; Zählerstand Bezug Total
 sml(1 1 cEnIn+hx(EnFrGrd*10000)+"01")
 sml(2 1 cEnIn+hx(EnFrGrd*10000)+"01")
-; Zählerstand Bezug Tarif 1
 sml(1 1 cEnIn1+hx(EnFrGrd*10000)+"01")
 sml(2 1 cEnIn1+hx(EnFrGrd*10000)+"01")
-; Zählerstand Bezug Tarif 2 = 0Wh
 cTmp="77070100010802ff0101621e52ff59000000000000000001"
 sml(1 1 cTmp)
 sml(2 1 cTmp)
-; Zählerstand Einspeisung Total
 sml(1 1 cEnOut+hx(EnToGrd*10000)+"01")
 sml(2 1 cEnOut+hx(EnToGrd*10000)+"01")
-; Zählerstand Einspeisung Tarif 1
 sml(1 1 cEnOut1+hx(EnToGrd*10000)+"01")
 sml(2 1 cEnOut1+hx(EnToGrd*10000)+"01")
-; Zählerstand Einspeisung Tarif 2 = 0Wh
 cTmp="77070100020802ff0101621e52ff59000000000000000001"
 sml(1 1 cTmp)
 sml(2 1 cTmp)
-; aktuelle Wirkleistung
 iPwr=i(fPwr)
 if fPwr<0 {
-;float kann nur 23Bit deshalb uint32 variable iPwr nutzen
 iPwr=#4294967296
 iPwr-=i(-fPwr)
 }
 sml(1 1 cPow+hxi(iPwr)+"01")
 sml(2 1 cPow+hxi(iPwr)+"01")
-
 >W
-; web button
 bu(_save "" "&#x1F4BE; Daten speichern")
-; Simulierte Leistung via Slider
 sl(-1000 1000 pwrsld "-1000 W" "0 W" "1000 W")
 pd(mode "Modus wählen: " 80 "Zufall" "Fest" "Rampe")
 nm(1 60 1 t1t "Zykluszeit [s]: " 50 0)
-
 Simulierte Zählerwerte:{m}
 aktuelle Wirkleistung{m}%fPwr% W
 Bezug{m}%2EnFrGrd% kWh
 Einspeisung{m}%2EnToGrd% kWh
-
-; Zeit
 <hr>{m}<hr>
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
 Uptime{m}%utm%
-
 $<center><span style="font-size:10px;">
 $Version 20.03.2026 (SML Simulator) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden nicht automatisch gespeichert!<br>
 $Speichern über Button oder Restart.<br>
 $</span></center>
-
 >M 2
-; Stromzähler MT175 wird simuliert mit HichiV1
-; Rx-Pin=3 (N/A), s=SML, 0=kein Filter, 9600=baudrate, MT175=Name, 1=Tx-Pin
 +1,3,s,0,9600,MT175_1,1
 +2,5,s,0,9600,MT175_2,4
 1,77070100100700ff@1,*Leistung1
