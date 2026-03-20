@@ -94,7 +94,20 @@ Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akk
   Wie 1_SML_ShellyEmu_Simple aber Diagrammen (wie 2_SML_Script_Chart_PV).
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 
-Ihr könnt die Emus mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen:
+**Akku Optionen:**  
+<ins>Offset für Nulleinspeisung [W]:</ins>  
+Sendet die Momentanleistung mit einem Offset an den Akku. Bei 100 W würde die Regelung des Akkus dann versuchen die Nulleinspeisung auf 100 W Netzbezug zu regeln.  
+<ins>Update der Werte verzögern [s]:</ins>  
+Aktualisiert die Momentanleistung, die an den Akku gesendet wird, nur alle x Sekunden. 1 s = Normaleinstellung, also jede Sekunde die Leistung aktualisieren. Diese Einstellung verändert/beeinflusst NICHT das Abruf/Sendeintervall vom/zum Akku!  
+<ins>UDP-Port (Neustart notwendig):</ins>  
+Je nach Akkutyp unterschiedlich. Eignetlich nur bei Marstek B2500 notwendig (je nach Firmwarestand). Standard 1010.  
+<ins>Datenübertragung erzwingen:</ins>  
+EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten:  
+<img width="300" height="356" alt="image" src="https://github.com/user-attachments/assets/9511659b-fe76-4e4e-9013-88f00f3be8e9" />
+
+**Testtool:**  
+Ihr könnt die Emus mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping):  
+<img width="500" height="1109" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
 
 
 
