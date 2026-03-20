@@ -532,11 +532,10 @@ if (upsecs%throttle==0) {
 	c1c=c1p/230
 	;c2c=c2p/230
 	;c3c=c3p/230
-	
-	; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
-	if (pwrforce>0) {
-		udpsent=1
-	}
+}
+; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
+if (pwrforce>0) {
+	udpsent=1
 }
 
 
@@ -617,7 +616,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 19.03.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 20.03.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
