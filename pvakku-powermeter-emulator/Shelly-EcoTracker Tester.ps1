@@ -2,7 +2,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # --- Hauptfenster ---
-$appVersion = "v2026-03-19 17:50"
+$appVersion = "v2026-03-20 10:55"
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  UDP"
 $form.Size = New-Object System.Drawing.Size(780, 900)
@@ -416,8 +416,15 @@ function Poll-UdpListener {
         $remoteEP = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
         while ($script:udpListenerClient.Available -gt 0) {
             $receiveBytes = $script:udpListenerClient.Receive([ref]$remoteEP)
-            $response = [System.Text.Encoding]::UTF8.GetString($receiveBytes)
             $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff"
+
+            if ($receiveBytes.Length -eq 0) {
+                $logEntry = "[$timestamp]  LISTENER << Leeres Paket (0 Bytes) von $($remoteEP.Address):$($remoteEP.Port) erhalten!`r`n" + ("-" * 80) + "`r`n"
+                Write-Log $logEntry $colorRed
+                continue
+            }
+
+            $response = [System.Text.Encoding]::UTF8.GetString($receiveBytes)
 
             # Log in Lila
             $logEntry = "[$timestamp]  LISTENER << Erzwungenes Paket vom Server erhalten ($($remoteEP.Address):$($remoteEP.Port), $($receiveBytes.Length) Bytes)`r`n$response`r`n" + ("-" * 80) + "`r`n"
@@ -488,26 +495,44 @@ function Send-UDPRequest {
         $udpClient.Send($sendBytes, $sendBytes.Length, $host_target, $port_target) | Out-Null
 
         $remoteEP = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
-        $allBytes = New-Object System.IO.MemoryStream
-        $receiveBytes = $udpClient.Receive([ref]$remoteEP)
-        $allBytes.Write($receiveBytes, 0, $receiveBytes.Length)
 
-        $udpClient.Client.ReceiveTimeout = 500
-        try {
-            while ($true) {
-                $moreBytes = $udpClient.Receive([ref]$remoteEP)
-                $allBytes.Write($moreBytes, 0, $moreBytes.Length)
+        if ($useListener) {
+            # Listener-Modus: nur erstes echtes Paket nehmen, Rest faengt der Listener auf
+            $receiveBytes = $null
+            $attempts = 0
+            while ($attempts -lt 10) {
+                $receiveBytes = $udpClient.Receive([ref]$remoteEP)
+                if ($receiveBytes.Length -gt 0) { break }
+                # Leeres Paket melden
+                $tsEmpty = Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff"
+                $logEmpty = "[$tsEmpty]  UDP << Leeres Paket (0 Bytes) von $($remoteEP.Address):$($remoteEP.Port) erhalten!`r`n" + ("-" * 80) + "`r`n"
+                Write-Log $logEmpty $colorRed
+                $attempts++
             }
-        } catch { }
+            $response = [System.Text.Encoding]::UTF8.GetString($receiveBytes)
+        } else {
+            # Ohne Listener: alle Pakete innerhalb 500ms einsammeln
+            $allBytes = New-Object System.IO.MemoryStream
+            $receiveBytes = $udpClient.Receive([ref]$remoteEP)
+            $allBytes.Write($receiveBytes, 0, $receiveBytes.Length)
 
-        $responseBytes = $allBytes.ToArray()
-        $allBytes.Dispose()
-        $response = [System.Text.Encoding]::UTF8.GetString($responseBytes)
+            $udpClient.Client.ReceiveTimeout = 500
+            try {
+                while ($true) {
+                    $moreBytes = $udpClient.Receive([ref]$remoteEP)
+                    $allBytes.Write($moreBytes, 0, $moreBytes.Length)
+                }
+            } catch { }
+
+            $receiveBytes = $allBytes.ToArray()
+            $allBytes.Dispose()
+            $response = [System.Text.Encoding]::UTF8.GetString($receiveBytes)
+        }
 
         if (-not $useListener) { $udpClient.Close() }
 
         Process-Response $response $timestamp "UDP <<  $command" $colorGreen
-        $statusLabel.Text = "UDP: Antwort von $($remoteEP.Address):$($remoteEP.Port)  ($($responseBytes.Length) Bytes)"
+        $statusLabel.Text = "UDP: Antwort von $($remoteEP.Address):$($remoteEP.Port)  ($($response.Length) Zeichen)"
     }
     catch [System.Net.Sockets.SocketException] {
         $logEntry = "[$timestamp]  UDP <<  $command`r`n[FEHLER] Timeout - keine Antwort erhalten.`r`n" + ("-" * 80) + "`r`n"
