@@ -105,6 +105,11 @@ Je nach Akkutyp unterschiedlich. Eignetlich nur bei Marstek B2500 notwendig (je 
 EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten:  
 <img width="300" height="356" alt="image" src="https://github.com/user-attachments/assets/9511659b-fe76-4e4e-9013-88f00f3be8e9" />
 
+<ins>SML Median Filter aktivieren:</ins> Vergleich EIN (links) und AUS (rechts)  
+<img width="300" height="455" alt="image" src="https://github.com/user-attachments/assets/3d16fd34-7f22-4e33-9448-0e1a6a4458b5" />  
+Ohne SML Filter zeigt sich ein besseres Einschwingverhalten. Das könnte bei anderen Akkus natürlich ganz anders aussehen!  
+
+
 **Testtool:**  
 Ihr könnt die Emus mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping):  
 <img width="500" height="1109" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
