@@ -156,6 +156,42 @@ ab Script 18.08.2025 wird dies automatisch beim #init erledigt!
 Backlog0 Timezone 99; TimeStd 0,0,10,1,3,60; TimeDst 0,0,3,1,2,120 <- Europe/Berlin
 Den Befehl müsst ihr ggf. auf euren Ort anpassen! https://tasmotatimezone.com bzw. https://tasmota.github.io/docs/Timezone-Table/
 
+### Home Assistant Tasmota Integration
+Korrektes Sensor-Mapping: Damit die Tasmota Integration die Werte vom Stromzähler voll automatisch konfiguriert (device_class, state_class, unit) muss in der >M Meter Sektion für jeden Wert ein korrekter Name vergeben werden.  
+
+Beispiel:  
+1,77070100100700ff@1,Leistung,W,**Power**,16  
+1,77070100010800ff@1000,Verbrauch,kWh,**ImportActive**,2  
+1,77070100020800ff@1000,Einspeisung,kWh,**ExportActive**,2  
+
+Wenn ihr euren Zähler über mein Zähler DropDown Menü im Script ausgewählt habt, dann werden bereits die korrekten Namen vergeben. Ich habe nämlich alle Zählerscripte händisch angepasst!  
+
+**Energie / Leistung**
+
+| JSON-Key | unit | device_class | state_class |
+|---|---|---|---|
+| **Total** | kWh | `energy` | `total` |
+| **Today** | kWh | `energy` | `total_increasing` |
+| **Yesterday** | kWh | `energy` | — |
+| **TotalTariff** | kWh | `energy` | `total` |
+| **Energy** | kWh | `energy` | `total` |
+| **ExportActive** | kWh | `energy` | `total` |
+| **ExportTariff** | kWh | `energy` | `total` |
+| **ImportActive** | kWh | `energy` | `total` |
+| **ExportReactive** | kVArh | — | `total` |
+| **ImportReactive** | kVArh | — | `total` |
+| **Power** | W | `power` | `measurement` |
+| **ActivePower** | W | `power` | `measurement` |
+| **ApparentPower** | VA | `apparent_power` | `measurement` |
+| **ReactivePower** | VAr | `reactive_power` | `measurement` |
+| **Voltage** | V | `voltage` | `measurement` |
+| **Current** | A | `current` | `measurement` |
+| **CurrentNeutral** | A | `current` | `measurement` |
+| **Frequency** | Hz | `frequency` | `measurement` |
+| **Factor** | *(None)* | `power_factor` | `measurement` |
+| **PhaseAngle** | ° | — | — |
+| **TotalStartTime** | *(None)* | — | — |
+
 
 ### Debuggen oder Daten loggen
 Falls ihr vielleicht im Script irgendwas loggen wollt (Zustände oder Werte in eine Datei mit Zeitstempel schreiben), dann gibt es eine schöne einfache Methode via Script. Erstellt dazu einfach ein neuen #Sub, da wo bereits Subs sind, ansonsten ist es egal wo:
