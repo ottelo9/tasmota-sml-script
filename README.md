@@ -94,7 +94,7 @@ Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akk
   Wie 1_SML_ShellyEmu_Simple aber Diagrammen (wie 2_SML_Script_Chart_PV).
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 
-**Akku Optionen:**  
+### Akku Optionen:
 <ins>Offset für Nulleinspeisung [W]:</ins>  
 Sendet die Momentanleistung mit einem Offset an den Akku. Bei 100 W würde die Regelung des Akkus dann versuchen die Nulleinspeisung auf 100 W Netzbezug zu regeln.  
 <ins>Update der Werte verzögern [s]:</ins>  
@@ -110,7 +110,7 @@ EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten:
 Ohne SML Filter zeigt sich ein besseres Einschwingverhalten. Das könnte bei anderen Akkus natürlich ganz anders aussehen!  
 
 
-**Testtool:**  
+### Testtool:
 Ihr könnt die Emus mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping):  
 <img width="500" height="1109" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
 
