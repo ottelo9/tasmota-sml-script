@@ -1,8 +1,8 @@
 >M 1
 +1,%0rxpin%,s,%0smlf%,9600,KAIFA,%0txpin%
-1,77070100100700ff@1,Leistung,W,Power,0
-1,77070100010800ff@1000,Verbrauch,kWh,E_in,3
-1,77070100020800ff@1000,Einspeisung,kWh,E_out,3
+1,77070100100700ff@1,Leistung,W,Power,16
+1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,3
+1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,3
 1,=h—
 1,77070100200700ff@1,Spannung L1,V,Voltage_L1,1
 1,77070100340700ff@1,Spannung L2,V,Voltage_L2,1

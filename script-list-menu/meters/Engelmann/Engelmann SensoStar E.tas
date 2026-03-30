@@ -24,8 +24,8 @@ sml(1 1 "107BFE7916")
 >M 1
 +1,%0rxpin%,rE1,%0smlf%,2400,WAERME,%0txpin%
 1,=so3,32
-1,042bu32s@1,Leistung,W,Leistung,0
-1,0406u32s@1000,Energie,MWh,Energie,3
+1,042bu32s@1,Leistung,W,Power,16
+1,0406u32s@1,Energie,kWh,ImportActive,3
 1,0413u32s@1000,Volumen,m³,Volumen,3
 1,0478u32s@1,Zählernummer,,Zählernummer,0
 1,142bu32s@1,Max. Leistung,W,Max. Leistung,0

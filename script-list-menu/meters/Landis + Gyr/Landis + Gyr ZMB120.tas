@@ -14,8 +14,8 @@ ends
 
 >M 1
 +1,%0rxpin%,o,%0smlf%,9600,ZMB120,%0txpin%
-1,16.7.0(@1,Leistung,kW,kW_L1+L2+L3,2
-1,1.8.0(@1,HT+NT Zählerstand,kWh,Total_in,3
+1,16.7.0(@1000,Leistung,W,Power,16
+1,1.8.0(@1,HT+NT Zählerstand,kWh,ImportActive,3
 1,1.8.1(@1,HT,kWh,HT_Total_in,3
 1,1.8.2(@1,NT,kWh,NT_Total_in,3
 1,=h===================

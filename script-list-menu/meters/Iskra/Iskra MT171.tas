@@ -14,5 +14,6 @@ ends
 
 >M 1
 +1,%0rxpin%,o,%0smlf%,9600,MT171,%0txpin%
-1,1-0:1.8.0*255(@1,Bezug,kWh,1-8-0,2
+1,=d 0 @1,Leistung (immer 0),W,Power,0
+1,1-0:1.8.0*255(@1,Bezug,kWh,ImportActive,2
 #

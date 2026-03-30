@@ -1,8 +1,8 @@
 >M 1
 +1,%0rxpin%,s,%0smlf%,9600,eBZ-DD3,%0txpin%
-1,77070100100700ff@1,aktuelle Leistung,W,Power,0
-1,77070100010800ff@100000000,Energie Verbrauch,kWh,E_in,3
-1,77070100020800ff@100000000,Energie Einspeisung,kWh,E_out,3
+1,77070100100700ff@1,aktuelle Leistung,W,Power,16
+1,77070100010800ff@100000000,Energie Verbrauch,kWh,ImportActive,3
+1,77070100020800ff@100000000,Energie Einspeisung,kWh,ExportActive,3
 1,=h--
 1,77070100240700FF@1,Leistung L1,W,36_7_0,0
 1,77070100380700FF@1,Leistung L2,W,56_7_0,0

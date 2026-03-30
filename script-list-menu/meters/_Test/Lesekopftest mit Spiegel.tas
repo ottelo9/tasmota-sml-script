@@ -20,7 +20,7 @@ sml(1 1 lsv2+hx(657.85*10000)+"01")
 
 >M 1
 +1,%0rxpin%,s,0,9600,TEST,%0txpin%
-1,77070100100700ff@1,Leistung,W,Power_curr,0
-1,77070100010800ff@1000,Verbrauch,kWh,Total_in,2
-1,77070100020800ff@1000,Einspeisung,kWh,Total_out,2
+1,77070100100700ff@1,Leistung,W,Power,0
+1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,2
+1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,2
 #

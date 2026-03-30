@@ -13,9 +13,9 @@ ends
 
 >M 1
 +1,%0rxpin%,o,%0smlf%,4800,E650,%0txpin%
-1,1-1:1.5.0(@1,power_IN,kW,1-5-0,3
-1,1-1:1.8.0(@1,Verbrauch,kWh,1-8-0,3
-1,1-1:2.8.0@1,Einspeisung,kWh,2-8-0,3
+1,1-1:1.5.0(@0.001,power_IN,W,Power,16
+1,1-1:1.8.0(@1,Verbrauch,kWh,ImportActive,3
+1,1-1:2.8.0@1,Einspeisung,kWh,ExportActive,3
 1,1-1:2.5.0(@1,power_OUT,kW,2-5-0,3
 1,1-1:21.5.0(@1,power_L1,kW,21-5-0,3
 1,1-1:41.5.0(@1,power_L2,kW,41-5-0,3

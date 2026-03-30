@@ -13,10 +13,13 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,%0smlf%,4800,EMH,%0txpin%
-1,0.0.0(@1,Zähler-Nr.,,0_0_0,0
-1,1.8.0(@1,WirkEnBezug,kWh,1_8_0,3
-1,2.8.0(@1,WirkEnEinsp,kWh,2_8_0,3
-1,2.8.1(@1,WirkEnEinspNT,kWh,2_8_1,3
-1,2.8.2(@1,WirkEnEinspHT,kWh,2_8_2,3
++1,%0rxpin%,o,%0smlf%,4800,DMTZ,%0txpin%
+1,=d 0 @1,Leistung (immer 0),W,Power,0
+1,1.8.0(@1,Bezug Gesamt,kWh,ImportActive,3
+1,2.8.0(@1,Einspeisung Gesamt,kWh,ExportActive,3
+1,=h--
+1,1.8.1(@1,Bezug NT,kWh,E_inNT,3
+1,1.8.2(@1,Bezug HT,kWh,E_inHT,3
+1,2.8.1(@1,Einspeisung NT,kWh,E_outNT,3
+1,2.8.2(@1,Einspeisung HT,kWh,E_outHT,3
 #
