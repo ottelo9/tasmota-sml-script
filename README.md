@@ -21,12 +21,6 @@ Scriptauswahl:
 Stromzähler/Pin-Auswahl:  
 <img width="300" height="393" alt="image" src="https://github.com/user-attachments/assets/308c6d35-80e5-4a78-88da-adc573ad1b8b" />
 
-
-
-
-
-
-
 ***ACHTUNG: KRITISCHE ÄNDERUNG AB SCRIPT VERSION 01.12.2025***  
 Diagramm-Daten müssen vor dem Upgrade auf diese Version gesichert werden. Nach dem Update können die Daten wieder importiert werden.  
 Anleitung: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#14  
@@ -109,11 +103,14 @@ EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten:
 <img width="400" height="455" alt="image" src="https://github.com/user-attachments/assets/3d16fd34-7f22-4e33-9448-0e1a6a4458b5" />  
 Ohne SML Filter zeigt sich ein besseres Einschwingverhalten. Das könnte bei anderen Akkus natürlich ganz anders aussehen!  
 
-
-### Testtool:
+### Testtools:
+<b>UDP/HTTP/PING Tester</b>  
 Ihr könnt die Emus mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping):  
 <img width="500" height="1109" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
 
+<b>SML Simulator</b>  
+Gemu2015 hat ein [SML Simulator Tool](https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/tinyc/sml_emulator.html) (simuliert einen x-beliebigen Stromzähler) für den Google Chrome Browser erstellt. Zum Simulieren eines Stromzählers wird ein USB Lesekopf am PC benötigt. Das Tool kann auch Zählerscripte (Meter Descriptor) erstellen und auch direkt an Tasmota senden. Wieso Google Chrome Browser? Nur Chrome unterstützt das serielle Interface.  
+<img width="500" height="385" alt="image" src="https://github.com/user-attachments/assets/9a5190da-2e8c-4198-97d0-4152276ad7a1" />
 
 
 **script-list-menu (ESP32)**  
@@ -133,13 +130,11 @@ Editor "komprimiert" werden. D.h. es werden alle Kommentare und Leerzeichen entf
 Ein passendes Tasmota Image von mir herunterladen. Dann kann das Script unter Tools -> Edit Script ausgewählt werden. Danach wählt ihr euren Zähler und die PINs (IR-Sende/Empfangsdiode eures Lesekopfes) aus. Die Daten können bequem über den Button initialisiert werden. Wenn Tasmota und das Script läuft und ihr auch eure Zählerwerte (Leistung, Bezug und ggf. Einspeisung) sehen könnt, dann müsst ihr das Script einmal initialisieren, damit die Tages-, Monats-, und Jahreswerte und die Diagramme stimmen. Dazu tippt einfach auf den Button Zählerwerte initialisieren und Reset Balkendiagramme. Alle Werte sind dann auf 0 zurückgesetzt! Wollt ihr die Werte von einem vorherigen ESP oder alten Script übertragen? Dazu habe ich eine sehr [ausführliche Anleitung](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#14) geschrieben. Wollt ihr Änderungen an dem Zählerscript vornehmen weil was fehlt? Dann klickt auf den Link Stromzähler Script.  
 <img width="400" height="524" alt="image" src="https://github.com/user-attachments/assets/339d57e7-62b6-4624-bae9-d2f7a4d4302f" />
 
-
 Für die "alten" Scripte im ESP8266 Ordner gilt: Skript herunterladen und z.B. mit dem Windows Editor öffnen (öffnen mit). 
 Es gibt auch für die Tasmota Skripte einen speziellen Editor vom Tasmota Script Entwickler [gemu2015](https://github.com/gemu2015) 
 den ihr [hier](https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/Scripteditor.zip) herunterladen könnt. 
 Dieser kann die Scripte direkt auf euren ESP übertragen und entfernt dabei alle Kommentare und leere Zeilen um Platz zu sparen! 
 Eine genauere Anleitung findet ihr auf meinem Blog oder auch in jedem Script.  
-
 
 **ESP8266: Die Skripte müssen von euch auf euren Zähler angepasst werden**  
 Die älteren Scripte vor 01.12.2025 sind auch für den ESP8266. Dort könnt ihr euren Zähler nicht via DropDown wählen. Den Zähler müsst ihr im Script editieren.  
@@ -156,6 +151,42 @@ ab Script 18.08.2025 wird dies automatisch beim #init erledigt!
 Backlog0 Timezone 99; TimeStd 0,0,10,1,3,60; TimeDst 0,0,3,1,2,120 <- Europe/Berlin
 Den Befehl müsst ihr ggf. auf euren Ort anpassen! https://tasmotatimezone.com bzw. https://tasmota.github.io/docs/Timezone-Table/
 
+### Home Assistant Tasmota Integration
+Korrektes Sensor-Mapping: Damit die Tasmota Integration die Werte vom Stromzähler voll automatisch konfiguriert (device_class, state_class, unit) muss in der >M Meter Sektion für jeden Wert ein korrekter Name vergeben werden.  
+
+Beispiel:  
+1,77070100100700ff@1,Leistung,W,**Power**,16  
+1,77070100010800ff@1000,Verbrauch,kWh,**ImportActive**,2  
+1,77070100020800ff@1000,Einspeisung,kWh,**ExportActive**,2  
+
+Wenn ihr euren Zähler über mein Zähler DropDown Menü im Script ausgewählt habt, dann werden bereits die korrekten Namen vergeben. Ich habe nämlich alle Zählerscripte händisch angepasst!  
+
+**Energie / Leistung**
+
+| JSON-Key | unit | device_class | state_class |
+|---|---|---|---|
+| **Total** | kWh | `energy` | `total` |
+| **Today** | kWh | `energy` | `total_increasing` |
+| **Yesterday** | kWh | `energy` | — |
+| **TotalTariff** | kWh | `energy` | `total` |
+| **Energy** | kWh | `energy` | `total` |
+| **ExportActive** | kWh | `energy` | `total` |
+| **ExportTariff** | kWh | `energy` | `total` |
+| **ImportActive** | kWh | `energy` | `total` |
+| **ExportReactive** | kVArh | — | `total` |
+| **ImportReactive** | kVArh | — | `total` |
+| **Power** | W | `power` | `measurement` |
+| **ActivePower** | W | `power` | `measurement` |
+| **ApparentPower** | VA | `apparent_power` | `measurement` |
+| **ReactivePower** | VAr | `reactive_power` | `measurement` |
+| **Voltage** | V | `voltage` | `measurement` |
+| **Current** | A | `current` | `measurement` |
+| **CurrentNeutral** | A | `current` | `measurement` |
+| **Frequency** | Hz | `frequency` | `measurement` |
+| **Factor** | *(None)* | `power_factor` | `measurement` |
+| **PhaseAngle** | ° | — | — |
+| **TotalStartTime** | *(None)* | — | — |
+Für weitere siehe [hier](https://github.com/ottelo9/tasmota-sml-script/pull/42#issuecomment-4053749869).  
 
 ### Debuggen oder Daten loggen
 Falls ihr vielleicht im Script irgendwas loggen wollt (Zustände oder Werte in eine Datei mit Zeitstempel schreiben), dann gibt es eine schöne einfache Methode via Script. Erstellt dazu einfach ein neuen #Sub, da wo bereits Subs sind, ansonsten ist es egal wo:
