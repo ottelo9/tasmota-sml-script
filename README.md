@@ -105,7 +105,7 @@ Ohne SML Filter zeigt sich ein besseres Einschwingverhalten. Das könnte bei and
 
 ### Testtools:
 <b>UDP/HTTP/PING Tester</b>  
-Ihr könnt die Emus mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping):  
+Ihr könnt die Emulation mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping):  
 <img width="500" height="1109" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
 
 <b>SML Simulator</b>  
