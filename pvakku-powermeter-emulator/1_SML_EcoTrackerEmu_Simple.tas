@@ -22,6 +22,7 @@ p:txind=1
 p:sel=0
 p:pwroffset=0
 p:smlfo=0
+p:ctrlopt=0
 t:t1=60
 smlf=0
 rxpin=0
@@ -57,6 +58,7 @@ yval=sml[2]
 yval2=sml[3]
 pwroffset=0
 smlfo=0
+ctrlopt=0
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
 
@@ -146,14 +148,17 @@ if (once==0) {
 mdns("ecotracker-" "-" "everhome")
 once=1
 }
-; Peaks reduzieren, verbessert Regelung
-tmp=sml[1]-cpwr
-if (tmp>500) {
-cpwr=sml[1]-(tmp/2)
+; Optimierung Regler
+if (ctrlopt>0) {
+if (sml[1]>pwroffset) {
+cpwr=(sml[1]-pwroffset)/4
 } else {
-; Nulleinspeisung-Offset: reduziere die Leistung damit die Regelung nicht um 0W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
+cpwr=(sml[1]-pwroffset)/0.8
+}
+} else {
 cpwr=sml[1]-pwroffset
 }
+
 ; stark gemittelte Leistung für powerAvg (EcoTrackerEmu)
 power3=(0.9*power3)+((1-0.9)*cpwr)
 
@@ -167,7 +172,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 19.03.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Version 02.04.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
@@ -201,6 +206,8 @@ so(17+4)
 <b>&#x1F50B; Akku</b><br><br>
 Offset für Nulleinspeisung [W]:
 nm(-200 200 1 pwroffset "" 50 0)
+Regleroptimierung:
+ck(ctrlopt "")
 <hr>
 <b>&#x26A1; Stromzähler</b><br>
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)

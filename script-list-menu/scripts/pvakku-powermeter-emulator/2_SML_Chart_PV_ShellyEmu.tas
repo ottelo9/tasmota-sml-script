@@ -23,6 +23,7 @@ p:throttle=1
 p:port=1
 p:sndpwr=0
 p:smlfo=0
+p:ctrlopt=0
 t:t1=5
 t:t2=60
 smlf=0
@@ -106,6 +107,7 @@ pwroffset=0
 pwrforce=0
 throttle=1
 smlfo=0
+ctrlopt=0
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
 #init2
@@ -353,9 +355,12 @@ udp(0 1010)
 once=1
 }
 if (upsecs%throttle==0) {
-tmp=sml[1]-cpwr
-if (tmp>500) {
-cpwr=sml[1]-(tmp/2)
+if (ctrlopt>0) {
+if (sml[1]>pwroffset) {
+cpwr=(sml[1]-pwroffset)/4
+} else {
+cpwr=(sml[1]-pwroffset)/0.8
+}
 } else {
 cpwr=sml[1]-pwroffset
 }
@@ -405,7 +410,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 20.03.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 02.04.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
@@ -445,6 +450,8 @@ Offset für Nulleinspeisung [W]:
 nm(-200 200 1 pwroffset "" 50 0)
 Update der Werte verzögern [s]:
 nm(1 60 1 throttle "" 50 0)
+Regleroptimierung:
+ck(ctrlopt "")
 UDP-Port (Neustart notwendig):
 rb(port "" "1010" "2220")
 Datenübertragung erzwingen:

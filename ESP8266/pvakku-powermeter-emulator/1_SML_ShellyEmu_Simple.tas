@@ -22,6 +22,7 @@ p:yval2=0
 p:pwroffset=0
 p:pwrforce=0
 p:throttle=1
+p:ctrlopt=0
 t:t1=60
 tmp=0
 hr=0
@@ -62,6 +63,7 @@ yval2=sml[3]
 pwroffset=0
 pwrforce=0
 throttle=1
+ctrlopt=0
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 svars
@@ -213,12 +215,14 @@ once=1
 
 ; Werte nur alle x Sek updaten (throttle=1 => sekündlich)
 if (upsecs%throttle==0) {
-; Peaks reduzieren, verbessert Regelung
-tmp=sml[1]-cpwr
-if (tmp>500) {
-cpwr=sml[1]-(tmp/2)
+; Optimierung Regler
+if (ctrlopt>0) {
+if (sml[1]>pwroffset) {
+cpwr=(sml[1]-pwroffset)/4
 } else {
-; Nulleinspeisung-Offset: reduziere die Leistung damit die Regelung nicht um 0W herum schwingt. Nur sinvoll, wenn PV-Panels direkt am Akku hängen.
+cpwr=(sml[1]-pwroffset)/0.8
+}
+} else {
 cpwr=sml[1]-pwroffset
 }
 
@@ -254,11 +258,12 @@ $<span style="font-size:10px;">
 $<b>PV-Akku Einstellungen</b><br>
 $[Variable] in Console ändern: script>var=x<br>
 $- Update verzögern [throttle]: %0throttle% s (1s = AUS)<br>
+$- Regleroptimierung [ctrlopt]: %0ctrlopt% (0 = AUS)<br>
 $- Offset [pwroffset]: %0pwroffset% W (0W = AUS)<br>
 $- UDP-Pakete erzwingen [pwrforce]: %0pwrforce% (0 = AUS)<br>
 $Script: %0slen% chars / 4096(1M) 8192(4M)
 $<hr>
-$<center>Version 20.03.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$<center>Version 02.04.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015<br>
 $</span></center>
 
