@@ -3,4 +3,7 @@
 1,77070100100700ff@1,Leistung,W,Power,16
 1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,3
 1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,3
+1,77070100240700ff@1,Power L1,W,P_L1,0
+1,77070100380700ff@1,Power L2,W,P_L2,0
+1,770701004C0700ff@1,Power L3,W,P_L3,0
 #
