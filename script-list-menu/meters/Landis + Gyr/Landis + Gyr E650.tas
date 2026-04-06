@@ -13,18 +13,18 @@ ends
 
 >M 1
 +1,%0rxpin%,o,%0smlf%,4800,E650,%0txpin%
-1,1-1:1.5.0(@0.001,power_IN,W,Power,16
-1,1-1:1.8.0(@1,Verbrauch,kWh,ImportActive,3
-1,1-1:2.8.0@1,Einspeisung,kWh,ExportActive,3
-1,1-1:2.5.0(@1,power_OUT,kW,2-5-0,3
-1,1-1:21.5.0(@1,power_L1,kW,21-5-0,3
-1,1-1:41.5.0(@1,power_L2,kW,41-5-0,3
-1,1-1:61.5.0(@1,power_L3,kW,61-5-0,3
+1,1-1:16.7.0(@0.001,Leistung,W,Power,16
+1,1-1:1.8.0(@1,Verbrauch,KWh,ImportActive,2
+1,1-1:2.8.0(@1,Einspeisung,KWh,ExportActive,2
+1,1-1:36.7.0(@0.001,Leistung_L1,W,36-7-0,16
+1,1-1:56.7.0(@0.001,Leistung_L2,W,56-7-0,16
+1,1-1:76.7.0(@0.001,Leistung_L3,W,76-7-0,16
+1,1-1:1.5.0(@0.001,power_IN,W,1-5-0,0
+1,1-1:2.5.0(@0.001,power_OUT,W,2-5-0,0
 1,1-1:32.7.0(@1,voltage_L1,V,32-7-0,2
 1,1-1:52.7.0(@1,voltage_L2,V,52-7-0,2
 1,1-1:72.7.0(@1,voltage_L3,V,72-7-0,2
 1,1-1:31.7.0(@1,current_L1,A,31-7-0,3
 1,1-1:51.7.0(@1,current_L2,A,51-7-0,3
-1,1-1:71.7.0(@1,current_L1,A,71-7-0,3
-1,1-1:91.7.0(@1,current_N,A,91-7-0,3
+1,1-1:71.7.0(@1,current_L3,A,71-7-0,3 
 #
