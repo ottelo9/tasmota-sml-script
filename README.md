@@ -77,7 +77,7 @@ Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akk
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 - `1_SML_ShellyEmu_Simple`  
   Einfaches Script zum Emulieren eines Shelly Pro 3EM.  
-  Getestet mit folgenden Akkus: Marstek (Jupiter, Venus, B2500), Hoymiles (MS-A2), Growatt (NOAH 2000).  
+  Getestet mit folgenden Akkus: Marstek (Jupiter, Venus, B2500), Hoymiles (MS-A2), Growatt (NOAH 2000), Solakon ONE (UDP-Port=1010).  
   Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte + Tages/Monats/Jahreswerte) an.
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 - `2_SML_Script_Chart_PV_EcoTrackerEmu`  
