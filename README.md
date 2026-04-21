@@ -71,7 +71,7 @@ Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akk
 [3 Marstek (2 × B2500 und einmal Venus A) im Parallelbetrieb](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773)
 - `1_SML_EcoTrackerEmu_Simple`  
   Sehr kleines und wirklich einfaches Script zum Emulieren eines EcoTracker von everHome.  
-  Getestet mit folgenden Akkus: Marstek (Jupiter, Venus, B2500), Hoymiles (MS-A2, HiBattery 1920 AC), Growatt (NOAH 2000).  
+  Getestet mit folgenden Akkus: Marstek (Jupiter, Venus, B2500), Hoymiles (MS-A2, HiBattery 1920 AC), Growatt (NOAH 2000) - Hinweis: Verschwindet leider in der App wieder.  
   Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte + Tages/Monats/Jahreswerte) an.
   Benötigt mein Tasmota Image [V15.0.1](https://github.com/ottelo9/tasmota-sml-images/releases/) oder höher. Im Script ist eine grobe Beschreibung, wie ihr das alles zum Laufen bekommt.
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
