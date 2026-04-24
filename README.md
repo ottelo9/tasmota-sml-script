@@ -94,11 +94,13 @@ Sendet die Momentanleistung mit einem Offset an den Akku. Bei 100 W würde die R
 <ins>Update der Werte verzögern [s]:</ins>  
 Aktualisiert die Momentanleistung, die an den Akku gesendet wird, nur alle x Sekunden. 1 s = Normaleinstellung, also jede Sekunde die Leistung aktualisieren. Diese Einstellung verändert/beeinflusst NICHT das Abruf/Sendeintervall vom/zum Akku!  
 <ins>UDP-Port (Neustart notwendig):</ins>  
-Je nach Akkutyp unterschiedlich. Eignetlich nur bei Marstek B2500 notwendig (je nach Firmwarestand). Standard 1010.  
+Je nach Akkutyp unterschiedlich. z.B. bei Marstek B2500 = 2220 (je nach Firmwarestand). Standard 1010.  
 <ins>Datenübertragung erzwingen:</ins>  
-EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten:  
+EIN = Kann das Regelverhalten bei Akkus verbessern (getestet mit Marstek):  
+Empfohlene Einstellung: AUS und Verwendung der neuen Regleroptimierung (siehe unten)  
 <img width="200" height="100" alt="image" src="https://github.com/user-attachments/assets/9511659b-fe76-4e4e-9013-88f00f3be8e9" />
-<ins>SML Median Filter aktivieren:</ins> Vergleich EIN (links) und AUS (rechts)  
+<ins>SML Median Filter aktivieren:</ins> Vergleich (Regleroptimierung=AUS) EIN (links) und AUS (rechts)  
+Empfohlene Einstellung: AUS und Verwendung der neuen Regleroptimierung (siehe unten)  
 <img width="200" height="100" alt="image" src="https://github.com/user-attachments/assets/3d16fd34-7f22-4e33-9448-0e1a6a4458b5" />  
 <ins>Regleroptimierung: (neu ab 02.04.2026)</ins>  
 EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten. Dem Akku wird ein falscher/kleinerer Verbrauch vorgekaukelt. Der interne Regler im Akku sieht eine kleinere Regelabweichung und versucht diese dann langsam auszuregeln. Getestet mit diversen Marstek Akkus (Jupiter, Venus). Siehe auch die [Diskussion](https://github.com/ottelo9/tasmota-sml-script/discussions/47).  
