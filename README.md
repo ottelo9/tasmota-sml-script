@@ -17,9 +17,9 @@ Die Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauches 
 Ich habe über die Zeit einige Varianten des Scriptes erstellt, die alle durch unterschiedliche Nutzeranfragen auf meinem Blog entstanden sind.  
 
 Scriptauswahl:  
-<img width="467" height="308" alt="image" src="https://github.com/user-attachments/assets/d6c8114e-da35-49ba-9ba2-47df5fd1c3fb" />  
+<img width="300" height="200" alt="image" src="https://github.com/user-attachments/assets/d6c8114e-da35-49ba-9ba2-47df5fd1c3fb" />  
 Stromzähler/Pin-Auswahl:  
-<img width="300" height="393" alt="image" src="https://github.com/user-attachments/assets/308c6d35-80e5-4a78-88da-adc573ad1b8b" />
+<img width="200" height="300" alt="image" src="https://github.com/user-attachments/assets/308c6d35-80e5-4a78-88da-adc573ad1b8b" />
 
 ***ACHTUNG: KRITISCHE ÄNDERUNG AB SCRIPT VERSION 01.12.2025***  
 Diagramm-Daten müssen vor dem Upgrade auf diese Version gesichert werden. Nach dem Update können die Daten wieder importiert werden.  
@@ -71,13 +71,13 @@ Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akk
 [3 Marstek (2 × B2500 und einmal Venus A) im Parallelbetrieb](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773)
 - `1_SML_EcoTrackerEmu_Simple`  
   Sehr kleines und wirklich einfaches Script zum Emulieren eines EcoTracker von everHome.  
-  Getestet mit folgenden Akkus: Marstek (Jupiter, Venus, B2500), Hoymiles (MS-A2, HiBattery 1920 AC), Growatt (NOAH 2000).  
+  Getestet mit folgenden Akkus: Marstek (Jupiter, Venus, B2500), Hoymiles (MS-A2, HiBattery 1920 AC), Growatt (NOAH 2000) - Hinweis: Verschwindet leider in der App wieder.  
   Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte + Tages/Monats/Jahreswerte) an.
   Benötigt mein Tasmota Image [V15.0.1](https://github.com/ottelo9/tasmota-sml-images/releases/) oder höher. Im Script ist eine grobe Beschreibung, wie ihr das alles zum Laufen bekommt.
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 - `1_SML_ShellyEmu_Simple`  
   Einfaches Script zum Emulieren eines Shelly Pro 3EM.  
-  Getestet mit folgenden Akkus: Marstek (Jupiter, Venus, B2500), Hoymiles (MS-A2), Growatt (NOAH 2000).  
+  Getestet mit folgenden Akkus: Marstek (Jupiter, Venus, B2500), Hoymiles (MS-A2), Growatt (NOAH 2000), Solakon ONE (UDP-Port=1010).  
   Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte + Tages/Monats/Jahreswerte) an.
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 - `2_SML_Script_Chart_PV_EcoTrackerEmu`  
@@ -94,23 +94,25 @@ Sendet die Momentanleistung mit einem Offset an den Akku. Bei 100 W würde die R
 <ins>Update der Werte verzögern [s]:</ins>  
 Aktualisiert die Momentanleistung, die an den Akku gesendet wird, nur alle x Sekunden. 1 s = Normaleinstellung, also jede Sekunde die Leistung aktualisieren. Diese Einstellung verändert/beeinflusst NICHT das Abruf/Sendeintervall vom/zum Akku!  
 <ins>UDP-Port (Neustart notwendig):</ins>  
-Je nach Akkutyp unterschiedlich. Eignetlich nur bei Marstek B2500 notwendig (je nach Firmwarestand). Standard 1010.  
+Je nach Akkutyp unterschiedlich. z.B. bei Marstek B2500 = 2220 (je nach Firmwarestand). Standard 1010.  
 <ins>Datenübertragung erzwingen:</ins>  
-EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten:  
-<img width="400" height="356" alt="image" src="https://github.com/user-attachments/assets/9511659b-fe76-4e4e-9013-88f00f3be8e9" />
-
-<ins>SML Median Filter aktivieren:</ins> Vergleich EIN (links) und AUS (rechts)  
-<img width="400" height="455" alt="image" src="https://github.com/user-attachments/assets/3d16fd34-7f22-4e33-9448-0e1a6a4458b5" />  
-Ohne SML Filter zeigt sich ein besseres Einschwingverhalten. Das könnte bei anderen Akkus natürlich ganz anders aussehen!  
+EIN = Kann das Regelverhalten bei Akkus verbessern (getestet mit Marstek):  
+Empfohlene Einstellung: AUS und Verwendung der neuen Regleroptimierung (siehe unten)  
+<img width="200" height="100" alt="image" src="https://github.com/user-attachments/assets/9511659b-fe76-4e4e-9013-88f00f3be8e9" />
+<ins>SML Median Filter aktivieren:</ins> Vergleich (Regleroptimierung=AUS) EIN (links) und AUS (rechts)  
+Empfohlene Einstellung: AUS und Verwendung der neuen Regleroptimierung (siehe unten)  
+<img width="200" height="100" alt="image" src="https://github.com/user-attachments/assets/3d16fd34-7f22-4e33-9448-0e1a6a4458b5" />  
+<ins>Regleroptimierung: (neu ab 02.04.2026)</ins>  
+EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten. Dem Akku wird ein falscher/kleinerer Verbrauch vorgekaukelt. Der interne Regler im Akku sieht eine kleinere Regelabweichung und versucht diese dann langsam auszuregeln. Getestet mit diversen Marstek Akkus (Jupiter, Venus). Siehe auch die [Diskussion](https://github.com/ottelo9/tasmota-sml-script/discussions/47).  
 
 ### Testtools:
 <b>UDP/HTTP/PING Tester</b>  
 Ihr könnt die Emulation mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping):  
-<img width="500" height="1109" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
 
 <b>SML Simulator</b>  
 Gemu2015 hat ein [SML Simulator Tool](https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/tinyc/sml_emulator.html) (simuliert einen x-beliebigen Stromzähler) für den Google Chrome Browser erstellt. Zum Simulieren eines Stromzählers wird ein USB Lesekopf am PC benötigt. Das Tool kann auch Zählerscripte (Meter Descriptor) erstellen und auch direkt an Tasmota senden. Wieso Google Chrome Browser? Nur Chrome unterstützt das serielle Interface.  
-<img width="500" height="385" alt="image" src="https://github.com/user-attachments/assets/9a5190da-2e8c-4198-97d0-4152276ad7a1" />
+<img width="400" height="200" alt="image" src="https://github.com/user-attachments/assets/9a5190da-2e8c-4198-97d0-4152276ad7a1" />
 
 
 **script-list-menu (ESP32)**  
