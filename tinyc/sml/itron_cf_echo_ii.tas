@@ -1,0 +1,32 @@
+; Itron CF Echo II — M-Bus heat meter, once-per-hour read
+;
+; Rewritten from ottelo9/tasmota-sml-script. Subroutine inlined, print
+; statements dropped, mins replaced by a local tick counter, the redundant
+; sb(tstamp 14 2)=="31" branch dropped (it duplicated the mins==31 reset
+; immediately below it). for…next kept verbatim — supported since v1.3.16.
+;
+; Same M-Bus wake shape as Allmess but with delay(350) ms and a slightly
+; different request frame. Fires at tick 1800 (30 min after boot), every +3600 s.
+
+>D
+>B
+=>sensor53 r
+>M 1
++1,7,s,0,2400,MBus
+1,=so14,10,500
+1,OBIS-H,,Waerme,Wh,1
+
+>S
+lnv2 += 1
+if lnv2 == 1800
+  sml(-1 1 "2400:8N1")
+  for lnv1 1 53 1
+    sml(1 1 "55555555555555555555")
+  next
+  delay(350)
+  sml(-1 1 "2400:8E1")
+  sml(1 1 "105BFE5916")
+endif
+if lnv2 >= 3600
+  lnv2 = 0
+endif

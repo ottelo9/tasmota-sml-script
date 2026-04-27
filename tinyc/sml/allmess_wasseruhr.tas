@@ -1,0 +1,35 @@
+; Allmess Wasserzähler — M-Bus water meter, once-per-hour read
+;
+; Rewritten from ottelo9/tasmota-sml-script. The =#readmeter subroutine is
+; inlined (no call/return in the mini-scripter subset); mins/upsecs are
+; replaced by a local 1 Hz tick counter (lnv2); print statements dropped
+; (soft-skipped anyway since v1.3.15). for…next loops are used verbatim —
+; supported since v1.3.16, so the 53×10-byte 0x55 preamble stays compact.
+;
+; Wake sequence @2400 bd 8N1: 53×10 B = 530 B of 0x55 (~2.2 s preamble),
+; then parity switch to 8E1, then REQ_UD2 "105BFE5B16".
+; Fires once per hour (tick 1800 = 30 min after boot, then every +3600 s).
+
+>D
+>B
+=>sensor53 r
+>M 1
++1,7,s,0,2400,MBus
+1,=so14,10,500
+1,1-0:1.8.0*255(@1,Zählerstand,kWh,Power_Total,4
+1,1-0:21.7.0*255(@1,Momentanleistung,W,Power_curr,0
+
+>S
+lnv2 += 1
+if lnv2 == 1800
+  sml(-1 1 "2400:8N1")
+  for lnv1 1 53 1
+    sml(1 1 "55555555555555555555")
+  next
+  delay(800)
+  sml(-1 1 "2400:8E1")
+  sml(1 1 "105BFE5B16")
+endif
+if lnv2 >= 3600
+  lnv2 = 0
+endif

@@ -1,0 +1,35 @@
+; EasyMeter Q3A — 3-phase electric meter, IR reading head
+;
+; Unmodified from ottelo9/tasmota-sml-script apart from pin substitution.
+; Runs on the mini-scripter as-is since v1.3.14 added spin/spinm opcodes.
+;
+; The script doesn't touch SML at all — it just drives the IR reading head's
+; TX LED supply pin high for 1 s out of every 60 s (keeps the meter's optical
+; interface awake). SML parsing of the RX stream happens independently.
+;
+; Pin 15 is a placeholder — in production replace with %0txpin% and run
+; smlApplyPins() so the numeric pin is substituted at descriptor-load time.
+
+>D
+>B
+=>sensor53 r
+>M 1
++1,3,s,0,9600,eBZQ3A
+1,=so14,10,500
+1,77070100010800ff@1000,Zählerstand,kWh,Power_Total,4
+1,77070100100700ff@1,Momentanleistung,W,Power_curr,0
+
+>S
+if lnv1 == 0
+  spinm(15 1)
+  spin(15 1)
+  lnv1 = 1
+endif
+lnv0 += 1
+switch lnv0
+case 1
+  spin(15 1)
+case 60
+  spin(15 0)
+  lnv0 = 0
+ends

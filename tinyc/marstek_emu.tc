@@ -1,0 +1,391 @@
+// Unified Marstek PV-battery emulator — EcoTracker + Shelly Pro 3EM
+// TinyC port of ottelo's 1_SML_EcoTrackerEmu_Simple.tas + 1_SML_ShellyEmu_Simple.tas
+//
+// Emulates either:
+//   * Everhome EcoTracker (mDNS: "ecotracker-<mac>", REST /v1/json)
+//   * Shelly Pro 3EM     (mDNS: "shellypro3em-<mac>", RPC /rpc/..., UDP 1010/2220)
+//
+// Mode is selectable via a WebUI dropdown (persisted). A script restart is
+// needed for the mDNS/UDP side-effects of the newly selected mode to take
+// effect (the HTTP endpoints are always live).
+//
+// Requires: USE_SML (or USE_SML_M). SML meter descriptor must be loaded
+// separately via the IDE SML tab or /sml_meter.def.
+
+// ─── Persistent settings (auto-saved to /tinyc_pvars.bin) ──────────────────
+persist int   emu_mode;        // 0 = EcoTracker, 1 = Shelly Pro 3EM
+persist int   udp_port_sel;    // 0 = 1010 (default), 1 = 2220 (B2500)
+persist int   pwroffset;       // zero-feed offset [W]
+persist int   ctrlopt;         // regulator optimization 0/1
+persist int   throttle;        // update rate [s] (Shelly)
+persist int   pwrforce;        // Shelly: push UDP even without request 0/1
+persist watch int meter_sel;   // SML descriptor picker — index into ottelo's repo
+persist watch int rx_pin;      // SML serial RX (free-GPIO picker, -1 = unset)
+persist watch int tx_pin;      // SML serial TX (-1 = unset, single-direction meters)
+persist float dval;            // day baseline, energy in  [kWh]
+persist float dval2;           // day baseline, energy out [kWh]
+persist float mval;            // month baseline in
+persist float mval2;           // month baseline out
+persist float yval;            // year baseline in
+persist float yval2;           // year baseline out
+persist watch int sml_activ;   // SML enable (mirrors tasm_rule)
+
+// ─── Runtime state ─────────────────────────────────────────────────────────
+float cpwr;                    // regulated power [W] (current)
+float power3;                  // heavily smoothed power (EcoTracker powerAvg)
+int   once_mdns;               // mDNS registered once
+int   once_udp;                // UDP bound once
+int   last_hr;                 // midnight edge-detect
+int   udp_api_last;            // 0=none, 1=EM.GetStatus, 2=Shelly.GetStatus
+int   udp_bind_port;           // resolved UDP port used
+
+char  mac[32];                 // own MAC, lowercase no colons
+char  rxbuf[256];              // UDP receive buffer
+char  body[640];               // HTTP/UDP response body (reused)
+char  wrap[768];               // Shelly UDP RPC envelope
+
+// ─── Transient UI flags ────────────────────────────────────────────────────
+int do_init;                   // button: init counters from meter
+int do_save;                   // button: manual save
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+void initVars() {
+    float ein  = smlGet(2);
+    float eout = smlGet(3);
+    dval  = ein;  dval2  = eout;
+    mval  = ein;  mval2  = eout;
+    yval  = ein;  yval2  = eout;
+    saveVars();
+    addLog("MarstekEmu: counters initialized from meter");
+}
+
+// Build EcoTracker /v1/json body into `body`
+void buildEcoJson() {
+    float ein  = smlGet(2) * 1000.0;   // kWh -> Wh
+    float eout = smlGet(3) * 1000.0;
+    sprintf(body, "{\"power\":%.0f,\"powerAvg\":%.0f,\"agePower\":1000,\"powerPhase1\":%.0f,\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":%.0f,\"energyCounterOut\":%.0f}", cpwr, power3, cpwr, ein, eout);
+}
+
+// Build Shelly EM.GetStatus body (compact — same fields the Scripter used)
+void buildShellyEm() {
+    sprintf(body, "{\"id\":0,\"a_act_power\":%.0f,\"b_act_power\":0,\"c_act_power\":0,\"total_act_power\":%.0f}", cpwr, cpwr);
+}
+
+// Build Shelly.GetStatus body (combined em:0 + emdata:0)
+void buildShellyFull() {
+    float ein  = smlGet(2) * 1000.0;
+    float eout = smlGet(3) * 1000.0;
+    sprintf(body, "{\"em:0\":{\"id\":0,\"a_act_power\":%.0f,\"b_act_power\":0,\"c_act_power\":0,\"total_act_power\":%.0f},\"emdata:0\":{\"id\":0,\"a_total_act_energy\":%.0f,\"a_total_act_ret_energy\":%.0f,\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,\"total_act\":%.0f,\"total_act_ret\":%.0f}}", cpwr, cpwr, ein, eout, ein, eout);
+}
+
+// Wrap any `body` in Shelly RPC UDP envelope into `wrap`
+void wrapShellyUdp() {
+    sprintf(wrap, "{\"id\":0,\"src\":\"shellypro3em-%s\",\"result\":%s}", mac, body);
+}
+
+// ─── HTTP endpoint handler ─────────────────────────────────────────────────
+// All endpoints are always registered so the Tasmota web server answers
+// regardless of the persisted mode — harmless and keeps mode-switching cheap.
+void WebOn() {
+    int h = webHandler();
+    if (h == 1) {                 // /v1/json  (EcoTracker)
+        buildEcoJson();
+        webSend(body);
+    } else if (h == 2) {          // /rpc/EM.GetStatus  (Shelly)
+        buildShellyEm();
+        webSend(body);
+    } else if (h == 3) {          // /rpc/Shelly.GetStatus  (Shelly)
+        buildShellyFull();
+        webSend(body);
+    }
+}
+
+// ─── Fast polling: UDP handling for Shelly mode ────────────────────────────
+// Marstek polls every 2-4s; we check every 100ms so responses are prompt.
+void Every100ms() {
+    if (emu_mode != 1 || once_udp == 0) return;
+
+    int n = udp(1, rxbuf);
+    int served = 0;
+    if (n > 0) {
+        if (strFind(rxbuf, "EM.GetStatus") >= 0) {
+            buildShellyEm();
+            wrapShellyUdp();
+            udp(2, wrap);            // reply to last sender
+            udp_api_last = 1;
+            served = 1;
+        } else if (strFind(rxbuf, "Shelly.GetStatus") >= 0) {
+            buildShellyFull();
+            wrapShellyUdp();
+            udp(2, wrap);
+            udp_api_last = 2;
+            served = 1;
+        }
+    }
+    // pwrforce: repeat last-kind reply to the last-known sender on idle tick.
+    // Helps Marstek regulation when the device polls sporadically.
+    if (served == 0 && pwrforce > 0 && udp_api_last > 0) {
+        if (udp_api_last == 1) {
+            buildShellyEm();
+        } else {
+            buildShellyFull();
+        }
+        wrapShellyUdp();
+        udp(2, wrap);
+    }
+}
+
+// ─── Per-second work: mDNS, UDP bind, power compute, midnight rollover ────
+void EverySecond() {
+    // Config-change handling must run BEFORE the NTP/meter early-return guards —
+    // otherwise we get a chicken-and-egg: no meter reading because pins not applied,
+    // pins not applied because the meter isn't reading.
+    //
+    // React to user changes via watch/changed/snapshot: zero per-second file I/O
+    // when nothing changed, re-apply on any transition. Values substitute verbatim
+    // (tx=-1 → literal "-1" = "no tx pin" in SML; smlf=0 = filter off, ottelo's default).
+    int meter_changed = changed(meter_sel);
+    int pins_changed  = changed(rx_pin) || changed(tx_pin);
+
+    // sml_activ is the checkbox → drives tasm_rule (Rule1 bit). SML_Init bails
+    // out early when Rule1 is off, so toggling this MUST force a Sensor53 r
+    // otherwise sml_globs.ready stays false and SML_SetBaud/SML_Write silently
+    // return 0 — the mini-scripter handshake logs keep printing but no bytes
+    // leave the UART.
+    int activ_changed = changed(sml_activ);
+    if (activ_changed) {
+        tasm_rule = sml_activ;
+        snapshot(sml_activ);
+    }
+
+    if (meter_changed || pins_changed || activ_changed) {
+        if (rx_pin >= 0 || tx_pin >= 0) {
+            smlApplyPins("/sml_meter.def", rx_pin, tx_pin, 0);
+        }
+        snapshot(rx_pin);
+        snapshot(tx_pin);
+        // /sml_meter.def was rewritten (or newly arrived from webRepoPulldown),
+        // OR Rule1 was just enabled — force SML to re-read the descriptor so
+        // the new pins/meter take effect without requiring a full reboot.
+        tasmCmd("Sensor53 r", body);
+    }
+
+    // (Re)compile the mini-scripter >F/>S sections whenever the descriptor changes.
+    // Needed for meters that require an IEC 62056-21 mode-A wake-up sequence
+    // (e.g. Elster AS1350: 300-baud "/?!" → 9600-baud data) — ottelo's Scripter
+    // descriptors encode that handshake in a >F section.
+    if (meter_changed) {
+        snapshot(meter_sel);
+        smlScripterLoad("/sml_meter.def");
+    }
+
+    // ── From here on: work that needs a live meter + NTP ──
+    if (tasm_year < 2020) return;
+    if (smlGet(2) == 0.0) return;
+
+    // One-time mDNS registration (depends on persisted mode)
+    if (once_mdns == 0) {
+        if (emu_mode == 1) {
+            mdnsRegister("shellypro3em-", "-", "shelly");
+            addLog("MarstekEmu: Shelly Pro 3EM mDNS registered");
+        } else {
+            mdnsRegister("ecotracker-", "-", "everhome");
+            addLog("MarstekEmu: EcoTracker mDNS registered");
+        }
+        once_mdns = 1;
+    }
+
+    // One-time UDP bind (Shelly only)
+    if (emu_mode == 1 && once_udp == 0) {
+        udp_bind_port = 1010;
+        if (udp_port_sel == 1) udp_bind_port = 2220;
+        udp(0, udp_bind_port);
+        addLog("MarstekEmu: Shelly UDP listening on port %d", udp_bind_port);
+        once_udp = 1;
+    }
+
+    // WebUI button actions
+    if (do_init) { initVars(); do_init = 0; }
+    if (do_save) { saveVars(); do_save = 0; }
+
+    // Throttle power updates
+    if (throttle < 1) throttle = 1;
+    if ((tasm_uptime % throttle) == 0) {
+        float raw = smlGet(1);
+        float base = raw - (float)pwroffset;
+        if (ctrlopt > 0) {
+            if (raw > (float)pwroffset) {
+                cpwr = base / 4.0;
+            } else {
+                cpwr = base / 0.8;
+            }
+        } else {
+            cpwr = base;
+        }
+        // Heavy low-pass filter for EcoTracker's powerAvg
+        power3 = (0.9 * power3) + (0.1 * cpwr);
+    }
+
+    // Midnight rollover: day / month / year baselines
+    int hr = tasm_hour;
+    if (hr == 0 && last_hr != 0) {
+        dval  = smlGet(2);
+        dval2 = smlGet(3);
+        if (tasm_day == 1) {
+            mval  = smlGet(2);
+            mval2 = smlGet(3);
+        }
+        if (tasm_day == 1 && tasm_month == 1) {
+            yval  = smlGet(2);
+            yval2 = smlGet(3);
+        }
+        saveVars();
+    }
+    last_hr = hr;
+
+}
+
+// ─── Tasmota main sensor page: readout rows ────────────────────────────────
+void WebCall() {
+    if (emu_mode == 1) {
+        strcpy(body, "{s}Emulation{m}Shelly Pro 3EM{e}");
+    } else {
+        strcpy(body, "{s}Emulation{m}EcoTracker{e}");
+    }
+    webSend(body);
+
+    sprintf(body, "{s}Leistung (an PV-Akku){m}%.0f W{e}", cpwr);
+    webSend(body);
+
+    float ein  = smlGet(2);
+    float eout = smlGet(3);
+    sprintf(body, "{s}Tagesverbrauch{m}%.2f kWh{e}",  ein  - dval);   webSend(body);
+    sprintf(body, "{s}Monatsverbrauch{m}%.2f kWh{e}", ein  - mval);   webSend(body);
+    sprintf(body, "{s}Jahresverbrauch{m}%.2f kWh{e}", ein  - yval);   webSend(body);
+    sprintf(body, "{s}Tageseinspeisung{m}%.2f kWh{e}",  eout - dval2); webSend(body);
+    sprintf(body, "{s}Monatseinspeisung{m}%.2f kWh{e}", eout - mval2); webSend(body);
+    sprintf(body, "{s}Jahreseinspeisung{m}%.2f kWh{e}", eout - yval2); webSend(body);
+    sprintf(body, "{s}Uptime{m}%d min{e}", tasm_uptime / 60);          webSend(body);
+}
+
+// ─── Settings page (widgets) ───────────────────────────────────────────────
+void WebUI() {
+    int page = webPage();
+    if (page != 0) return;
+
+    // ── Fancy frame mirroring ottelo's Scripter >w layout ──
+    // Widgets between the raw-HTML blocks emit <div>...</div> via seva()/siva(),
+    // so we can freely intersperse headers, separators and wrapping panels.
+    // Single-line CSS: TinyC's parser doesn't do C-style adjacent string concat.
+    webSend("<style>.mke-panel{max-width:320px;margin:12px auto;background:#f0f0f0;color:#000;padding:18px;border:2px solid #ccc;border-radius:6px;text-align:left}.mke-panel h3{margin:0 0 8px;font-size:15px}.mke-panel hr{border:0;border-top:1px solid #bbb;margin:14px 0}.mke-panel b{display:inline-block;margin-bottom:4px;font-size:13px}.mke-panel div{margin:6px 0}.mke-panel input[type=checkbox]{transform:scale(1.3);margin-left:6px}.mke-panel button{padding:6px 10px;border-radius:4px}</style>");
+    webSend("<div class='mke-panel'>");
+    webSend("<h3>&#x1F50C; PV-Akku Emulator</h3>");
+
+    // ─ Emulation mode ─
+    webSend("<b>&#x2699;&#xFE0F; Modus</b>");
+    webPulldown(emu_mode, "Emulation (Neustart noetig)", "EcoTracker|Shelly Pro 3EM");
+    webSend("<hr>");
+
+    // ─ Battery regulation ─
+    webSend("<b>&#x1F50B; Akku</b>");
+    webNumber(pwroffset, -200, 200, "Offset [W] Nulleinspeisung");
+    webCheckbox(ctrlopt, "Regleroptimierung");
+
+    // ─ Shelly-only section ─
+    if (emu_mode == 1) {
+        webSend("<hr>");
+        webSend("<b>&#x1F310; Shelly Pro 3EM</b>");
+        webNumber(throttle, 1, 60, "Update-Rate [s]");
+        webPulldown(udp_port_sel, "UDP-Port", "1010|2220 (B2500)");
+        webCheckbox(pwrforce, "Uebertragung erzwingen");
+    }
+
+    // ─ Meter + system ─
+    webSend("<hr>");
+    webSend("<b>&#x26A1; Stromzaehler</b>");
+    webCheckbox(sml_activ, "SML Zaehler aktiv");
+    webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Zaehler-Descriptor bearbeiten</a>");
+    // Remote descriptor picker — fetches ottelo's list on demand, saves choice to /sml_meter.def
+    webRepoPulldown(meter_sel, "Descriptor aus Repo",
+                    "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
+                    "smartmeter",
+                    "/sml_meter.def");
+    // GPIO pickers — only free pins are listed. Selection auto-applies to /sml_meter.def
+    // every second (idempotent — only writes when content actually changes).
+    webPulldown(rx_pin, "RX Pin",  "@getfreepins");
+    webPulldown(tx_pin, "TX Pin",  "@getfreepins");
+
+    webSend("<hr>");
+    webSend("<b>&#x1F4BE; Daten</b>");
+    webButton(do_init, "Zaehler initialisieren");
+    webButton(do_save, "Daten speichern");
+
+    webSend("</div>");
+}
+
+// ─── MQTT telemetry ────────────────────────────────────────────────────────
+void JsonCall() {
+    float ein  = smlGet(2);
+    float eout = smlGet(3);
+    if (emu_mode == 1) {
+        sprintf(body, ",\"ShellyEmu\":{\"Power\":%.0f,\"EnergyIn\":%.3f,\"EnergyOut\":%.3f,\"DayIn\":%.3f,\"DayOut\":%.3f}", cpwr, ein, eout, ein - dval, eout - dval2);
+    } else {
+        sprintf(body, ",\"EcoTracker\":{\"Power\":%.0f,\"EnergyIn\":%.3f,\"EnergyOut\":%.3f,\"DayIn\":%.3f,\"DayOut\":%.3f}", cpwr, ein, eout, ein - dval, eout - dval2);
+    }
+    responseAppend(body);
+}
+
+// ─── main() — one-shot setup ───────────────────────────────────────────────
+int main() {
+    once_mdns    = 0;
+    once_udp     = 0;
+    last_hr      = -1;
+    udp_api_last = 0;
+    cpwr         = 0.0;
+    power3       = 0.0;
+    do_init      = 0;
+    do_save      = 0;
+
+    if (throttle < 1) throttle = 1;
+
+    // First-run defaults for pin pickers (persist defaults to 0, but 0 is a real GPIO).
+    // -1 means "leave the placeholder in /sml_meter.def untouched until user picks one".
+    if (rx_pin == 0 && tx_pin == 0) { rx_pin = -1; tx_pin = -1; }
+
+    // Checkbox is the single source of truth at boot — if the user enabled
+    // "SML Zaehler aktiv" in a previous session, make sure Rule1 is on before
+    // SML_Init gets a chance to run. Otherwise SML_Init's `bitRead(rule_enabled,0)`
+    // guard bails out, sml_globs.ready stays false, and every SML_SetBaud /
+    // SML_Write from the mini-scripter handshake silently returns 0.
+    if (sml_activ != tasm_rule) {
+        tasm_rule = sml_activ;
+    }
+
+    tasmInfo(1, mac);   // lowercase hex, no colons — used in Shelly UDP "src"
+
+    // Register every endpoint unconditionally.
+    // Handlers check the mode-agnostic payload and always reply correctly.
+    webOn(1, "/v1/json");                  // EcoTracker
+    webOn(2, "/rpc/EM.GetStatus");         // Shelly
+    webOn(3, "/rpc/Shelly.GetStatus");     // Shelly
+
+    webPageLabel(0, "PV-Akku Emulator");
+
+    // First-run init: seed baselines from current meter reading
+    if (dval == 0.0 && smlGet(2) > 0.0) {
+        initVars();
+    }
+
+    // Same Tasmota timezone setup as the Scripter versions
+    tasmCmd("Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120", body);
+
+    // Unconditional mini-scripter load at boot: the descriptor file may already
+    // contain >F/>S sections from a previous session (or from a manual upload),
+    // but `changed(meter_sel)` returns false at boot when shadow == value, so
+    // the change-triggered load below would never fire. Logs "(>F=0 >S=0)" if
+    // nothing to compile — harmless.
+    smlScripterLoad("/sml_meter.def");
+
+    addLog("MarstekEmu: started mode=%d mac=%s rx=%d tx=%d meter=%d", emu_mode, mac, rx_pin, tx_pin, meter_sel);
+    return 0;
+}

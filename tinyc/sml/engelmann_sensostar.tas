@@ -1,0 +1,42 @@
+; Engelmann SensoStar E — M-Bus heat meter, read every ~45 min
+;
+; Rewritten from ottelo9/tasmota-sml-script. Subroutine inlined, print
+; statements dropped, upsecs%2700 replaced by a local tick counter. The
+; for…next wake-preamble loop is kept verbatim — supported natively since
+; v1.3.16. Fires at tick 1 (cold boot) and then every 2700 s thereafter.
+;
+; Sequence: 53×10-byte 0x55 preamble @ 2400 bd 8N1 (~2.2 s),
+;           parity switch to 8E1,
+;           M-Bus init ping "1040004016"  (delay 350 ms),
+;           REQ_UD2 "107BFE7916".
+
+>D
+>B
+=>sensor53 r
+>M 1
++1,7,s,0,2400,MBus
+1,=so14,10,500
+1,OBIS-H,,Waerme,Wh,1
+1,OBIS-I,,Durchfluss,l/h,0
+
+>S
+lnv2 += 1
+lnv3 = 0
+if lnv2 == 1
+  lnv3 = 1
+endif
+if lnv2 == 2700
+  lnv3 = 1
+  lnv2 = 0
+endif
+if lnv3 == 1
+  sml(-1 1 "2400:8N1")
+  for lnv1 1 53 1
+    sml(1 1 "55555555555555555555")
+  next
+  delay(350)
+  sml(-1 1 "2400:8E1")
+  sml(1 1 "1040004016")
+  delay(350)
+  sml(1 1 "107BFE7916")
+endif
