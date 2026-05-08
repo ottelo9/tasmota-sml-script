@@ -1,0 +1,15 @@
+>D
+>B
+->sensor53 r
+>M 1
++1,3,m,0,9600,Janitza,1,1,01034A38,01034A3A,01034A3C,01034A4C,01034A4E,01034A50,01034A72,01034A7A,01034A82
+1,010304ffffffff@i0:1,Voltage L1-N,V,Voltage_L1-N,2
+1,010304ffffffff@i1:1,Voltage L2-N,V,Voltage_L2-N,2
+1,010304ffffffff@i2:1,Voltage L3-N,V,Voltage_L3-N,2
+1,010304ffffffff@i3:1,Real power L1-N,W,Real_power_L1-N,2
+1,010304ffffffff@i4:1,Real power L2-N,W,Real_power_L2-N,2
+1,010304ffffffff@i5:1,Real power L3-N,W,Real_power_L3-N,2
+1,010304ffffffff@i6:1,Real energy L3,Wh,Real_energy_L3,2
+1,010304ffffffff@i7:1,Real energy L3- consumed,Wh,Real_energy_L3_consumed,2
+1,010304ffffffff@i8:1,Real energy L3- delivered,Wh,Real_energy_L3_delivered,2
+#

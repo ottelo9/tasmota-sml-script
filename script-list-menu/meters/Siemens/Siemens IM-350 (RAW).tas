@@ -1,0 +1,19 @@
+>B
+=>sensor53 r
+>M 1
++1,3,r,0,115200,Meter
+1,=so3,256
+1,=so4,KEY
+1,x24UUuu@1,year,,year,0
+1,x26ss@1,month,,month,0
+1,x27ss@1,day,,day,0
+1,x18ss@1,hh,,hh,0
+1,x19ss@1,mm,,mm,0
+1,x20ss@1,ss,,ss,0
+1,x30UUuuUUuu@1000,Energy A+,kWh,1_8_0,3
+1,x35UUuuUUuu@1000,Energy A-,kWh,2_8_0,3
+1,x40UUuuUUuu@1000,reactive E. R+,kVarh,3_8_0,3
+1,x45UUuuUUuu@1000,reactive E. R-,kVarh,4_8_0,3
+1,x50UUuuUUuu@1,active P+,W,1_7_0,0
+1,x55UUuuUUuu@1,active P-,W,2_7_0,0
+#

@@ -1,0 +1,21 @@
+>D
+>B
+->sensor53 r
+
+>M 1
++1,[192.168.2.251],m,0,502,FRONIUS,0,100,r01039C870020
+1,=so3,80
+1,010340ffffffff@i0:1,AC Current,A,11_7_0,3
+1,010340x4ffffffff@i0:1,L1 Current,A,31_7_0,3
+1,010340x8ffffffff@i0:1,L2 Current,A,51_7_0,3
+1,010340x12ffffffff@i0:1,L3 Current,A,71_7_0,3
+1,010340x28ffffffff@i0:1,L1 Voltage,V,32_7_0,2
+1,010340x32ffffffff@i0:1,L2 Voltage,V,52_7_0,2
+1,010340x36ffffffff@i0:1,L3 Voltage,V,72_7_0,2
+1,010340x40ffffffff@i0:1000,Output Power,kW,2_7_0,3
+1,010340x44ffffffff@i0:1,Frequency,Hz,14_7_0,3
+1,010340x48ffffffff@i0:1000,Apparent Power,kVA,9_7_0,3
+1,010340x52ffffffff@i0:1000,Reactive Power,kVAr,4_7_0,3
+1,010340x56ffffffff@i0:1,Power Factor,,13_7_0,3
+1,010340x60ffffffff@i0:1000,AC Lifetime En,kWh,2_8_0,3
+#
