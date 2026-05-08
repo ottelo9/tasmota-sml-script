@@ -1,0 +1,8 @@
+>D
+>B
+=>sensor53 r
+>M 1
++1,3,o,0,9600,SML
+1,1-0:1.8.0*255(@1,EC_CounterVal,kWh,EC_CounterVal,4
+1,1-0:61.7.255*255(@1,EC_PowerVal,W,EC_PowerVal,0
+#

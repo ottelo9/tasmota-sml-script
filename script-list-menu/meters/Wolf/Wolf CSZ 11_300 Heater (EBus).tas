@@ -1,0 +1,16 @@
+>D
+>B
+->sensor53 r
+>M 1
++1,3,e,0,2400,EBUS
+1,xxxx0503xxxxxxxxxxxxxxxxss@1,Outside temperature,C,Outsidetemp,0
+1,xxxx5014xxxxxxxxxxuu@1,Romm temperature,C,Roomtemp,0
+1,xxxx0503xxxxxxxxxxxxxxuu@1,Warmwater,C,Warmwater,0
+1,xxxx0503xxxxxxxxxxuu@1,Boiler,C,Boiler,0
+1,03fe0503xxxxxxxxxxxxuu@1,Returns,C,Returns,0
+1,03fe0503xxxxuu@1,Status,,Status,0
+1,03fe0503xxxxxxuu@b3:1,Burner on,,Burner,0
+1,xxxx5017xxxxxxuuuu@16,Solar collektor,C,Collector,1
+1,xxxx5017xxxxxxxxxxuuuu@16,Solar storage,C,Solarstorage,1
+1,xxxx5017xxuu@b0:1,Solar pump on,,Solarpump,0
+#
