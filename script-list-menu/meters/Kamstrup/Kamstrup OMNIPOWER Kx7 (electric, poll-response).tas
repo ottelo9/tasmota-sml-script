@@ -1,6 +1,6 @@
 ; Extracted from Tasmota SML emulator built-in profile.
 >M 1
-+1,4,k,0,9600,KAMKx7,5,10,3F10040001041E043403FF
++1,%0rxpin%,k,%0smlf%,9600,KAMKx7,%0txpin%,10,3F10040001041E043403FF
 1,3F100001kstr@i0:1000,EnergyIn,kWh,EnergyIn,3
 1,3F10x8xx041Ekstr@i0:10,VoltageP1,V,VoltageP1,1
 1,3F10x17xx0434kstr@i0:100,CurrentP1,A,CurrentP1,2

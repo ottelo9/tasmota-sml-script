@@ -1,5 +1,5 @@
 >M 1
-+1,3,o,16,115200,Name,1
++1,%0rxpin%,o,%0smlf%,115200,Name,%0txpin%
 1,1-0:32.7.0(@1,L1 Voltage,V,volts_l1,1
 1,1-0:52.7.0(@1,L2 Voltage,V,volts_l2,1
 1,1-0:72.7.0(@1,L3 Voltage,V,volts_l3,1

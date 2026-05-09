@@ -2,7 +2,7 @@
 >B
 ->sensor53 r
 >M 1
-+1,3,m,0,19200,Trovis,1,2,rF7030009000E,rF703001C0004,F703006A
++1,%0rxpin%,m,%0smlf%,19200,Trovis,%0txpin%,2,rF7030009000E,rF703001C0004,F703006A
 1,F7031CSSss@i0:10,Außentemp.,°C,Temp_Outside,1
 1,F7031CxxxxxxxxxxxxSSss@i0:10,Vorlauftemp.,°C,Temp_Flow,1
 1,F7031CxxxxxxxxxxxxxxxxxxxxxxxxxxxxSSss@i0:10,Rücklauftemp.,°C,Temp_Return,1

@@ -4,7 +4,7 @@
 ; Monitor Sensor at GPIO25
 =>sensor53 l255
 >M 1
-+1,13,r,0,9600,aec,15,50,2101B203FD4D0D
++1,%0rxpin%,r,%0smlf%,9600,aec,%0txpin%,50,2101B203FD4D0D
 
 1,212717UUuux7@1,Leistung,W,power,0
 1,212717x4UUuux4@1000,Energie,kWh,energy_sun,3

@@ -1,5 +1,5 @@
 >M 1
-+1,3,o,0,1200,MC401,1
++1,%0rxpin%,o,%0smlf%,1200,MC401,%0txpin%
 1,@s 0:1,Gesammt Verbrauch,kwh,total_in,0
 1,@s 1:100,Gesammt Durchfluss,m3,total_flow,2
 1,@s 2:1,Laufzeit,h,time,0

@@ -2,7 +2,7 @@
 >B
 ->sensor53 r
 >M 1
-+1,3,e,0,2400,EBUS
++1,%0rxpin%,e,%0smlf%,2400,EBUS
 1,xxxx0503xxxxxxxxxxxxxxxxss@1,Outside temperature,C,Outsidetemp,0
 1,xxxx5014xxxxxxxxxxuu@1,Romm temperature,C,Roomtemp,0
 1,xxxx0503xxxxxxxxxxxxxxuu@1,Warmwater,C,Warmwater,0

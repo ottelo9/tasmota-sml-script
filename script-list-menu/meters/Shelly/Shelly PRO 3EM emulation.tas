@@ -1,6 +1,6 @@
 ; adapt your own meter descriptor here
 >M 1
-+1,5,o,16,9600,eBZ,4
++1,%0rxpin%,o,%0smlf%,9600,eBZ,%0txpin%
 1,1-0:1.8.0*255(@1,Verbrauch,kWh,E_in,3
 1,1-0:2.8.0*255(@1,Einspeisung,kWh,E_out,3
 1,1-0:16.7.0*255(@1,akt. Leistung,W,Power,0

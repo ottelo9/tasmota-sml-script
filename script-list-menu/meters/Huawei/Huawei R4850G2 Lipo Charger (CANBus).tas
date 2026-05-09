@@ -1,7 +1,7 @@
 >M 1
 ; Huawei R4850G2
 ; params -> 03 = baudrate 125kb + number of receive buffers * 100
-+1,7,C,0,3203,CAN,6,10,908040FE080000000000000000
++1,%0rxpin%,C,%0smlf%,3203,CAN,%0txpin%,10,908040FE080000000000000000
 1,1081407f0801700000UUuuUUuu@1024,Input Power,W,ipwr,1
 1,1081407f0801710000UUuuUUuu@1024,Input Frequency,Hz,freq,1
 1,1081407f0801780000UUuuUUuu@1024,Input Voltage,V,ivolt,1
