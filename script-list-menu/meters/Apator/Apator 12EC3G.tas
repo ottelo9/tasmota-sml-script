@@ -2,6 +2,6 @@
 >B
 =>sensor53 r
 >M 1
-+1,3,o,0,300,Strom,1,30,2F3F210D0A,063030300D0A
++1,%0rxpin%,o,%0smlf%,300,Strom,%0txpin%,30,2F3F210D0A,063030300D0A
 1,1.8.0*00(@1,Gesamtverbrauch,kWh,Pges,2
 #

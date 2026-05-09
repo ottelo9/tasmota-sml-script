@@ -8,7 +8,7 @@
 ; you need to replace it with your xhcc can-bus id converted to hex format
 ; you will find your can-bus id (in decimal) in Special Functions (7) -> Network (31) -> CAN-bus ID (4)
 ; in the example below, the can-bus id of the xhcc device was "139"
-+1,26,C,0,3204,XHCC,25,5
++1,%0rxpin%,C,%0smlf%,3204,XHCC,%0txpin%,5
 1,10018b800500ssSS@10,Temp S1,ºC,S1,1
 1,10018b800501ssSS@10,Temp S2,ºC,S2,1
 1,10018b800502ssSS@10,Temp S3,ºC,S3,1

@@ -1,5 +1,5 @@
 >M 1
-+1,3,rE1,0,9600,ABB,1,10,1040105016,107b108b16,105b106b16[,107b108b16[,105b106b16]]
++1,%0rxpin%,rE1,%0smlf%,9600,ABB,%0txpin%,10,1040105016,107b108b16,105b106b16[,107b108b16[,105b106b16]]
 1,081072bcd8@1,Meter ID,,ID,0 ; meter ID (BCD-8)
 1,0E8400bcd8@100,E Imp total,kWh,Imp,2 ; Total imported energy 0.01 kWh
 1,04A900ssSSssSSs@100,P total,W,P_tot,2 ; Total Power 0.01 W

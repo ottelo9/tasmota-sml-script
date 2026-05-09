@@ -1,6 +1,6 @@
 ; Extracted from Tasmota SML emulator built-in profile.
 >M 1
-+1,4,rE1,0,2400,WAERME
++1,%0rxpin%,rE1,%0smlf%,2400,WAERME
 1,=so3,8
 1,0c06bcd8@1,Total Energy,kWh,w_total,0
 1,0c13bcd8@1000,Total volume,m³,v_total,2

@@ -1,6 +1,6 @@
 ; Extracted from Tasmota SML emulator built-in profile.
 >M 1
-+1,4,r,0,9600,LGZE450
++1,%0rxpin%,r,%0smlf%,9600,LGZE450
 1,=so3,512
 1,=so4,0123456789ABCDEF0123456789ABCDEF
 1,pm(1.8.0)@1000,kWh_IN,kWh,kWh_IN,3;Wirkenergie Lieferung (+A)

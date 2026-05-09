@@ -1,7 +1,7 @@
 >B
 =>sensor53 r
 >M 1
-+1,3,r,0,115200,Meter
++1,%0rxpin%,r,%0smlf%,115200,Meter
 1,=so3,256
 1,=so4,KEY
 1,x24UUuu@1,year,,year,0

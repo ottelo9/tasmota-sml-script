@@ -1,5 +1,5 @@
 >M 1
-+1,3,o,0,9600,,1
++1,%0rxpin%,o,%0smlf%,9600,,%0txpin%
 1,0.0.1(@1,Zählernummer,,Meter_number,0
 1,0.9.1(@#),Zeitstempel,Uhr,time-stamp,0
 1,=h===================

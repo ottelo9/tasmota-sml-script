@@ -1,6 +1,6 @@
 >M 1
 ; meter definition
-+1,35,o,16,115200,ma105
++1,%0rxpin%,o,%0smlf%,115200,ma105
 ; invert the HW serial line as the P1 port uses inverse signaling
 ; no external signal inverter circuit is needed
 1,=so2,4
