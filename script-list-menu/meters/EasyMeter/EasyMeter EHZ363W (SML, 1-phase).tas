@@ -1,9 +1,9 @@
 ; Extracted from Tasmota SML emulator built-in profile.
 >M 1
 +1,%0rxpin%,s,%0smlf%,9600,EHZ363W
-1,0100010800ff@1000,Verbrauch,kWh,Energy_In,3
-1,0100020800ff@1000,Einspeisung,kWh,Energy_Out,3
-1,0100100700ff@1,Wirkleistung,W,Power_Net,0
+1,0100100700ff@1,Leistung,W,Power,0
+1,0100010800ff@1000,Verbrauch,kWh,ImportActive,2
+1,0100020800ff@1000,Einspeisung,kWh,ExportActive,2
 1,0100200700ff@10,Spannung,V,Voltage,1
 1,01001f0700ff@1000,Strom,A,Current,3
 1,01000e0700ff@10,Frequenz,Hz,Frequency,1
