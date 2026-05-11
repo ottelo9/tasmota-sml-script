@@ -3,8 +3,8 @@
 =>sensor53 r
 >M 1
 +1,%0rxpin%,s,%0smlf%,9600,MT681
-1,77070100010800ff@1000,Verbrauch,kWh,Total_in,4
-1,77070100100700ff@1,Leistung,W,Power_cur,0
-1,77070100020800ff@1000,Erzeugung,kWh,Total_out,4
+1,77070100100700ff@1,Leistung,W,Power,0
+1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,3
+1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,3
 1,77070100000009ff@#,Service ID,,Meter_id,0
 #

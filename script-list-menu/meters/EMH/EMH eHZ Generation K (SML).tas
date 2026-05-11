@@ -4,7 +4,7 @@
 =>sensor53 r
 >M 1
 +1,%0rxpin%,s,%0smlf%,9600,
-1,77070100010800ff@1000,Total consumption,kWh,total_in,2
-1,77070100020800ff@1000,Total feed-in,kWh,total_out,2
-1,77070100100700ff@1,Power,W,power_curr,0
+1,77070100100700ff@1,Leistung,W,Power,0
+1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,2
+1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,2
 #
