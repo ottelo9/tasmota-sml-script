@@ -98,7 +98,7 @@ Je nach Akkutyp unterschiedlich. z.B. bei Marstek B2500 = 2220 (je nach Firmware
 <ins>Datenübertragung erzwingen:</ins>  
 EIN = Kann das Regelverhalten bei Akkus verbessern (getestet mit Marstek):  
 Empfohlene Einstellung: AUS und Verwendung der neuen Regleroptimierung (siehe unten)  
-<img width="200" height="100" alt="image" src="https://github.com/user-attachments/assets/9511659b-fe76-4e4e-9013-88f00f3be8e9" />
+<img width="200" height="100" alt="image" src="https://github.com/user-attachments/assets/9511659b-fe76-4e4e-9013-88f00f3be8e9" />  
 <ins>SML Median Filter aktivieren:</ins> Vergleich (Regleroptimierung=AUS) EIN (links) und AUS (rechts)  
 Empfohlene Einstellung: AUS und Verwendung der neuen Regleroptimierung (siehe unten)  
 <img width="200" height="100" alt="image" src="https://github.com/user-attachments/assets/3d16fd34-7f22-4e33-9448-0e1a6a4458b5" />  
