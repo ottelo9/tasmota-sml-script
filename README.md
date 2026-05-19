@@ -73,9 +73,9 @@ Beispiele:
 
 Getestete Akkus (E = Ecotracker Script, S = Shelly Script):  
 - ✅ Marstek Jupiter C Plus (E+S) mit Option Regleroptimierung
-- ✅ Marstek Venus A (E+S)
-- ✅ Marstek Venus E 2.0 3.0 (E+S) mit 3.0 gibt es Probleme?
-- ✅ Marstek B2500 (E+S) mit UDP-Port 2220 (je nach Firmwarestand)
+- ✅ [Marstek Venus A (E+S)](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762600#post4762600)
+- ✅ [Marstek Venus E V2 V3 (E+S)](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762402#post4762402) mit 3.0 gibt es Probleme?
+- ✅ Marstek B2500 (E+S) mit UDP-Port 2220 (je nach Firmware), [auch 3 parallel](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762714#post4762714)
 - ✅ [Hoymiles MS-A2 (E)](https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762332#post4762332) [(S funktioniert wohl nicht)](https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762405#post4762405)
 - ✅ [Hoymiles HiBattery 1920 AC (E)](https://github.com/ottelo9/tasmota-sml-script/discussions/49)
 - ✅ Growatt NOAH 2000 (E)
