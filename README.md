@@ -72,15 +72,16 @@ Beispiele:
 [3 Marstek (2 × B2500 und einmal Venus A) im Parallelbetrieb](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773)  
 
 Getestete Akkus (E = Ecotracker Script, S = Shelly Script):  
-- Marstek Jupiter C Plus (E+S) mit Option Regleroptimierung
-- Marstek Venus A (E+S)
-- Marstek Venus E 2.0 3.0 (E+S) mit 3.0 gibt es Probleme?
-- Marstek B2500 (E+S) mit UDP-Port 2220 (je nach Firmwarestand)
-- Hoymiles MS-A2 (E+S)
-- Hoymiles HiBattery 1920 AC (E)
-- Growatt NOAH 2000 (E)
-- Solakon ONE (S) mit UDP-Port = 1010
-- Indevolt SF2000 (E)
+- ✅ Marstek Jupiter C Plus (E+S) mit Option Regleroptimierung
+- ✅ Marstek Venus A (E+S)
+- ✅ Marstek Venus E 2.0 3.0 (E+S) mit 3.0 gibt es Probleme?
+- ✅ Marstek B2500 (E+S) mit UDP-Port 2220 (je nach Firmwarestand)
+- ✅ Hoymiles MS-A2 (E+S)
+- ✅ [Hoymiles HiBattery 1920 AC (E)](https://github.com/ottelo9/tasmota-sml-script/discussions/49)
+- ✅ Growatt NOAH 2000 (E)
+- ✅ Solakon ONE (S) mit UDP-Port = 1010
+- ✅ Indevolt SF2000 (E)
+- ❌ Jackery Homepower 2000 Ultra (S unmöglich, E kann getestet werden via [TinyC Test](https://github.com/ottelo9/tasmota-sml-script/issues/24#issuecomment-4447909656))
 
 Scripte:  
 - `1_SML_EcoTrackerEmu_Simple`  
