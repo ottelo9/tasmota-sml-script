@@ -76,7 +76,7 @@ Getestete Akkus (E = Ecotracker Script, S = Shelly Script):
 - ✅ Marstek Venus A (E+S)
 - ✅ Marstek Venus E 2.0 3.0 (E+S) mit 3.0 gibt es Probleme?
 - ✅ Marstek B2500 (E+S) mit UDP-Port 2220 (je nach Firmwarestand)
-- ✅ Hoymiles MS-A2 (E+S)
+- ✅ [Hoymiles MS-A2 (E)](https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762332#post4762332) [(S funktioniert wohl nicht)](https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762405#post4762405)
 - ✅ [Hoymiles HiBattery 1920 AC (E)](https://github.com/ottelo9/tasmota-sml-script/discussions/49)
 - ✅ Growatt NOAH 2000 (E)
 - ✅ Solakon ONE (S) mit UDP-Port = 1010
