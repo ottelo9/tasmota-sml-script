@@ -1,6 +1,6 @@
 >D 250
 IP=192.168.178.169
-; 1_SML_ShellyEmu_Simple_28.9.25.tas
+; 1_SML_ShellyEmu_Simple_18.9.25.tas
 ; https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4464252#post4464252
 ; Ich habe das Script hochgeladen, da es bei den Usern aus dem Forum auf einem ESP8266 besser funktioniert (Regelung schwingt nicht)
 ; Mit einem ESP32 funktionieren aber auch die aktuellen Scripte ohne zu schwingen!
