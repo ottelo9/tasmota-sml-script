@@ -143,6 +143,19 @@ $chkUdpListener.ForeColor = [System.Drawing.Color]::FromArgb(180, 130, 255)
 $chkUdpListener.FlatStyle = "Flat"
 $form.Controls.Add($chkUdpListener)
 
+# HTTP Keep-Alive Checkbox (nur im HTTP-Modus sichtbar, am selben Platz wie UDP Listener)
+# AUS  = Connection: close, Socket wird nach jeder Antwort geschlossen (sauber, Standard).
+# AN   = Connection: keep-alive, Verbindung bleibt offen -> simuliert Jackery/NOAH-Verhalten,
+#        das den Tasmota-Webserver-Slot dauerhaft belegt (zum Testen des "Haengens").
+$chkHttpKeepAlive = New-Object System.Windows.Forms.CheckBox
+$chkHttpKeepAlive.Text = "Keep-Alive"
+$chkHttpKeepAlive.Location = New-Object System.Drawing.Point(610, 119)
+$chkHttpKeepAlive.Size = New-Object System.Drawing.Size(125, 22)
+$chkHttpKeepAlive.ForeColor = [System.Drawing.Color]::FromArgb(255, 170, 80)
+$chkHttpKeepAlive.FlatStyle = "Flat"
+$chkHttpKeepAlive.Visible = $false
+$form.Controls.Add($chkHttpKeepAlive)
+
 # ===================== Intervall-Bereich (UDP/HTTP) =====================
 $lblInterval = New-StyledLabel "Intervall (Sek.):" 15 158 110 22
 $form.Controls.Add($lblInterval)
@@ -575,13 +588,33 @@ function Send-HTTPRequest {
     $form.Refresh()
 
     try {
-        $webClient = New-Object System.Net.WebClient
-        $webClient.Encoding = [System.Text.Encoding]::UTF8
-        $response = $webClient.DownloadString($url)
-        $webClient.Dispose()
+        # HttpWebRequest statt WebClient, damit das Keep-Alive-Verhalten steuerbar ist.
+        # Checkbox AUS (Standard): KeepAlive=$false -> "Connection: close", Socket wird
+        #   nach jeder Antwort via $resp.Close() geschlossen -> Tasmota-Slot frei, sauber.
+        # Checkbox AN: KeepAlive=$true -> Verbindung bleibt offen (simuliert Jackery/NOAH).
+        #   Der einzige Webserver-Slot des ESP32 bleibt belegt -> Geraet haengt, bis
+        #   dieses Script schliesst. Genau das Verhalten, das echte PV-Akkus ausloesen.
+        $useKeepAlive = $chkHttpKeepAlive.Checked
+        $request = [System.Net.HttpWebRequest]::Create($url)
+        $request.Method           = "GET"
+        $request.KeepAlive        = $useKeepAlive
+        $request.Timeout          = 5000
+        $request.ReadWriteTimeout = 5000
+        $request.UserAgent        = "ShellyEcoTrackerTester"
 
-        Process-Response $response $timestamp "HTTP GET  $url" $colorGreen
-        $statusLabel.Text = "HTTP: Antwort erhalten von $url  ($($response.Length) Zeichen)"
+        $resp   = $request.GetResponse()
+        $stream = $resp.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::UTF8)
+        $response = $reader.ReadToEnd()
+        $reader.Close()
+        $stream.Close()
+        # Bei KeepAlive=$false schliesst Close() den Socket; bei $true wandert die
+        # Verbindung zurueck in den Pool und bleibt offen (gewolltes Jackery-Sim).
+        $resp.Close()
+
+        $kaTag = if ($useKeepAlive) { "[keep-alive]" } else { "[close]" }
+        Process-Response $response $timestamp "HTTP GET  $url  $kaTag" $colorGreen
+        $statusLabel.Text = "HTTP ${kaTag}: Antwort von $url  ($($response.Length) Zeichen)"
     }
     catch [System.Net.WebException] {
         $errMsg = $_.Exception.Message
@@ -719,7 +752,7 @@ function Send-Request {
 # Sammlung aller modusabhaengigen Controls
 $udpHttpControls = @($lblCmd, $txtCommand, $btnSend, $lblPresets,
     $btnPreset1, $btnPreset2, $btnPresetHTTP, $btnPresetHTTP2, $btnPresetHTTP3,
-    $chkUdpListener,
+    $chkUdpListener, $chkHttpKeepAlive,
     $lblInterval, $txtInterval, $btnStartInterval, $btnStopInterval, $lblIntervalStatus)
 
 $pingControls = @($lblPingInterval, $txtPingInterval, $lblPingHint1,
@@ -770,6 +803,7 @@ function Update-ModeUI {
             $btnPresetHTTP2.Visible = $false
             $btnPresetHTTP3.Visible = $false
             $chkUdpListener.Visible = $true
+            $chkHttpKeepAlive.Visible = $false
             $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  UDP"
         } else {
             $lblModeIndicator.Text = "[ HTTP-Modus ]"
@@ -785,6 +819,7 @@ function Update-ModeUI {
             $btnPresetHTTP2.Visible = $true
             $btnPresetHTTP3.Visible = $true
             $chkUdpListener.Visible = $false
+            $chkHttpKeepAlive.Visible = $true
             $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  HTTP GET"
         }
     }
