@@ -78,7 +78,7 @@ Getestete Akkus (E = Ecotracker Script, S = Shelly Script):
 - ✅ Marstek B2500 (E+S) mit UDP-Port 2220 (je nach Firmware), [auch 3 parallel](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762714#post4762714)
 - ✅ [Hoymiles MS-A2 (E)](https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762332#post4762332) [(S funktioniert wohl nicht)](https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762405#post4762405)
 - ✅ [Hoymiles HiBattery 1920 AC (E)](https://github.com/ottelo9/tasmota-sml-script/discussions/49)
-- ✅ Growatt NOAH 2000 (E)
+- ✅ [Growatt NOAH 2000 (S)](https://www.photovoltaikforum.com/thread/257383-growatt-noah-2000-shelly-pro-3em-ecotracker-emulator-f%C3%BCr-tasmota-lesekopf/?pageNo=1)
 - ✅ Solakon ONE (S) mit UDP-Port = 1010
 - ✅ Indevolt SF2000 (E)
 - ❌ Jackery Homepower 2000 Ultra (S unmöglich, E kann getestet werden via [TinyC Test](https://github.com/ottelo9/tasmota-sml-script/issues/24#issuecomment-4447909656))
