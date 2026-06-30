@@ -67,8 +67,9 @@ Alle Scripte (auch pvakku-powermeter-emulator) in der alten Version für den kle
 
 ### pvakku-powermeter-emulator (ESP32)
 Diese Scripte emulieren einen Shelly Pro 3EM oder Ecotracker, die mit smarten Akkus verbunden werden (zur Nulleinspeisung). Das Script ist direkt auf dem Lesekopf lauffähig und übernimmt neben dem Stromzähler auslesen die Emulation.  
-Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akkus getestet wurden.  
-Beispiele:  
+Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akkus getestet wurden (siehe folgende Liste). Damit der Emulator vom Akku gefunden wird bzw. auch reibungslos läuft, sollte der Akku und der ESP/Lesekopf (auf dem der Emu läuft) eine gute WLAN Verbindung haben. Bei meinem Marstek Jupiter C Plus gabs nämlich Probleme, der Emulator wurde erkannt war aber danach sofort Offline. Der Akku hatte schlechten Empfang (im roten Bereich). Manche andere Akkus möglich es z.B. auch nicht, wenn sie mit unterschiedlichen Accesspoints/Repeatern im WLAN verbunden sind.  
+  
+Beispiel mit mehreren Akkus:  
 [3 Marstek (2 × B2500 und einmal Venus A) im Parallelbetrieb](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773)  
 
 Getestete Akkus (E = Ecotracker Script, S = Shelly Script):  
