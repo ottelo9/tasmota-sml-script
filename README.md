@@ -82,6 +82,8 @@ Getestete Akkus (E = Ecotracker Script, S = Shelly Script):
 - ✅ Solakon ONE (S) mit UDP-Port = 1010
 - ✅ Indevolt SF2000 (E)
 - ❌ Jackery Homepower 2000 Ultra (S unmöglich, E kann getestet werden via [TinyC Test](https://github.com/ottelo9/tasmota-sml-script/issues/24#issuecomment-4447909656))
+- ✅ Ecoflow Stream AC Pro (E, S?)
+- ✅ [Minjet Speicher (S, E?)](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#Kommentare)
 
 Scripte:  
 - `1_SML_EcoTrackerEmu_Simple`  
