@@ -1,0 +1,25 @@
+>M 1
++1,%0rxpin%,s,%0smlf%,9600,LK33BM,%0txpin%
+1,=soC,1024,0
+1,77070100100700ff@1,Leistung,W,Power,16
+1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,3
+1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,3
+1,=h--
+1,77070100010801ff@1000,Verbrauch HT,kWh,E_inHT,3
+1,77070100010802ff@1000,Verbrauch NT,kWh,E_inNT,3
+1,77070100240700ff@1,Leistung_L1,W,power_L1,0
+1,77070100380700ff@1,Leistung_L2,W,power_L2,0
+1,770701004c0700ff@1,Leistung_L3,W,power_L3,0
+1,77070100200700ff@1,Voltage L1,V,Volt_L1_curr,1
+1,77070100340700ff@1,Voltage L2,V,Volt_L2_curr,1
+1,77070100480700ff@1,Voltage L3,V,Volt_L3_curr,1
+1,770701001f0700ff@1,Amperage L1,A,curr_L1,2
+1,77070100330700ff@1,Amperage L2,A,curr_L2,2
+1,77070100470700ff@1,Amperage L3,A,curr_L3,2
+1,770701000e0700ff@1,Frequency,Hz,HZ,2
+1,77070100510704ff@1,Phaseangle I-L1/U-L1,deg,phase_angle_p1,1
+1,7707010051070fff@1,Phaseangle I-L2/U-L2,deg,phase_angle_p2,1
+1,7707010051071aff@1,Phaseangle I-L3/U-L3,deg,phase_angle_p3,1
+1,77070100510701ff@1,Phase angle U-L2/U-L1,deg,phase_angle_l2_l1,1
+1,77070100510702ff@1,Phase angle U-L3/U-L1,deg,phase_angle_l3_l1,1
+#
