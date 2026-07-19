@@ -10,16 +10,11 @@
 1,77070100240700ff@1,Leistung_L1,W,power_L1,0
 1,77070100380700ff@1,Leistung_L2,W,power_L2,0
 1,770701004c0700ff@1,Leistung_L3,W,power_L3,0
-1,77070100200700ff@1,Voltage L1,V,Volt_L1_curr,1
-1,77070100340700ff@1,Voltage L2,V,Volt_L2_curr,1
-1,77070100480700ff@1,Voltage L3,V,Volt_L3_curr,1
-1,770701001f0700ff@1,Amperage L1,A,curr_L1,2
-1,77070100330700ff@1,Amperage L2,A,curr_L2,2
-1,77070100470700ff@1,Amperage L3,A,curr_L3,2
-1,770701000e0700ff@1,Frequency,Hz,HZ,2
-1,77070100510704ff@1,Phaseangle I-L1/U-L1,deg,phase_angle_p1,1
-1,7707010051070fff@1,Phaseangle I-L2/U-L2,deg,phase_angle_p2,1
-1,7707010051071aff@1,Phaseangle I-L3/U-L3,deg,phase_angle_p3,1
-1,77070100510701ff@1,Phase angle U-L2/U-L1,deg,phase_angle_l2_l1,1
-1,77070100510702ff@1,Phase angle U-L3/U-L1,deg,phase_angle_l3_l1,1
+1,77070100200700ff@1,Spannung L1,V,Volt_L1_curr,1
+1,77070100340700ff@1,Spannung L2,V,Volt_L2_curr,1
+1,77070100480700ff@1,Spannung L3,V,Volt_L3_curr,1
+1,770701001f0700ff@1,Strom L1,A,curr_L1,2
+1,77070100330700ff@1,Strom L2,A,curr_L2,2
+1,77070100470700ff@1,Strom L3,A,curr_L3,2
+1,770701000e0700ff@1,Frequenz,Hz,HZ,2
 #
