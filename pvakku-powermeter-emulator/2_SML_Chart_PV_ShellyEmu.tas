@@ -87,6 +87,7 @@ p:port=1
 p:sndpwr=0
 p:smlfo=0
 p:ctrlopt=0
+p:ph3=0
 ;p:vn=12000   optional um per Slider Y-Achse Werte zu begrenzen
 t:t1=5
 t:t2=60
@@ -182,6 +183,7 @@ pwrforce=0
 throttle=1
 smlfo=0
 ctrlopt=0
+ph3=0
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
 
@@ -527,14 +529,18 @@ if (upsecs%throttle==0) {
 
 	; Standard: Zähler sendet nur Gesamtleistung
 	c1p=cpwr
-	; Optional: Wenn Zähler auch Einzelleistungen sendet (L1-3). Marstek prüft dann, auf welcher Phase er verbunden ist. ; entfernen um zu verwenden.
-	;c1p=sml[4]
-	;c2p=sml[5]
-	;c3p=sml[6]
+	c2p=0
+	c3p=0
+	; Optional: Wenn Zähler auch Einzelleistungen sendet (L1-3). Marstek prüft dann, auf welcher Phase er verbunden ist. Dafür muss sml_meter.def muss korrekt sein. Nach Einspeisung müssen die Einzelleistungen kommen.
+	if (ph3==1) {
+	c1p=sml[4]
+	c2p=sml[5]
+	c3p=sml[6]
+	}
 	; Ströme berechnen
 	c1c=c1p/230
-	;c2c=c2p/230
-	;c3c=c3p/230
+	c2c=c2p/230
+	c3c=c3p/230
 }
 ; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
 if (pwrforce>0) {
@@ -619,7 +625,7 @@ $gc(e)
 %=#monthsub
 
 $<center><span style="font-size:10px;">
-$Version 02.04.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 25.07.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
@@ -667,6 +673,8 @@ UDP-Port (Neustart notwendig):
 rb(port "" "1010" "2220")
 Datenübertragung erzwingen:
 ck(pwrforce "")
+3 Phasen:
+ck(ph3 "")
 <hr>
 <b>&#x26A1; Stromzähler</b><br>
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)

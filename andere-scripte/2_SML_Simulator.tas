@@ -28,13 +28,23 @@ cEnOut="77070100020800ff0101621e52ff5900000000"
 cEnOut1="77070100020801ff0101621e52ff5900000000"
 ; Aktuelle Wirkleistung Watt
 cPow="77070100100700ff0101621b520055"
+; Aktuelle Wirkleistung je Phase L1/L2/L3 (OBIS 36.7.0 / 56.7.0 / 76.7.0)
+cP1="77070100240700ff0101621b520055"
+cP2="77070100380700ff0101621b520055"
+cP3="770701004c0700ff0101621b520055"
 cTmp=""
 ; Countdown Timer 5s and 60s
 t:t1=5
 t:t2=60
 ; Vars
 I:iPwr=0
+I:iP1=0
+I:iP2=0
+I:iP3=0
 fPwr=0
+fp1=0
+fp2=0
+fp3=0
 utm="00d 00h 00m"
 PwrToGrd=0
 PwrFrGrd=0
@@ -133,6 +143,31 @@ iPwr-=i(-fPwr)
 }
 sml(1 1 cPow+hxi(iPwr)+"01")
 sml(2 1 cPow+hxi(iPwr)+"01")
+; Einzelleistungen L1/L2/L3: Gesamtleistung aufteilen (50/30/20, Summe=Gesamt)
+fp1=fPwr*0.5
+fp2=fPwr*0.3
+fp3=fPwr-fp1-fp2
+iP1=i(fp1)
+if fp1<0 {
+iP1=#4294967296
+iP1-=i(-fp1)
+}
+iP2=i(fp2)
+if fp2<0 {
+iP2=#4294967296
+iP2-=i(-fp2)
+}
+iP3=i(fp3)
+if fp3<0 {
+iP3=#4294967296
+iP3-=i(-fp3)
+}
+sml(1 1 cP1+hxi(iP1)+"01")
+sml(2 1 cP1+hxi(iP1)+"01")
+sml(1 1 cP2+hxi(iP2)+"01")
+sml(2 1 cP2+hxi(iP2)+"01")
+sml(1 1 cP3+hxi(iP3)+"01")
+sml(2 1 cP3+hxi(iP3)+"01")
 
 >W
 ; web button
@@ -144,6 +179,7 @@ nm(1 60 1 t1t "Zykluszeit [s]: " 50 0)
 
 Simulierte Zählerwerte:{m}
 aktuelle Wirkleistung{m}%fPwr% W
+Phasen L1/L2/L3{m}%0fp1% / %0fp2% / %0fp3% W
 Bezug{m}%2EnFrGrd% kWh
 Einspeisung{m}%2EnToGrd% kWh
 

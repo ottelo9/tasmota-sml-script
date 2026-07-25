@@ -24,6 +24,7 @@ p:port=1
 p:sndpwr=0
 p:smlfo=0
 p:ctrlopt=0
+p:ph3=0
 t:t1=5
 t:t2=60
 smlf=0
@@ -108,6 +109,7 @@ pwrforce=0
 throttle=1
 smlfo=0
 ctrlopt=0
+ph3=0
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
 #init2
@@ -365,7 +367,16 @@ cpwr=(sml[1]-pwroffset)/0.8
 cpwr=sml[1]-pwroffset
 }
 c1p=cpwr
+c2p=0
+c3p=0
+if (ph3==1) {
+c1p=sml[4]
+c2p=sml[5]
+c3p=sml[6]
+}
 c1c=c1p/230
+c2c=c2p/230
+c3c=c3p/230
 }
 if (pwrforce>0) {
 udpsent=1
@@ -410,7 +421,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 02.04.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 25.07.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>
@@ -456,6 +467,8 @@ UDP-Port (Neustart notwendig):
 rb(port "" "1010" "2220")
 Datenübertragung erzwingen:
 ck(pwrforce "")
+3 Phasen:
+ck(ph3 "")
 <hr>
 <b>&#x26A1; Stromzähler</b><br>
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)

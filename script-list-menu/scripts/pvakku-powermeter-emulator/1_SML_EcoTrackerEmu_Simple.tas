@@ -12,15 +12,19 @@ p:sel=0
 p:pwroffset=0
 p:smlfo=0
 p:ctrlopt=0
+p:ph3=0
 t:t1=60
 smlf=0
 rxpin=0
 txpin=0
 hr=0
-power3=0
 res=0
 tmp=0
+c1p=0
+c2p=0
+c3p=0
 cpwr=0
+power3=0
 once=0
 header=""
 json=""
@@ -44,6 +48,7 @@ yval2=sml[3]
 pwroffset=0
 smlfo=0
 ctrlopt=0
+ph3=0
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
 >ah
@@ -51,7 +56,7 @@ res=won(1 "/v1/json")
 >on1
 json=warg
 if (json!="") {
-json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0cpwr)+",\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
+json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0c1p)+",\"powerPhase2\":"+s(0c2p)+",\"powerPhase3\":"+s(0c3p)+",\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
 tmp=sl(json)
 header="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "+s(0tmp)+"\r\nConnection: close\r\n\r\n"
 wcs so(4)
@@ -119,6 +124,14 @@ cpwr=(sml[1]-pwroffset)/0.8
 cpwr=sml[1]-pwroffset
 }
 power3=(0.9*power3)+((1-0.9)*cpwr)
+c1p=cpwr
+c2p=0
+c3p=0
+if (ph3==1) {
+c1p=sml[4]
+c2p=sml[5]
+c3p=sml[6]
+}
 >W
 Leistung (an PV-Akku){m}%0cpwr% W
 Tagesverbrauch{m}%2(sml[2]-dval)% kWh
@@ -129,7 +142,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 02.04.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Version 25.07.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
@@ -163,6 +176,8 @@ Offset für Nulleinspeisung [W]:
 nm(-200 200 1 pwroffset "" 50 0)
 Regleroptimierung:
 ck(ctrlopt "")
+3 Phasen:
+ck(ph3 "")
 <hr>
 <b>&#x26A1; Stromzähler</b><br>
 smlpd("https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters" "Stromzählerauswahl (<a href=https://ottelo.jimdofree.com/kontakt>Probleme?)</a><br>" sel)

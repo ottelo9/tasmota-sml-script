@@ -46,6 +46,7 @@ p:throttle=1
 p:port=1
 p:smlfo=0
 p:ctrlopt=0
+p:ph3=0
 t:t1=60
 smlf=0
 rxpin=0
@@ -94,6 +95,7 @@ pwroffset=0
 pwrforce=0
 throttle=1
 smlfo=0
+ph3=0
 ctrlopt=0
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
@@ -280,14 +282,18 @@ cpwr=sml[1]-pwroffset
 
 ; Standard: Zähler sendet nur Gesamtleistung
 c1p=cpwr
-; Optional: Wenn Zähler auch Einzelleistungen sendet (L1-3). Marstek prüft dann, auf welcher Phase er verbunden ist. ; entfernen um zu verwenden.
-;c1p=sml[4]
-;c2p=sml[5]
-;c3p=sml[6]
+c2p=0
+c3p=0
+; Optional: Wenn Zähler auch Einzelleistungen sendet (L1-3). Marstek prüft dann, auf welcher Phase er verbunden ist. Dafür muss sml_meter.def muss korrekt sein. Nach Einspeisung müssen die Einzelleistungen kommen.
+if (ph3==1) {
+c1p=sml[4]
+c2p=sml[5]
+c3p=sml[6]
+}
 ; Ströme berechnen
 c1c=c1p/230
-;c2c=c2p/230
-;c3c=c3p/230
+c2c=c2p/230
+c3c=c3p/230
 }
 ; Optional: Sende auch, wenn Marstek nicht anfragt, verbessert Marstek Regelung
 if (pwrforce>0) {
@@ -305,7 +311,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 02.04.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
+$Version 25.07.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
@@ -343,6 +349,8 @@ Update der Werte verzögern [s]:
 nm(1 60 1 throttle "" 50 0)
 Regleroptimierung:
 ck(ctrlopt "")
+3 Phasen:
+ck(ph3 "")
 UDP-Port (Neustart notwendig):
 rb(port "" "1010" "2220")
 Datenübertragung erzwingen:
