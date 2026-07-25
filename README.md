@@ -120,6 +120,18 @@ Empfohlene Einstellung: AUS und Verwendung der neuen Regleroptimierung (siehe un
 <img width="200" height="100" alt="image" src="https://github.com/user-attachments/assets/3d16fd34-7f22-4e33-9448-0e1a6a4458b5" />  
 <ins>Regleroptimierung: (neu ab 02.04.2026)</ins>  
 EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten. Dem Akku wird ein falscher/kleinerer Verbrauch vorgekaukelt. Der interne Regler im Akku sieht eine kleinere Regelabweichung und versucht diese dann langsam auszuregeln. Getestet mit diversen Marstek Akkus (Jupiter, Venus). Siehe auch die [Diskussion](https://github.com/ottelo9/tasmota-sml-script/discussions/47).  
+<ins>3 Phasen: (neu ab 25.07.2026)</ins>  
+EIN = Wirkleistungen der 3 Phasen werden an den Akku übertragen, somit ist der Betrieb von mehreren Akkus auf unterschiedlichen Phasen möglich. Das ist beim echten Shelly/Ecotracker Standard. Das muss euer Stromzähler aber unterstützten und das Stromzähler Script (meter_sml.def) muss von der Reihenfolge der Werte korrekt eingestellt sein (Beispiel):  
+>M 1  
++1,%0rxpin%,s,%0smlf%,9600,MT175,%0txpin%  
+1,77070100100700ff@1,Leistung,W,Power,16  <- sml[1]  
+1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,2  <- sml[2]  
+1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,2  <- sml[3]  
+1,=h--  
+1,77070100240700ff@1,L1,W,L1,0  <- sml[4]  
+1,77070100380700ff@1,L2,W,L2,0  <- sml[5]  
+1,770701004C0700ff@1,L3,W,L3,0  <- sml[6]  
+#  
 
 ### Testtools:
 <b>UDP/HTTP/PING Tester</b>  
