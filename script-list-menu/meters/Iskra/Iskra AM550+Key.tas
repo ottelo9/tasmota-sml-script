@@ -1,0 +1,22 @@
+;Anleitung https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#4e
+;und https://tasmota.github.io/docs/Smart-Meter-Interface/#iskra-am550
+>M 1
++1,%0rxpin%,r,%0smlf%,9600,AM550+Key,%0txpin%
+1,=so3,512
+1,=so4,KeyHierEinfügen
+1,0209090cx33UUuuUUuu@1,Momentanleistung,W,Power,16
+1,0209090cx13UUuuUUuu@1000,Zählerstand,kWh,ImportActive,3
+1,0209090cx18UUuuUUuu@1000,Einspeisung,kWh,ExportActive,3
+1,=h--
+1,0209090cUUuu@1,year,,year,0
+1,0209090cx2ss@1,month,,month,0
+1,0209090cx3ss@1,day,,day,0
+1,0209090cx5ss@1,hh,,hh,0
+1,0209090cx6ss@1,mm,,mm,0
+1,0209090cx7ss@1,ss,,ss,0
+1,0209090cx23UUuuUUuu@1000,Blindenergie,varh,Blindenergie,3
+1,0209090cx28UUuuUUuu@1000,Blindenergie einsp,varh,Blindenergie einsp,3
+1,0209090cx38UUuuUUuu@1,Einspeiseleistung,W,Einspeiseleistung,0
+1,0209090cx43UUuuUUuu@1,Blindleistung,var,Blindleistung,0
+1,0209090cx48UUuuUUuu@1,Blindleistung einsp,var,Blindleistung einsp,0
+#

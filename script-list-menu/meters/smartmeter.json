@@ -83,6 +83,7 @@
 		{ "label": "Holley DTZ541", "filename": "Holley/Holley DTZ541.tas" },
 		{ "label": "Holley EHZ541", "filename": "Holley/Holley EHZ541.tas" },
 		{ "label": "Iskra AM550", "filename": "Iskra/Iskra AM550.tas" },
+		{ "label": "Iskra AM550 (verschlüsselt)", "filename": "Iskra/Iskra AM550+Key.tas" },
 		{ "label": "Iskra eHZ-MS2020 MT691-D4A52", "filename": "Iskra/Iskra eHZ-MS2020 MT691-D4A52.tas" },
 		{ "label": "Iskra eHZ-MT681-D4A51-K0p", "filename": "Iskra/Iskra eHZ-MT681-D4A51-K0p.tas" },
 		{ "label": "Iskra eHZ-MT681-D4A52-K0p", "filename": "Iskra/Iskra eHZ-MT681-D4A52-K0p.tas" },

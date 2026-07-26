@@ -83,7 +83,7 @@ $txtHost = New-Object System.Windows.Forms.TextBox
 $txtHost.Location = New-Object System.Drawing.Point(130, 45)
 $txtHost.Size = New-Object System.Drawing.Size(300, 26)
 $txtHost.BackColor = $bgField; $txtHost.ForeColor = $fgWhite
-$txtHost.BorderStyle = "FixedSingle"; $txtHost.Text = "192.168.178.31"
+$txtHost.BorderStyle = "FixedSingle"; $txtHost.Text = "192.168.178.132"
 $form.Controls.Add($txtHost)
 
 $lblPort = New-StyledLabel "Port:" 445 48 40 22
