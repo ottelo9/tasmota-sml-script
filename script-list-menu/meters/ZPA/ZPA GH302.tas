@@ -7,6 +7,7 @@
 1,77070100240700ff@1,Leistung_L1,W,power_L1,0
 1,77070100380700ff@1,Leistung_L2,W,power_L2,0
 1,770701004c0700ff@1,Leistung_L3,W,power_L3,0
+1,=h--
 1,770701001f0700ff@1,Strom L1,A,Curr_p1,2
 1,77070100330700ff@1,Strom L2,A,Curr_p2,2
 1,77070100470700ff@1,Strom L3,A,Curr_p3,2

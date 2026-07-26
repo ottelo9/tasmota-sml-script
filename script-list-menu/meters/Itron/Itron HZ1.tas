@@ -7,6 +7,7 @@
 1,1-0:21.7.0*255(@1,Leistung_L1,W,Watt_L1,0
 1,1-0:41.7.0*255(@1,Leistung_L2,W,Watt_L2,0
 1,1-0:61.7.0*255(@1,Leistung_L3,W,Watt_L3,0
+1,=h--
 1,1-0:32.7.0*255(@1,Spannung L1,V,voltage_l1,1
 1,1-0:52.7.0*255(@1,Spannung L2,V,voltage_l2,1
 1,1-0:72.7.0*255(@1,Spannung L3,V,voltage_l3,1

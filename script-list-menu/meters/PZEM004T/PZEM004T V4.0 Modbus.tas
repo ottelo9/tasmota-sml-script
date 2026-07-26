@@ -1,6 +1,3 @@
->D
->B
-->sensor53 r
 >M 1
 +1,%0rxpin%,m,%0smlf%,9600,modbus,%0txpin%,3,r010400000009,r020400000009,r030400000009
 1,010412UUuu@i0:10,Voltage,V,Volt_2,1

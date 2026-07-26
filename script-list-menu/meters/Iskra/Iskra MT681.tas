@@ -4,12 +4,12 @@
 1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,3
 1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,3
 1,=h--
-1,770701000f0700ff@1,LeistungB,W,PowerB,0
-1,77070100010700ff@1,LeistungC,W,PowerC,0
-1,=h--
 1,77070100240700ff@1,Leistung_L1,W,power_L1,0
 1,77070100380700ff@1,Leistung_L2,W,power_L2,0
 1,770701004c0700ff@1,Leistung_L3,W,power_L3,0
+1,=h--
+1,770701000f0700ff@1,LeistungB,W,PowerB,0
+1,77070100010700ff@1,LeistungC,W,PowerC,0
 1,=h--
 1,77070100150700FF@1,Leistung_L1B,W,Watt_L1B,0
 1,77070100290700FF@1,Leistung_L2B,W,Watt_L2B,0

@@ -4,6 +4,10 @@
 1,010404SSssSSss@i1:100,Verbrauch,kWh,ImportActive,2
 1,010404SSssSSss@i2:100,Einspeisung,kWh,ExportActive,2
 1,=h--
+1,010404SSssSSss@i9:1,Leistung L1,W,Power_L1,0
+1,010404SSssSSss@i10:1,Leistung L2,W,Power_L2,0
+1,010404SSssSSss@i11:1,Leistung L3,W,Power_L3,0
+1,=h--
 1,010404SSssSSss@i3:100,Spannung L1,V,Voltage_L1,0
 1,010404SSssSSss@i4:100,Spannung L2,V,Voltage_L2,0
 1,010404SSssSSss@i5:100,Spannung L3,V,Voltage_L3,0
@@ -11,8 +15,4 @@
 1,010404SSssSSss@i6:100,Strom L1,A,Current_L1,2
 1,010404SSssSSss@i7:100,Strom L2,A,Current_L2,2
 1,010404SSssSSss@i8:100,Strom L3,A,Current_L3,2
-1,=h--
-1,010404SSssSSss@i9:1,Leistung L1,W,Power_L1,0
-1,010404SSssSSss@i10:1,Leistung L2,W,Power_L2,0
-1,010404SSssSSss@i11:1,Leistung L3,W,Power_L3,0
 #

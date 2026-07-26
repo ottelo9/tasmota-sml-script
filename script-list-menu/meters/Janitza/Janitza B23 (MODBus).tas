@@ -1,6 +1,3 @@
->D
->B
-->sensor53 r
 >M 1
 +1,%0rxpin%,m,%0smlf%,9600,Janitza,%0txpin%,1,01034A38,01034A3A,01034A3C,01034A4C,01034A4E,01034A50,01034A72,01034A7A,01034A82
 1,010304ffffffff@i0:1,Voltage L1-N,V,Voltage_L1-N,2

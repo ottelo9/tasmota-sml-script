@@ -7,6 +7,7 @@
 1,77070100240700ff@1,Leistung_L1,W,power_L1,0
 1,77070100380700ff@1,Leistung_L2,W,power_L2,0
 1,770701004c0700ff@1,Leistung_L3,W,power_L3,0
+1,=h--
 1,77070100200700ff@1,Spannung L1,V,voltage_L1,1
 1,77070100340700ff@1,Spannung L2,V,voltage_L2,1
 1,77070100480700ff@1,Spannung L3,V,voltage_L3,1

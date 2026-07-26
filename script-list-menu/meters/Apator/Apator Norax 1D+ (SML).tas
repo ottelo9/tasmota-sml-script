@@ -1,11 +1,9 @@
->D
->B
-->sensor53 r
 >M 1
 +1,%0rxpin%,s,%0smlf%,9600,SML
 1,77070100100700ff@1,Leistung,W,Power,0
 1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,2
 1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,2
+1,=h--
 1,770701000b0700ff@1,Strom,A,Current,1
 1,770701000c0700ff@1,Spannung,V,Voltage,1
 1,770701000e0700ff@1,Frequenz,Hz,Frequency,0

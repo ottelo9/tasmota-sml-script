@@ -1,11 +1,8 @@
->D
->B
-=>sensor53 r
 >M 1
 +1,%0rxpin%,s,%0smlf%,9600,DWS7612
-1,77070100010800ff@1000,Energie,kWh,energy,4
-1,77070100100700ff@1,Leistung,W,power,2
+1,77070100100700ff@1,Leistung,W,Power,2
+1,77070100010800ff@1000,Energie,kWh,ImportActive,4
+1,=h--
 1,7707010060320101@#,Service ID,,meter_id,0
-1,77010b0a01445a47@#,Unbekannt,,unknown,0
 1,77070100600100ff@#,Zählernummer,,meter_number,0
 #
