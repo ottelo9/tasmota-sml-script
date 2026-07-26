@@ -121,7 +121,7 @@ Empfohlene Einstellung: AUS und Verwendung der neuen Regleroptimierung (siehe un
 <ins>Regleroptimierung: (neu ab 02.04.2026)</ins>  
 EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten. Dem Akku wird ein falscher/kleinerer Verbrauch vorgekaukelt. Der interne Regler im Akku sieht eine kleinere Regelabweichung und versucht diese dann langsam auszuregeln. Getestet mit diversen Marstek Akkus (Jupiter, Venus). Siehe auch die [Diskussion](https://github.com/ottelo9/tasmota-sml-script/discussions/47).  
 <ins>3 Phasen: (neu ab 25.07.2026)</ins>  
-EIN = Wirkleistungen der 3 Phasen werden an den Akku übertragen, somit ist der Betrieb von mehreren Akkus auf unterschiedlichen Phasen möglich. Das ist beim echten Shelly/Ecotracker Standard. Das muss euer Stromzähler aber unterstützten und das Stromzähler Script (meter_sml.def) muss von der Reihenfolge der Werte korrekt eingestellt sein (Beispiel):  
+EIN = Wirkleistungen der 3 Phasen werden an den Akku übertragen, somit ist der Betrieb von mehreren Akkus auf unterschiedlichen Phasen möglich. Der einstellbare Offset beeinflusst aber nur die Gesamtleistung, genauso wie die Regleroptimierung. Das ist beim echten Shelly/Ecotracker Standard. Das muss euer Stromzähler aber unterstützten und das Stromzähler Script (meter_sml.def) muss von der Reihenfolge der Werte korrekt eingestellt sein (Beispiel):  
 >M 1  
 +1,%0rxpin%,s,%0smlf%,9600,MT175,%0txpin%  
 1,77070100100700ff@1,Leistung,W,Power,16  <- sml[1]  
