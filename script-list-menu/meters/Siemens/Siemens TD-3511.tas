@@ -11,7 +11,7 @@ lnv0=0
 ends
 
 >M 1
-+1,%0rxpin%,o,%0smlf%,19200,Siemens,%0txpin%
++1,%0rxpin%,o,%0smlf%,19200,TD3511,%0txpin%
 1,1.7.0(@1000,Wirkleistung_P+,W,Power,16
 1,1.8.0(@1,Verbrauch,kWh,ImportActive,3
 1,2.8.0(@1,Einspeisung,kWh,ExportActive,3

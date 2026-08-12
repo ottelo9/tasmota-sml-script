@@ -140,6 +140,7 @@
 		{ "label": "Shelly PRO 3EM emulation", "filename": "Shelly/Shelly PRO 3EM emulation.tas" },
 		{ "label": "Siemens IM-350", "filename": "Siemens/Siemens IM-350.tas" },
 		{ "label": "Siemens IM-350 (RAW)", "filename": "Siemens/Siemens IM-350 (RAW).tas" },
+		{ "label": "Siemens IM-351", "filename": "Siemens/Siemens IM-351.tas" },
 		{ "label": "Siemens TD-3511", "filename": "Siemens/Siemens TD-3511.tas" },
 		{ "label": "ZPA GH302", "filename": "ZPA/ZPA GH302.tas" },
 		{ "label": "ZPA GH305", "filename": "ZPA/ZPA GH305.tas" },

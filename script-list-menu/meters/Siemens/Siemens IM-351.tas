@@ -1,0 +1,11 @@
+>M 1
++1,%0rxpin%,r,%0smlf%,9600,IM351
+1,=so3,256
+1,=so4,KEY
+1,=m 4-5 @1,Wirkleistung,W,Power,16
+1,0209090Cx13UUuuUUuu@1000,Verbrauch,kWh,ImportActive,3
+1,0209090Cx18UUuuUUuu@1000,Einspeisung,kWh,ExportActive,3
+1,=h--
+1,0209090Cx33UUuuUUuu@1,+P,W,+P,0
+1,0209090Cx38UUuuUUuu@1,-P,W,-P,0
+#
