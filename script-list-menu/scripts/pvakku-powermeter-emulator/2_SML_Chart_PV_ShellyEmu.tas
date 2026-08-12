@@ -57,6 +57,8 @@ header=""
 once=0
 udpsent=0
 udpapi=0
+phin=0
+phout=0
 >R
 =#save
 >B
@@ -117,6 +119,16 @@ acp(dcon 0)
 acp(dprod 0)
 acp(mcon 0)
 =#save
+#ctrl
+if (ctrlopt>0) {
+if (phin>pwroffset) {
+phout=(phin-pwroffset)/4
+} else {
+phout=(phin-pwroffset)/0.8
+}
+} else {
+phout=phin-pwroffset
+}
 #daysub
 if wm>0 {
 wcs <div id="day" style="text-align:center;width:600px;height:400px"></div>
@@ -357,22 +369,22 @@ udp(0 1010)
 once=1
 }
 if (upsecs%throttle==0) {
-if (ctrlopt>0) {
-if (sml[1]>pwroffset) {
-cpwr=(sml[1]-pwroffset)/4
-} else {
-cpwr=(sml[1]-pwroffset)/0.8
-}
-} else {
-cpwr=sml[1]-pwroffset
-}
+phin=sml[1]
+=#ctrl
+cpwr=phout
 c1p=cpwr
 c2p=0
 c3p=0
 if (ph3==1) {
-c1p=sml[4]
-c2p=sml[5]
-c3p=sml[6]
+phin=sml[4]
+=#ctrl
+c1p=phout
+phin=sml[5]
+=#ctrl
+c2p=phout
+phin=sml[6]
+=#ctrl
+c3p=phout
 }
 c1c=c1p/230
 c2c=c2p/230
@@ -421,7 +433,7 @@ $gc(e)
 %=#dayprod
 %=#monthsub
 $<center><span style="font-size:10px;">
-$Version 25.07.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
+$Version 12.08.2026 (PV+ShellyEmu) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $4h Diagramm aktualisiert sich alle 30s, 24h Diagramm alle 60s.<br>

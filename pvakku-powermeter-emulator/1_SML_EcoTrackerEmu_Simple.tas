@@ -40,6 +40,8 @@ power3=0
 once=0
 header=""
 json=""
+phin=0
+phout=0
 
 >B
 ->SetOption57 0
@@ -66,6 +68,19 @@ ctrlopt=0
 ph3=0
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
 =#save
+
+; Offset für Nulleinspeisung + Regleroptimierung auf einen Leistungswert anwenden
+; Eingabe: phin, Ausgabe: phout. Aufruf für die Gesamtleistung und (bei ph3=1) für jede Phase einzeln.
+#ctrl
+if (ctrlopt>0) {
+if (phin>pwroffset) {
+phout=(phin-pwroffset)/4
+} else {
+phout=(phin-pwroffset)/0.8
+}
+} else {
+phout=phin-pwroffset
+}
 
 ;-- ECOTRACKER EMULATION --
 >ah
@@ -154,16 +169,10 @@ if (once==0) {
 mdns("ecotracker-" "-" "everhome")
 once=1
 }
-; Optimierung Regler
-if (ctrlopt>0) {
-if (sml[1]>pwroffset) {
-cpwr=(sml[1]-pwroffset)/4
-} else {
-cpwr=(sml[1]-pwroffset)/0.8
-}
-} else {
-cpwr=sml[1]-pwroffset
-}
+; Optimierung Regler + Offset
+phin=sml[1]
+=#ctrl
+cpwr=phout
 
 ; stark gemittelte Leistung für powerAvg (EcoTrackerEmu)
 power3=(0.9*power3)+((1-0.9)*cpwr)
@@ -173,10 +182,17 @@ c1p=cpwr
 c2p=0
 c3p=0
 ; Optional: Wenn Zähler auch Einzelleistungen sendet (L1-3). Marstek prüft dann, auf welcher Phase er verbunden ist. Dafür muss sml_meter.def muss korrekt sein. Nach Einspeisung müssen die Einzelleistungen kommen.
+; Offset und Regleroptimierung wirken hier pro Phase, da der Akku auf seine eigene Phase regelt.
 if (ph3==1) {
-c1p=sml[4]
-c2p=sml[5]
-c3p=sml[6]
+phin=sml[4]
+=#ctrl
+c1p=phout
+phin=sml[5]
+=#ctrl
+c2p=phout
+phin=sml[6]
+=#ctrl
+c3p=phout
 }
 
 >W
@@ -189,7 +205,7 @@ Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
 $<center><span style="font-size:10px;">
-$Version 25.07.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
+$Version 12.08.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $und gemu2015 (ScriptEngine V%vers%)<br>
 $Hinweis: Alle Werte werden um Mitternacht gespeichert!<br>
 $</span></center>
