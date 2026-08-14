@@ -20,6 +20,7 @@
 		{ "label": "2_SML_Chart_PV_EcoTrackerEmu", "filename": "pvakku-powermeter-emulator/2_SML_Chart_PV_EcoTrackerEmu.tas" },
 		{ "label": "2_SML_Chart_PV_ShellyEmu", "filename": "pvakku-powermeter-emulator/2_SML_Chart_PV_ShellyEmu.tas" },
 		{ "label": "C) Andere Scripte:", "filename": "" },
+		{ "label": "1_DeepSleep", "filename": "other/1_DeepSleep.tas" }
 		{ "label": "2_SML_Simulator", "filename": "other/2_SML_Simulator.tas" }
 	]
 }

@@ -9,6 +9,10 @@
 ; zum String hinzugefügt und dann als SML Binary gesendet.
 ; Die Leistung wird jede Sekunde addiert. Wenn positiv dann +PwrFrGrd, wenn negativ dann
 ; +PwrToGrd. Nach 60s wird die Arbeit/Energie für den Zähler errechnet = EnFrGrd EnToGrd.
+; Modi: Zufall / Fest (ein Schieberegler = Gesamtleistung, Aufteilung fest 50/30/20) /
+; Rampe / Fest je Phase (drei Schieberegler L1/L2/L3, Gesamtleistung = deren Summe).
+; "Fest je Phase" ist der Modus zum Testen von Akkus, die selbst erkennen sollen,
+; an welcher Phase sie hängen.
 
 ; Startwert Stromzählerwert kWh (Netzbezug)
 p:EnFrGrd=26712.92
@@ -16,6 +20,10 @@ p:EnFrGrd=26712.92
 p:EnToGrd=657.85
 p:mode=1
 p:pwrsld=1000
+; Feste Vorgabe je Phase (Modus 4), Gesamtleistung = Summe der drei
+p:psl1=500
+p:psl2=300
+p:psl3=200
 ; OBIS binary SML MT175 Stromzähler
 ; OBIS (hex) Dumps (erstellt mit echtem Zähler via sensor53 d1). Die letzten 10 Hex Zahlen werden generiert
 ; Zählerstand Bezug Total [Wh]
@@ -87,7 +95,14 @@ fPwr=-1000
 fPwr+=20
 }
 }
-ends 
+case 4
+; Feste Vorgabe je Phase via Schieberegler, Gesamtleistung = Summe
+; (fuer Akkus, die selbst erkennen sollen, an welcher Phase sie haengen)
+fp1=psl1
+fp2=psl2
+fp3=psl3
+fPwr=fp1+fp2+fp3
+ends
 
 ; alle 1s: Leistung W jede Sekunde addieren, damit Bezug/Einspeisung korrekt erhöht wird
 if (fPwr<0) {
@@ -143,10 +158,13 @@ iPwr-=i(-fPwr)
 }
 sml(1 1 cPow+hxi(iPwr)+"01")
 sml(2 1 cPow+hxi(iPwr)+"01")
-; Einzelleistungen L1/L2/L3: Gesamtleistung aufteilen (50/30/20, Summe=Gesamt)
+; Einzelleistungen L1/L2/L3: in Modus 4 stehen sie schon aus den Schiebereglern,
+; sonst wird die Gesamtleistung fest aufgeteilt (50/30/20, Summe=Gesamt)
+if (mode!=4) {
 fp1=fPwr*0.5
 fp2=fPwr*0.3
 fp3=fPwr-fp1-fp2
+}
 iP1=i(fp1)
 if fp1<0 {
 iP1=#4294967296
@@ -172,10 +190,15 @@ sml(2 1 cP3+hxi(iP3)+"01")
 >W
 ; web button
 bu(_save "" "&#x1F4BE; Daten speichern")
-; Simulierte Leistung via Slider
+; Simulierte Leistung via Slider (Modus "Fest")
 sl(-1000 1000 pwrsld "-1000 W" "0 W" "1000 W")
-pd(mode "Modus wählen: " 80 "Zufall" "Fest" "Rampe")
+pd(mode "Modus wählen: " 80 "Zufall" "Fest" "Rampe" "Fest je Phase")
 nm(1 60 1 t1t "Zykluszeit [s]: " 50 0)
+
+; Einzelvorgabe je Phase - wirkt nur im Modus "Fest je Phase"
+sl(-1000 1000 psl1 "L1" "0 W" "1000 W")
+sl(-1000 1000 psl2 "L2" "0 W" "1000 W")
+sl(-1000 1000 psl3 "L3" "0 W" "1000 W")
 
 Simulierte Zählerwerte:{m}
 aktuelle Wirkleistung{m}%fPwr% W
@@ -189,7 +212,7 @@ Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2
 Uptime{m}%utm%
 
 $<center><span style="font-size:10px;">
-$Version 20.03.2026 (SML Simulator) by ottelo.jimdo.de<br>
+$Version 12.08.2026 (SML Simulator) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden nicht automatisch gespeichert!<br>
 $Speichern über Button oder Restart.<br>
 $</span></center>

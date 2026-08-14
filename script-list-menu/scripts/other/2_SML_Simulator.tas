@@ -4,12 +4,14 @@ p:EnFrGrd=26712.92
 p:EnToGrd=657.85
 p:mode=1
 p:pwrsld=1000
+p:psl1=500
+p:psl2=300
+p:psl3=200
 cEnIn="77070100010800ff650001018201621e52ff5900000000"
 cEnIn1="77070100010801ff0101621e52ff5900000000"
 cEnOut="77070100020800ff0101621e52ff5900000000"
 cEnOut1="77070100020801ff0101621e52ff5900000000"
 cPow="77070100100700ff0101621b520055"
-; Phasen-Leistung OBIS: L1=36.7.0 L2=56.7.0 L3=76.7.0 (Einheit W, int32, signed)
 cP1="77070100240700ff0101621b520055"
 cP2="77070100380700ff0101621b520055"
 cP3="770701004c0700ff0101621b520055"
@@ -56,6 +58,11 @@ fPwr=-1000
 fPwr+=20
 }
 }
+case 4
+fp1=psl1
+fp2=psl2
+fp3=psl3
+fPwr=fp1+fp2+fp3
 ends
 if (fPwr<0) {
 PwrToGrd-=fPwr
@@ -97,10 +104,11 @@ iPwr-=i(-fPwr)
 }
 sml(1 1 cPow+hxi(iPwr)+"01")
 sml(2 1 cPow+hxi(iPwr)+"01")
-; 3-Phasen: Gesamtleistung auf L1/L2/L3 aufteilen (50/30/20, Summe=Gesamt)
+if (mode!=4) {
 fp1=fPwr*0.5
 fp2=fPwr*0.3
 fp3=fPwr-fp1-fp2
+}
 iP1=i(fp1)
 if fp1<0 {
 iP1=#4294967296
@@ -125,8 +133,11 @@ sml(2 1 cP3+hxi(iP3)+"01")
 >W
 bu(_save "" "&#x1F4BE; Daten speichern")
 sl(-1000 1000 pwrsld "-1000 W" "0 W" "1000 W")
-pd(mode "Modus wählen: " 80 "Zufall" "Fest" "Rampe")
+pd(mode "Modus wählen: " 80 "Zufall" "Fest" "Rampe" "Fest je Phase")
 nm(1 60 1 t1t "Zykluszeit [s]: " 50 0)
+sl(-1000 1000 psl1 "L1" "0 W" "1000 W")
+sl(-1000 1000 psl2 "L2" "0 W" "1000 W")
+sl(-1000 1000 psl3 "L3" "0 W" "1000 W")
 Simulierte Zählerwerte:{m}
 aktuelle Wirkleistung{m}%fPwr% W
 Phasen L1/L2/L3{m}%0fp1% / %0fp2% / %0fp3% W
@@ -136,7 +147,7 @@ Einspeisung{m}%2EnToGrd% kWh
 Datum{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
 Uptime{m}%utm%
 $<center><span style="font-size:10px;">
-$Version 20.03.2026 (SML Simulator) by ottelo.jimdo.de<br>
+$Version 12.08.2026 (SML Simulator) by ottelo.jimdo.de<br>
 $Hinweis: Die Daten werden nicht automatisch gespeichert!<br>
 $Speichern über Button oder Restart.<br>
 $</span></center>
