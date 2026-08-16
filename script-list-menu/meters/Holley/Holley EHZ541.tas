@@ -3,5 +3,4 @@
 1,77070100100700ff@1,Leistung,W,Power,16
 1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,3
 1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,3
-;1,=so1,00010800,65,11,65,11,00100700
 #

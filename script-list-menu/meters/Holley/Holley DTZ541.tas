@@ -3,10 +3,12 @@
 1,77070100100700ff@1,Leistung,W,Power,16
 1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,3
 1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,3
+1,77070100010802ff@1000,Verbrauch Nacht,kWh,TotalTariff,3
+1,77070100010801ff@1000,Verbrauch Tag,kwH,Energy,3
 1,=h--
-1,=m 7*10 @1,Power L1,W,P1,0
-1,=m 8*11 @1,Power L2,W,P2,0
-1,=m 9*12 @1,Power L3,W,P3,0
+1,=m 9*12 @1,Power L1,W,P1,0
+1,=m 10*13 @1,Power L2,W,P2,0
+1,=m 11*14 @1,Power L3,W,P3,0
 1,=h--
 1,77070100200700ff@1,Voltage L1,V,volt_p1,1
 1,77070100340700ff@1,Voltage L2,V,volt_p2,1
