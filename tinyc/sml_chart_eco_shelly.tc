@@ -1,0 +1,194 @@
+// sml_chart_eco_shelly.tc — charts + EcoTracker / Shelly Pro 3EM emulator.
+// Same charts and PV switch as sml_chart.tc, plus the meter emulation a PV
+// battery polls. Without charts use sml_eco_shelly.tc.
+// Docs: https://ottelo9.github.io/tasmota-sml-script/eco_shelly/
+// Needs ESP32, TinyC in SLOT 0 (Tasmota dispatches every webOn to slot 0),
+// USE_SML.
+
+#include "sml_chart_pv_common.tc"
+#include "sml_modbus_common.tc"
+#include "eco_shelly_common.tc"
+
+char sml_vers[] = "16.08.2026";
+
+// ─── Settings ──────────────────────────────────────────────────────────────
+persist int sml_pv;          // 1 = show feed-in rows and charts
+
+// ─── Transient WebButton flags ─────────────────────────────────────────────
+int do_init;
+int do_init2;
+int do_save;
+int do_reset;
+
+// ─── Callbacks ─────────────────────────────────────────────────────────────
+
+void Every100ms() {
+    esPoll();
+    mbPoll();
+}
+
+void EverySecond() {
+    sml_descriptor_apply();
+    esTick();
+    mbTick();
+
+    if (do_reset) {
+        tasmCmd("Sensor53 r", sml_pv_resp);
+        do_reset = 0;
+    }
+
+    if (tasm_year < 2020) return;
+    if (smlGet(2) == 0.0) return;
+
+    if (do_init) {
+        sml_chart_init_baselines();
+        sml_chart_pv_init_baselines();
+        do_init = 0;
+    }
+    if (do_init2) {
+        sml_chart_init_columns();
+        sml_chart_pv_init_columns();
+        do_init2 = 0;
+    }
+    if (do_save) {
+        sml_chart_save();
+        sml_chart_pv_save();
+        do_save = 0;
+    }
+
+    sml_t1 = sml_t1 - 1;
+    if (sml_t1 <= 0) {
+        sml_t1 = 5;
+        sml_chart_5s_tick();
+        sml_chart_pv_5s_tick();       // smooths power2 and publishes it
+        // cpwr - what the emulator hands the battery - only exists here.
+        if (sml_sndpwr) {
+            sprintf(sml_buf, "publish stat/%%topic%%/script/cpwr %d", (int)es_cpwr);
+            tasmCmd(sml_buf, sml_pv_resp);
+        }
+    }
+    sml_t2 = sml_t2 - 1;
+    if (sml_t2 <= 0) {
+        sml_t2 = 60;
+        sml_chart_60s_tick();
+        sml_chart_pv_60s_tick();
+    }
+}
+
+void WebOn() {
+    int h = webHandler();
+    if (esWebOn(h)) return;           // /v1/json, /rpc/*
+    if (h != 4) return;               // /pwr
+    if (sml_sndpwr > 0) {
+        sprintf(sml_buf, "{\"power2\":%.0f", sml_power2);
+        sprintfAppend(sml_buf, ",\"cpwr\":%.0f", es_cpwr);
+        sprintfAppend(sml_buf, ",\"power\":%.0f", smlGet(1));
+        sprintfAppend(sml_buf, ",\"in\":%.3f", smlGet(2));
+        sprintfAppend(sml_buf, ",\"out\":%.3f}", smlGet(3));
+    } else {
+        strcpy(sml_buf, "{\"enabled\":0}");
+    }
+    webSend(sml_buf);
+}
+
+void WebCall() {
+    if (!sml_activ) {
+        uiText("{s}SML{m}off (Rule1){e}", "{s}SML{m}aus (Rule1){e}");
+        return;
+    }
+    sml_chart_render_totals();
+    if (ui_de) sprintf(sml_buf, "{s}Leistung (gefiltert){m}%.0f W{e}", sml_power2);
+    else       sprintf(sml_buf, "{s}Power (smoothed){m}%.0f W{e}", sml_power2);
+    webSend(sml_buf);
+
+    if (sml_pv > 0) {
+        float eout = smlGet(3);
+        if (ui_de) {
+            sprintf(sml_buf, "{s}Tageseinspeisung{m}%.2f kWh{e}",  eout - sml_dval2); webSend(sml_buf);
+            sprintf(sml_buf, "{s}Monatseinspeisung{m}%.2f kWh{e}", eout - sml_mval2); webSend(sml_buf);
+            sprintf(sml_buf, "{s}Jahreseinspeisung{m}%.2f kWh{e}", eout - sml_yval2); webSend(sml_buf);
+        } else {
+            sprintf(sml_buf, "{s}Export day{m}%.2f kWh{e}",   eout - sml_dval2); webSend(sml_buf);
+            sprintf(sml_buf, "{s}Export month{m}%.2f kWh{e}", eout - sml_mval2); webSend(sml_buf);
+            sprintf(sml_buf, "{s}Export year{m}%.2f kWh{e}",  eout - sml_yval2); webSend(sml_buf);
+        }
+    }
+    esRows();
+    mbRows();
+}
+
+void WebPage() {
+    webSend("<div style='margin-left:-30px'>");
+    sml_chart_render_4h();
+    sml_chart_render_24h();
+    sml_chart_render_days();
+    if (sml_pv > 0) {
+        sml_chart_pv_render_dayprod();
+        sml_chart_pv_render_months_dual();
+    } else {
+        sml_chart_render_months();
+    }
+    webSend("</div>");
+}
+
+void WebUI() {
+    if (webPage() != 0) return;
+    sml_render_settings_panel();
+    uiLang();
+    esPanel();
+
+    uiHead("&#x2600;&#xFE0F;", "PV", "PV", "sml/#pv");
+    if (ui_de) webCheckbox(sml_pv, "Einspeisung anzeigen");
+    else       webCheckbox(sml_pv, "Show feed-in");
+
+    uiHead("&#x1F527;", "Telemetry", "Telemetrie", "sml/#telemetry");
+    if (ui_de) webCheckbox(sml_sndpwr, "Gemittelte Leistung senden");
+    else       webCheckbox(sml_sndpwr, "Publish smoothed power");
+    if (sml_sndpwr > 0) {
+        webSend("<div style='font-size:12px;color:#444'>MQTT: power2 + cpwr &middot; HTTP: <a href='/pwr'>/pwr</a></div>");
+    }
+    mbPanel();
+
+    sml_chart_data_panel(varIdx(do_init), varIdx(do_init2));
+    if (ui_de) {
+        webButton(do_save,  "Diagrammdaten speichern|gespeichert");
+        webSend("<hr>");
+        webButton(do_reset, "SML neu laden|neu geladen");
+    } else {
+        webButton(do_save,  "Save chart data|saved");
+        webSend("<hr>");
+        webButton(do_reset, "Restart SML|restarted");
+    }
+
+    sprintf(sml_buf, "<hr><div style='text-align:center;font-size:10px;color:#555;line-height:1.5'>sml_chart_eco_shelly.tc &middot; Version %s<br>", sml_vers);
+    webSend(sml_buf);
+    webSend("by <a href='https://ottelo.jimdofree.com' target='_blank'>ottelo.jimdofree.com</a> &amp; gemu2015 (TinyC <span id='tcv'>...</span>)</div></div>");
+    webSend("<script>if(window.__tcv){document.getElementById('tcv').textContent=window.__tcv;}else{fetch('/tc_api?cmd=status').then(function(r){return r.json();}).then(function(j){window.__tcv=j.release;var e=document.getElementById('tcv');if(e)e.textContent=j.release;}).catch(function(){});}</script>");
+}
+
+void JsonCall() {
+    esJson();
+}
+
+int main() {
+    if (sml_rx_pin == 0 && sml_tx_pin == 0) {
+        sml_rx_pin = -1;
+        sml_tx_pin = -1;
+    }
+    if (sml_da == 0) sml_da = 1;
+    if (sml_activ != tasm_rule) tasm_rule = sml_activ;
+
+    sml_chart_load();
+    sml_chart_pv_load();
+
+    esInit(1, 2, 3);             // /v1/json, /rpc/EM, /rpc/Shelly
+    mbInit();
+    webPageLabel(0, "Settings");
+    webPageLabel(1, "");
+    webOn(4, "/pwr");
+    smlScripterLoad("/sml_meter.def");
+
+    addLog("sml_chart_eco_shelly: %s started mode=%d pv=%d modbus=%d",
+           sml_vers, es_mode, sml_pv, mb_on);
+    return 0;
+}

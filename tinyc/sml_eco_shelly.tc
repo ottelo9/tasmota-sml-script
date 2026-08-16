@@ -1,0 +1,136 @@
+// sml_eco_shelly.tc — SML meter + EcoTracker / Shelly Pro 3EM emulator,
+// no charts. Feeds a PV battery (Marstek, Jackery, NOAH, Hoymiles, ...) for
+// zero feed-in. For the charts variant use sml_chart_eco_shelly.tc.
+// Docs: https://ottelo9.github.io/tasmota-sml-script/eco_shelly/
+// Needs ESP32, TinyC in SLOT 0 (Tasmota dispatches every webOn to slot 0),
+// USE_SML.
+
+#include "sml_descriptor.tc"
+#include "sml_modbus_common.tc"
+#include "eco_shelly_common.tc"
+
+char sml_vers[] = "16.08.2026";
+
+// ─── Settings ──────────────────────────────────────────────────────────────
+persist int sml_sndpwr;      // 1 = publish power via MQTT and serve /pwr
+
+// ─── Runtime ───────────────────────────────────────────────────────────────
+float sml_power2;
+int   sml_pwr_last;
+char  sml_mtopic[64];
+char  sml_pub[128];
+int   do_reset;
+
+// ─── Callbacks ─────────────────────────────────────────────────────────────
+
+void Every100ms() {
+    esPoll();
+    mbPoll();
+}
+
+void EverySecond() {
+    sml_descriptor_apply();
+    esTick();
+    mbTick();
+
+    if (do_reset) {
+        tasmCmd("Sensor53 r", sml_buf);
+        do_reset = 0;
+    }
+
+    if (tasm_uptime - sml_pwr_last >= 5) {
+        sml_pwr_last = tasm_uptime;
+        sml_power2 = (0.9 * sml_power2) + (0.1 * smlGet(1));
+        if (sml_sndpwr > 0) {
+            sprintf(sml_pub, "Publish stat/%s/script/power2 %.0f", sml_mtopic, sml_power2);
+            tasmCmd(sml_pub, sml_buf);
+            sprintf(sml_pub, "Publish stat/%s/script/cpwr %.0f", sml_mtopic, es_cpwr);
+            tasmCmd(sml_pub, sml_buf);
+        }
+    }
+}
+
+void WebOn() {
+    int h = webHandler();
+    if (esWebOn(h)) return;          // /v1/json, /rpc/*
+    if (h != 4) return;              // /pwr
+    if (sml_sndpwr > 0) {
+        sprintf(sml_buf, "{\"power2\":%.0f", sml_power2);
+        sprintfAppend(sml_buf, ",\"cpwr\":%.0f", es_cpwr);
+        sprintfAppend(sml_buf, ",\"power\":%.0f", smlGet(1));
+        sprintfAppend(sml_buf, ",\"in\":%.3f", smlGet(2));
+        sprintfAppend(sml_buf, ",\"out\":%.3f}", smlGet(3));
+    } else {
+        strcpy(sml_buf, "{\"enabled\":0}");
+    }
+    webSend(sml_buf);
+}
+
+void WebCall() {
+    if (!sml_activ) {
+        uiText("{s}SML{m}off (Rule1){e}", "{s}SML{m}aus (Rule1){e}");
+        return;
+    }
+    if (ui_de) {
+        sprintf(sml_buf, "{s}Leistung{m}%.0f W{e}", smlGet(1));      webSend(sml_buf);
+        sprintf(sml_buf, "{s}Bezug{m}%.3f kWh{e}", smlGet(2));       webSend(sml_buf);
+        sprintf(sml_buf, "{s}Einspeisung{m}%.3f kWh{e}", smlGet(3)); webSend(sml_buf);
+    } else {
+        sprintf(sml_buf, "{s}Power{m}%.0f W{e}", smlGet(1));         webSend(sml_buf);
+        sprintf(sml_buf, "{s}Import{m}%.3f kWh{e}", smlGet(2));      webSend(sml_buf);
+        sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", smlGet(3));      webSend(sml_buf);
+    }
+    esRows();
+    mbRows();
+}
+
+void WebUI() {
+    if (webPage() != 0) return;
+    sml_render_settings_panel();
+    uiLang();
+    esPanel();
+
+    uiHead("&#x1F4E1;", "Telemetry", "Telemetrie", "sml/#telemetry");
+    if (ui_de) webCheckbox(sml_sndpwr, "Leistung senden");
+    else       webCheckbox(sml_sndpwr, "Publish power");
+    if (sml_sndpwr > 0) {
+        sprintf(sml_buf, "<div style='font-size:12px;color:#444'>MQTT: stat/%s/script/power2 + /cpwr<br>HTTP: <a href='/pwr'>/pwr</a></div>", sml_mtopic);
+        webSend(sml_buf);
+    }
+    mbPanel();
+
+    webSend("<hr>");
+    if (ui_de) webButton(do_reset, "SML neu laden|neu geladen");
+    else       webButton(do_reset, "Restart SML|restarted");
+
+    sprintf(sml_buf, "<hr><div style='text-align:center;font-size:10px;color:#555;line-height:1.5'>sml_eco_shelly.tc &middot; Version %s<br>", sml_vers);
+    webSend(sml_buf);
+    webSend("by <a href='https://ottelo.jimdofree.com' target='_blank'>ottelo.jimdofree.com</a> &amp; gemu2015 (TinyC <span id='tcv'>...</span>)</div></div>");
+    webSend("<script>if(window.__tcv){document.getElementById('tcv').textContent=window.__tcv;}else{fetch('/tc_api?cmd=status').then(function(r){return r.json();}).then(function(j){window.__tcv=j.release;var e=document.getElementById('tcv');if(e)e.textContent=j.release;}).catch(function(){});}</script>");
+}
+
+void JsonCall() {
+    esJson();
+}
+
+int main() {
+    if (sml_rx_pin == 0 && sml_tx_pin == 0) {
+        sml_rx_pin = -1;
+        sml_tx_pin = -1;
+    }
+    if (sml_activ != tasm_rule) tasm_rule = sml_activ;
+
+    tasmInfo(0, sml_mtopic);
+    sml_power2 = smlGet(1);
+    sml_pwr_last = 0;
+
+    esInit(1, 2, 3);             // /v1/json, /rpc/EM, /rpc/Shelly
+    mbInit();
+    webPageLabel(0, "Settings");
+    webOn(4, "/pwr");
+    smlScripterLoad("/sml_meter.def");
+
+    addLog("sml_eco_shelly: %s started mode=%d rx=%d modbus=%d",
+           sml_vers, es_mode, sml_rx_pin, mb_on);
+    return 0;
+}

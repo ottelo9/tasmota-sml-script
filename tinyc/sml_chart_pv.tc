@@ -1,0 +1,147 @@
+// ============================================================================
+// sml_chart_pv.tc — SML reader with PV-production tracking + charts
+// ============================================================================
+//
+// TinyC port of ottelo's 2_SML_Chart_PV.tas. Builds on sml_chart.tc:
+// every feature of the consumption-only variant is here, plus the PV
+// production side — a second energy counter at smlGet(3), parallel
+// midnight-rollover for production baselines, a daily-production chart,
+// a dual-series month chart (consumption + feed-in), an exponentially
+// smoothed power readout and optional MQTT publish of that smoothed
+// value (for opendtu-onbattery DPL etc.).
+//
+// All consumption-chart infrastructure (4h/24h power, daily-consumption,
+// midnight rollover, file I/O, descriptor settings panel) is inherited
+// from sml_chart_common.tc; all PV-production helpers from
+// sml_chart_pv_common.tc (also shared with sml_chart_modbus.tc).
+// This file is just the callback wiring.
+// ============================================================================
+
+// Uncomment to pre-fill all charts with synthetic data at boot.
+//#define SML_CHART_DEMO
+
+#include "sml_chart_pv_common.tc"
+
+// ── Transient WebButton flags ──────────────────────────────────────────────
+int do_init;
+int do_init2;
+int do_save;
+int do_reset;
+
+// ============================================================================
+// Callbacks
+// ============================================================================
+
+void EverySecond() {
+    sml_descriptor_apply();
+
+    if (do_reset) {
+        tasmCmd("Sensor53 r", sml_pv_resp);
+        do_reset = 0;
+    }
+
+    if (tasm_year < 2020) return;
+    if (smlGet(2) == 0.0) return;
+
+    if (do_init) {
+        sml_chart_init_baselines();
+        sml_chart_pv_init_baselines();
+        do_init = 0;
+    }
+    if (do_init2) {
+        sml_chart_init_columns();
+        sml_chart_pv_init_columns();
+        do_init2 = 0;
+    }
+    if (do_save) {
+        sml_chart_save();
+        sml_chart_pv_save();
+        do_save = 0;
+    }
+
+    sml_t1 = sml_t1 - 1;
+    if (sml_t1 <= 0) {
+        sml_t1 = 5;
+        sml_chart_5s_tick();
+        sml_chart_pv_5s_tick();
+    }
+    sml_t2 = sml_t2 - 1;
+    if (sml_t2 <= 0) {
+        sml_t2 = 60;
+        sml_chart_60s_tick();
+        sml_chart_pv_60s_tick();
+    }
+}
+
+void WebCall() {
+    if (!sml_activ) {
+        webSend("{s}SML{m}disabled (Rule1 off){e}");
+        return;
+    }
+    sml_chart_render_totals();
+    sprintf(sml_buf, "{s}Leistung (gefiltert){m}%.0f W{e}", sml_power2);
+    webSend(sml_buf);
+    float eout = smlGet(3);
+    sprintf(sml_buf, "{s}Tageseinspeisung{m}%.2f kWh{e}",   eout - sml_dval2); webSend(sml_buf);
+    sprintf(sml_buf, "{s}Monatseinspeisung{m}%.2f kWh{e}",  eout - sml_mval2); webSend(sml_buf);
+    sprintf(sml_buf, "{s}Jahreseinspeisung{m}%.2f kWh{e}",  eout - sml_yval2); webSend(sml_buf);
+}
+
+void WebPage() {
+    // ottelo's chart-centering compensation (2_SML_Chart_PV.tas wraps the
+    // chart block in `<div style="margin-left:-30px">`) — pulls the
+    // ~30 px right-shift of the Tasmota main page back to centered.
+    webSend("<div style='margin-left:-30px'>");
+    sml_chart_render_4h();
+    sml_chart_render_24h();
+    sml_chart_render_days();           // daily consumption (tri-color)
+    sml_chart_pv_render_dayprod();     // daily production (tri-color)
+    sml_chart_pv_render_months_dual(); // dual-series month chart
+    webSend("</div>");
+}
+
+void WebUI() {
+    sml_render_settings_panel();
+    webSend("<hr><b>&#x1F527; Optionen</b>");
+    webCheckbox(sml_sndpwr, "MQTT: Gemittelte Leistung senden");
+    webSend("<hr><b>&#x1F4BE; Daten</b>");
+    // Destruktive Aktionen mit Sicherheitsabfrage (confirm) + Klartext-Label.
+    webSend("<div style='font-size:11px;color:#a00;margin:4px 0'>&#9888; Die folgenden zwei Aktionen ueberschreiben Verlaufsdaten.</div>");
+    webSend("<div><button style='width:100%' data-a='erledigt' onclick='if(confirm(\"Setzt Tages-/Monats-/Jahres-Nullpunkt NEU vom aktuellen Zaehlerstand und loescht die 4h/24h-Charts. Fortfahren?\"))tcbtn(this,1,");
+    sprintf(sml_buf, "%d)'>Zaehler-Nullpunkte setzen (Tag/Monat/Jahr) + Power-Charts leeren</button></div>", varIdx(do_init));
+    webSend(sml_buf);
+    webSend("<div><button style='width:100%' data-a='erledigt' onclick='if(confirm(\"Loescht ALLE Tages- und Monats-Balken (Verbrauchsverlauf). Fortfahren?\"))tcbtn(this,1,");
+    sprintf(sml_buf, "%d)'>Balkendiagramme (Tage/Monate) zuruecksetzen</button></div>", varIdx(do_init2));
+    webSend(sml_buf);
+    webButton(do_save,  "Diagrammdaten jetzt speichern|gespeichert");
+    webSend("<hr><b>&#x1F504; SML neu initialisieren</b>");
+    webButton(do_reset, "SML-Treiber neu laden (Sensor53 r)|SML neu geladen");
+    webSend("<div style='font-size:11px;color:#777;margin:4px 0'>Laedt nur den SML-Treiber neu (Pins/Descriptor) - aendert KEINE Zaehler- oder Chart-Daten.</div>");
+    webSend("<div style='text-align:center;font-size:10px;color:#777;margin-top:10px'><b>sml_chart_pv.tc</b><br>TinyC port of ottelo's 2_SML_Chart_PV.tas</div></div>");
+}
+
+int main() {
+    if (sml_rx_pin == 0 && sml_tx_pin == 0) {
+        sml_rx_pin = -1;
+        sml_tx_pin = -1;
+    }
+    if (sml_da == 0) sml_da = 1;
+
+    if (sml_activ != tasm_rule) tasm_rule = sml_activ;
+
+    sml_chart_load();
+    sml_chart_pv_load();
+
+#ifdef SML_CHART_DEMO
+    sml_chart_pv_demo_fill();
+#endif
+
+    webPageLabel(0, "Einstellungen / Daten");
+    webPageLabel(1, "");
+
+    smlScripterLoad("/sml_meter.def");
+
+    addLog("sml_chart_pv: started rx=%d tx=%d meter=%d activ=%d sndpwr=%d",
+           sml_rx_pin, sml_tx_pin, sml_meter_sel, sml_activ, sml_sndpwr);
+    return 0;
+}

@@ -1,0 +1,430 @@
+// ============================================================================
+// sml_chart_common.tc — shared chart + descriptor helpers for SML scripts
+// ============================================================================
+//
+// Helper library used by the sml_chart family (sml_chart.tc + later
+// sml_chart_pv / sml_chart_bezug / sml_chart_modbus / sml_water /
+// power_meter ports). Provides:
+//
+//   * Persist state for descriptor management, baselines and the rolling
+//     chart arrays
+//   * `sml_descriptor_apply()` — change-detect for rx/tx/filter/activ,
+//     re-runs Sensor53 r + smlApplyPins on any flip (same logic as in
+//     sml_simple.tc)
+//   * Two-stage chart-array pump: filter ring at 5 s cadence → averaged
+//     value pushed to the visible chart at 30 s / 60 s cadence (matches
+//     ottelo's `s4hf/s24hf` moving-average idiom)
+//   * `sml_chart_60s_tick()` — daily/monthly/yearly counter updates +
+//     midnight rollover with month-wrap zero-fill
+//   * `sml_chart_render_*()` — WebChart-driven 4 h / 24 h power line
+//     charts + daily / monthly column charts
+//   * `sml_chart_save() / load()` — binary persistence of the four
+//     chart arrays to `/sml_chart.bin`
+//   * `sml_render_settings_page()` — same Stromzähler / Pins / Filter
+//     panel as sml_simple, kept central so all sml_chart_* variants
+//     share one source of truth
+//
+// **No callbacks / no main() in here** — the including script wires the
+// helpers into its own EverySecond / WebUI / WebCall callbacks.
+//
+// Storage footprint (all in PSRAM on ESP32-S3-PSRAM via special_calloc):
+//   s4h:    481 ints       ≈ 1.9 KB     (4 h @ 30 s/sample)
+//   s24h:  1441 ints       ≈ 5.6 KB     (24 h @ 60 s/sample)
+//   dcon:    32 floats     ≈ 128 B
+//   mcon:    13 floats     ≈ 52 B
+//   filter rings, cursors, scratch                ≈ 200 B
+//   ---------------------------------------------------------
+//   Total chart state                              ≈ 8 KB
+// ============================================================================
+
+// Descriptor management (persist watch vars + sml_descriptor_apply +
+// sml_render_settings_panel) lives in sml_descriptor.tc — one source of
+// truth shared with sml_simple.tc and any future SML-flavoured script.
+#include "sml_descriptor.tc"
+
+// ── Energy baselines (delta against current SML kWh counter) ────────────────
+persist float sml_dval;         // daily zero point
+persist float sml_mval;         // monthly zero point
+persist float sml_yval;         // yearly zero point
+persist int   sml_da;           // last seen day-of-month (month-wrap detector)
+
+// ── Rolling-power chart arrays — head index in a separate cursor ────────────
+// MUST be float arrays — WebChart memcpy's each int32 slot into a float
+// (vm.h SYS_WEB_CHART: `memcpy(&fval, &arr[idx], sizeof(float))`). Int
+// arrays render as garbage values (bit-cast).
+persist float sml_s4h[481];     // 4 h chart, 30 s per slot
+persist float sml_s24h[1441];   // 24 h chart, 60 s per slot
+persist int   sml_s4h_pos;
+persist int   sml_s24h_pos;
+
+// ── Daily / monthly columnar totals — 0-based indexing matching WebChart's
+// ring-buffer walk (pos-count+i, mod count). Day 1 = index 0, Month 1 = 0.
+persist float sml_dcon[31];
+persist float sml_mcon[12];
+
+// ── Runtime state — moving filter rings + tick counters ─────────────────────
+int sml_s4hf[6];                // 6×5s = 30s average window for 4 h chart
+int sml_s24hf[12];              // 12×5s = 60s average window for 24 h chart
+int sml_f4_pos;
+int sml_f24_pos;
+int sml_t1;                     // 5s downcounter
+int sml_t2;                     // 60s downcounter
+int sml_hr_last;                // last seen tasm_hour (midnight edge detect)
+// sml_buf is declared in sml_descriptor.tc and shared by both modules
+
+// ============================================================================
+// Speicherung der Chart-Daten — .pvs (seit fw 1.6.42)
+// ----------------------------------------------------------------------------
+// ALLE Chart-Daten UND die Nullpunkte liegen jetzt in EINER Datei: der .pvs
+// des Slots. Die Arrays oben sind `persist` deklariert; die Firmware stellt sie
+// beim Laden wieder her und schreibt sie bei saveVars()/TinyCStop zurück.
+//
+// Warum die Umstellung (gemu 2026-07-25, nach ottelo9/tasmota-sml-images#50):
+// Vorher lagen die Arrays in /sml_chart.bin, die Nullpunkte sml_dval/mval/yval
+// aber in der .pvs. Wer die .bin sicherte und zurueckspielte, hatte die
+// Historie — aber nicht die Bezugswerte. Der naechste 60-s-Tick rechnete dann
+//     sml_dcon[d-1] = ein - sml_dval;    // sml_dval == 0
+// und schrieb den KOMPLETTEN Zaehlerstand in den heutigen Balken. Ein
+// Riesenausreisser, die Y-Achse skalierte mit, die ganze importierte Historie
+// war optisch weg. mi-hol im selben Thread: „Wuerden diese Infos in den Dateien
+// gespeichert, waere der Backup via Dateien trivial." Genau das ist es jetzt:
+//
+//     Sichern      = /sml_chart_pv.pvs kopieren (EINE Datei, alles drin)
+//     Zurueckspielen = zurueckkopieren, Slot neu starten. Fertig.
+//
+// Kein Nullpunkt-Tanz, keine heikle Reihenfolge, keine doppelte Buchfuehrung.
+// Vorbild ist energy_dashboard.tc, das schon so arbeitet.
+//
+// ⚠️ BRAUCHT FIRMWARE >= 1.6.42. Erst dort kommen heap-`persist`-Arrays ueber
+//    Reload und Neustart zurueck (5a0f1f06f) und die .pvs ist namensbasiert
+//    (PV3, 3763abf02) — Anhaengen/Umsortieren von persist-Variablen loescht
+//    den Stand nicht mehr. Auf aelterer Firmware NICHT verwenden: dort kaemen
+//    die Arrays als Nullen zurueck. Dann bei der .bin-Fassung bleiben
+//    (git history).
+// ============================================================================
+
+// ── Einmalige Uebernahme aus der alten /sml_chart.bin ──────────────────────
+// Bestandsgeraete haben ihre Historie noch in der .bin. Beim ersten Start nach
+// dem Umstieg wird sie EINMAL eingelesen, in die .pvs uebernommen und dann in
+// /sml_chart.bin.done umbenannt.
+//
+// Umbenannt, nicht geloescht: die Datei bleibt als Sicherung liegen, und ihr
+// blosses Vorhandensein ist zugleich die Markierung „schon uebernommen" — es
+// braucht keine zusaetzliche Zustandsdatei. (`fileRename` gab es in TinyC
+// bisher nicht; sie ist fuer genau diesen Fall dazugekommen, gemu 2026-07-25.)
+//
+// Das ist zugleich der IMPORT-WEG: wer eine .bin aus sml_chart_editor.html
+// einspielen will, laedt sie als /sml_chart.bin hoch und startet den Slot neu.
+// Fertig — kein Nullpunkte-Setzen, keine Reihenfolge, kein Slot-stoppen-Tanz.
+#ifndef CHART_CSV_DEC
+#define CHART_CSV_DEC 3
+#endif
+
+void sml_chart_load() {
+    int h = fileOpen("/sml_chart.bin", "r");
+    if (h < 0) return;                         // nichts zu uebernehmen
+    fileReadBin(h, sml_s4h,  481);
+    fileReadBin(h, sml_s24h, 1441);
+    fileReadBin(h, sml_dcon, 31);
+    fileReadBin(h, sml_mcon, 12);
+    fileClose(h);
+    saveVars();                                 // ab jetzt gilt die .pvs
+    if (fileRename("/sml_chart.bin", "/sml_chart.bin.done") < 0) {
+        // Ziel liegt schon da (frueherer Import). Dann das alte Sicherungsstueck
+        // weg und erneut umbenennen -- sonst wuerde die .bin bei JEDEM Start
+        // wieder eingelesen und ueberschriebe neuere Daten.
+        fileDelete("/sml_chart.bin.done");
+        fileRename("/sml_chart.bin", "/sml_chart.bin.done");
+    }
+    addLog("sml_chart: .bin in die .pvs uebernommen, umbenannt in /sml_chart.bin.done");
+}
+
+// Sichern = die persist-Werte schreiben. Erfasst Arrays UND Nullpunkte in einem
+// Zug — im Gegensatz zur alten .bin, die nur die Arrays kannte.
+void sml_chart_save() {
+    saveVars();
+}
+
+// Menschenlesbarer Export fuer Sicherung/Weitergabe (Tabellenkalkulation,
+// sml_chart_editor.html). KEINE Speicherung — die laeuft ueber die .pvs.
+// Absichtlich mit den Nullpunkten in der ersten Zeile: eine Sicherung ohne sie
+// war ja gerade das Problem.
+void sml_chart_export_csv() {
+    int h = fileOpen("/sml_chart.csv", "w");
+    if (h < 0) {
+        addLog("sml_chart_export_csv: fileOpen fehlgeschlagen");
+        return;
+    }
+    char kopf[96];
+    sprintf(kopf, "%.3f\t%.3f\t%.3f\t%d\n", sml_dval, sml_mval, sml_yval, sml_da);
+    fileWrite(h, kopf, strlen(kopf));
+    fileWriteArray(sml_s4h,  h, 481,  0, CHART_CSV_DEC);
+    fileWriteArray(sml_s24h, h, 1441, 0, CHART_CSV_DEC);
+    fileWriteArray(sml_dcon, h, 31,   0, CHART_CSV_DEC);
+    fileWriteArray(sml_mcon, h, 12,   0, CHART_CSV_DEC);
+    fileClose(h);
+    addLog("sml_chart: /sml_chart.csv geschrieben (Nullpunkte in Zeile 1)");
+}
+
+// Beim Herunterfahren die persist-Werte sichern:
+//   CleanUp() — Geraete-Neustart / OTA (FUNC_SAVE_BEFORE_RESTART)
+//   OnExit()  — dieser Slot gestoppt / neu gestartet / entfernt
+// Die Firmware sichert persist bei TinyCStop ohnehin selbst; diese beiden sind
+// der Guertel zum Hosentraeger fuer den Neustart-/OTA-Weg.
+// Die frueher noetige sml_chart_dirty-Sperre ist entfallen: sie verhinderte,
+// dass die Teardown-Sicherung eine frisch hochgeladene .bin ueberschreibt.
+// Mit der .pvs gibt es diesen Wettlauf nicht mehr — der Import laeuft ueber die
+// .mig-Marke und wird beim Laden angewandt, nicht beim Beenden.
+void CleanUp() {
+    saveVars();
+}
+void OnExit() {
+    saveVars();
+}
+
+// ============================================================================
+// Init helpers — reset baselines from current meter, reset chart arrays
+// ============================================================================
+void sml_chart_init_baselines() {
+    float ein = smlGet(2);
+    sml_dval = ein;
+    sml_mval = ein;
+    sml_yval = ein;
+    sml_s4h_pos  = 0;
+    sml_s24h_pos = 0;
+    int i = 0;
+    while (i < 481)  { sml_s4h[i]  = 0.0; i = i + 1; }
+    i = 0;
+    while (i < 1441) { sml_s24h[i] = 0.0; i = i + 1; }
+    sml_chart_save();
+    addLog("sml_chart: baselines set from meter, power charts cleared");
+}
+
+void sml_chart_init_columns() {
+    int i = 0;
+    while (i < 31) { sml_dcon[i] = 0.0; i = i + 1; }
+    i = 0;
+    while (i < 12) { sml_mcon[i] = 0.0; i = i + 1; }
+    sml_chart_save();
+    addLog("sml_chart: daily + monthly column charts cleared");
+}
+
+// ============================================================================
+// 5-s tick — feed the moving-average filters and push to the rolling
+// chart arrays. Mirrors ottelo's >S "alle 5s" block exactly.
+// ============================================================================
+void sml_chart_5s_tick() {
+    int p = (int)smlGet(1);             // current power in W (int filter ring)
+    sml_s4hf[sml_f4_pos] = p;
+    sml_f4_pos = (sml_f4_pos + 1) % 6;
+    sml_s24hf[sml_f24_pos] = p;
+    sml_f24_pos = (sml_f24_pos + 1) % 12;
+
+    int sum = 0;
+    int i = 0;
+    while (i < 6) { sum = sum + sml_s4hf[i]; i = i + 1; }
+    float s4h_avg = (float)sum / 6.0;
+
+    sum = 0;
+    i = 0;
+    while (i < 12) { sum = sum + sml_s24hf[i]; i = i + 1; }
+    float s24h_avg = (float)sum / 12.0;
+
+    // 240-slot ring at 1 min/slot = the last 4 h, sliding. Two fixes vs the old
+    // ((hour-4)%24)*120 mapping: (1) that only produced idx4 < 480 for hours
+    // 4..7, so outside 04:00-08:00 nothing was stored and the chart was empty;
+    // (2) 1-min slots match the WebChart x-axis interval=1, so 240 points span a
+    // real 4 h axis — the previous 480 30-s points were drawn over an 8 h axis.
+    int idx4  = (tasm_hour * 60 + tasm_minute) % 240;
+    int idx24 = tasm_hour * 60 + tasm_minute;
+    if (idx4 >= 0 && idx4 < 240) {
+        sml_s4h[idx4] = s4h_avg;
+        sml_s4h_pos = idx4;
+    }
+    if (idx24 >= 0 && idx24 < 1440) {
+        sml_s24h[idx24] = s24h_avg;
+        sml_s24h_pos = idx24;
+    }
+}
+
+// ============================================================================
+// 60-s tick — daily / monthly counters + midnight rollover.
+// Mirrors ottelo's >S "alle 60s" block (lines 244-278).
+// ============================================================================
+void sml_chart_60s_tick() {
+    float ein = smlGet(2);
+    int   d   = tasm_day;        // 1..31
+    int   m   = tasm_month;      // 1..12
+
+    if (d >= 1 && d <= 31) sml_dcon[d - 1] = ein - sml_dval;
+    if (m >= 1 && m <= 12) sml_mcon[m - 1] = ein - sml_mval;
+
+    int hr = tasm_hour;
+    if (sml_hr_last != hr && hr == 0) {
+        if (d > 1) {
+            sml_da = d;
+        } else {
+            // Month-wrap — zero out days past the previous month's length.
+            // sml_da still holds last-seen 1..31; zero indices [sml_da..30].
+            int i = sml_da;
+            while (i < 31) { sml_dcon[i] = 0.0; i = i + 1; }
+            sml_mval = ein;
+            sml_da = 1;
+        }
+        if (d == 1 && m == 1) sml_yval = ein;
+        sml_dval = ein;
+        sml_chart_save();
+    }
+    sml_hr_last = hr;
+}
+
+// ============================================================================
+// Render helpers — chart + table blocks for the WebUI main page
+// ============================================================================
+void sml_chart_render_totals() {
+    // The live meter values, so the driver's own rows can be switched off -
+    // they prefix every value with the meter name, which reads badly.
+    if (ui_de) {
+        sprintf(sml_buf, "{s}Leistung{m}%.0f W{e}", smlGet(1));      webSend(sml_buf);
+        sprintf(sml_buf, "{s}Bezug{m}%.3f kWh{e}", smlGet(2));       webSend(sml_buf);
+        sprintf(sml_buf, "{s}Einspeisung{m}%.3f kWh{e}", smlGet(3)); webSend(sml_buf);
+    } else {
+        sprintf(sml_buf, "{s}Power{m}%.0f W{e}", smlGet(1));         webSend(sml_buf);
+        sprintf(sml_buf, "{s}Import{m}%.3f kWh{e}", smlGet(2));      webSend(sml_buf);
+        sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", smlGet(3));      webSend(sml_buf);
+    }
+
+    // Datum + Uptime (Paritaet zum .tas-Original; auf der Hauptseite gewuenscht)
+    sprintf(sml_buf, "{s}Datum{m}%02d.%02d.%04d %02d:%02d{e}", tasm_day, tasm_month, tasm_year, tasm_hour, tasm_minute); webSend(sml_buf);
+    int up_d = tasm_uptime / 86400;
+    int up_h = (tasm_uptime / 3600) % 24;
+    int up_m = (tasm_uptime / 60) % 60;
+    sprintf(sml_buf, "{s}Uptime{m}%d d %d h %d min{e}", up_d, up_h, up_m); webSend(sml_buf);
+
+    float ein = smlGet(2);
+    if (ui_de) {
+        sprintf(sml_buf, "{s}Tagesverbrauch{m}%.2f kWh{e}",  ein - sml_dval); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Monatsverbrauch{m}%.2f kWh{e}", ein - sml_mval); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Jahresverbrauch{m}%.2f kWh{e}", ein - sml_yval); webSend(sml_buf);
+    } else {
+        sprintf(sml_buf, "{s}Import day{m}%.2f kWh{e}",   ein - sml_dval); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Import month{m}%.2f kWh{e}", ein - sml_mval); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Import year{m}%.2f kWh{e}",  ein - sml_yval); webSend(sml_buf);
+    }
+}
+
+// Script JS hook applied to both rolling charts: filled area (better
+// readability) + DE date in the tooltip (dd.MM.yyyy), independent of the
+// browser locale. WebChartJS runs in the chart's draw scope (dt/o/el) and
+// o.done=1 takes over the draw so it renders as an AreaChart.
+char sml_chart_js[224];   // must hold the full snippet incl. trailing o.done=1
+
+void sml_chart_area_de() {
+    strcpy(sml_chart_js,
+        "var f=new google.visualization.DateFormat({pattern:'dd.MM.yyyy HH:mm'});f.format(dt,0);o.areaOpacity=0.3;new google.visualization.AreaChart(el).draw(dt,o);o.done=1");
+    WebChartJS(sml_chart_js);
+}
+
+void sml_chart_render_4h() {
+    WebChartSize(600, 280);
+    // 240 points at interval=1 min = a 4 h x-axis (matches the 240-slot 1-min
+    // ring). Filled area + DE date via the hook.
+    if (ui_de) WebChart(0, "Verbrauch 4 Stunden [Watt]", "W", 0x3498db, sml_s4h_pos, 240, sml_s4h, 0, 1, 0.0, 0.0);
+    else       WebChart(0, "Power 4 hours [Watt]", "W", 0x3498db, sml_s4h_pos, 240, sml_s4h, 0, 1, 0.0, 0.0);
+    sml_chart_area_de();
+}
+
+void sml_chart_render_24h() {
+    WebChartSize(600, 280);
+    if (ui_de) WebChart(0, "Verbrauch 24 Stunden [Watt]", "W", 0x3498db, sml_s24h_pos, 1440, sml_s24h, 0, 1, 0.0, 0.0);
+    else       WebChart(0, "Power 24 hours [Watt]", "W", 0x3498db, sml_s24h_pos, 1440, sml_s24h, 0, 1, 0.0, 0.0);
+    sml_chart_area_de();
+}
+
+// ── Direct Google Charts emit — per-bar tri-color (past=green / today=red /
+//    future=blue) and day-of-month x-axis. WebChart's built-in axis
+//    formatter shows DD.MM. for >7 column points and doesn't support
+//    per-bar styles, so we bypass it for the column charts. Loader is
+//    already on the page from the WebChart line-chart calls above.
+// The two destructive data buttons, identical in every chart wiring - so they
+// live here once. Pass the already-resolved widget indices:
+//     sml_chart_data_panel(varIdx(do_init), varIdx(do_init2));
+void sml_chart_data_panel(int idx_init, int idx_init2) {
+    uiHead("&#x1F4BE;", "Data", "Daten", "sml/#data");
+    uiText("<div style='font-size:11px;color:#a00;margin:4px 0'>&#9888; Both actions overwrite history.</div>",
+           "<div style='font-size:11px;color:#a00;margin:4px 0'>&#9888; Beide Aktionen ueberschreiben Verlaufsdaten.</div>");
+
+    if (ui_de) {
+        webSend("<div><button style='width:100%' data-a='erledigt' onclick='if(confirm(\"Nullpunkte neu vom Zaehlerstand setzen und 4h/24h-Charts leeren?\"))tcbtn(this,1,");
+        sprintf(sml_buf, "%d)'>Nullpunkte setzen + Power-Charts leeren</button></div>", idx_init);
+    } else {
+        webSend("<div><button style='width:100%' data-a='done' onclick='if(confirm(\"Reset the day/month/year baselines from the meter and clear the 4h/24h charts?\"))tcbtn(this,1,");
+        sprintf(sml_buf, "%d)'>Reset baselines + clear power charts</button></div>", idx_init);
+    }
+    webSend(sml_buf);
+
+    if (ui_de) {
+        webSend("<div><button style='width:100%' data-a='erledigt' onclick='if(confirm(\"ALLE Tages- und Monatsbalken loeschen?\"))tcbtn(this,1,");
+        sprintf(sml_buf, "%d)'>Balkendiagramme zuruecksetzen</button></div>", idx_init2);
+    } else {
+        webSend("<div><button style='width:100%' data-a='done' onclick='if(confirm(\"Delete ALL day and month bars?\"))tcbtn(this,1,");
+        sprintf(sml_buf, "%d)'>Reset bar charts</button></div>", idx_init2);
+    }
+    webSend(sml_buf);
+}
+
+void sml_chart_render_days() {
+    int today = tasm_day;
+    if (today < 1) today = 1;
+    webSend("<div id='sml_dch' style='text-align:center;width:600px;height:280px'></div>");
+    if (ui_de) webSend("<script>function _smlDD(){var d=google.visualization.arrayToDataTable([['Tag','Energie [kWh]',{role:'style'}]");
+    else       webSend("<script>function _smlDD(){var d=google.visualization.arrayToDataTable([['Day','Energy [kWh]',{role:'style'}]");
+    int i = 1;
+    while (i <= 31) {
+        if (i < today)        sprintf(sml_buf, ",[%d,%.2f,'green']", i, sml_dcon[i - 1]);
+        else if (i == today)  sprintf(sml_buf, ",[%d,%.2f,'red']",   i, sml_dcon[i - 1]);
+        else                  sprintf(sml_buf, ",[%d,%.2f,'blue']",  i, sml_dcon[i - 1]);
+        webSend(sml_buf);
+        i = i + 1;
+    }
+    // Split instead of sprintf: the block contains '75%' and '# kWh', which a
+    // format string would eat. webSend concatenates, so three calls are fine.
+    webSend("]);new google.visualization.ColumnChart(document.getElementById('sml_dch')).draw(d,{chartArea:{left:50,right:20,height:'75%',backgroundColor:'#f0f2f5'},legend:'none',title:'");
+    if (ui_de) {
+        webSend("Tagesverbraeuche Monatsansicht',vAxis:{format:'# kWh'},hAxis:{title:'Tag',ticks:[1,5,10,15,20,25,30]}});}google.charts.setOnLoadCallback(_smlDD);</script>");
+    } else {
+        webSend("Import per day',vAxis:{format:'# kWh'},hAxis:{title:'Day',ticks:[1,5,10,15,20,25,30]}});}google.charts.setOnLoadCallback(_smlDD);</script>");
+    }
+}
+
+void sml_chart_render_months() {
+    int thismon = tasm_month;
+    if (thismon < 1) thismon = 1;
+    // strToken needs the source as a resolvable char[] variable — string
+    // literals fall through tc_resolve_ref and return empty (the earlier
+    // version produced ['',12.3,...] with no month names on the x-axis).
+    char mn_names[64];
+    strcpy(mn_names, "Jan|Feb|Maer|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez");
+    char mn[6];
+    webSend("<div id='sml_mch' style='text-align:center;width:600px;height:280px'></div>");
+    if (ui_de) webSend("<script>function _smlDM(){var d=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]',{role:'style'}]");
+    else       webSend("<script>function _smlDM(){var d=google.visualization.arrayToDataTable([['Month','Import [kWh]',{role:'style'}]");
+    int i = 1;
+    while (i <= 12) {
+        strToken(mn, mn_names, '|', i);
+        if (i < thismon)        sprintf(sml_buf, ",['%s',%.2f,'green']", mn, sml_mcon[i - 1]);
+        else if (i == thismon)  sprintf(sml_buf, ",['%s',%.2f,'red']",   mn, sml_mcon[i - 1]);
+        else                    sprintf(sml_buf, ",['%s',%.2f,'blue']",  mn, sml_mcon[i - 1]);
+        webSend(sml_buf);
+        i = i + 1;
+    }
+    webSend("]);new google.visualization.ColumnChart(document.getElementById('sml_mch')).draw(d,{chartArea:{left:50,right:30,top:30,height:'70%',backgroundColor:'#f0f2f5'},legend:'none',title:'");
+    if (ui_de) {
+        webSend("Monatsverbraeuche Jahresansicht',vAxis:{format:'# kWh'},hAxis:{slantedText:false,showTextEvery:1}});}google.charts.setOnLoadCallback(_smlDM);</script>");
+    } else {
+        webSend("Import per month',vAxis:{format:'# kWh'},hAxis:{slantedText:false,showTextEvery:1}});}google.charts.setOnLoadCallback(_smlDM);</script>");
+    }
+}
+
+// Settings panel renderer is in sml_descriptor.tc as
+// `sml_render_settings_panel()` — including modules call that directly.

@@ -1,0 +1,952 @@
+// Marstek CT002 / CT003 emulator for Tasmota, UDP port 12345.
+// Feeds a Venus / Jupiter / B2500 from the SML meter. Relay mode only.
+// Docs: https://ottelo9.github.io/tasmota-sml-script/ct002/
+// Needs ESP32, TinyC in slot 0, USE_SML.
+//
+// Frame:    SOH STX <total-len> |f1|..|fN ETX <xor-hex>
+// Length:   whole packet incl. length digits and checksum
+// Checksum: XOR over SOH..ETX, 2 lowercase hex chars
+// Request:  |batt-type|batt-mac|ct-type|ct-mac|phase|power[|participate]
+// Response: |ct-type|ct-mac|batt-type|batt-mac| 20 numbers (+4 on CT003)
+// Protocol source: tomquist/AstraMeter, docs/ct002-ct003-protocol.md
+//
+// Not implemented: the app's MQTT frames (cd=1/cd=4). The HTTP cloud push was
+// built and measured — accepted, but the app still showed "--", so it is gone.
+// The app's live view comes over MQTT only; a fake CT there is always offline.
+
+#define CT_NSLOT     9        // consumer slots — the real CT keeps 9
+#define CT_RXMAX   320        // request buffer  (a request is ~55 B)
+#define CT_TXMAX   420        // response buffer (a response is ~140 B)
+
+// char[] not #define: a #define stays an Identifier in the AST, which
+// syscalls taking a const-pool string must not be handed.
+char ct_host[] = "eu.hamedata.com";
+
+
+// Online help, EN/DE switch on the page. Anchor appended per section:
+// sprintf(buf, "...%s#ct'>i</a>", ct_helpa)
+char ct_helpa[] = " <a class='i' target='_blank' href='https://ottelo9.github.io/tasmota-sml-script/ct002/";
+
+// ─── Persistent settings ───────────────────────────────────────────────────
+persist int  ct_kind;          // 0 = CT002 (HME-4), 1 = CT003 (HME-3)
+persist int  ct_port;          // UDP listen port (12345)
+persist int  ct_rssi;          // Wi-Fi RSSI reported to the batteries [dBm]
+persist int  ct_ttl;           // consumer timeout [s], 0 = adaptive (~2 polls)
+persist int  ct_offset;        // zero-feed offset [W]
+persist int  ct_tweak;          // regulator shaping 0/1 (as in the .tas scripts)
+persist int  ct_ph3;              // 1 = per-phase values from smlGet(4/5/6)
+persist char ct_mac[16];       // CT MAC, 12 hex lowercase. Empty = answer all
+persist char ct_mail[64];      // Marstek account mail (registration only)
+
+// ─── Consumer table (one row per battery, keyed by its MAC) ────────────────
+char ct_smac[CT_NSLOT][16];
+int  ct_sused[CT_NSLOT];
+int  ct_sph[CT_NSLOT];              // 0 = '0'/unassigned, 1=A, 2=B, 3=C, 4=D(combined)
+int  ct_spwr[CT_NSLOT];             // last reported power [W], + = discharge
+int  ct_spart[CT_NSLOT];            // participate flag (field 7, default 1)
+int  ct_slast[CT_NSLOT];            // millis() of the last request
+int  ct_siv[CT_NSLOT];              // measured poll interval [ms]
+
+// ─── Runtime ───────────────────────────────────────────────────────────────
+int  ct_pa; int ct_pb; int ct_pc; int ct_ptot;   // grid power reported to the batteries [W]
+int  ct_idx;                       // response index 0..255, wraps
+
+// Filled by ctAgg(), read by the response builder.
+int  ct_nbA; int ct_nbB; int ct_nbC; int ct_nbD; int ct_live;
+int  ct_cx; int ct_cA; int ct_cB; int ct_cC; int ct_cD;    // charge    (< 0)
+int  ct_dx; int ct_dA; int ct_dB; int ct_dC; int ct_dD;    // discharge (> 0)
+int  ct_once;                       // UDP socket bound once
+int  ct_rxc; int ct_txc; int ct_badc;
+
+char ct_hexd[] = "0123456789abcdef";
+char ct_type[8];                      // "HME-4" or "HME-3"
+
+char ct_rxb[CT_RXMAX];                     // UDP receive buffer
+char ct_txb[CT_TXMAX];                     // outgoing frame
+char ct_innb[CT_TXMAX];                    // frame body ("|f1|f2|...")
+
+// Parsed request fields (globals, not locals — keeps the VM stack small)
+char ct_qbtype[16];                    // battery type, e.g. "HMG-50"
+char ct_qbmac[16];                     // battery MAC
+char ct_qtype[16];                   // CT type the battery asks for
+char ct_qmac[16];                    // CT MAC the battery asks for
+char ct_qph[8];                        // phase char
+char ct_qpwr[16];                      // signed power
+char ct_qpart[8];                      // participate (optional field 7)
+
+// ─── Marstek cloud registration ────────────────────────────────────────────
+char ct_pass[64];                    // NOT persisted — cleared after use
+char ct_msg[128];                   // status line shown in the web UI
+char ct_tok[96];                     // session token
+char ct_umail[96];                      // url-encoded mailbox
+char ct_req[600];                       // request line + headers
+char ct_buf[600];                     // scratch for parsing
+char ct_resp[2048];                // API response body
+char ct_fnd[6][16];                     // distinct fake-CT MACs seen while scanning
+int  ct_rreq;                        // 0 idle, 1 = login+scan, 2 = create
+int  ct_busy;
+int  ct_okflag;                         // 1 = last action succeeded (green status)
+int  ct_pts;                        // millis() when the password was set
+
+// ─── CT protocol ───────────────────────────────────────────────────────────
+
+// Total frame length. The length digits count towards the length, so the
+// digit count is resolved iteratively (as AstraMeter's compute_length).
+int ctLen(int innerlen) {
+    int base = innerlen + 5;          // SOH + STX + ETX + 2 checksum chars
+    if (base + 1 < 10)  return base + 1;
+    if (base + 2 < 100) return base + 2;
+    return base + 3;
+}
+
+// Wrap `innerbuf` (must start with '|') into a complete CT frame in `out`.
+void ctFrame(char out[], char innerbuf[]) {
+    int total = ctLen(strlen(innerbuf));
+    sprintf(out, "..%d%s", total, innerbuf);   // ".." reserves SOH/STX
+    out[0] = 1;                                // SOH
+    out[1] = 2;                                // STX
+    int n = strlen(out);
+    out[n] = 3;                                // ETX
+    int x = 0;
+    int i = 0;
+    for (i = 0; i <= n; i = i + 1) {           // XOR over SOH..ETX inclusive
+        x = x ^ out[i];
+    }
+    out[n + 1] = ct_hexd[(x >> 4) & 15];
+    out[n + 2] = ct_hexd[x & 15];
+    out[n + 3] = 0;
+}
+
+// Verify the request checksum. Real CTs emit uppercase hex and sometimes a
+// leading space for small values, so the comparison stays tolerant.
+int ctCheck(int n) {
+    if (n < 8) return 0;
+    if (ct_rxb[n - 3] != 3) return 0;             // ETX where it belongs
+    int x = 0;
+    int i = 0;
+    for (i = 0; i <= n - 3; i = i + 1) {
+        x = x ^ ct_rxb[i];
+    }
+    int hi = ct_hexd[(x >> 4) & 15];
+    int lo = ct_hexd[x & 15];
+    int ghi = ct_rxb[n - 2];
+    int glo = ct_rxb[n - 1];
+    if (ghi >= 65 && ghi <= 70) ghi = ghi + 32;   // 'A'-'F' -> lowercase
+    if (glo >= 65 && glo <= 70) glo = glo + 32;
+    if (glo != lo) return 0;
+    if (ghi == hi) return 1;
+    if (ghi == 32 && hi == 48) return 1;          // ' ' instead of '0'
+    return 0;
+}
+
+// Copy token `n` (1-based, '|' separated) of the request into dst and cut it
+// at the first control character — the last field carries the ETX + checksum.
+int ctTok(char dst[], int n) {
+    int l = strToken(dst, ct_rxb, '|', n);
+    int i = 0;
+    for (i = 0; i < l; i = i + 1) {
+        if (dst[i] < 32) {
+            dst[i] = 0;
+            return i;
+        }
+    }
+    return l;
+}
+
+int ctFind(char macbuf[]) {
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        if (ct_sused[i] == 1) {
+            if (strcmp(ct_smac[i], macbuf) == 0) return i;
+        }
+    }
+    return -1;
+}
+
+int ctAlloc(char macbuf[]) {
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        if (ct_sused[i] == 0) {
+            ct_sused[i]  = 1;
+            ct_sph[i]    = 0;
+            ct_spwr[i]   = 0;
+            ct_spart[i]  = 1;
+            ct_siv[i]    = 1000;
+            ct_slast[i]  = millis();
+            strcpy(ct_smac[i], macbuf);
+            addLog("CT002: slot %d new: %s", i, macbuf);
+            return i;
+        }
+    }
+    return -1;
+}
+
+// Drop consumers that stopped polling — the real CT evicts after ~1-2 cycles.
+void ctAge() {
+    int now = millis();
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        if (ct_sused[i] == 1) {
+            int ttl = ct_ttl * 1000;
+            if (ttl <= 0) {
+                ttl = ct_siv[i] * 2 + 500;
+                if (ttl < 5000) ttl = 5000;
+            }
+            if (now - ct_slast[i] > ttl) {
+                ct_sused[i] = 0;
+                addLog("CT002: slot %d (%s) expired", i, ct_smac[i]);
+            }
+        }
+    }
+}
+
+// Build the buckets over all live, participating slots.
+void ctAgg() {
+    ct_nbA = 0; ct_nbB = 0; ct_nbC = 0; ct_nbD = 0; ct_live = 0;
+    ct_cx = 0; ct_cA = 0; ct_cB = 0; ct_cC = 0; ct_cD = 0;
+    ct_dx = 0; ct_dA = 0; ct_dB = 0; ct_dC = 0; ct_dD = 0;
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        if (ct_sused[i] == 1) {
+            ct_live = ct_live + 1;
+            if (ct_spart[i] != 0) {
+                int p = ct_spwr[i];
+                int f = ct_sph[i];
+                if (f == 1) {
+                    ct_nbA = ct_nbA + 1;
+                    if (p < 0) ct_cA = ct_cA + p; else ct_dA = ct_dA + p;
+                } else if (f == 2) {
+                    ct_nbB = ct_nbB + 1;
+                    if (p < 0) ct_cB = ct_cB + p; else ct_dB = ct_dB + p;
+                } else if (f == 3) {
+                    ct_nbC = ct_nbC + 1;
+                    if (p < 0) ct_cC = ct_cC + p; else ct_dC = ct_dC + p;
+                } else if (f == 4) {
+                    ct_nbD = ct_nbD + 1;
+                    if (p < 0) ct_cD = ct_cD + p; else ct_dD = ct_dD + p;
+                } else {
+                    // '0'/unassigned: answered, but never aggregated into a
+                    // committed phase — the battery is still detecting its phase.
+                    if (p < 0) ct_cx = ct_cx + p; else ct_dx = ct_dx + p;
+                }
+            }
+        }
+    }
+}
+
+// Build the response for one requesting battery into ct_txb.
+void ctBuild(char btype[], char bmac[], char reqctmac[]) {
+    ctAgg();
+
+    // Identity: CT first, battery second — the reverse of the request order.
+    if (strlen(ct_mac) == 12) {
+        sprintf(ct_innb, "|%s|%s", ct_type, ct_mac);
+    } else {
+        sprintf(ct_innb, "|%s|%s", ct_type, reqctmac);
+    }
+    sprintfAppend(ct_innb, "|%s|%s", btype, bmac);
+    sprintfAppend(ct_innb, "|%d|%d|%d|%d", ct_pa, ct_pb, ct_pc, ct_ptot);                  // 5..8
+    sprintfAppend(ct_innb, "|%d|%d|%d|%d", ct_nbA, ct_nbB, ct_nbC, ct_nbD);        // 9..12
+    sprintfAppend(ct_innb, "|%d|%d", ct_rssi, ct_idx);                       // 13..14
+    sprintfAppend(ct_innb, "|%d|%d|%d|%d|%d", ct_cx, ct_cA, ct_cB, ct_cC, ct_cD);   // 15..19
+    sprintfAppend(ct_innb, "|%d|%d|%d|%d|%d", ct_dx, ct_dA, ct_dB, ct_dC, ct_dD);   // 20..24
+    if (ct_kind == 1) {
+        // CT003 only: 4 tariff registers, everything on the peak tariff.
+        // Wh assumed - the exact scaling is unconfirmed.
+        int ein  = (int)(smlGet(2) * 1000.0);
+        int eout = (int)(smlGet(3) * 1000.0);
+        sprintfAppend(ct_innb, "|0|%d|0|%d", ein, eout);           // 25..28
+    }
+    ctFrame(ct_txb, ct_innb);
+}
+
+// Handle one received datagram (already in ct_rxb, `n` bytes).
+void ctHandle(int n) {
+    if (n < 12)  return;
+    if (ct_rxb[0] != 1) return;                   // SOH
+    if (ct_rxb[1] != 2) return;                   // STX
+    if (ctCheck(n) == 0) {
+        ct_badc = ct_badc + 1;
+        return;
+    }
+
+    ctTok(ct_qbtype,  2);
+    ctTok(ct_qbmac,   3);
+    ctTok(ct_qtype, 4);
+    ctTok(ct_qmac,  5);
+    ctTok(ct_qph,     6);
+    ctTok(ct_qpwr,    7);
+    int havepart = ctTok(ct_qpart, 8);
+
+    if (strlen(ct_qbmac) < 6) return;
+
+    // Only answer for our own CT MAC (or the wildcard) once one is configured.
+    strToLower(ct_qmac);
+    if (strlen(ct_mac) == 12) {
+        if (strcmp(ct_qmac, ct_mac) != 0) {
+            if (strcmp(ct_qmac, "000000000000") != 0) return;
+        }
+    }
+
+    int f = 0;                                  // phase bucket
+    int c = ct_qph[0];
+    if (c == 'A' || c == 'a') f = 1;
+    if (c == 'B' || c == 'b') f = 2;
+    if (c == 'C' || c == 'c') f = 3;
+    if (c == 'D' || c == 'd') f = 4;            // D = combined (合相), not a 4th phase
+
+    int idx = ctFind(ct_qbmac);
+    if (idx < 0) idx = ctAlloc(ct_qbmac);
+    if (idx < 0) return;                        // table full — real CT holds 9 too
+
+    int now = millis();
+    int dt  = now - ct_slast[idx];
+    if (dt > 100 && dt < 30000) ct_siv[idx] = dt;
+    ct_slast[idx] = now;
+    ct_sph[idx]   = f;
+    ct_spwr[idx]  = strToInt(ct_qpwr);
+    if (havepart > 0) {
+        ct_spart[idx] = strToInt(ct_qpart);
+    } else {
+        ct_spart[idx] = 1;                        // absent field means "participating"
+    }
+
+    ct_idx = (ct_idx + 1) & 255;
+    ctBuild(ct_qbtype, ct_qbmac, ct_qmac);
+    udp(2, ct_txb);                                // unicast back to the sender
+    ct_txc = ct_txc + 1;
+}
+
+// ─── Meter ─────────────────────────────────────────────────────────────────
+
+// Offset + optional regulator shaping — same law as the .tas emulators, and
+// applied per phase for the same reason: each battery regulates its own phase.
+int ctCtrl(float raw) {
+    float off = (float)ct_offset;
+    float v = raw - off;
+    if (ct_tweak > 0) {
+        if (raw > off) {
+            v = v / 4.0;
+        } else {
+            v = v / 0.8;
+        }
+    }
+    return (int)v;
+}
+
+void ctPower() {
+    if (ct_ph3 == 1) {
+        ct_pa = ctCtrl(smlGet(4));
+        ct_pb = ctCtrl(smlGet(5));
+        ct_pc = ctCtrl(smlGet(6));
+    } else {
+        // Single-value meter: everything on L1, like the Shelly emulation.
+        // Set every battery to phase A (or all to D, which reads the total).
+        ct_pa = ctCtrl(smlGet(1));
+        ct_pb = 0;
+        ct_pc = 0;
+    }
+    ct_ptot = ctCtrl(smlGet(1));       // the saldierend total — phase D reads this
+}
+
+// ─── Marstek cloud registration (HTTPS via httpGet + md5) ──────────────────
+
+void ctUrlMail(char dst[], char src[]) {
+    int n = strlen(src);
+    int i = 0;
+    int j = 0;
+    for (i = 0; i < n; i = i + 1) {
+        int c = src[i];
+        if (c == '@') {
+            dst[j] = '%'; dst[j + 1] = '4'; dst[j + 2] = '0'; j = j + 3;
+        } else if (c == '+') {
+            dst[j] = '%'; dst[j + 1] = '2'; dst[j + 2] = 'B'; j = j + 3;
+        } else {
+            dst[j] = c; j = j + 1;
+        }
+    }
+    dst[j] = 0;
+}
+
+// GET /app/Solar/v2_get_device.php — returns a token plus the device list.
+// Fills ct_tok and leaves the body in ct_resp. Returns 1 on success.
+int ctLogin() {
+    if (strlen(ct_mail) < 5) { strcpy(ct_msg, "Mail missing"); return 0; }
+    if (strlen(ct_pass) < 1) { strcpy(ct_msg, "Password missing"); return 0; }
+
+    char dig[20];
+    char dighex[40];
+    if (md5(ct_pass, strlen(ct_pass), dig) != 1) {
+        strcpy(ct_msg, "MD5 not available in this firmware");
+        return 0;
+    }
+    bin2hex(dig, 16, dighex);
+    ctUrlMail(ct_umail, ct_mail);
+
+    // Short enough for httpGet's 256-char URL limit, and httpGet de-chunks
+    // the reply for us — which the raw TLS path below would not.
+    strcpy(ct_req, "https://");
+    strcat(ct_req, ct_host);
+    strcat(ct_req, "/app/Solar/v2_get_device.php?mailbox=");
+    strcat(ct_req, ct_umail);
+    strcat(ct_req, "&pwd=");
+    strcat(ct_req, dighex);
+
+    int n = httpGet(ct_req, ct_resp);
+    if (n <= 0) {
+        sprintf(ct_msg, "No reply from Marstek (rc=%d)", n);
+        return 0;
+    }
+    int p = strFind(ct_resp, "\"token\":\"");
+    if (p < 0) {
+        // The API answers 200 with code=4 on a wrong password.
+        if (strFind(ct_resp, "\"code\":4") >= 0) {
+            strcpy(ct_msg, "Login refused - wrong password?");
+        } else {
+            strcpy(ct_msg, "No token in reply - login failed");
+        }
+        return 0;
+    }
+    strSub(ct_tok, ct_resp, p + 9, 0);
+    int q = strFind(ct_tok, "\"");
+    if (q > 0) ct_tok[q] = 0;
+    return 1;
+}
+
+// Scan the device list for managed fake CTs (devid = mac = 02b250xxxxxx, the
+// prefix AstraMeter uses). The scan is destructive — ct_resp is scratch.
+// One device yields TWO hits (devid and mac carry the same value), so the
+// results are deduplicated - otherwise one CT would be counted as two.
+int ctScan() {
+    int found = 0;      // distinct CTs
+    int nfnd  = 0;      // entries stored in ct_fnd[]
+    int guard = 0;
+    while (guard < 16) {
+        int m = strFind(ct_resp, "02b250");
+        if (m < 0) break;
+        strSub(ct_buf, ct_resp, m, 12);
+        ct_resp[m] = 'X';                 // don't match the same spot again
+        guard = guard + 1;
+        if (strlen(ct_buf) == 12) {
+            strToLower(ct_buf);
+            int dup = 0;
+            int k = 0;
+            for (k = 0; k < nfnd; k = k + 1) {
+                if (strcmp(ct_fnd[k], ct_buf) == 0) dup = 1;
+            }
+            if (dup == 0) {
+                if (nfnd < 6) {
+                    strcpy(ct_fnd[nfnd], ct_buf);
+                    nfnd = nfnd + 1;
+                }
+                // Never overwrite a CT MAC that is already set - with two fake
+                // CTs in the account this would silently switch the device to
+                // the other one.
+                if (found == 0 && strlen(ct_mac) != 12) {
+                    strcpy(ct_mac, ct_buf);
+                    addLog("CT002: fake CT adopted: %s", ct_buf);
+                } else {
+                    addLog("CT002: fake CT found: %s (not adopted)", ct_buf);
+                }
+                found = found + 1;
+            }
+        }
+    }
+    return found;
+}
+
+void ctDoLogin() {
+    ct_okflag = 0;
+    strcpy(ct_msg, "Login running ...");
+    if (ctLogin() == 0) return;
+    int found = ctScan();
+    if (found > 0) {
+        saveVars();
+        ct_okflag = 1;
+        sprintf(ct_msg, "OK - %d fake CT(s) found, CT MAC = ", found);
+        strcat(ct_msg, ct_mac);
+    } else {
+        strcpy(ct_msg, "Login OK, no CT found");
+    }
+}
+
+// GET /app/Solar/v2_add_device.php — creates the managed CT record.
+void ctDoCreate() {
+    ct_okflag = 0;
+    if (strlen(ct_mac) == 12) {
+        strcpy(ct_msg, "CT MAC already set - clear it first");
+        return;
+    }
+    strcpy(ct_msg, "Creating ...");
+    if (ctLogin() == 0) return;
+    if (ctScan() > 0) {
+        saveVars();
+        ct_okflag = 1;
+        strcpy(ct_msg, "Fake CT already exists - adopted instead");
+        return;
+    }
+
+    // devid = mac = 02b250 + 6 random hex, like AstraMeter's _generate_new_id
+    char nm[16];
+    char one[4];
+    strcpy(nm, "02b250");
+    int i = 0;
+    for (i = 0; i < 6; i = i + 1) {
+        int r = random(0, 16);
+        if (r > 15) r = 15;            // guard: ct_hexd[16] is the NUL terminator
+        if (r < 0)  r = 0;
+        one[0] = ct_hexd[r];
+        one[1] = 0;
+        strcat(nm, one);
+    }
+    if (strlen(nm) != 12) {
+        strcpy(ct_msg, "MAC generation failed");
+        return;
+    }
+    char sfx[8];
+    strSub(sfx, nm, -4, 4);
+
+    // httpGet, not the raw TLS socket: tlsConnect() (BearSSL) fails against
+    // this host on the ESP32-C3, while httpGet (mbedtls) reaches it - the
+    // login above proves it. Price: httpGet cuts the URL at 256 chars, so
+    // mandatory fields go first and the rest only while it fits.
+
+    strcpy(ct_req, "https://");
+    strcat(ct_req, ct_host);
+    strcat(ct_req, "/app/Solar/v2_add_device.php?mailbox=");
+    strcat(ct_req, ct_umail);
+    strcat(ct_req, "&devid=");
+    strcat(ct_req, nm);
+    strcat(ct_req, "&mac=");
+    strcat(ct_req, nm);
+    strcat(ct_req, "&type=");
+    strcat(ct_req, ct_type);
+    strcat(ct_req, "&token=");
+    strcat(ct_req, ct_tok);
+    strcat(ct_req, "&access=1&name=CT002&bluetooth_name=MST-SMR_");
+    strcat(ct_req, sfx);
+    if (strlen(ct_req) + 25 <= 250) strcat(ct_req, "&timeZone=Europe%2FBerlin");
+    if (strlen(ct_req) + 12 <= 250) strcat(ct_req, "&version=121");
+    if (strlen(ct_req) + 16 <= 250) strcat(ct_req, "&position=%7B%7D");
+    int ulen = strlen(ct_req);
+    addLog("CT002: add_device URL %d chars", ulen);
+    if (ulen > 250) {
+        sprintf(ct_msg, "URL too long (%d chars) - mail address too long?", ulen);
+        return;
+    }
+
+    httpHeader("User-Agent", "Dart/2.19 (dart:io)");
+    httpHeader("Accept", "application/json");
+    httpHeader("token", ct_tok);
+
+    int rn = httpGet(ct_req, ct_resp);
+    if (rn <= 0) {
+        sprintf(ct_msg, "No reply on create (rc=%d)", rn);
+        return;
+    }
+    int good = 0;
+    if (strFind(ct_resp, "\"code\":1")   >= 0) good = 1;
+    if (strFind(ct_resp, "\"code\":2")   >= 0) good = 1;
+    if (strFind(ct_resp, "\"code\":\"1\"") >= 0) good = 1;
+    if (strFind(ct_resp, "\"code\":\"2\"") >= 0) good = 1;
+    if (good == 0) {
+        strcpy(ct_msg, "Create refused: ");
+        strcat(ct_msg, ct_resp);
+        return;
+    }
+    strcpy(ct_mac, nm);
+    saveVars();
+    strcpy(ct_pass, "");            // done - drop the password now
+    ct_okflag = 1;
+    strcpy(ct_msg, "Fake CT created, CT MAC = ");
+    strcat(ct_msg, ct_mac);
+    addLog("CT002: fake CT created in Marstek cloud: %s (%s)", nm, ct_type);
+}
+
+
+// ─── Building-block API ────────────────────────────────────────────────────
+// This file defines no callbacks - the including program owns them and calls
+// the functions below. Meter setup (descriptor, pins, filter) belongs to
+// sml_descriptor.tc, telemetry (power2, /pwr) to the base program.
+
+int ct_webnum;                       // webOn handler number for /ctreg
+
+// From main(). `webnum` is the webOn handler id the wiring reserves for
+// /ctreg - only slot 0 can serve it at all.
+void ctInit(int webnum) {
+    ct_once = 0;
+    ct_idx  = 0;
+    ct_rxc  = 0;
+    ct_txc  = 0;
+    ct_badc = 0;
+    ct_rreq = 0;
+    ct_busy = 0;
+    ct_okflag = 0;
+    ct_pts = 0;
+    strcpy(ct_pass, "");
+    strcpy(ct_msg, "ready");
+
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        ct_sused[i] = 0;
+        ct_sph[i]   = 0;
+        ct_spwr[i]  = 0;
+        ct_spart[i] = 1;
+        ct_siv[i]   = 1000;
+        ct_slast[i] = 0;
+        strcpy(ct_smac[i], "");
+    }
+    ctAgg();
+
+    if (ct_port < 1)  ct_port = 12345;
+    if (ct_rssi == 0) ct_rssi = -50;
+    if (ct_rssi > 0)  ct_rssi = 0 - ct_rssi;
+    if (ct_kind == 1) {
+        strcpy(ct_type, "HME-3");
+    } else {
+        strcpy(ct_type, "HME-4");
+    }
+    strToLower(ct_mac);
+
+    ct_webnum = webnum;
+    webOn(webnum, "/ctreg");
+}
+
+// From Every100ms(). A few datagrams per tick so a burst from several
+// batteries drains without waiting 100 ms each.
+void ctPoll() {
+    if (ct_once == 0) return;
+    int guard = 0;
+    while (guard < 4) {
+        int n = udp(1, ct_rxb);
+        if (n <= 0) return;
+        ct_rxc = ct_rxc + 1;
+        ctHandle(n);
+        guard = guard + 1;
+    }
+}
+
+// From EverySecond().
+void ctTick() {
+    if (tasm_wifi == 1 && ct_once == 0) {
+        if (ct_port < 1) ct_port = 12345;
+        if (udp(0, ct_port) == 1) {
+            // The firmware re-binds the socket after 60 s without a packet.
+            // Harmless under load, noisy when idle - 300 s keeps recovery.
+            udp(8, 1, 300);
+            ct_once = 1;
+            addLog("CT002: %s listening on UDP %d (CT MAC %s)", ct_type, ct_port, ct_mac);
+        }
+    }
+
+    ctPower();
+    ctAge();
+    strToLower(ct_mac);          // the web field may have been typed upper case
+
+    if (strlen(ct_pass) > 0 && ct_busy == 0) {
+        if (millis() - ct_pts > 600000) {
+            strcpy(ct_pass, "");
+            addLog("CT002: cached Marstek password discarded after 10 min");
+        }
+    }
+}
+
+// From TaskLoop(). Cloud calls block for seconds, so they must not run in
+// EverySecond - there they would stall the Tasmota main loop.
+void ctTask() {
+    if (ct_rreq > 0) {
+        int what = ct_rreq;
+        ct_rreq  = 0;
+        ct_busy  = 1;
+        if (what == 1) {
+            ctDoLogin();
+        } else {
+            ctDoCreate();
+        }
+        // Password stays in RAM for step 2 (both steps need a token) and is
+        // dropped on success or by timeout in ctTick(). Never on flash.
+        ct_busy = 0;
+    }
+}
+
+// From WebCall(): rows for the main sensor page.
+void ctRows() {
+    sprintf(ct_buf, "{s}Emulation{m}%s{e}", ct_type);
+    webSend(ct_buf);
+    if (strlen(ct_mac) == 12) {
+        sprintf(ct_buf, "{s}CT MAC{m}%s{e}", ct_mac);
+    } else {
+        if (ui_de) strcpy(ct_buf, "{s}CT MAC{m}(alle){e}");
+        else       strcpy(ct_buf, "{s}CT MAC{m}(any){e}");
+    }
+    webSend(ct_buf);
+
+    int i = 0;
+    int live = 0;
+    char pn[4];
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        if (ct_sused[i] == 1) {
+            live = live + 1;
+            strcpy(pn, "x");
+            if (ct_sph[i] == 1) strcpy(pn, "A");
+            if (ct_sph[i] == 2) strcpy(pn, "B");
+            if (ct_sph[i] == 3) strcpy(pn, "C");
+            if (ct_sph[i] == 4) strcpy(pn, "D");
+            if (ui_de) sprintf(ct_buf, "{s}Akku %s{m}", ct_smac[i]);
+            else       sprintf(ct_buf, "{s}Battery %s{m}", ct_smac[i]);
+            sprintfAppend(ct_buf, "Ph %s &middot; %d W", pn, ct_spwr[i]);
+            if (ct_spart[i] == 0) strcat(ct_buf, " (passiv)");
+            sprintfAppend(ct_buf, " &middot; %d ms{e}", ct_siv[i]);
+            webSend(ct_buf);
+        }
+    }
+    if (ui_de) {
+        sprintf(ct_buf, "{s}Akkus{m}%d{e}", live);            webSend(ct_buf);
+        sprintf(ct_buf, "{s}CT meldet{m}%d W{e}", ct_ptot);   webSend(ct_buf);
+    } else {
+        sprintf(ct_buf, "{s}Batteries{m}%d{e}", live);        webSend(ct_buf);
+        sprintf(ct_buf, "{s}CT sees{m}%d W{e}", ct_ptot);     webSend(ct_buf);
+    }
+    sprintf(ct_buf, "{s}UDP rx/tx/bad{m}%d / %d / ", ct_rxc, ct_txc);
+    sprintfAppend(ct_buf, "%d{e}", ct_badc);
+    webSend(ct_buf);
+}
+
+// From WebUI(): emitted inside an already-open settings panel, so no <div>
+// and no styles of its own beyond the help-link class.
+void ctPanel() {
+    webSend("<style>a.i{text-decoration:none;margin-left:6px}</style>");
+
+    uiHead("&#x1F50C;", "CT", "CT", "ct002/#ct");
+    if (ui_de) {
+        webPulldown(ct_kind, "Typ (Neustart)", "CT002 (HME-4)|CT003 (HME-3)");
+        webText(ct_mac, 16, "CT-MAC");
+        webNumber(ct_port, 1024, 65535, "UDP-Port");
+        webNumber(ct_rssi, -90, -20, "RSSI [dBm]");
+        webNumber(ct_ttl, 0, 300, "Akku-Timeout [s]");
+    } else {
+        webPulldown(ct_kind, "Type (restart)", "CT002 (HME-4)|CT003 (HME-3)");
+        webText(ct_mac, 16, "CT MAC");
+        webNumber(ct_port, 1024, 65535, "UDP port");
+        webNumber(ct_rssi, -90, -20, "RSSI [dBm]");
+        webNumber(ct_ttl, 0, 300, "Battery timeout [s]");
+    }
+
+    uiHead("&#x1F50B;", "Battery", "Akku", "ct002/#battery");
+    if (ui_de) {
+        webNumber(ct_offset, -200, 200, "Offset [W]");
+        webCheckbox(ct_tweak, "Regleroptimierung");
+        webCheckbox(ct_ph3, "3 Phasen");
+    } else {
+        webNumber(ct_offset, -200, 200, "Offset [W]");
+        webCheckbox(ct_tweak, "Regulator tweak");
+        webCheckbox(ct_ph3, "3 phases");
+    }
+
+    uiHead("&#x2601;&#xFE0F;", "Marstek", "Marstek", "ct002/#marstek");
+    // Login and CT MAC live on /ctreg, not here: this block re-renders every
+    // 2 s and the sv= string write path is broken in the firmware.
+    sprintf(ct_buf, "<div style='font-size:12px;color:#444'>Account: <b>%s</b></div>", ct_mail);
+    webSend(ct_buf);
+    if (ui_de) webSend("<div><a href='/ctreg'><button type='button'>&#x1F511; Konto einrichten</button></a></div>");
+    else       webSend("<div><a href='/ctreg'><button type='button'>&#x1F511; Set up account</button></a></div>");
+}
+
+// From JsonCall(): appended to the SENSOR telemetry.
+void ctJson() {
+    int live = 0;
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        if (ct_sused[i] == 1) live = live + 1;
+    }
+    // "Power", not "Total": Home Assistant's Tasmota integration maps key
+    // names, and "Total" is its energy key - the watts showed up as kWh.
+    sprintf(ct_buf, ",\"CT002\":{\"Power\":%d", ct_ptot);
+    sprintfAppend(ct_buf, ",\"L1\":%d,\"L2\":%d,\"L3\":%d", ct_pa, ct_pb, ct_pc);
+    sprintfAppend(ct_buf, ",\"Slaves\":%d}", live);
+    responseAppend(ct_buf);
+}
+
+int ctWebOn(int h) {
+    if (h != ct_webnum) return 0;
+
+
+    char a[96];
+
+    // Poller status query: text only, no side effects.
+    // Format "<status>|<ct-mac>|<busy>"
+    if (webArg("st", a) > 0) {
+        strcpy(ct_buf, ct_msg);
+        strcat(ct_buf, "|");
+        if (strlen(ct_mac) == 12) {
+            strcat(ct_buf, ct_mac);
+        } else {
+            strcat(ct_buf, "(none yet)");
+        }
+        if (ct_busy == 1) {
+            strcat(ct_buf, "|1");
+        } else {
+            strcat(ct_buf, "|0");
+        }
+        if (ct_okflag == 1) {
+            strcat(ct_buf, "|1");
+        } else {
+            strcat(ct_buf, "|0");
+        }
+        webSend(ct_buf);
+        return 1;
+    }
+
+    int act = 0;
+    if (webArg("do", a) > 0) {
+        if (strcmp(a, "login")  == 0) act = 1;
+        if (strcmp(a, "create") == 0) act = 2;
+        if (strcmp(a, "clear")  == 0) act = 3;
+    }
+    if (webArg("mail", a) > 0) {
+        strcpy(ct_mail, a);
+        saveVars();
+    }
+    // An empty field keeps the cached password, so step 2 does not need it
+    // typed again.
+    if (webArg("pw", a) > 0) {
+        strcpy(ct_pass, a);
+        ct_pts = millis();
+    }
+    if (act == 3) {                     // clear the local CT MAC, cloud untouched
+        strcpy(ct_mac, "");
+        strcpy(ct_msg, "CT MAC cleared (cloud device remains)");
+        ct_okflag = 0;
+        saveVars();
+        webSend("<html><head><meta charset='utf-8'></head><body><script>location.replace('/ctreg');</script></body></html>");
+        return 1;
+    }
+    if (act > 0) {
+        if (ct_busy == 1) {
+            strcpy(ct_msg, "Another job is running");
+        } else {
+            ct_rreq = act;
+            strcpy(ct_msg, "requested, running ...");
+        }
+        // Post/Redirect/Get - without it every reload asks to resubmit the
+        // form and keeps showing the stale answer.
+        webSend("<html><head><meta charset='utf-8'></head><body><script>location.replace('/ctreg');</script></body></html>");
+        return 1;
+    }
+
+    webSend("<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Marstek account</title>");
+    webSend("<style>body{font-family:sans-serif;background:#252525;color:#eaeaea;margin:0;padding:16px}");
+    webSend(".p{max-width:360px;margin:0 auto;background:#f0f0f0;color:#000;padding:18px;border:2px solid #ccc;border-radius:6px}");
+    webSend("h3{margin:0 0 10px;font-size:16px}label{display:block;margin:10px 0 4px;font-size:13px}");
+    webSend("input[type=text],input[type=password]{width:100%;box-sizing:border-box;padding:6px}");
+    webSend("button{padding:8px 12px;border-radius:4px;margin:8px 0;width:100%}");
+    webSend(".n{font-size:12px;color:#444;line-height:1.35;margin:8px 0}.w{font-size:12px;color:#a00;line-height:1.35;margin:8px 0}");
+    webSend("a.i{text-decoration:none;margin-left:6px}");
+    webSend(".s{background:#fff;border:1px solid #bbb;padding:8px;font-size:13px;margin-top:10px}");
+    webSend(".s.ok{background:#e6f6e6;border-color:#5f9e5f;color:#155f15}</style></head><body><div class='p'>");
+    sprintf(ct_buf, "<h3>&#x2601;&#xFE0F; Marstek</h3>%sct002/#marstek'>&#x2139;&#xFE0F;</a>", ct_helpa);
+    webSend(ct_buf);
+    uiText("<div class='n'>The battery only talks to a CT that exists in your Marstek account.</div>",
+           "<div class='n'>Der Akku spricht nur mit einem CT, das im Marstek-Konto existiert.</div>");
+
+    webSend("<form method='post' action='/ctreg'>");
+    sprintf(ct_buf, "<label>Mail</label><input type='text' name='mail' value='%s'>", ct_mail);
+    webSend(ct_buf);
+    uiText("<label>Password</label>", "<label>Passwort</label>");
+    webSend("<input type='password' name='pw' value=''>");
+    if (strlen(ct_pass) > 0) {
+        uiText("<div class='n'>Password kept for 10 min. Leave empty to reuse.</div>",
+               "<div class='n'>Passwort 10 min gemerkt. Leer lassen zum Wiederverwenden.</div>");
+    }
+    uiText("<div class='w'>&#x26A0;&#xFE0F; Plain text over your LAN. Never stored on flash.</div>",
+           "<div class='w'>&#x26A0;&#xFE0F; Klartext im LAN. Wird nie auf Flash gespeichert.</div>");
+    uiText("<button type='submit' name='do' value='login'>1. Log in</button>",
+           "<button type='submit' name='do' value='login'>1. Anmelden</button>");
+    // Create stays out of reach while a MAC is set - ctDoCreate() refuses too,
+    // but a disabled button says so before the click, not after.
+    if (strlen(ct_mac) == 12) {
+        uiText("<button type='submit' name='do' value='create' disabled>2. Create fake CT</button><div class='n'>A CT MAC is set. Clear it below first.</div>",
+               "<button type='submit' name='do' value='create' disabled>2. Fake-CT anlegen</button><div class='n'>CT-MAC ist gesetzt. Unten erst loeschen.</div>");
+    } else {
+        uiText("<button type='submit' name='do' value='create' onclick='return confirm(\"Create a new CT in your Marstek account?\")'>2. Create fake CT</button>",
+               "<button type='submit' name='do' value='create' onclick='return confirm(\"Neues CT im Marstek-Konto anlegen?\")'>2. Fake-CT anlegen</button>");
+    }
+    webSend("</form>");
+
+    if (ct_okflag == 1) {
+        sprintf(ct_buf, "<div class='s ok' id='stbox'><b>Status:</b> <span id='st'>%s</span></div>", ct_msg);
+    } else {
+        sprintf(ct_buf, "<div class='s' id='stbox'><b>Status:</b> <span id='st'>%s</span></div>", ct_msg);
+    }
+    webSend(ct_buf);
+    if (strlen(ct_mac) == 12) {
+        sprintf(ct_buf, "<div class='s'><b>CT MAC:</b> <span id='mc'>%s</span></div>", ct_mac);
+    } else {
+        if (ui_de) strcpy(ct_buf, "<div class='s'><b>CT MAC:</b> <span id='mc'>(noch keine)</span></div>");
+        else       strcpy(ct_buf, "<div class='s'><b>CT MAC:</b> <span id='mc'>(none yet)</span></div>");
+    }
+    webSend(ct_buf);
+    if (strlen(ct_mac) == 12) {
+        uiText("<form method='post' action='/ctreg'><button type='submit' name='do' value='clear' onclick='return confirm(\"Clear the CT MAC here? The CT in your account stays.\")'>&#x274C; Clear CT MAC</button></form>",
+               "<form method='post' action='/ctreg'><button type='submit' name='do' value='clear' onclick='return confirm(\"CT-MAC hier loeschen? Das CT im Konto bleibt.\")'>&#x274C; CT-MAC loeschen</button></form>");
+    }
+    uiText("<div><a href='/'><button type='button'>&#x2B05;&#xFE0F; Main menu</button></a></div>",
+           "<div><a href='/'><button type='button'>&#x2B05;&#xFE0F; Hauptmenue</button></a></div>");
+    // The cloud call runs in TaskLoop and is unfinished when this renders.
+    // Chained setTimeout, not setInterval, so slow answers cannot stack.
+    webSend("<script>function pl(){fetch('/ctreg?st=1',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var p=t.split('|');");
+    webSend("document.getElementById('st').textContent=p[0];document.getElementById('mc').textContent=p[1];");
+    webSend("document.getElementById('stbox').className=(p[3]=='1')?'s ok':'s';})");
+    webSend(".catch(function(){}).then(function(){setTimeout(pl,1500);});}setTimeout(pl,800);</script>");
+    webSend("</div></body></html>");
+    return 1;
+}
+
+int ctCmd(char cmd[]) {
+    if (strcmp(cmd, "STAT") == 0) {
+        sprintf(ct_buf, "rx=%d tx=%d bad=%d idx=%d", ct_rxc, ct_txc, ct_badc, ct_idx);
+        responseCmnd(ct_buf);
+        int i = 0;
+        for (i = 0; i < CT_NSLOT; i = i + 1) {
+            if (ct_sused[i] == 1) {
+                addLog("CT002: slot %d %s ph=%d p=%d part=%d iv=%d",
+                       i, ct_smac[i], ct_sph[i], ct_spwr[i], ct_spart[i], ct_siv[i]);
+            }
+        }
+    } else if (strcmp(cmd, "CLR") == 0) {
+        int i = 0;
+        for (i = 0; i < CT_NSLOT; i = i + 1) {
+            ct_sused[i] = 0;
+        }
+        responseCmnd("slots cleared");
+    } else if (strStartsWith(cmd, "MAC ") == 1) {
+        strSub(ct_buf, cmd, 4, 0);
+        strTrim(ct_buf);
+        strToLower(ct_buf);
+        if (strlen(ct_buf) == 12 || strlen(ct_buf) == 0) {
+            strcpy(ct_mac, ct_buf);
+            saveVars();
+            responseCmnd(ct_mac);
+        } else {
+            responseCmnd("12 hex chars expected (or empty for any)");
+        }
+    } else if (strStartsWith(cmd, "MAIL ") == 1) {
+        strSub(ct_buf, cmd, 5, 0);
+        strcpy(ct_mail, ct_buf);
+        saveVars();
+        responseCmnd(ct_mail);
+    } else if (strStartsWith(cmd, "PASS ") == 1) {
+        strSub(ct_buf, cmd, 5, 0);
+        strcpy(ct_pass, ct_buf);
+        responseCmnd("password set (not stored)");
+    } else if (strcmp(cmd, "LOGIN") == 0) {
+        ct_rreq = 1;
+        responseCmnd("login requested");
+    } else if (strcmp(cmd, "CREATE JA") == 0) {
+        ct_rreq = 2;
+        responseCmnd("create requested");
+    } else {
+        return 0;      // not ours - the wiring answers
+    }
+    return 1;
+}

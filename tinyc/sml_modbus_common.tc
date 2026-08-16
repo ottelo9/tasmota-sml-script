@@ -1,0 +1,140 @@
+// sml_modbus_common.tc — Modbus-TCP slave as a building block. Defines no
+// callbacks; the including program owns them and calls the functions below.
+// Off by default, switched on in the settings panel.
+//
+// Extracted from gemu's sml_chart_modbus.tc, the TinyC port of ottelo's
+// 2_SML_Chart_PV_Modbus.tas.
+//
+// Register map (FC03 only, holding registers, 2 registers per value,
+// IEEE-754 float big-endian):
+//   40000 (PDU 0) Power       [W]    smlGet(1)
+//   40002 (PDU 2) Import      [kWh]  smlGet(2)
+//   40004 (PDU 4) Export      [kWh]  smlGet(3)
+
+#include "ui_common.tc"
+
+// ─── Settings ──────────────────────────────────────────────────────────────
+persist watch int mb_on;      // 1 = run the slave
+persist watch int mb_port;    // TCP port, standard 502
+
+// ─── Runtime ───────────────────────────────────────────────────────────────
+int   mb_started;             // 0 until tcpServer() succeeded
+int   mb_rx[16];              // request frame (FC03 request = exactly 12 B)
+int   mb_hdr[9];              // MBAP + PDU header / exception bytes (uint8)
+float mb_dat[6];              // up to 3 floats
+char  mb_txt[192];
+
+// ─── Building-block API ────────────────────────────────────────────────────
+
+// From main().
+void mbInit() {
+    mb_started = 0;
+    if (mb_port < 1 || mb_port > 65535) mb_port = 502;   // 0 = never set
+    snapshot(mb_port);
+    snapshot(mb_on);
+}
+
+// From Every100ms(). One request → one response, connection kept open
+// (proper Modbus-TCP slave behaviour; clients pipeline their polls).
+void mbPoll() {
+    if (mb_on == 0) return;
+
+    if (mb_started == 0) {
+        if (tcpServer(mb_port) == 0) {
+            mb_started = 1;
+            addLog("sml_modbus: Modbus-TCP slave on port %d", mb_port);
+        }
+        return;                       // network not up yet — retry next tick
+    }
+
+    int avail = tcpAvailable();       // accepts a waiting client + byte count
+    if (avail != 12) {
+        if (avail > 12) tcpReadArray(mb_rx);   // drain junk, don't wedge
+        return;
+    }
+    tcpReadArray(mb_rx);
+
+    mb_hdr[0] = mb_rx[0];             // echo transaction id
+    mb_hdr[1] = mb_rx[1];
+    mb_hdr[2] = 0;                    // protocol id = 0
+    mb_hdr[3] = 0;
+    mb_hdr[6] = mb_rx[6];             // unit id
+
+    int fc   = mb_rx[7];
+    int addr = mb_rx[9];              // high byte mb_rx[8] is always 0 here
+    int qty  = mb_rx[11];
+
+    if (fc != 3) {
+        mb_hdr[4] = 0;
+        mb_hdr[5] = 3;                // unit + FC|0x80 + exception code
+        mb_hdr[7] = fc + 128;
+        mb_hdr[8] = 1;                // illegal function
+        tcpWriteArray(mb_hdr, 9, 0);
+        return;
+    }
+    // Inside 0..6 and 2-register aligned, or it is not one of our floats.
+    if (qty + addr > 6 || (qty % 2) != 0 || (addr % 2) != 0) {
+        mb_hdr[4] = 0;
+        mb_hdr[5] = 3;
+        mb_hdr[7] = fc + 128;
+        mb_hdr[8] = 2;                // illegal data address
+        tcpWriteArray(mb_hdr, 9, 0);
+        return;
+    }
+
+    int bytecount = qty * 2;
+    mb_hdr[4] = 0;
+    mb_hdr[5] = bytecount + 3;        // unit + FC + bytecount field + data
+    mb_hdr[7] = fc;
+    mb_hdr[8] = bytecount;
+    tcpWriteArray(mb_hdr, 9, 0);
+
+    int first  = addr / 2 + 1;        // smlGet is 1-based
+    int floats = qty / 2;
+    int k = 0;
+    while (k < floats) {
+        mb_dat[k] = smlGet(first + k);
+        k = k + 1;
+    }
+    tcpWriteArray(mb_dat, floats, 3); // raw 32-bit big-endian
+}
+
+// From EverySecond(). Applies port / on-off changes without a reboot.
+void mbTick() {
+    if (changed(mb_port) || changed(mb_on)) {
+        if (mb_port < 1 || mb_port > 65535) mb_port = 502;
+        if (mb_started) tcpClose();
+        mb_started = 0;               // mbPoll() re-binds if still enabled
+        snapshot(mb_port);
+        snapshot(mb_on);
+        addLog("sml_modbus: slave %d on port %d", mb_on, mb_port);
+    }
+}
+
+// From WebCall().
+void mbRows() {
+    if (mb_on == 0) return;
+    if (mb_started) {
+        sprintf(mb_txt, "{s}Modbus-TCP{m}%d{e}", mb_port);
+    } else {
+        uiText("{s}Modbus-TCP{m}starting{e}", "{s}Modbus-TCP{m}startet{e}");
+        return;
+    }
+    webSend(mb_txt);
+}
+
+// From WebUI(): emitted inside an already-open settings panel.
+void mbPanel() {
+    uiHead("&#x1F5A7;&#xFE0F;", "Modbus-TCP", "Modbus-TCP", "sml/#modbus");
+    if (ui_de) webCheckbox(mb_on, "Slave aktiv");
+    else       webCheckbox(mb_on, "Slave active");
+    if (mb_on == 0) return;
+
+    if (ui_de) webNumber(mb_port, 1, 65535, "TCP-Port");
+    else       webNumber(mb_port, 1, 65535, "TCP port");
+    if (ui_de) {
+        webSend("<div class='hint'>FC03 &middot; 40000 Leistung W &middot; 40002 Bezug kWh &middot; 40004 Einspeisung kWh<br>je 2 Register, IEEE-754 float, big-endian</div>");
+    } else {
+        webSend("<div class='hint'>FC03 &middot; 40000 power W &middot; 40002 import kWh &middot; 40004 export kWh<br>2 registers each, IEEE-754 float, big-endian</div>");
+    }
+}

@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SML meter scripts for Tasmota</title>
+<style>
+:root{--bg:#f7f7f8;--fg:#1c1c1e;--mut:#5b5b60;--card:#fff;--line:#dcdce0;--accent:#0a6ebd;--warn:#a3350f;--code:#f0f0f2}
+@media (prefers-color-scheme:dark){
+:root{--bg:#17171a;--fg:#e9e9ec;--mut:#a1a1a8;--card:#1f1f23;--line:#33333a;--accent:#5ab0f0;--warn:#f08a62;--code:#26262b}
+}
+*{box-sizing:border-box}
+body{margin:0;padding:0 16px 64px;background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto}
+header{padding:26px 0 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+h1{margin:0 0 4px;font-size:22px;line-height:1.25}
+.sub{color:var(--mut);font-size:14px;margin:0}
+.switch{margin-top:14px;display:flex;gap:8px}
+.switch button{font:inherit;font-size:13px;padding:5px 14px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;cursor:pointer}
+.switch button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+nav{margin:0 0 22px;font-size:14px}
+nav a{color:var(--accent);text-decoration:none;margin-right:14px;white-space:nowrap;display:inline-block}
+nav a:hover{text-decoration:underline}
+section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:0 0 14px;scroll-margin-top:16px}
+h2{margin:0 0 10px;font-size:17px}
+h3{margin:16px 0 6px;font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+p{margin:8px 0}
+ul{margin:8px 0;padding-left:20px}
+li{margin:4px 0}
+code,kbd{background:var(--code);padding:1px 5px;border-radius:4px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code);padding:10px 12px;border-radius:6px;overflow-x:auto;margin:10px 0}
+pre code{background:none;padding:0}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:var(--code);font-weight:600;white-space:nowrap}
+.warn{border-left:3px solid var(--warn);padding-left:12px;color:var(--warn)}
+footer{color:var(--mut);font-size:13px;text-align:center;margin-top:26px}
+footer a{color:var(--accent)}
+footer .dis{font-size:12px;line-height:1.45;max-width:560px;margin:12px auto 0;opacity:.85}
+body.lang-en .de{display:none}
+body.lang-de .en{display:none}
+</style>
+</head>
+<body class="lang-en">
+<div class="wrap">
+
+<header>
+  <h1>SML meter scripts for Tasmota</h1>
+  <p class="sub"><span class="en">TinyC family &middot; read the electricity meter, chart it, hand it on</span><span class="de">TinyC-Familie &middot; Stromzähler auslesen, aufzeichnen, weitergeben</span></p>
+  <div class="switch">
+    <button data-set="en">English</button>
+    <button data-set="de">Deutsch</button>
+  </div>
+</header>
+
+<nav>
+  <a href="#overview"><span class="en">Overview</span><span class="de">Überblick</span></a>
+  <a href="#programs"><span class="en">Programs</span><span class="de">Programme</span></a>
+  <a href="#meter"><span class="en">Descriptor</span><span class="de">Descriptor</span></a>
+  <a href="#pins">Pins</a>
+  <a href="#filter">Filter</a>
+  <a href="#display"><span class="en">Display</span><span class="de">Anzeige</span></a>
+  <a href="#pv">PV</a>
+  <a href="#data"><span class="en">Chart data</span><span class="de">Diagrammdaten</span></a>
+  <a href="#telemetry"><span class="en">Telemetry</span><span class="de">Telemetrie</span></a>
+  <a href="#modbus">Modbus</a>
+  <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
+</nav>
+
+<section id="overview">
+<h2><span class="en">Overview</span><span class="de">Überblick</span></h2>
+<div class="en">
+<p>An ESP32 with a reading head sits on your electricity meter and reads it over SML. Every program of this family shares the same meter setup; they differ in what they add on top: charts, a meter emulator for a PV battery, a Modbus slave.</p>
+<p><b>Requirements:</b> ESP32 (no ESP8266), Tasmota with TinyC and <code>USE_SML</code>, and a reading head (examples on my <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">blog</a>).</p>
+<p>Everything is set up on the web page, no code editing. Language, meter, pins and options are stored on the device.</p>
+</div>
+<div class="de">
+<p>Ein ESP32 mit Lesekopf sitzt am Stromzähler und liest ihn über SML aus. Alle Programme dieser Familie teilen sich die gleiche Zählereinrichtung; sie unterscheiden sich nur in dem, was oben drauf kommt: Diagramme, ein Zähler-Emulator für eine PV-Batterie, ein Modbus-Slave.</p>
+<p><b>Voraussetzungen:</b> ESP32 (kein ESP8266), Tasmota mit TinyC und <code>USE_SML</code> und ein Lesekopf (Beispiele auf meinem <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">Blog</a>).</p>
+<p>Alles wird auf der Weboberfläche eingestellt, nichts im Code. Sprache, Zähler, Pins und Optionen liegen auf dem Gerät.</p>
+</div>
+</section>
+
+<section id="programs">
+<h2><span class="en">Programs</span><span class="de">Programme</span></h2>
+<div class="en">
+<p>Pick one, compile it, upload it into slot&nbsp;0. Modbus is an option inside every one of them.</p>
+<table>
+<tr><th>sml_simple.tc</th><td>Meter only. Smallest program.</td></tr>
+<tr><th>sml_chart.tc</th><td>+ charts and tables, feed-in switchable.</td></tr>
+<tr><th>sml_ct002.tc</th><td>+ Marstek CT002/CT003 emulator (<a href="../ct002/">docs</a>).</td></tr>
+<tr><th>sml_chart_ct002.tc</th><td>Charts + CT002 emulator.</td></tr>
+<tr><th>sml_eco_shelly.tc</th><td>+ EcoTracker / Shelly Pro 3EM emulator (<a href="../eco_shelly/">docs</a>).</td></tr>
+<tr><th>sml_chart_eco_shelly.tc</th><td>Charts + EcoTracker / Shelly emulator.</td></tr>
+</table>
+<h3>Install</h3>
+<ol>
+<li>Console: <code>TinyCIde</code>, then open <code>http://&lt;ip&gt;/tc</code>.</li>
+<li>Load the <code>.tc</code> file, <b>Compile</b>, <b>Upload</b> into slot&nbsp;0.</li>
+<li>Tick autoexec, or start it with <code>TinyCRun /&lt;name&gt;.tcb</code>.</li>
+</ol>
+<p class="warn">Slot&nbsp;0 only for the emulator variants: their HTTP endpoints are <code>webOn</code> handlers, and Tasmota dispatches those to slot&nbsp;0.</p>
+<p>Each program keeps its own settings file. Switching programs means setting the meter up again.</p>
+</div>
+<div class="de">
+<p>Eines aussuchen, kompilieren, in Slot&nbsp;0 hochladen. Modbus ist in jedem davon als Option enthalten.</p>
+<table>
+<tr><th>sml_simple.tc</th><td>Nur Zähler. Kleinstes Programm.</td></tr>
+<tr><th>sml_chart.tc</th><td>+ Diagramme und Tabellen, Einspeisung schaltbar.</td></tr>
+<tr><th>sml_ct002.tc</th><td>+ Marstek-CT002/CT003-Emulator (<a href="../ct002/">Doku</a>).</td></tr>
+<tr><th>sml_chart_ct002.tc</th><td>Diagramme + CT002-Emulator.</td></tr>
+<tr><th>sml_eco_shelly.tc</th><td>+ EcoTracker- / Shelly-Pro-3EM-Emulator (<a href="../eco_shelly/">Doku</a>).</td></tr>
+<tr><th>sml_chart_eco_shelly.tc</th><td>Diagramme + EcoTracker- / Shelly-Emulator.</td></tr>
+</table>
+<h3>Installation</h3>
+<ol>
+<li>Konsole: <code>TinyCIde</code>, dann <code>http://&lt;ip&gt;/tc</code> öffnen.</li>
+<li>Die <code>.tc</code>-Datei laden, <b>Compile</b>, <b>Upload</b> in Slot&nbsp;0.</li>
+<li>Autoexec ankreuzen oder mit <code>TinyCRun /&lt;name&gt;.tcb</code> starten.</li>
+</ol>
+<p class="warn">Nur Slot&nbsp;0 bei den Emulator-Varianten: deren HTTP-Endpunkte sind <code>webOn</code>-Handler, und die reicht Tasmota an Slot&nbsp;0 weiter.</p>
+<p>Jedes Programm hat seine eigene Einstellungsdatei. Beim Wechsel muss der Zähler neu eingerichtet werden.</p>
+</div>
+</section>
+
+<section id="meter">
+<h2>Descriptor</h2>
+<div class="en">
+<p>The descriptor tells the SML driver how to read your meter: baud rate, protocol and which OBIS codes go into which value. It lives in <code>/sml_meter.def</code>.</p>
+<table>
+<tr><th>Meter active</th><td>Switches the SML driver on and off (Rule1). Off means no readings at all.</td></tr>
+<tr><th>From repo</th><td>Pulldown with ready-made descriptors from my repository. Picking one downloads it and restarts the driver.</td></tr>
+<tr><th>Edit descriptor</th><td>Opens the file editor for hand-tuning. Your meter not in the list? Start from the closest one.</td></tr>
+</table>
+<p>The first three values are fixed by convention and everything else builds on them: <code>1</code> power&nbsp;[W], <code>2</code> import&nbsp;[kWh], <code>3</code> export&nbsp;[kWh].</p>
+</div>
+<div class="de">
+<p>Der Descriptor sagt dem SML-Treiber, wie dein Zähler zu lesen ist: Baudrate, Protokoll und welcher OBIS-Code in welchen Wert geht. Er liegt in <code>/sml_meter.def</code>.</p>
+<table>
+<tr><th>Zähler aktiv</th><td>Schaltet den SML-Treiber ein und aus (Rule1). Aus heißt: gar keine Messwerte.</td></tr>
+<tr><th>Aus Repo</th><td>Auswahlliste mit fertigen Descriptoren aus meinem Repository. Eine Auswahl lädt ihn herunter und startet den Treiber neu.</td></tr>
+<tr><th>Descriptor bearbeiten</th><td>Öffnet den Dateieditor zum Anpassen. Zähler nicht in der Liste? Mit dem ähnlichsten anfangen.</td></tr>
+</table>
+<p>Die ersten drei Werte sind per Konvention festgelegt, alles andere baut darauf auf: <code>1</code> Leistung&nbsp;[W], <code>2</code> Bezug&nbsp;[kWh], <code>3</code> Einspeisung&nbsp;[kWh].</p>
+</div>
+</section>
+
+<section id="pins">
+<h2>Pins</h2>
+<div class="en">
+<p>RX is the pin the reading head's data line goes to. TX is only needed for meters that have to be woken up or that expect a request.</p>
+<table>
+<tr><th>RX&nbsp;3 &middot; TX&nbsp;1</th><td>Hichi, Stromleser, LesekopfV32, Wattwächter</td></tr>
+<tr><th>RX&nbsp;5 &middot; TX&nbsp;4</th><td>bitShake</td></tr>
+</table>
+<p>The pulldown only offers pins Tasmota has left free. A pin already assigned in the module configuration will not show up.</p>
+<p>Changing a pin rewrites the descriptor and restarts the driver &mdash; no reboot needed.</p>
+</div>
+<div class="de">
+<p>RX ist der Pin, an dem die Datenleitung des Lesekopfs hängt. TX braucht man nur bei Zählern, die geweckt werden müssen oder eine Anforderung erwarten.</p>
+<table>
+<tr><th>RX&nbsp;3 &middot; TX&nbsp;1</th><td>Hichi, Stromleser, LesekopfV32, Wattwächter</td></tr>
+<tr><th>RX&nbsp;5 &middot; TX&nbsp;4</th><td>bitShake</td></tr>
+</table>
+<p>Die Auswahlliste zeigt nur Pins, die Tasmota frei gelassen hat. Ein in der Modulkonfiguration belegter Pin taucht nicht auf.</p>
+<p>Eine Pin-Änderung schreibt den Descriptor neu und startet den Treiber neu &mdash; ohne Neustart des Geräts.</p>
+</div>
+</section>
+
+<section id="filter">
+<h2>Filter</h2>
+<div class="en">
+<p>A median filter over the incoming power values. It throws away single outliers &mdash; the spikes that make a chart unreadable and an emulator regulate against nothing.</p>
+<p>Leave it on unless you need the raw value. It costs a little response time, which matters only for battery regulation.</p>
+</div>
+<div class="de">
+<p>Ein Median-Filter über die eingehenden Leistungswerte. Er wirft einzelne Ausreißer weg &mdash; die Spitzen, die ein Diagramm unlesbar machen und einen Emulator gegen nichts regeln lassen.</p>
+<p>Ruhig anlassen, außer du brauchst den Rohwert. Er kostet etwas Reaktionszeit, was nur bei der Akkuregelung eine Rolle spielt.</p>
+</div>
+</section>
+
+<section id="display">
+<h2><span class="en">Display</span><span class="de">Anzeige</span></h2>
+<div class="en">
+<p>The SML driver can print its own rows on the main page, with the meter name in front of every value. The script prints the same values itself, in your language and without the prefix.</p>
+<table>
+<tr><th>off (default)</th><td>Only the script's rows. Tidier.</td></tr>
+<tr><th>on</th><td>Driver rows as well &mdash; useful while setting up a descriptor, because you see every value it produces, not just the first three.</td></tr>
+</table>
+<p>The MQTT telemetry (<code>SENSOR</code>) always contains the driver's values, whatever this is set to. Home Assistant is unaffected.</p>
+</div>
+<div class="de">
+<p>Der SML-Treiber kann eigene Zeilen auf der Hauptseite ausgeben, mit dem Zählernamen vor jedem Wert. Das Script gibt dieselben Werte selbst aus &mdash; in deiner Sprache und ohne Präfix.</p>
+<table>
+<tr><th>aus (Standard)</th><td>Nur die Zeilen des Scripts. Aufgeräumter.</td></tr>
+<tr><th>an</th><td>Zusätzlich die Treiberzeilen &mdash; praktisch beim Einrichten eines Descriptors, weil du jeden erzeugten Wert siehst, nicht nur die ersten drei.</td></tr>
+</table>
+<p>Die MQTT-Telemetrie (<code>SENSOR</code>) enthält die Treiberwerte immer, unabhängig von dieser Einstellung. Home Assistant merkt davon nichts.</p>
+</div>
+</section>
+
+<section id="pv">
+<h2>PV</h2>
+<div class="en">
+<p>Only in the chart variants. Off, the page shows consumption alone. On, it adds feed-in: day, month and year rows, a daily production chart and a month chart with both directions.</p>
+<p>Switch it on if your meter has a feed-in register (<code>1.8.0</code> and <code>2.8.0</code>). Without solar the extra charts stay at zero.</p>
+</div>
+<div class="de">
+<p>Nur in den Diagramm-Varianten. Aus zeigt die Seite nur den Verbrauch. An kommt die Einspeisung dazu: Tages-, Monats- und Jahreszeile, ein Tagesertragsdiagramm und ein Monatsdiagramm mit beiden Richtungen.</p>
+<p>Einschalten, wenn dein Zähler ein Einspeiseregister hat (<code>1.8.0</code> und <code>2.8.0</code>). Ohne PV bleiben die zusätzlichen Diagramme auf null.</p>
+</div>
+</section>
+
+<section id="data">
+<h2><span class="en">Chart data</span><span class="de">Diagrammdaten</span></h2>
+<div class="en">
+<table>
+<tr><th>Init meter values</th><td>Sets day, month and year baselines to the current meter reading. Do this once after installing, otherwise the first day shows the whole meter total.</td></tr>
+<tr><th>Reset bar charts</th><td>Clears the day and month columns. The counters keep running.</td></tr>
+<tr><th>Save chart data</th><td>Writes the chart data to flash now. It is also saved automatically, this is for before a deliberate reboot.</td></tr>
+</table>
+<p>The data lives in <code>/sml_chart.bin</code> and is exported to <code>/sml_chart.csv</code>. Both survive a firmware update, both are lost when the file system is erased.</p>
+<p class="warn">Charts need the clock. Before the device has NTP time (<code>2020</code>) nothing is recorded.</p>
+</div>
+<div class="de">
+<table>
+<tr><th>Zählerwerte initialisieren</th><td>Setzt die Tages-, Monats- und Jahresbasis auf den aktuellen Zählerstand. Einmal nach der Installation machen, sonst zeigt der erste Tag den kompletten Zählerstand.</td></tr>
+<tr><th>Balkendiagramme zurücksetzen</th><td>Löscht die Tages- und Monatsspalten. Die Zähler laufen weiter.</td></tr>
+<tr><th>Diagrammdaten speichern</th><td>Schreibt die Diagrammdaten sofort in den Flash. Das passiert auch automatisch; der Knopf ist für den bewussten Neustart davor.</td></tr>
+</table>
+<p>Die Daten liegen in <code>/sml_chart.bin</code> und werden nach <code>/sml_chart.csv</code> exportiert. Beide überstehen ein Firmware-Update, beide sind weg, wenn das Dateisystem gelöscht wird.</p>
+<p class="warn">Diagramme brauchen die Uhr. Bevor das Gerät NTP-Zeit hat (<code>2020</code>), wird nichts aufgezeichnet.</p>
+</div>
+</section>
+
+<section id="telemetry">
+<h2><span class="en">Telemetry</span><span class="de">Telemetrie</span></h2>
+<div class="en">
+<p>Off by default. On, the script publishes a heavily smoothed power value every 5&nbsp;s and serves it over HTTP as well.</p>
+<h3>MQTT</h3>
+<table>
+<tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Smoothed power [W]. Exponential average, 10&nbsp;% new value per step &mdash; slow on purpose.</td></tr>
+<tr><th><code>stat/&lt;topic&gt;/script/cpwr</code></th><td>Emulator variants only: the value handed to the battery, after offset and shaping.</td></tr>
+</table>
+<h3>HTTP <code>/pwr</code></h3>
+<pre><code>{"power2":-217,"cpwr":-180,"power":-440,"in":26714.950,"out":659.775}</code></pre>
+<p>For a second battery that polls over HTTP instead of listening for a meter &mdash; opendtu-onbattery's dynamic power limiter, for example. With telemetry off the endpoint answers <code>{"enabled":0}</code>.</p>
+<p>Why smoothed: a battery that follows every spike swings. <code>power</code> is the raw value, <code>power2</code> the calm one.</p>
+</div>
+<div class="de">
+<p>Standardmäßig aus. An veröffentlicht das Script alle 5&nbsp;s einen stark gemittelten Leistungswert und liefert ihn zusätzlich über HTTP.</p>
+<h3>MQTT</h3>
+<table>
+<tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Gemittelte Leistung [W]. Exponentieller Mittelwert, 10&nbsp;% neuer Wert pro Schritt &mdash; absichtlich träge.</td></tr>
+<tr><th><code>stat/&lt;topic&gt;/script/cpwr</code></th><td>Nur Emulator-Varianten: der Wert, den der Akku bekommt, nach Offset und Regleroptimierung.</td></tr>
+</table>
+<h3>HTTP <code>/pwr</code></h3>
+<pre><code>{"power2":-217,"cpwr":-180,"power":-440,"in":26714.950,"out":659.775}</code></pre>
+<p>Für einen zweiten Akku, der über HTTP pollt statt auf einen Zähler zu horchen &mdash; zum Beispiel der Dynamic Power Limiter von opendtu-onbattery. Bei ausgeschalteter Telemetrie antwortet der Endpunkt mit <code>{"enabled":0}</code>.</p>
+<p>Warum gemittelt: ein Akku, der jeder Spitze folgt, schwingt. <code>power</code> ist der Rohwert, <code>power2</code> der ruhige.</p>
+</div>
+</section>
+
+<section id="modbus">
+<h2>Modbus-TCP</h2>
+<div class="en">
+<p>Off by default. On, the device is a Modbus-TCP slave and any client can read the meter from it &mdash; a home automation system, a wallbox, an energy manager.</p>
+<table>
+<tr><th><span class="en">Register</span></th><th>PDU</th><th><span class="en">Value</span></th><th><span class="en">Unit</span></th></tr>
+<tr><td>40000</td><td>0</td><td><span class="en">Power</span></td><td>W</td></tr>
+<tr><td>40002</td><td>2</td><td><span class="en">Import</span></td><td>kWh</td></tr>
+<tr><td>40004</td><td>4</td><td><span class="en">Export</span></td><td>kWh</td></tr>
+</table>
+<p>Two registers per value, 32-bit IEEE-754 float, big-endian. Holding registers, <b>FC03 only</b>. Reads must start on a value boundary and cover whole values, so address and count are both even.</p>
+<p>Port 502 is standard. Change it if something else on the device already uses it. The change takes effect within a second, no reboot.</p>
+<p>Anything outside the map is answered properly: a wrong function code gives exception&nbsp;<code>01</code>, a bad address exception&nbsp;<code>02</code>. Connections stay open, so a client can poll as fast as it likes.</p>
+</div>
+<div class="de">
+<p>Standardmäßig aus. An ist das Gerät ein Modbus-TCP-Slave, und jeder Client kann den Zähler auslesen &mdash; Hausautomatisierung, Wallbox, Energiemanager.</p>
+<table>
+<tr><th>Register</th><th>PDU</th><th>Wert</th><th>Einheit</th></tr>
+<tr><td>40000</td><td>0</td><td>Leistung</td><td>W</td></tr>
+<tr><td>40002</td><td>2</td><td>Bezug</td><td>kWh</td></tr>
+<tr><td>40004</td><td>4</td><td>Einspeisung</td><td>kWh</td></tr>
+</table>
+<p>Zwei Register je Wert, 32-Bit-IEEE-754-Float, big-endian. Holding-Register, <b>nur FC03</b>. Ein Lesezugriff muss auf einer Wertgrenze beginnen und ganze Werte umfassen, Adresse und Anzahl sind also beide gerade.</p>
+<p>Port 502 ist Standard. Nur ändern, wenn ihn auf dem Gerät schon etwas anderes benutzt. Die Änderung greift innerhalb einer Sekunde, ohne Neustart.</p>
+<p>Alles außerhalb der Tabelle wird sauber beantwortet: falscher Funktionscode gibt Exception&nbsp;<code>01</code>, falsche Adresse Exception&nbsp;<code>02</code>. Verbindungen bleiben offen, ein Client kann also so schnell pollen, wie er möchte.</p>
+</div>
+</section>
+
+<section id="trouble">
+<h2><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></h2>
+<div class="en">
+<table>
+<tr><th>All values 0</th><td>Check <b>Meter active</b>, then the pins, then the descriptor. <b>Show driver rows</b> on tells you whether the driver is producing anything at all.</td></tr>
+<tr><th>Power has the wrong sign</th><td>Import and export are swapped in the descriptor. Feed-in must be negative.</td></tr>
+<tr><th>Values jump</th><td>Switch the <a href="#filter">filter</a> on. If it stays wild, the reading head is sitting badly.</td></tr>
+<tr><th>Charts stay empty</th><td>No NTP time yet, or the baselines were never initialised. See <a href="#data">chart data</a>.</td></tr>
+<tr><th>Settings lost after reboot</th><td>Settings are written when they change and at program stop. A power cut in between can cost the last change.</td></tr>
+<tr><th>Modbus does not answer</th><td>Check the port, and whether the network was up when the program started. <kbd>weblog 4</kbd> shows the bind.</td></tr>
+</table>
+</div>
+<div class="de">
+<table>
+<tr><th>Alle Werte 0</th><td>Erst <b>Zähler aktiv</b> prüfen, dann die Pins, dann den Descriptor. <b>Treiberzeilen zeigen</b> an verrät, ob der Treiber überhaupt etwas liefert.</td></tr>
+<tr><th>Leistung mit falschem Vorzeichen</th><td>Bezug und Einspeisung sind im Descriptor vertauscht. Einspeisung muss negativ sein.</td></tr>
+<tr><th>Werte springen</th><td><a href="#filter">Filter</a> einschalten. Bleibt es unruhig, sitzt der Lesekopf schlecht.</td></tr>
+<tr><th>Diagramme bleiben leer</th><td>Noch keine NTP-Zeit, oder die Basiswerte wurden nie initialisiert. Siehe <a href="#data">Diagrammdaten</a>.</td></tr>
+<tr><th>Einstellungen nach Neustart weg</th><td>Einstellungen werden bei Änderung und beim Programmende geschrieben. Ein Stromausfall dazwischen kann die letzte Änderung kosten.</td></tr>
+<tr><th>Modbus antwortet nicht</th><td>Port prüfen und ob das Netzwerk beim Programmstart schon stand. <kbd>weblog 4</kbd> zeigt das Binden.</td></tr>
+</table>
+</div>
+</section>
+
+<footer>
+<span class="en">Scripts and page by <a href="https://ottelo.jimdofree.com/">ottelo</a> with the help of ClaudeAI &middot; TinyC and the SML driver by <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
+<span class="de">Scripte und Seite von <a href="https://ottelo.jimdofree.com/">ottelo</a> mit Hilfe von ClaudeAI &middot; TinyC und SML-Treiber von <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
+</footer>
+
+</div>
+<script>
+(function(){
+  function set(l){
+    document.body.className = 'lang-' + l;
+    document.documentElement.lang = l;
+    var b = document.querySelectorAll('.switch button');
+    for (var i = 0; i < b.length; i++) {
+      if (b[i].getAttribute('data-set') === l) { b[i].classList.add('on'); }
+      else { b[i].classList.remove('on'); }
+    }
+    try { localStorage.setItem('ct002lang', l); } catch (e) {}
+  }
+  var q = location.search.match(/[?&]lang=(de|en)/);
+  var s = null;
+  try { s = localStorage.getItem('ct002lang'); } catch (e) {}
+  var nav = (navigator.language || '').slice(0, 2) === 'de' ? 'de' : 'en';
+  set(q ? q[1] : (s || nav));
+  var b = document.querySelectorAll('.switch button');
+  for (var i = 0; i < b.length; i++) {
+    b[i].addEventListener('click', function(){ set(this.getAttribute('data-set')); });
+  }
+})();
+</script>
+</body>
+</html>

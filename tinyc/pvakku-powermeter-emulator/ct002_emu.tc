@@ -22,6 +22,9 @@
 // syscalls taking a const-pool string must not be handed.
 char mk_host[] = "eu.hamedata.com";
 
+// Script version, shown in the web UI footer and in the startup log.
+char vers[] = "16.08.2026";
+
 // Online help, EN/DE switch on the page. Anchor appended per section:
 // sprintf(buf, "...%s#ct'>i</a>", helpa)
 char helpa[] = " <a class='i' target='_blank' href='https://ottelo9.github.io/tasmota-sml-script/ct002/";
@@ -774,6 +777,14 @@ void WebUI() {
 
         webSend("<hr>");
         webButton(do_save, "Save|saved");
+
+        // Footer: which script is running, in which version, on which engine.
+        // TC_RELEASE is not reachable from a script, so the TinyC version is
+        // pulled from /tc_api once and cached - this block re-renders every 2 s.
+        sprintf(scanb, "<hr><div style='text-align:center;font-size:10px;color:#555;line-height:1.5'>ct002_emu.tc &middot; Version %s<br>", vers);
+        webSend(scanb);
+        webSend("by <a href='https://ottelo.jimdofree.com' target='_blank'>ottelo.jimdofree.com</a> &amp; gemu2015 (TinyC <span id='tcv'>...</span>)</div>");
+        webSend("<script>if(window.__tcv){document.getElementById('tcv').textContent=window.__tcv;}else{fetch('/tc_api?cmd=status').then(function(r){return r.json();}).then(function(j){window.__tcv=j.release;var e=document.getElementById('tcv');if(e)e.textContent=j.release;}).catch(function(){});}</script>");
         webSend("</div>");
         return;
     }
@@ -1039,7 +1050,7 @@ int main() {
 
     smlScripterLoad("/sml_meter.def");
 
-    addLog("CT002: started, type %s, port %d, CT MAC '%s', 3ph=%d",
-           cttype, ct_port, ct_mac, ph3);
+    addLog("CT002: ct002_emu.tc %s started, type %s, port %d, CT MAC '%s', 3ph=%d",
+           vers, cttype, ct_port, ct_mac, ph3);
     return 0;
 }

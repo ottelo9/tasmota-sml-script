@@ -1,0 +1,134 @@
+// sml_simple.tc — SML meter readout, no charts, no emulator.
+// Smallest program of the family: pick the meter, read it, hand the values
+// on via MQTT and HTTP. Charts: sml_chart.tc. Emulator: sml_ct002.tc.
+// Docs: https://ottelo9.github.io/tasmota-sml-script/sml/
+// Needs ESP32, TinyC in slot 0, USE_SML.
+
+#include "ui_common.tc"
+#include "sml_descriptor.tc"
+#include "sml_modbus_common.tc"
+
+char sml_vers[] = "16.08.2026";
+
+// ─── Settings ──────────────────────────────────────────────────────────────
+persist int  sml_sndpwr;         // 1 = publish power via MQTT and serve /pwr
+
+// ─── Runtime ───────────────────────────────────────────────────────────────
+float sml_power2;
+int   sml_pwr_last;
+char  sml_mtopic[64];
+char  sml_pub[128];
+int   do_reset;
+
+// ─── Callbacks ─────────────────────────────────────────────────────────────
+
+void Every100ms() {
+    mbPoll();
+}
+
+void EverySecond() {
+    sml_descriptor_apply();
+    mbTick();
+
+    if (do_reset) {
+        tasmCmd("Sensor53 r", sml_buf);
+        do_reset = 0;
+    }
+
+    // 5 s raster and EMA as in the .tas scripts. Tasmota's Publish command,
+    // not mqttPublish(): that one wants a literal topic and ours carries the
+    // device name.
+    if (tasm_uptime - sml_pwr_last >= 5) {
+        sml_pwr_last = tasm_uptime;
+        sml_power2 = (0.9 * sml_power2) + (0.1 * smlGet(1));
+        if (sml_sndpwr > 0) {
+            sprintf(sml_pub, "Publish stat/%s/script/power2 %.0f", sml_mtopic, sml_power2);
+            tasmCmd(sml_pub, sml_buf);
+        }
+    }
+}
+
+// /pwr — JSON for a second battery polling over HTTP (opendtu-onbattery DPL)
+void WebOn() {
+    if (webHandler() != 1) return;
+    if (sml_sndpwr > 0) {
+        sprintf(sml_buf, "{\"power2\":%.0f", sml_power2);
+        sprintfAppend(sml_buf, ",\"power\":%.0f", smlGet(1));
+        sprintfAppend(sml_buf, ",\"in\":%.3f", smlGet(2));
+        sprintfAppend(sml_buf, ",\"out\":%.3f}", smlGet(3));
+    } else {
+        strcpy(sml_buf, "{\"enabled\":0}");
+    }
+    webSend(sml_buf);
+}
+
+void WebCall() {
+    if (!sml_activ) {
+        if (ui_de) webSend("{s}SML{m}aus (Rule1){e}");
+        else       webSend("{s}SML{m}off (Rule1){e}");
+        return;
+    }
+    if (ui_de) {
+        sprintf(sml_buf, "{s}Leistung{m}%.0f W{e}", smlGet(1));      webSend(sml_buf);
+        sprintf(sml_buf, "{s}Bezug{m}%.3f kWh{e}", smlGet(2));       webSend(sml_buf);
+        sprintf(sml_buf, "{s}Einspeisung{m}%.3f kWh{e}", smlGet(3)); webSend(sml_buf);
+    } else {
+        sprintf(sml_buf, "{s}Power{m}%.0f W{e}", smlGet(1));         webSend(sml_buf);
+        sprintf(sml_buf, "{s}Import{m}%.3f kWh{e}", smlGet(2));      webSend(sml_buf);
+        sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", smlGet(3));      webSend(sml_buf);
+    }
+    if (sml_sndpwr > 0) {
+        if (ui_de) sprintf(sml_buf, "{s}Leistung (gemittelt){m}%.0f W{e}", sml_power2);
+        else       sprintf(sml_buf, "{s}Power (smoothed){m}%.0f W{e}", sml_power2);
+        webSend(sml_buf);
+    }
+    mbRows();
+}
+
+void WebUI() {
+    sml_render_settings_panel();     // opens the panel div
+    uiLang();
+
+    uiHead("&#x1F4E1;", "Telemetry", "Telemetrie", "sml/#telemetry");
+    if (ui_de) webCheckbox(sml_sndpwr, "Leistung senden");
+    else       webCheckbox(sml_sndpwr, "Publish power");
+    if (sml_sndpwr > 0) {
+        sprintf(sml_buf, "<div style='font-size:12px;color:#444'>MQTT: stat/%s/script/power2<br>HTTP: <a href='/pwr'>/pwr</a></div>", sml_mtopic);
+        webSend(sml_buf);
+    }
+    mbPanel();
+
+    webSend("<hr>");
+    if (ui_de) webButton(do_reset, "SML neu laden|neu geladen");
+    else       webButton(do_reset, "Restart SML|restarted");
+
+    sprintf(sml_buf, "<hr><div style='text-align:center;font-size:10px;color:#555;line-height:1.5'>sml_simple.tc &middot; Version %s<br>", sml_vers);
+    webSend(sml_buf);
+    webSend("by <a href='https://ottelo.jimdofree.com' target='_blank'>ottelo.jimdofree.com</a> &amp; gemu2015 (TinyC <span id='tcv'>...</span>)</div></div>");
+    webSend("<script>if(window.__tcv){document.getElementById('tcv').textContent=window.__tcv;}else{fetch('/tc_api?cmd=status').then(function(r){return r.json();}).then(function(j){window.__tcv=j.release;var e=document.getElementById('tcv');if(e)e.textContent=j.release;}).catch(function(){});}</script>");
+}
+
+int main() {
+    // -1 keeps the %0?rxpin% placeholder in /sml_meter.def untouched until
+    // the user picks a pin; 0 is a real GPIO and cannot be the sentinel.
+    if (sml_rx_pin == 0 && sml_tx_pin == 0) {
+        sml_rx_pin = -1;
+        sml_tx_pin = -1;
+    }
+    if (sml_activ != tasm_rule) {
+        tasm_rule = sml_activ;
+    }
+
+    tasmInfo(0, sml_mtopic);
+    sml_power2 = smlGet(1);
+    sml_pwr_last = 0;
+
+    mbInit();
+    webPageLabel(0, "Settings");
+    webOn(1, "/pwr");
+    smlScripterLoad("/sml_meter.def");
+
+    addLog("sml_simple: %s started rx=%d tx=%d meter=%d modbus=%d",
+           sml_vers, sml_rx_pin, sml_tx_pin, sml_meter_sel, mb_on);
+    return 0;
+}

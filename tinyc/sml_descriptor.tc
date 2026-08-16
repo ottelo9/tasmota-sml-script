@@ -1,0 +1,148 @@
+// ============================================================================
+// sml_descriptor.tc — SML descriptor + pin management helpers
+// ============================================================================
+//
+// Shared building block for any TinyC script that needs to expose the
+// "pick a meter / pick the pins / toggle the filter / restart the driver"
+// settings panel. Used by:
+//   * sml_simple.tc          — readings only
+//   * sml_chart_common.tc    — base for the chart family (sml_chart,
+//                              sml_chart_pv, sml_chart_bezug, …)
+//   * sml_water.tc           — m³ counter
+//   * sml_chart_modbus.tc    — pins / activ still apply, descriptor is
+//                              skipped at runtime but UI is identical
+//
+// Exposes:
+//   - persist watch state (5 vars)
+//   - sml_descriptor_apply()       call from EverySecond
+//   - sml_render_settings_panel()  call from WebUI to draw the styled box
+//
+// No callbacks / no main() here — the including script wires these.
+// ============================================================================
+
+#include "ui_common.tc"
+
+// ── Persisted descriptor settings ───────────────────────────────────────────
+persist watch int sml_meter_sel;
+persist watch int sml_rx_pin;
+persist watch int sml_tx_pin;
+persist watch int sml_filter;   // 0 = raw, 1 = on → smlf=16 in descriptor
+persist watch int sml_activ;    // mirrors tasm_rule bit 0
+persist watch int sml_drvrows;  // 1 = also show the SML driver's own rows
+
+// ── Shared sprintf scratch (also used by chart/totals renderers) ────────────
+char sml_buf[160];
+int  sml_drv_init;              // 0 until the display option was applied once
+
+// ============================================================================
+// Change-detect + re-apply: descriptor / pins / filter / activ.
+// Idempotent: zero file IO when nothing changed; smlApplyPins itself
+// only rewrites /sml_meter.def when a substituted value differs.
+// ============================================================================
+void sml_descriptor_apply() {
+    // Driver rows on/off. Bit 2 drops the driver's own sensor block (it puts
+    // the meter name in front of every value), bit 0 keeps the SENSOR JSON.
+    // The script renders the values itself.
+    if (changed(sml_drvrows) || sml_drv_init == 0) {
+        sml_drv_init = 1;
+        if (sml_drvrows > 0) {
+            smlSetOptions(0x101);   // 0x100 = write-enable, bit 0 = JSON
+        } else {
+            smlSetOptions(0x105);   // + bit 2 = no driver rows
+        }
+        snapshot(sml_drvrows);
+    }
+
+    int meter_changed  = changed(sml_meter_sel);
+    int pins_changed   = changed(sml_rx_pin) || changed(sml_tx_pin);
+    int filter_changed = changed(sml_filter);
+    int activ_changed  = changed(sml_activ);
+
+    if (activ_changed) {
+        tasm_rule = sml_activ;
+        snapshot(sml_activ);
+    }
+    if (meter_changed || pins_changed || filter_changed || activ_changed) {
+        if (sml_rx_pin >= 0 || sml_tx_pin >= 0) {
+            int filter_val = sml_filter ? 16 : 0;
+            smlApplyPins("/sml_meter.def", sml_rx_pin, sml_tx_pin, filter_val);
+        }
+        snapshot(sml_rx_pin);
+        snapshot(sml_tx_pin);
+        snapshot(sml_filter);
+        tasmCmd("Sensor53 r", sml_buf);
+        // A driver restart resets sml_options to its default, so the display
+        // choice has to be applied again afterwards.
+        if (sml_drvrows > 0) {
+            smlSetOptions(0x101);   // 0x100 = write-enable, bit 0 = JSON
+        } else {
+            smlSetOptions(0x105);   // + bit 2 = no driver rows
+        }
+        // Persist the new pins/filter/activ NOW. TinyC only auto-saves persist
+        // vars at slot-stop; a main()-only SML slot (sml_simple / deye / charts)
+        // stops right after main(), so a UI pin/activ change made while it runs
+        // would otherwise never reach flash and be lost on the next reboot
+        // (slot would come back with -1/-1 pins and SML deactivated).
+        saveVars();
+    }
+    if (meter_changed) {
+        snapshot(sml_meter_sel);
+        smlScripterLoad("/sml_meter.def");
+    }
+}
+
+// ============================================================================
+// Settings panel — uptime + descriptor picker + pin pulldowns + filter
+// toggle + edit-descriptor link. The styled <div class='sml-p'> is opened
+// here and LEFT OPEN — callers add their own buttons / footer / sections
+// then close the div with `</div>` themselves.
+// ============================================================================
+void sml_render_settings_panel() {
+    webSend("<style>.sml-p{max-width:340px;margin:12px auto;background:#f0f0f0;color:#000;padding:16px;border:2px solid #ccc;border-radius:6px;text-align:left}.sml-p h3{margin:0 0 8px}.sml-p hr{border:0;border-top:1px solid #bbb;margin:12px 0}.sml-p b{display:inline-block;margin-bottom:4px;font-size:13px}.sml-p div{margin:6px 0}.sml-p .hint{font-size:9px;color:#555;line-height:1.4}</style>");
+    if (ui_de) webSend("<div class='sml-p'><h3>&#x26A1; SML-Zaehler</h3>");
+    else       webSend("<div class='sml-p'><h3>&#x26A1; SML meter</h3>");
+    int up_d = tasm_uptime / 86400;
+    int up_h = (tasm_uptime / 3600) % 24;
+    int up_m = (tasm_uptime / 60) % 60;
+    sprintf(sml_buf, "<div>Uptime: %d d %d h %d min</div>", up_d, up_h, up_m);
+    webSend(sml_buf);
+
+    if (ui_de) {
+        webCheckbox(sml_activ, "Zaehler aktiv");
+        webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Descriptor bearbeiten</a>");
+    } else {
+        webCheckbox(sml_activ, "Meter active");
+        webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Edit descriptor</a>");
+    }
+
+    uiHead("&#x1F4E6;", "Descriptor", "Descriptor", "sml/#meter");
+    if (ui_de) {
+        webRepoPulldown(sml_meter_sel, "Aus Repo",
+                        "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
+                        "smartmeter",
+                        "/sml_meter.def");
+    } else {
+        webRepoPulldown(sml_meter_sel, "From repo",
+                        "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
+                        "smartmeter",
+                        "/sml_meter.def");
+    }
+
+    uiHead("&#x1F50C;", "Pins", "Pins", "sml/#pins");
+    if (ui_de) {
+        webPulldown(sml_rx_pin, "RX-Pin", "@getfreepins");
+        webPulldown(sml_tx_pin, "TX-Pin", "@getfreepins");
+    } else {
+        webPulldown(sml_rx_pin, "RX pin", "@getfreepins");
+        webPulldown(sml_tx_pin, "TX pin", "@getfreepins");
+    }
+    webSend("<div class='hint'>RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwaechter<br>RX=5 TX=4: bitShake</div>");
+
+    uiHead("&#x1F4CA;", "Filter", "Filter", "sml/#filter");
+    if (ui_de) webCheckbox(sml_filter, "Median-Filter");
+    else       webCheckbox(sml_filter, "Median filter");
+
+    uiHead("&#x1F5A5;&#xFE0F;", "Display", "Anzeige", "sml/#display");
+    if (ui_de) webCheckbox(sml_drvrows, "Treiberzeilen zeigen");
+    else       webCheckbox(sml_drvrows, "Show driver rows");
+}

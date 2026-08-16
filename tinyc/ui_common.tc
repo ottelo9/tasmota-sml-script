@@ -1,0 +1,51 @@
+// ui_common.tc — language switch and help links for the whole family.
+//
+// Widget labels must be string LITERALS: webNumber/webCheckbox/webPulldown
+// take a const-pool index, not a buffer. So every translated label needs its
+// own if/else at the call site - there is no lookup table. Keep labels short,
+// put the explaining text on the help page behind the (i).
+//
+// uiI("ct002/#ct") is safe with a literal: the text goes through sprintf,
+// not straight into webSend (a literal handed to a char[] param and then
+// streamed renders empty on firmware older than 2026-07-28).
+
+persist watch int ui_de;     // 0 = English (default), 1 = Deutsch
+
+char ui_base[] = " <a class='i' target='_blank' href='https://ottelo9.github.io/tasmota-sml-script/";
+char ui_buf[220];
+
+// Language picker. Belongs at the top of the settings page.
+void uiLang() {
+    if (ui_de) {
+        webPulldown(ui_de, "Sprache", "English|Deutsch");
+    } else {
+        webPulldown(ui_de, "Language", "English|Deutsch");
+    }
+}
+
+// (i) link for a section heading, e.g. uiI("ct002/#battery")
+void uiI(char page[]) {
+    sprintf(ui_buf, "%s%s'>&#x2139;&#xFE0F;</a>", ui_base, page);
+    webSend(ui_buf);
+}
+
+// Section heading with a help link: uiHead("&#x26A1;", "Meter", "Zaehler", "sml/#meter")
+void uiHead(char icon[], char en[], char de[], char page[]) {
+    if (ui_de) {
+        sprintf(ui_buf, "<hr><b>%s %s</b>", icon, de);
+    } else {
+        sprintf(ui_buf, "<hr><b>%s %s</b>", icon, en);
+    }
+    webSend(ui_buf);
+    uiI(page);
+}
+
+// One line of prose in the current language.
+void uiText(char en[], char de[]) {
+    if (ui_de) {
+        sprintf(ui_buf, "%s", de);
+    } else {
+        sprintf(ui_buf, "%s", en);
+    }
+    webSend(ui_buf);
+}
