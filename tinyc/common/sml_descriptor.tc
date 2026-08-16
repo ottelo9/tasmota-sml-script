@@ -100,7 +100,10 @@ void sml_descriptor_apply() {
 // then close the div with `</div>` themselves.
 // ============================================================================
 void sml_render_settings_panel() {
-    webSend("<style>.sml-p{max-width:340px;margin:12px auto;background:#f0f0f0;color:#000;padding:16px;border:2px solid #ccc;border-radius:6px;text-align:left}.sml-p h3{margin:0 0 8px}.sml-p hr{border:0;border-top:1px solid #bbb;margin:12px 0}.sml-p b{display:inline-block;margin-bottom:4px;font-size:13px}.sml-p div{margin:6px 0}.sml-p .hint{font-size:9px;color:#555;line-height:1.4}</style>");
+    // Tasmota's wrapper is an inline-block with min-width:340px, so it grows
+    // with its widest child - pinning it is what widens the page. Same value
+    // as the /tc slot page uses. 96vw keeps it inside a phone screen.
+    webSend("<style>body>div{width:480px;max-width:96vw;box-sizing:border-box}.sml-p{max-width:100%;box-sizing:border-box;margin:12px auto;background:#f0f0f0;color:#000;padding:16px;border:2px solid #ccc;border-radius:6px;text-align:left}.sml-p h3{margin:0 0 8px}.sml-p hr{border:0;border-top:1px solid #bbb;margin:12px 0}.sml-p b{display:inline-block;margin-bottom:4px;font-size:13px}.sml-p div{margin:6px 0}.sml-p .hint{font-size:9px;color:#555;line-height:1.4}</style>");
     if (ui_de) webSend("<div class='sml-p'><h3>&#x26A1; SML-Zähler</h3>");
     else       webSend("<div class='sml-p'><h3>&#x26A1; SML meter</h3>");
     uiLang();                       // topmost - it relabels everything below
