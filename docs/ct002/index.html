@@ -36,6 +36,7 @@ th{background:var(--code);font-weight:600;white-space:nowrap}
 .warn{border-left:3px solid var(--warn);padding-left:12px;color:var(--warn)}
 footer{color:var(--mut);font-size:13px;text-align:center;margin-top:26px}
 footer a{color:var(--accent)}
+footer .dis{font-size:12px;line-height:1.45;max-width:560px;margin:12px auto 0;opacity:.85}
 body.lang-en .de{display:none}
 body.lang-de .en{display:none}
 </style>
@@ -196,6 +197,7 @@ body.lang-de .en{display:none}
 <li>Create only one fake CT. If several exist, the app may be pointed at a different one than your device answers for.</li>
 </ul>
 <p class="warn">The password travels in the clear over your LAN to the device. It is never written to flash, is kept in RAM for 10 minutes so step&nbsp;2 does not need it again, and is discarded after a successful create.</p>
+<p class="warn">Creating the fake CT talks to an undocumented Marstek API with your own account. That may go against Marstek's terms of use &mdash; it is your account and your risk. In the worst case Marstek removes the device or acts against the account.</p>
 </div>
 <div class="de">
 <p>Ein Akku spricht nur mit einem CT, das im Marstek-Konto des Besitzers existiert. Der Emulator kann so einen Eintrag anlegen &mdash; ein verwaltetes Ger&auml;t, dessen Id und MAC mit <code>02b250</code> beginnen, derselbe Datensatz, den auch AstraMeter erzeugt.</p>
@@ -212,6 +214,7 @@ body.lang-de .en{display:none}
 <li>Lege nur ein Fake-CT an. Gibt es mehrere, zeigt die App womöglich auf ein anderes, als dein Ger&auml;t bedient.</li>
 </ul>
 <p class="warn">Das Passwort geht unverschl&uuml;sselt durch dein Netz an das Ger&auml;t. Es wird nie auf Flash geschrieben, bleibt 10 Minuten im Arbeitsspeicher, damit Schritt&nbsp;2 es nicht erneut braucht, und wird nach erfolgreichem Anlegen verworfen.</p>
+<p class="warn">Das Anlegen des Fake-CT spricht eine undokumentierte Marstek-Schnittstelle mit deinem eigenen Konto an. Das kann gegen Marsteks Nutzungsbedingungen versto&szlig;en &mdash; es ist dein Konto und dein Risiko. Im schlimmsten Fall entfernt Marstek das Ger&auml;t oder geht gegen das Konto vor.</p>
 </div>
 </section>
 
@@ -253,6 +256,7 @@ CTCREATE JA       run step 2 (the JA is the confirmation)</code></pre>
 <footer>
 <span class="en">Script and page by <a href="https://ottelo.jimdofree.com/">ottelo</a> &middot; protocol details from <a href="https://github.com/tomquist/AstraMeter">AstraMeter</a> &middot; TinyC by <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
 <span class="de">Script und Seite von <a href="https://ottelo.jimdofree.com/">ottelo</a> &middot; Protokolldetails aus <a href="https://github.com/tomquist/AstraMeter">AstraMeter</a> &middot; TinyC von <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
+<p class="dis"><span class="en">Not affiliated with, endorsed by or supported by Marstek. Marstek, CT002 and CT003 are trademarks of their respective owners and are used here only to describe compatibility.</span><span class="de">Keine Verbindung zu Marstek, keine Unterst&uuml;tzung oder Billigung durch Marstek. Marstek, CT002 und CT003 sind Marken der jeweiligen Inhaber und werden hier ausschlie&szlig;lich zur Beschreibung der Kompatibilit&auml;t genannt.</span></p>
 </footer>
 
 </div>
