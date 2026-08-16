@@ -111,17 +111,17 @@ body.lang-de .en{display:none}
 <tr><th>Type</th><td>CT002 sends <code>HME-4</code>, CT003 sends <code>HME-3</code> and four extra energy registers. Takes effect after a restart of the script.</td></tr>
 <tr><th>CT MAC</th><td>12 hex characters, the MAC of the CT in your Marstek account. When set, the emulator only answers requests for that MAC (or the wildcard <code>000000000000</code>). Leave empty and it answers everything &mdash; handy while testing, wrong once several CTs exist.</td></tr>
 <tr><th>UDP port</th><td>12345 in every known firmware. Only change it if you know why.</td></tr>
-<tr><th>RSSI</th><td>Wi-Fi signal strength reported to the battery. Cosmetic; the battery does not act on it.</td></tr>
-<tr><th>Battery timeout</th><td>Seconds after which a silent battery is dropped from the table. <code>0</code> = automatic: about two of its own poll cycles, at least 5&nbsp;s. That mirrors a real CT.</td></tr>
+<tr><th>RSSI</th><td>Wi-Fi signal strength reported to the battery.</td></tr>
+<tr><th>Battery timeout</th><td>Seconds after which a offline battery is dropped from the table. <code>0</code> = automatic: about two of its own poll cycles, at least 5&nbsp;s. That mirrors a real CT.</td></tr>
 </table>
 </div>
 <div class="de">
 <table>
 <tr><th>Type</th><td>CT002 sendet <code>HME-4</code>, CT003 sendet <code>HME-3</code> und vier zusätzliche Energieregister. Wirkt erst nach einem Neustart des Scripts.</td></tr>
 <tr><th>CT MAC</th><td>12 Hex-Zeichen, die MAC des CT im Marstek-Konto. Ist sie gesetzt, antwortet der Emulator nur auf Anfragen für diese MAC (oder die Wildcard <code>000000000000</code>). Leer bedeutet: antwortet auf alles &mdash; praktisch zum Testen, falsch sobald es mehrere CTs gibt.</td></tr>
-<tr><th>UDP port</th><td>12345 in jeder bekannten Firmware. Nur ändern, wenn du wei&szlig;t warum.</td></tr>
-<tr><th>RSSI</th><td>WLAN-Signalstärke, die dem Akku gemeldet wird. Kosmetik, der Akku richtet sich nicht danach.</td></tr>
-<tr><th>Battery timeout</th><td>Sekunden, nach denen ein stiller Akku aus der Tabelle fällt. <code>0</code> = automatisch: etwa zwei seiner eigenen Abfragezyklen, mindestens 5&nbsp;s. So macht es ein echtes CT auch.</td></tr>
+<tr><th>UDP port</th><td>12345 in jeder bekannten Firmware. Nur ändern, wenn du weißt warum.</td></tr>
+<tr><th>RSSI</th><td>WLAN-Signalstärke, die dem Akku gemeldet wird.</td></tr>
+<tr><th>Battery timeout</th><td>Sekunden, nach denen ein Akku, der micht mehr antwortet, aus der Tabelle fällt. <code>0</code> = automatisch: etwa zwei Abfragezyklen, mindestens 5&nbsp;s. So macht es ein echter CT auch.</td></tr>
 </table>
 </div>
 </section>
@@ -132,7 +132,7 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>Offset [W]</th><td>Target grid power instead of zero. A small positive value keeps you slightly on the import side so nothing is fed back. Applied <b>per phase</b>, because each battery regulates its own phase &mdash; with three batteries on three phases the household total ends up at three times the value.</td></tr>
 <tr><th>Regulator tweak</th><td>Scales the deviation before it is sent: divided by 4 above the offset, by 0.8 below it. Damps overshoot on import, reacts faster on export. Off is the honest reading of the meter.</td></tr>
-<tr><th>3 phases</th><td>On: L1/L2/L3 come from the meter individually (<code>smlGet(4/5/6)</code>). Off: the total goes onto L1 and B/C stay at 0 &mdash; then set every battery to phase A or D, otherwise a battery on B or C would read 0&nbsp;W forever.</td></tr>
+<tr><th>3 phases</th><td>On: L1/L2/L3 come from the meter individually (not all meter supports this). Off: the total goes onto L1 and B/C stay at 0 &mdash; then set every battery to phase A or D, otherwise a battery on B or C would read 0&nbsp;W forever.</td></tr>
 </table>
 <h3>Phase selection</h3>
 <p>The phase is set on the battery, in the Marstek app &mdash; not here. What it means on the wire:</p>
@@ -144,16 +144,16 @@ body.lang-de .en{display:none}
 </div>
 <div class="de">
 <table>
-<tr><th>Offset [W]</th><td>Zielwert am Netz statt null. Ein kleiner positiver Wert hält dich knapp auf der Bezugsseite, damit nichts eingespeist wird. Wirkt <b>pro Phase</b>, weil jeder Akku seine eigene Phase regelt &mdash; bei drei Akkus auf drei Phasen liegt der Hausanschluss am Ende beim Dreifachen.</td></tr>
-<tr><th>Regulator tweak</th><td>Skaliert die Abweichung vor dem Senden: oberhalb des Offsets geteilt durch 4, unterhalb durch 0,8. Dämpft &Uuml;berschwingen beim Bezug, reagiert schneller bei Einspeisung. Aus ist der ehrliche Zählerwert.</td></tr>
-<tr><th>3 phases</th><td>Ein: L1/L2/L3 kommen einzeln vom Zähler (<code>smlGet(4/5/6)</code>). Aus: die Gesamtleistung liegt auf L1, B und C bleiben 0 &mdash; dann alle Akkus auf Phase A oder D stellen, sonst liest ein Akku auf B oder C dauerhaft 0&nbsp;W.</td></tr>
+<tr><th>Offset [W]</th><td>Zielwert am Netz statt null. Ein kleiner positiver Wert hält dich knapp über der Bezugsseite, damit nichts eingespeist wird. Wirkt <b>pro Phase</b>, weil jeder Akku seine eigene Phase regelt &mdash; bei drei Akkus auf drei Phasen liegt der Hausanschluss am Ende beim Dreifachen.</td></tr>
+<tr><th>Regulator tweak</th><td>Skaliert die Abweichung vor dem Senden: oberhalb des Offsets geteilt durch 4, unterhalb durch 0,8. Dämpft Überschwingen beim Bezug, reagiert schneller bei Einspeisung.</td></tr>
+<tr><th>3 phases</th><td>Ein: L1/L2/L3 kommen einzeln vom Zähler (nicht alle Stromzähler unterstützten das). Aus: die Gesamtleistung liegt auf L1, B und C bleiben 0 &mdash; dann alle Akkus auf Phase A oder D stellen, sonst liest ein Akku auf B oder C dauerhaft 0&nbsp;W.</td></tr>
 </table>
 <h3>Phasenwahl</h3>
 <p>Die Phase wird am Akku eingestellt, in der Marstek-App &mdash; nicht hier. Was sie auf dem Draht bedeutet:</p>
 <ul>
 <li><code>A</code> / <code>B</code> / <code>C</code>: der Akku regelt gegen diese Phase und teilt sie sich mit anderen Akkus auf derselben Phase.</li>
 <li><code>D</code>: kombiniert. Der Akku liest die <b>Summe</b> aller drei Phasen. Bei saldierendem Zähler normalerweise die richtige Wahl.</li>
-<li><code>x</code> in der Weboberfläche hei&szlig;t: der Akku hat sich noch nicht entschieden und sucht. Er ändert dazu seine eigene Leistung und schaut, welche Phase sich mitbewegt. Bei einem Simulator mit konstanten Werten kommt er nie zu einem Schluss &mdash; also echten Zähler anschlie&szlig;en oder die Phase in der App fest vorgeben.</li>
+<li><code>x</code> in der Weboberfläche heißt: der Akku hat sich noch nicht entschieden und sucht. Er ändert dazu seine eigene Leistung und schaut, welche Phase sich mitbewegt. Bei einem Simulator mit konstanten Werten kommt er nie zu einem Schluss &mdash; also echten Zähler anschließen oder die Phase in der App fest vorgeben.</li>
 </ul>
 </div>
 </section>
@@ -173,8 +173,8 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>SML active</th><td>Schaltet den SML-Treiber ein. Ohne ihn gibt es keine Messwerte und der Emulator antwortet mit 0&nbsp;W.</td></tr>
 <tr><th>Descriptor</th><td>Wählt eine Zählerdefinition aus dem Script-Repository und schreibt sie nach <code>/sml_meter.def</code>. Für Handarbeit <b>Edit descriptor</b>.</td></tr>
-<tr><th>RX / TX pin</th><td>GPIOs des Lesekopfs. Häufig: RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattwächter), RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
-<tr><th>Median filter</th><td>Glättet einzelne Ausrei&szlig;er, kostet aber Reaktionszeit &mdash; für Nulleinspeisung besser aus lassen, die Akkus filtern selbst.</td></tr>
+<tr><th>RX / TX pin</th><td>GPIOs des Lesekopfs (wo ist die Sende- und Empfangsdiode angeschlossen). Häufig: RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattwächter), RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
+<tr><th>Median filter</th><td>Glättet einzelne Ausreißer, kostet aber Reaktionszeit &mdash; für Nulleinspeisung besser aus lassen, die Akkus filtern selbst.</td></tr>
 </table>
 <p>Die Reihenfolge der Werte zählt: <code>1</code> Leistung, <code>2</code> Bezug, <code>3</code> Einspeisung, <code>4/5/6</code> die drei Phasenleistungen. Nur Zähler, die Einzelphasen liefern, können die Option <b>3 phases</b> bedienen.</p>
 </div>
@@ -214,7 +214,7 @@ body.lang-de .en{display:none}
 <li>Lege nur ein Fake-CT an. Gibt es mehrere, zeigt die App womöglich auf ein anderes, als dein Gerät bedient.</li>
 </ul>
 <p class="warn">Das Passwort geht unverschlüsselt durch dein Netz an das Gerät. Es wird nie auf Flash geschrieben, bleibt 10 Minuten im Arbeitsspeicher, damit Schritt&nbsp;2 es nicht erneut braucht, und wird nach erfolgreichem Anlegen verworfen.</p>
-<p class="warn">Das Anlegen des Fake-CT spricht eine undokumentierte Marstek-Schnittstelle mit deinem eigenen Konto an. Das kann gegen Marsteks Nutzungsbedingungen versto&szlig;en &mdash; es ist dein Konto und dein Risiko. Im schlimmsten Fall entfernt Marstek das Gerät oder geht gegen das Konto vor.</p>
+<p class="warn">Das Anlegen des Fake-CT spricht eine undokumentierte Marstek-Schnittstelle mit deinem eigenen Konto an. Das kann gegen Marsteks Nutzungsbedingungen verstoßen &mdash; es ist dein Konto und dein Risiko. Im schlimmsten Fall entfernt Marstek das Gerät oder geht gegen das Konto vor.</p>
 </div>
 </section>
 
@@ -244,7 +244,7 @@ CTCREATE JA       run step 2 (the JA is the confirmation)</code></pre>
 </div>
 <div class="de">
 <table>
-<tr><th><code>rx</code> bleibt 0</th><td>Es kommt nichts an. Der Akku wurde nicht auf dieses CT gestellt oder hat es verloren. In der App den Betriebsmodus umschalten (Automatik aus und wieder ein). Ein Script-Neustart schlie&szlig;t den Socket kurz, und der Akku findet nicht immer von allein zurück.</td></tr>
+<tr><th><code>rx</code> bleibt 0</th><td>Es kommt nichts an. Der Akku wurde nicht auf dieses CT gestellt oder hat es verloren. In der App den Betriebsmodus umschalten (Automatik aus und wieder ein). Ein Script-Neustart schließt den Socket kurz, und der Akku findet nicht immer von allein zurück.</td></tr>
 <tr><th><code>bad</code> zählt hoch</th><td>Pakete kommen an, scheitern aber an der Prüfsumme. Auf dem Draht passt etwas nicht zum Protokoll &mdash; Log mit <kbd>weblog 4</kbd> mitschreiben.</td></tr>
 <tr><th>Akku zeigt <code>Ph x</code></th><td>Er sucht noch seine Phase. Siehe <a href="#battery">Akku</a>.</td></tr>
 <tr><th>Alle Werte 0&nbsp;W</th><td>Keine Zählerwerte. <b>SML active</b>, Pins und Descriptor unter <a href="#meter">Zähler</a> prüfen.</td></tr>
@@ -256,7 +256,7 @@ CTCREATE JA       run step 2 (the JA is the confirmation)</code></pre>
 <footer>
 <span class="en">Script and page by <a href="https://ottelo.jimdofree.com/">ottelo</a> &middot; protocol details from <a href="https://github.com/tomquist/AstraMeter">AstraMeter</a> &middot; TinyC by <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
 <span class="de">Script und Seite von <a href="https://ottelo.jimdofree.com/">ottelo</a> &middot; Protokolldetails aus <a href="https://github.com/tomquist/AstraMeter">AstraMeter</a> &middot; TinyC von <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
-<p class="dis"><span class="en">Not affiliated with, endorsed by or supported by Marstek. Marstek, CT002 and CT003 are trademarks of their respective owners and are used here only to describe compatibility.</span><span class="de">Keine Verbindung zu Marstek, keine Unterstützung oder Billigung durch Marstek. Marstek, CT002 und CT003 sind Marken der jeweiligen Inhaber und werden hier ausschlie&szlig;lich zur Beschreibung der Kompatibilität genannt.</span></p>
+<p class="dis"><span class="en">Not affiliated with, endorsed by or supported by Marstek. Marstek, CT002 and CT003 are trademarks of their respective owners and are used here only to describe compatibility.</span><span class="de">Keine Verbindung zu Marstek, keine Unterstützung oder Billigung durch Marstek. Marstek, CT002 und CT003 sind Marken der jeweiligen Inhaber und werden hier ausschließlich zur Beschreibung der Kompatibilität genannt.</span></p>
 </footer>
 
 </div>
