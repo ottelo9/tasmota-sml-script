@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marstek CT002 / CT003 emulator</title>
+<style>
+:root{--bg:#f7f7f8;--fg:#1c1c1e;--mut:#5b5b60;--card:#fff;--line:#dcdce0;--accent:#0a6ebd;--warn:#a3350f;--code:#f0f0f2}
+@media (prefers-color-scheme:dark){
+:root{--bg:#17171a;--fg:#e9e9ec;--mut:#a1a1a8;--card:#1f1f23;--line:#33333a;--accent:#5ab0f0;--warn:#f08a62;--code:#26262b}
+}
+*{box-sizing:border-box}
+body{margin:0;padding:0 16px 64px;background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto}
+header{padding:26px 0 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+h1{margin:0 0 4px;font-size:22px;line-height:1.25}
+.sub{color:var(--mut);font-size:14px;margin:0}
+.switch{margin-top:14px;display:flex;gap:8px}
+.switch button{font:inherit;font-size:13px;padding:5px 14px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;cursor:pointer}
+.switch button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+nav{margin:0 0 22px;font-size:14px}
+nav a{color:var(--accent);text-decoration:none;margin-right:14px;white-space:nowrap;display:inline-block}
+nav a:hover{text-decoration:underline}
+section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:0 0 14px;scroll-margin-top:16px}
+h2{margin:0 0 10px;font-size:17px}
+h3{margin:16px 0 6px;font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+p{margin:8px 0}
+ul{margin:8px 0;padding-left:20px}
+li{margin:4px 0}
+code,kbd{background:var(--code);padding:1px 5px;border-radius:4px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code);padding:10px 12px;border-radius:6px;overflow-x:auto;margin:10px 0}
+pre code{background:none;padding:0}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:var(--code);font-weight:600;white-space:nowrap}
+.warn{border-left:3px solid var(--warn);padding-left:12px;color:var(--warn)}
+footer{color:var(--mut);font-size:13px;text-align:center;margin-top:26px}
+footer a{color:var(--accent)}
+body.lang-en .de{display:none}
+body.lang-de .en{display:none}
+</style>
+</head>
+<body class="lang-en">
+<div class="wrap">
+
+<header>
+  <h1>Marstek CT002 / CT003 emulator</h1>
+  <p class="sub"><span class="en">TinyC script for Tasmota &middot; turns an ESP32 with a meter reading head into a Marstek CT</span><span class="de">TinyC-Script f&uuml;r Tasmota &middot; macht aus einem ESP32 mit Lesekopf ein Marstek-CT</span></p>
+  <div class="switch">
+    <button data-set="en">English</button>
+    <button data-set="de">Deutsch</button>
+  </div>
+</header>
+
+<nav>
+  <a href="#overview"><span class="en">Overview</span><span class="de">&Uuml;berblick</span></a>
+  <a href="#setup"><span class="en">Setup</span><span class="de">Einrichtung</span></a>
+  <a href="#ct">CT</a>
+  <a href="#battery"><span class="en">Battery</span><span class="de">Akku</span></a>
+  <a href="#meter"><span class="en">Meter</span><span class="de">Z&auml;hler</span></a>
+  <a href="#marstek"><span class="en">Marstek account</span><span class="de">Marstek-Konto</span></a>
+  <a href="#console"><span class="en">Console</span><span class="de">Konsole</span></a>
+  <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
+</nav>
+
+<section id="overview">
+<h2><span class="en">Overview</span><span class="de">&Uuml;berblick</span></h2>
+<div class="en">
+<p>The script speaks Marstek's native CT protocol on UDP port 12345, so a Venus / Jupiter / B2500 fleet can use your Tasmota device as its CT clamp. Grid power comes from the SML meter, exactly like the Shelly Pro 3EM and EcoTracker emulators &mdash; this is a third meter dialect, not a different data source.</p>
+<p>What it adds over the Shelly emulation: <b>coordination between several batteries</b>. Every battery reports its own power and phase, and the answer carries the number of batteries per phase. Each battery divides the phase power by that count as its first step, so two batteries on one phase no longer fight each other. It also supports phase <code>D</code>, where a battery regulates against the sum of all three phases &mdash; usually what you want with a netting meter.</p>
+<p>It runs in relay mode: the grid reading is passed through as measured, and each battery does its own regulation. There is no active steering or load balancing.</p>
+<p><b>Requirements:</b> ESP32 (ESP8266 is not supported), Tasmota with TinyC and <code>USE_SML</code>, and a meter reading head.</p>
+</div>
+<div class="de">
+<p>Das Script spricht Marsteks eigenes CT-Protokoll auf UDP-Port 12345, damit Venus-, Jupiter- oder B2500-Akkus dein Tasmota-Ger&auml;t als CT-Zange benutzen k&ouml;nnen. Die Netzleistung kommt vom SML-Z&auml;hler, genau wie beim Shelly-Pro-3EM- und EcoTracker-Emulator &mdash; es ist ein dritter Z&auml;hler-Dialekt, keine andere Datenquelle.</p>
+<p>Der Gewinn gegen&uuml;ber der Shelly-Emulation: <b>Koordination mehrerer Akkus</b>. Jeder Akku meldet seine eigene Leistung und Phase, und die Antwort enth&auml;lt die Anzahl der Akkus je Phase. Jeder Akku teilt die Phasenleistung als allerersten Schritt durch diese Zahl &mdash; zwei Akkus auf einer Phase schaukeln sich damit nicht mehr gegenseitig hoch. Dazu kommt Phase <code>D</code>, bei der ein Akku gegen die Summe aller drei Phasen regelt; bei einem saldierenden Z&auml;hler ist das meist das Richtige.</p>
+<p>Betrieb im Relay-Modus: der Z&auml;hlerwert wird unver&auml;ndert durchgereicht, jeder Akku regelt selbst. Es gibt keine aktive Steuerung oder Lastverteilung.</p>
+<p><b>Voraussetzungen:</b> ESP32 (ESP8266 wird nicht unterst&uuml;tzt), Tasmota mit TinyC und <code>USE_SML</code>, dazu ein Lesekopf.</p>
+</div>
+</section>
+
+<section id="setup">
+<h2><span class="en">Setup</span><span class="de">Einrichtung</span></h2>
+<div class="en">
+<ol>
+<li>Open the TinyC IDE on the device (console: <code>TinyCIde</code>, then <code>http://&lt;ip&gt;/tc</code>).</li>
+<li>Load <code>ct002_emu.tc</code>, press <b>Compile</b>, then <b>Upload</b> into slot&nbsp;0.</li>
+<li>Tick autoexec so it starts on boot, or run <code>TinyCRun /ct002_emu.tcb</code>.</li>
+<li>Set up the meter under <a href="#meter">Meter</a> first &mdash; without readings the emulator answers with 0&nbsp;W.</li>
+<li>Create the CT in your <a href="#marstek">Marstek account</a> and select it in the app.</li>
+</ol>
+<p class="warn">Slot&nbsp;0 only. The <code>/ctreg</code> page is a <code>webOn</code> endpoint, and Tasmota always dispatches those to slot&nbsp;0.</p>
+</div>
+<div class="de">
+<ol>
+<li>TinyC-IDE auf dem Ger&auml;t &ouml;ffnen (Konsole: <code>TinyCIde</code>, dann <code>http://&lt;ip&gt;/tc</code>).</li>
+<li><code>ct002_emu.tc</code> laden, <b>Compile</b>, dann <b>Upload</b> in Slot&nbsp;0.</li>
+<li>Autoexec ankreuzen, damit es beim Booten startet &mdash; oder <code>TinyCRun /ct002_emu.tcb</code>.</li>
+<li>Zuerst den <a href="#meter">Z&auml;hler</a> einrichten; ohne Messwerte antwortet der Emulator mit 0&nbsp;W.</li>
+<li>Das CT im <a href="#marstek">Marstek-Konto</a> anlegen und in der App ausw&auml;hlen.</li>
+</ol>
+<p class="warn">Nur Slot&nbsp;0. Die Seite <code>/ctreg</code> ist ein <code>webOn</code>-Endpunkt, und die reicht Tasmota immer an Slot&nbsp;0 weiter.</p>
+</div>
+</section>
+
+<section id="ct">
+<h2>CT</h2>
+<div class="en">
+<table>
+<tr><th>Type</th><td>CT002 sends <code>HME-4</code>, CT003 sends <code>HME-3</code> and four extra energy registers. Takes effect after a restart of the script.</td></tr>
+<tr><th>CT MAC</th><td>12 hex characters, the MAC of the CT in your Marstek account. When set, the emulator only answers requests for that MAC (or the wildcard <code>000000000000</code>). Leave empty and it answers everything &mdash; handy while testing, wrong once several CTs exist.</td></tr>
+<tr><th>UDP port</th><td>12345 in every known firmware. Only change it if you know why.</td></tr>
+<tr><th>RSSI</th><td>Wi-Fi signal strength reported to the battery. Cosmetic; the battery does not act on it.</td></tr>
+<tr><th>Battery timeout</th><td>Seconds after which a silent battery is dropped from the table. <code>0</code> = automatic: about two of its own poll cycles, at least 5&nbsp;s. That mirrors a real CT.</td></tr>
+</table>
+</div>
+<div class="de">
+<table>
+<tr><th>Type</th><td>CT002 sendet <code>HME-4</code>, CT003 sendet <code>HME-3</code> und vier zus&auml;tzliche Energieregister. Wirkt erst nach einem Neustart des Scripts.</td></tr>
+<tr><th>CT MAC</th><td>12 Hex-Zeichen, die MAC des CT im Marstek-Konto. Ist sie gesetzt, antwortet der Emulator nur auf Anfragen f&uuml;r diese MAC (oder die Wildcard <code>000000000000</code>). Leer bedeutet: antwortet auf alles &mdash; praktisch zum Testen, falsch sobald es mehrere CTs gibt.</td></tr>
+<tr><th>UDP port</th><td>12345 in jeder bekannten Firmware. Nur &auml;ndern, wenn du wei&szlig;t warum.</td></tr>
+<tr><th>RSSI</th><td>WLAN-Signalst&auml;rke, die dem Akku gemeldet wird. Kosmetik, der Akku richtet sich nicht danach.</td></tr>
+<tr><th>Battery timeout</th><td>Sekunden, nach denen ein stiller Akku aus der Tabelle f&auml;llt. <code>0</code> = automatisch: etwa zwei seiner eigenen Abfragezyklen, mindestens 5&nbsp;s. So macht es ein echtes CT auch.</td></tr>
+</table>
+</div>
+</section>
+
+<section id="battery">
+<h2><span class="en">Battery</span><span class="de">Akku</span></h2>
+<div class="en">
+<table>
+<tr><th>Offset [W]</th><td>Target grid power instead of zero. A small positive value keeps you slightly on the import side so nothing is fed back. Applied <b>per phase</b>, because each battery regulates its own phase &mdash; with three batteries on three phases the household total ends up at three times the value.</td></tr>
+<tr><th>Regulator tweak</th><td>Scales the deviation before it is sent: divided by 4 above the offset, by 0.8 below it. Damps overshoot on import, reacts faster on export. Off is the honest reading of the meter.</td></tr>
+<tr><th>3 phases</th><td>On: L1/L2/L3 come from the meter individually (<code>smlGet(4/5/6)</code>). Off: the total goes onto L1 and B/C stay at 0 &mdash; then set every battery to phase A or D, otherwise a battery on B or C would read 0&nbsp;W forever.</td></tr>
+</table>
+<h3>Phase selection</h3>
+<p>The phase is set on the battery, in the Marstek app &mdash; not here. What it means on the wire:</p>
+<ul>
+<li><code>A</code> / <code>B</code> / <code>C</code>: the battery regulates against that phase and shares it with other batteries on the same phase.</li>
+<li><code>D</code>: combined mode. The battery reads the <b>total</b> of all three phases. With a netting meter this is normally the right choice.</li>
+<li><code>x</code> in the web UI means the battery has not decided yet and is still probing. It changes its own output and watches which phase moves. With a simulator that produces constant values it can never conclude &mdash; give it a real meter, or set the phase manually in the app.</li>
+</ul>
+</div>
+<div class="de">
+<table>
+<tr><th>Offset [W]</th><td>Zielwert am Netz statt null. Ein kleiner positiver Wert h&auml;lt dich knapp auf der Bezugsseite, damit nichts eingespeist wird. Wirkt <b>pro Phase</b>, weil jeder Akku seine eigene Phase regelt &mdash; bei drei Akkus auf drei Phasen liegt der Hausanschluss am Ende beim Dreifachen.</td></tr>
+<tr><th>Regulator tweak</th><td>Skaliert die Abweichung vor dem Senden: oberhalb des Offsets geteilt durch 4, unterhalb durch 0,8. D&auml;mpft &Uuml;berschwingen beim Bezug, reagiert schneller bei Einspeisung. Aus ist der ehrliche Z&auml;hlerwert.</td></tr>
+<tr><th>3 phases</th><td>Ein: L1/L2/L3 kommen einzeln vom Z&auml;hler (<code>smlGet(4/5/6)</code>). Aus: die Gesamtleistung liegt auf L1, B und C bleiben 0 &mdash; dann alle Akkus auf Phase A oder D stellen, sonst liest ein Akku auf B oder C dauerhaft 0&nbsp;W.</td></tr>
+</table>
+<h3>Phasenwahl</h3>
+<p>Die Phase wird am Akku eingestellt, in der Marstek-App &mdash; nicht hier. Was sie auf dem Draht bedeutet:</p>
+<ul>
+<li><code>A</code> / <code>B</code> / <code>C</code>: der Akku regelt gegen diese Phase und teilt sie sich mit anderen Akkus auf derselben Phase.</li>
+<li><code>D</code>: kombiniert. Der Akku liest die <b>Summe</b> aller drei Phasen. Bei saldierendem Z&auml;hler normalerweise die richtige Wahl.</li>
+<li><code>x</code> in der Weboberfl&auml;che hei&szlig;t: der Akku hat sich noch nicht entschieden und sucht. Er &auml;ndert dazu seine eigene Leistung und schaut, welche Phase sich mitbewegt. Bei einem Simulator mit konstanten Werten kommt er nie zu einem Schluss &mdash; also echten Z&auml;hler anschlie&szlig;en oder die Phase in der App fest vorgeben.</li>
+</ul>
+</div>
+</section>
+
+<section id="meter">
+<h2><span class="en">Meter</span><span class="de">Z&auml;hler</span></h2>
+<div class="en">
+<table>
+<tr><th>SML active</th><td>Switches the SML driver on. Without it there are no readings and the emulator answers 0&nbsp;W.</td></tr>
+<tr><th>Descriptor</th><td>Picks a meter definition from the script repository and writes it to <code>/sml_meter.def</code>. Use <b>Edit descriptor</b> for manual changes.</td></tr>
+<tr><th>RX / TX pin</th><td>GPIOs of the reading head. Common: RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattw&auml;chter), RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
+<tr><th>Median filter</th><td>Smooths single outliers. Costs reaction time &mdash; leave it off for zero feed-in, the batteries filter on their own.</td></tr>
+</table>
+<p>Value order matters: <code>1</code> power, <code>2</code> energy import, <code>3</code> energy export, <code>4/5/6</code> the three phase powers. Only meters that publish per-phase values can drive the <b>3 phases</b> option.</p>
+</div>
+<div class="de">
+<table>
+<tr><th>SML active</th><td>Schaltet den SML-Treiber ein. Ohne ihn gibt es keine Messwerte und der Emulator antwortet mit 0&nbsp;W.</td></tr>
+<tr><th>Descriptor</th><td>W&auml;hlt eine Z&auml;hlerdefinition aus dem Script-Repository und schreibt sie nach <code>/sml_meter.def</code>. F&uuml;r Handarbeit <b>Edit descriptor</b>.</td></tr>
+<tr><th>RX / TX pin</th><td>GPIOs des Lesekopfs. H&auml;ufig: RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattw&auml;chter), RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
+<tr><th>Median filter</th><td>Gl&auml;ttet einzelne Ausrei&szlig;er, kostet aber Reaktionszeit &mdash; f&uuml;r Nulleinspeisung besser aus lassen, die Akkus filtern selbst.</td></tr>
+</table>
+<p>Die Reihenfolge der Werte z&auml;hlt: <code>1</code> Leistung, <code>2</code> Bezug, <code>3</code> Einspeisung, <code>4/5/6</code> die drei Phasenleistungen. Nur Z&auml;hler, die Einzelphasen liefern, k&ouml;nnen die Option <b>3 phases</b> bedienen.</p>
+</div>
+</section>
+
+<section id="marstek">
+<h2><span class="en">Marstek account</span><span class="de">Marstek-Konto</span></h2>
+<div class="en">
+<p>A battery only talks to a CT that exists in the owner's Marstek account. The emulator can create such an entry &mdash; a managed device whose id and MAC start with <code>02b250</code>, the same record AstraMeter creates.</p>
+<ol>
+<li>Open <b>Set up account</b> (page <code>/ctreg</code>), enter mail and password.</li>
+<li><b>Log in + check account</b> fetches a token and adopts an existing fake CT if there is one.</li>
+<li>If none was found: tick <b>Allow create</b>, then <b>Create fake CT</b>. The status line updates by itself.</li>
+<li>In the Marstek app refresh the CT list (log out and in if needed), select the new CT, switch the battery to automatic.</li>
+</ol>
+<h3>What to expect</h3>
+<ul>
+<li>The fake CT shows as <b>offline</b> in the app, and its live values stay at <code>--</code>. That is expected and does not affect regulation: the battery reads the CT locally over UDP, while the app's display comes from Marstek's cloud over MQTT, which a fake CT never connects to.</li>
+<li>The <code>setCtReporting</code> HTTP push does <b>not</b> fix that. It was implemented and measured: the endpoint accepts the data (<code>{"code":1,"msg":"success"}</code>), but after 776 accepted reports the app still showed <code>--</code>. It was removed again.</li>
+<li>Create only one fake CT. If several exist, the app may be pointed at a different one than your device answers for.</li>
+</ul>
+<p class="warn">The password travels in the clear over your LAN to the device. It is never written to flash, is kept in RAM for 10 minutes so step&nbsp;2 does not need it again, and is discarded after a successful create.</p>
+</div>
+<div class="de">
+<p>Ein Akku spricht nur mit einem CT, das im Marstek-Konto des Besitzers existiert. Der Emulator kann so einen Eintrag anlegen &mdash; ein verwaltetes Ger&auml;t, dessen Id und MAC mit <code>02b250</code> beginnen, derselbe Datensatz, den auch AstraMeter erzeugt.</p>
+<ol>
+<li><b>Set up account</b> &ouml;ffnen (Seite <code>/ctreg</code>), Mail und Passwort eintragen.</li>
+<li><b>Log in + check account</b> holt ein Token und &uuml;bernimmt ein vorhandenes Fake-CT, falls eines da ist.</li>
+<li>Wurde keines gefunden: <b>Allow create</b> ankreuzen, dann <b>Create fake CT</b>. Die Statuszeile aktualisiert sich von selbst.</li>
+<li>In der Marstek-App die CT-Liste aktualisieren (notfalls ab- und wieder anmelden), das neue CT ausw&auml;hlen, den Akku auf Automatik stellen.</li>
+</ol>
+<h3>Was dich erwartet</h3>
+<ul>
+<li>Das Fake-CT erscheint in der App als <b>offline</b>, seine Live-Werte bleiben auf <code>--</code>. Das ist so erwartet und hat auf die Regelung keinen Einfluss: der Akku liest das CT lokal per UDP, w&auml;hrend die Anzeige der App aus Marsteks Cloud per MQTT kommt &mdash; und dorthin verbindet sich ein Fake-CT nie.</li>
+<li>Der <code>setCtReporting</code>-Push &auml;ndert daran <b>nichts</b>. Er war eingebaut und wurde gemessen: der Endpunkt nimmt die Daten an (<code>{"code":1,"msg":"success"}</code>), aber nach 776 akzeptierten Reports zeigte die App weiter <code>--</code>. Er wurde wieder entfernt.</li>
+<li>Lege nur ein Fake-CT an. Gibt es mehrere, zeigt die App womöglich auf ein anderes, als dein Ger&auml;t bedient.</li>
+</ul>
+<p class="warn">Das Passwort geht unverschl&uuml;sselt durch dein Netz an das Ger&auml;t. Es wird nie auf Flash geschrieben, bleibt 10 Minuten im Arbeitsspeicher, damit Schritt&nbsp;2 es nicht erneut braucht, und wird nach erfolgreichem Anlegen verworfen.</p>
+</div>
+</section>
+
+<section id="console">
+<h2><span class="en">Console commands</span><span class="de">Konsolen-Kommandos</span></h2>
+<pre><code>CTSTAT            rx/tx/bad counters, one log line per battery
+CTCLR             clear the battery table
+CTMAC &lt;hex12&gt;     set the CT MAC (empty = answer any)
+CTMAIL &lt;address&gt;  set the Marstek account mail
+CTPASS &lt;password&gt; set the password (RAM only)
+CTLOGIN           run step 1
+CTCREATE JA       run step 2 (the JA is the confirmation)</code></pre>
+<div class="en"><p>Log lines are always English, whatever else is on screen &mdash; mixed-language logs make support harder.</p></div>
+<div class="de"><p>Log-Zeilen sind immer englisch, unabh&auml;ngig vom Rest &mdash; gemischtsprachige Logs machen die Fehlersuche schwerer.</p></div>
+</section>
+
+<section id="trouble">
+<h2><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></h2>
+<div class="en">
+<table>
+<tr><th><code>rx</code> stays 0</th><td>Nothing is arriving. The battery has not been pointed at this CT, or it lost it. Toggle the operating mode in the app (automatic off and on again). A script restart drops the socket for a moment, and the battery does not always come back on its own.</td></tr>
+<tr><th><code>bad</code> counts up</th><td>Packets arrive but fail the checksum. Something on the wire does not match the protocol &mdash; keep the log with <kbd>weblog 4</kbd>.</td></tr>
+<tr><th>Battery shows <code>Ph x</code></th><td>It is still probing its phase. See <a href="#battery">Battery</a>.</td></tr>
+<tr><th>All values 0&nbsp;W</th><td>No meter readings. Check <b>SML active</b>, pins and descriptor under <a href="#meter">Meter</a>.</td></tr>
+<tr><th>App shows <code>--</code></th><td>Expected. See <a href="#marstek">Marstek account</a>.</td></tr>
+</table>
+</div>
+<div class="de">
+<table>
+<tr><th><code>rx</code> bleibt 0</th><td>Es kommt nichts an. Der Akku wurde nicht auf dieses CT gestellt oder hat es verloren. In der App den Betriebsmodus umschalten (Automatik aus und wieder ein). Ein Script-Neustart schlie&szlig;t den Socket kurz, und der Akku findet nicht immer von allein zur&uuml;ck.</td></tr>
+<tr><th><code>bad</code> z&auml;hlt hoch</th><td>Pakete kommen an, scheitern aber an der Pr&uuml;fsumme. Auf dem Draht passt etwas nicht zum Protokoll &mdash; Log mit <kbd>weblog 4</kbd> mitschreiben.</td></tr>
+<tr><th>Akku zeigt <code>Ph x</code></th><td>Er sucht noch seine Phase. Siehe <a href="#battery">Akku</a>.</td></tr>
+<tr><th>Alle Werte 0&nbsp;W</th><td>Keine Z&auml;hlerwerte. <b>SML active</b>, Pins und Descriptor unter <a href="#meter">Z&auml;hler</a> pr&uuml;fen.</td></tr>
+<tr><th>App zeigt <code>--</code></th><td>Erwartet. Siehe <a href="#marstek">Marstek-Konto</a>.</td></tr>
+</table>
+</div>
+</section>
+
+<footer>
+<span class="en">Script and page by <a href="https://ottelo.jimdofree.com/">ottelo</a> &middot; protocol details from <a href="https://github.com/tomquist/AstraMeter">AstraMeter</a> &middot; TinyC by <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
+<span class="de">Script und Seite von <a href="https://ottelo.jimdofree.com/">ottelo</a> &middot; Protokolldetails aus <a href="https://github.com/tomquist/AstraMeter">AstraMeter</a> &middot; TinyC von <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
+</footer>
+
+</div>
+<script>
+(function(){
+  function set(l){
+    document.body.className = 'lang-' + l;
+    document.documentElement.lang = l;
+    var b = document.querySelectorAll('.switch button');
+    for (var i = 0; i < b.length; i++) {
+      if (b[i].getAttribute('data-set') === l) { b[i].classList.add('on'); }
+      else { b[i].classList.remove('on'); }
+    }
+    try { localStorage.setItem('ct002lang', l); } catch (e) {}
+  }
+  var q = location.search.match(/[?&]lang=(de|en)/);
+  var s = null;
+  try { s = localStorage.getItem('ct002lang'); } catch (e) {}
+  var nav = (navigator.language || '').slice(0, 2) === 'de' ? 'de' : 'en';
+  set(q ? q[1] : (s || nav));
+  var b = document.querySelectorAll('.switch button');
+  for (var i = 0; i < b.length; i++) {
+    b[i].addEventListener('click', function(){ set(this.getAttribute('data-set')); });
+  }
+})();
+</script>
+</body>
+</html>
