@@ -59,6 +59,18 @@ void sml_descriptor_apply() {
         tasm_rule = sml_activ;
         snapshot(sml_activ);
     }
+    // The repo pulldown downloads client-side, straight past the VM, so it
+    // stages into /sml_meter.new. Swap it in first - the pins below have to be
+    // substituted into the NEW file.
+    if (meter_changed) {
+        int h = fileOpen("/sml_meter.new", "r");
+        if (h >= 0) {
+            fileClose(h);
+            fileDelete("/sml_meter.def");
+            fileRename("/sml_meter.new", "/sml_meter.def");
+        }
+        snapshot(sml_meter_sel);
+    }
     if (meter_changed || pins_changed || filter_changed || activ_changed) {
         if (sml_rx_pin >= 0 || sml_tx_pin >= 0) {
             int filter_val = sml_filter ? 16 : 0;
@@ -73,7 +85,6 @@ void sml_descriptor_apply() {
         sml_apply_drvrows();
     }
     if (meter_changed) {
-        snapshot(sml_meter_sel);
         smlScripterLoad("/sml_meter.def");
     }
     // Save always writes: TinyC only auto-saves persist vars at slot-stop, and
@@ -112,12 +123,12 @@ void sml_render_settings_panel() {
         webRepoPulldown(sml_meter_sel, "Aus Repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
                         "smartmeter",
-                        "/sml_meter.def");
+                        "/sml_meter.new");
     } else {
         webRepoPulldown(sml_meter_sel, "From repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
                         "smartmeter",
-                        "/sml_meter.def");
+                        "/sml_meter.new");
     }
 
     uiHead("&#x1F50C;", "Pins", "Pins", "sml/#pins");
