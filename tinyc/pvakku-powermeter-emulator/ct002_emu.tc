@@ -85,11 +85,12 @@ char umail[96];                      // url-encoded mailbox
 char req[600];                       // request line + headers
 char scanb[600];                     // scratch for parsing
 char http_resp[2048];                // API response body
+char fnd[6][16];                     // distinct fake-CT MACs seen while scanning
 int  reg_req;                        // 0 idle, 1 = login+scan, 2 = create
 int  reg_busy;
+int  reg_ok;                         // 1 = last action succeeded (green status)
 int  pass_ts;                        // millis() when the password was set
-int  do_save; int do_clear;
-int  allow_create;                   // safety checkbox for the cloud write
+int  do_save;
 
 // ─── CT protocol ───────────────────────────────────────────────────────────
 
@@ -418,52 +419,64 @@ int mkLogin() {
 
 // Scan the device list for managed fake CTs (devid = mac = 02b250xxxxxx, the
 // prefix AstraMeter uses). The scan is destructive — http_resp is scratch.
+// One device yields TWO hits (devid and mac carry the same value), so the
+// results are deduplicated - otherwise one CT would be counted as two.
 int mkScan() {
-    int found = 0;
+    int found = 0;      // distinct CTs
+    int nfnd  = 0;      // entries stored in fnd[]
     int guard = 0;
-    while (guard < 12) {
+    while (guard < 16) {
         int m = strFind(http_resp, "02b250");
         if (m < 0) break;
         strSub(scanb, http_resp, m, 12);
-        if (strlen(scanb) == 12) {
-            strToLower(scanb);
-            // Never overwrite a CT MAC that is already set - with two fake
-            // CTs in the account this would silently switch the device to the
-            // other one, and the battery would talk to a CT the app never
-            // selected.
-            if (found == 0 && strlen(ct_mac) != 12) {
-                strcpy(ct_mac, scanb);
-                addLog("CT002: fake CT adopted: %s", scanb);
-            } else {
-                addLog("CT002: fake CT found: %s (not adopted)", scanb);
-            }
-            found = found + 1;
-        }
         http_resp[m] = 'X';                 // don't match the same spot again
         guard = guard + 1;
+        if (strlen(scanb) == 12) {
+            strToLower(scanb);
+            int dup = 0;
+            int k = 0;
+            for (k = 0; k < nfnd; k = k + 1) {
+                if (strcmp(fnd[k], scanb) == 0) dup = 1;
+            }
+            if (dup == 0) {
+                if (nfnd < 6) {
+                    strcpy(fnd[nfnd], scanb);
+                    nfnd = nfnd + 1;
+                }
+                // Never overwrite a CT MAC that is already set - with two fake
+                // CTs in the account this would silently switch the device to
+                // the other one.
+                if (found == 0 && strlen(ct_mac) != 12) {
+                    strcpy(ct_mac, scanb);
+                    addLog("CT002: fake CT adopted: %s", scanb);
+                } else {
+                    addLog("CT002: fake CT found: %s (not adopted)", scanb);
+                }
+                found = found + 1;
+            }
+        }
     }
     return found;
 }
 
 void mkDoLogin() {
+    reg_ok = 0;
     strcpy(reg_msg, "Login running ...");
     if (mkLogin() == 0) return;
     int found = mkScan();
     if (found > 0) {
         saveVars();
+        reg_ok = 1;
         sprintf(reg_msg, "OK - %d fake CT(s) found, CT MAC = ", found);
         strcat(reg_msg, ct_mac);
     } else {
-        strcpy(reg_msg, "Login OK, no fake CT yet - create one below");
+        strcpy(reg_msg, "Login OK, no CT found");
     }
 }
 
 // GET /app/Solar/v2_add_device.php — creates the managed CT record.
 void mkDoCreate() {
-    if (allow_create == 0) {
-        strcpy(reg_msg, "Tick 'allow create' first");
-        return;
-    }
+    reg_ok = 0;
     if (strlen(ct_mac) == 12) {
         strcpy(reg_msg, "CT MAC already set - clear it first");
         return;
@@ -472,6 +485,7 @@ void mkDoCreate() {
     if (mkLogin() == 0) return;
     if (mkScan() > 0) {
         saveVars();
+        reg_ok = 1;
         strcpy(reg_msg, "Fake CT already exists - adopted instead");
         return;
     }
@@ -547,6 +561,7 @@ void mkDoCreate() {
     strcpy(ct_mac, nm);
     saveVars();
     strcpy(mk_pass, "");            // done - drop the password now
+    reg_ok = 1;
     strcpy(reg_msg, "Fake CT created, CT MAC = ");
     strcat(reg_msg, ct_mac);
     addLog("CT002: fake CT created in Marstek cloud: %s (%s)", nm, cttype);
@@ -617,13 +632,7 @@ void EverySecond() {
     }
 
     // ── web buttons ──
-    if (do_save > 0)  { do_save = 0;  saveVars(); }
-    if (do_clear > 0) {
-        do_clear = 0;
-        strcpy(ct_mac, "");
-        strcpy(reg_msg, "CT MAC cleared (cloud device remains)");
-        saveVars();
-    }
+    if (do_save > 0) { do_save = 0; saveVars(); }
 }
 
 // Cloud calls block for seconds — they belong in the slot's own task, never
@@ -722,27 +731,16 @@ void WebUI() {
         webCheckbox(smlfo, "Median filter");
 
         webSend("<hr>");
-        webButton(do_save, "Save|saved");
-        webSend("</div>");
-        return;
-    }
-
-    if (page == 1) {
-        webSend("<style>.ct-p{max-width:340px;margin:12px auto;background:#f0f0f0;color:#000;padding:18px;border:2px solid #ccc;border-radius:6px;text-align:left}.ct-p h3{margin:0 0 8px;font-size:15px}.ct-p hr{border:0;border-top:1px solid #bbb;margin:14px 0}.ct-p b{display:inline-block;margin-bottom:4px;font-size:13px}.ct-p .note{font-size:12px;color:#444;line-height:1.35}.ct-p a.i{text-decoration:none;margin-left:6px}</style>");
-        webSend("<div class='ct-p'>");
-        sprintf(scanb, "<h3>&#x2601;&#xFE0F; Marstek account</h3>%s#marstek'>&#x2139;&#xFE0F; help</a>", helpa);
+        sprintf(scanb, "<b>&#x2601;&#xFE0F; Marstek</b>%s#marstek'>&#x2139;&#xFE0F;</a>", helpa);
         webSend(scanb);
-        // Not webText: the firmware writes sv= strings to globals[idx] while
-        // webText reports the heap handle index for any char[] > 16, so the
-        // text lands in foreign variables. Own page /ctreg instead.
-
-        sprintf(scanb, "<div class='note'>Account: <b>%s</b></div>", mk_mail);
+        // Login and CT MAC live on /ctreg, not here: this block re-renders
+        // every 2 s and the sv= string write path is broken in the firmware.
+        sprintf(scanb, "<div style='font-size:12px;color:#444'>Account: <b>%s</b></div>", mk_mail);
         webSend(scanb);
         webSend("<div><a href='/ctreg'><button type='button'>&#x1F511; Set up account</button></a></div>");
+
         webSend("<hr>");
-        sprintf(scanb, "<b>Status</b><div class='note'>%s</div>", reg_msg);
-        webSend(scanb);
-        webButton(do_clear, "Clear CT MAC|cleared");
+        webButton(do_save, "Save|saved");
         webSend("</div>");
         return;
     }
@@ -768,9 +766,14 @@ void WebOn() {
         if (strlen(ct_mac) == 12) {
             strcat(scanb, ct_mac);
         } else {
-            strcat(scanb, "(noch keine)");
+            strcat(scanb, "(none yet)");
         }
         if (reg_busy == 1) {
+            strcat(scanb, "|1");
+        } else {
+            strcat(scanb, "|0");
+        }
+        if (reg_ok == 1) {
             strcat(scanb, "|1");
         } else {
             strcat(scanb, "|0");
@@ -783,6 +786,7 @@ void WebOn() {
     if (webArg("do", a) > 0) {
         if (strcmp(a, "login")  == 0) act = 1;
         if (strcmp(a, "create") == 0) act = 2;
+        if (strcmp(a, "clear")  == 0) act = 3;
     }
     if (webArg("mail", a) > 0) {
         strcpy(mk_mail, a);
@@ -794,10 +798,13 @@ void WebOn() {
         strcpy(mk_pass, a);
         pass_ts = millis();
     }
-    if (webArg("ok", a) > 0) {
-        allow_create = 1;
-    } else {
-        allow_create = 0;
+    if (act == 3) {                     // clear the local CT MAC, cloud untouched
+        strcpy(ct_mac, "");
+        strcpy(reg_msg, "CT MAC cleared (cloud device remains)");
+        reg_ok = 0;
+        saveVars();
+        webSend("<html><head><meta charset='utf-8'></head><body><script>location.replace('/ctreg');</script></body></html>");
+        return;
     }
     if (act > 0) {
         if (reg_busy == 1) {
@@ -820,10 +827,11 @@ void WebOn() {
     webSend("button{padding:8px 12px;border-radius:4px;margin:8px 0;width:100%}");
     webSend(".n{font-size:12px;color:#444;line-height:1.35;margin:8px 0}.w{font-size:12px;color:#a00;line-height:1.35;margin:8px 0}");
     webSend("a.i{text-decoration:none;margin-left:6px}");
-    webSend(".s{background:#fff;border:1px solid #bbb;padding:8px;font-size:13px;margin-top:10px}</style></head><body><div class='p'>");
+    webSend(".s{background:#fff;border:1px solid #bbb;padding:8px;font-size:13px;margin-top:10px}");
+    webSend(".s.ok{background:#e6f6e6;border-color:#5f9e5f;color:#155f15}</style></head><body><div class='p'>");
     sprintf(scanb, "<h3>&#x2601;&#xFE0F; Marstek account</h3>%s#marstek'>&#x2139;&#xFE0F; help</a>", helpa);
     webSend(scanb);
-    webSend("<div class='n'>The battery only talks to a CT that exists in your Marstek account.</div>");
+    webSend("<div class='n'>The battery only communicates to a CT that exists in your Marstek account.</div>");
 
     webSend("<form method='post' action='/ctreg'>");
     sprintf(scanb, "<label>Mail</label><input type='text' name='mail' value='%s'>", mk_mail);
@@ -832,13 +840,23 @@ void WebOn() {
     if (strlen(mk_pass) > 0) {
         webSend("<div class='n'>Password held in RAM for 10 min. Leave empty to reuse it.</div>");
     }
-    webSend("<div class='w'>&#x26A0;&#xFE0F; Sent in the clear over your LAN. Never stored on flash.</div>");
+    webSend("<div class='w'>&#x26A0;&#xFE0F; Sent as plain text over your LAN. Never stored on flash.</div>");
     webSend("<button type='submit' name='do' value='login'>1. Log in + check account</button>");
-    webSend("<label><input type='checkbox' name='ok' value='1'> Allow create</label>");
-    webSend("<button type='submit' name='do' value='create'>2. Create fake CT</button>");
+    // Create stays out of reach while a MAC is set - mkDoCreate() refuses too,
+    // but a disabled button says so before the click, not after.
+    if (strlen(ct_mac) == 12) {
+        webSend("<button type='submit' name='do' value='create' disabled>2. Create fake CT</button>");
+        webSend("<div class='n'>A CT MAC is set. Clear it below to create another one.</div>");
+    } else {
+        webSend("<button type='submit' name='do' value='create' onclick='return confirm(\"Create a new CT device in your Marstek account? This cannot be undone from here.\")'>2. Create fake CT</button>");
+    }
     webSend("</form>");
 
-    sprintf(scanb, "<div class='s'><b>Status:</b> <span id='st'>%s</span></div>", reg_msg);
+    if (reg_ok == 1) {
+        sprintf(scanb, "<div class='s ok' id='stbox'><b>Status:</b> <span id='st'>%s</span></div>", reg_msg);
+    } else {
+        sprintf(scanb, "<div class='s' id='stbox'><b>Status:</b> <span id='st'>%s</span></div>", reg_msg);
+    }
     webSend(scanb);
     if (strlen(ct_mac) == 12) {
         sprintf(scanb, "<div class='s'><b>CT MAC:</b> <span id='mc'>%s</span></div>", ct_mac);
@@ -846,11 +864,15 @@ void WebOn() {
         strcpy(scanb, "<div class='s'><b>CT MAC:</b> <span id='mc'>(none yet)</span></div>");
     }
     webSend(scanb);
+    if (strlen(ct_mac) == 12) {
+        webSend("<form method='post' action='/ctreg'><button type='submit' name='do' value='clear' onclick='return confirm(\"Clear the CT MAC on this device? The CT in your Marstek account stays.\")'>&#x274C; Clear CT MAC</button></form>");
+    }
     webSend("<div><a href='/'><button type='button'>&#x2B05;&#xFE0F; Main menu</button></a></div>");
     // The cloud call runs in TaskLoop and is unfinished when this renders.
     // Chained setTimeout, not setInterval, so slow answers cannot stack.
     webSend("<script>function pl(){fetch('/ctreg?st=1',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var p=t.split('|');");
-    webSend("document.getElementById('st').textContent=p[0];document.getElementById('mc').textContent=p[1];})");
+    webSend("document.getElementById('st').textContent=p[0];document.getElementById('mc').textContent=p[1];");
+    webSend("document.getElementById('stbox').className=(p[3]=='1')?'s ok':'s';})");
     webSend(".catch(function(){}).then(function(){setTimeout(pl,1500);});}setTimeout(pl,800);</script>");
     webSend("</div></body></html>");
 }
@@ -896,7 +918,6 @@ void Command(char cmd[]) {
         reg_req = 1;
         responseCmnd("login requested");
     } else if (strcmp(cmd, "CREATE JA") == 0) {
-        allow_create = 1;
         reg_req = 2;
         responseCmnd("create requested");
     } else {
@@ -923,9 +944,9 @@ int main() {
     bad_cnt  = 0;
     reg_req  = 0;
     reg_busy = 0;
-    do_save = 0; do_clear = 0;
-    allow_create = 0;
+    do_save = 0;
     strcpy(mk_pass, "");
+    reg_ok = 0;
     strcpy(reg_msg, "ready");
 
     int i = 0;
@@ -957,7 +978,7 @@ int main() {
 
     addCommand("CT");
     webPageLabel(0, "CT emulator");
-    webPageLabel(1, "Marstek account");
+    webPageLabel(1, "");        // clear the old page - labels survive a slot restart
     webOn(4, "/ctreg");         // own page, see WebOn() - slot 0 only
 
     smlScripterLoad("/sml_meter.def");
