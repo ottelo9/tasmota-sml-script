@@ -76,7 +76,7 @@ body.lang-de .en{display:none}
 <p>Das Script verwendet Marsteks eigenes CT-Protokoll auf UDP-Port 12345, damit Venus-, Jupiter- oder B2500-Akkus dein Tasmota-Gerät als emulierten CT002/CT003 benutzen können. Die Netzleistung kommt von deinem Zähler, genau wie beim Shelly-Pro-3EM- und EcoTracker-Emulator &mdash; es ist die dritte Möglichkeit eine PV-Batterie mit einem emuliertem Zähler zu verbinden, um die Nulleinspeisung zu realisieren.</p>
 <p>Der Vorteil gegenüber der Shelly-Emulation: <b>Koordination mehrerer Akkus</b>. Jeder Akku meldet seine eigene Leistung und Phase, und die Antwort enthält die Anzahl der Akkus je Phase. Jeder Akku teilt die Leistung als allerersten Schritt durch diese Zahl &mdash; zwei Akkus auf einer Phase schwingen sich damit nicht mehr gegenseitig auf (Regelschwingen). Dazu kommt Phase <code>D</code>, bei der ein Akku gegen die Summe aller drei Phasen regelt; bei einem saldierenden Zähler ist das meist das Richtige.</p>
 <p>Betrieb im Relay-Modus: der Zählerwert wird unverändert durchgereicht, jeder Akku regelt selbst. Es gibt keine aktive Steuerung oder Lastverteilung.</p>
-<p><b>Voraussetzungen:</b> ESP32 (ESP8266 wird nicht unterstützt), Tasmota mit TinyC und <code>USE_SML</code>, dazu ein Lesekopf.</p>
+<p><b>Voraussetzungen:</b> ESP32 (ESP8266 wird nicht unterstützt), Tasmota mit TinyC und <code>USE_SML</code> und natürlich ein Lesekopf (Beispiele auf meinem <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">Blog</a>).</p>
 </div>
 </section>
 
