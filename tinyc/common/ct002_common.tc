@@ -37,6 +37,31 @@ persist int  ct_ph3;              // 1 = per-phase values from smlGet(4/5/6)
 persist char ct_mac[16];       // CT MAC, 12 hex lowercase. Empty = answer all
 persist char ct_mail[64];      // Marstek account mail (registration only)
 
+// ─── Edit buffer ───────────────────────────────────────────────────────────
+// The panel writes here; Save copies it onto the settings above. ct_mac and
+// ct_mail are not in here - those are handled on /ctreg.
+int ct_e_kind; int ct_e_port; int ct_e_rssi; int ct_e_ttl;
+int ct_e_offset; int ct_e_tweak; int ct_e_ph3;
+
+void ctCommit() {
+    ct_kind = ct_e_kind;
+    ct_port = ct_e_port;
+    ct_rssi = ct_e_rssi;
+    ct_ttl = ct_e_ttl;
+    ct_offset = ct_e_offset;
+    ct_tweak = ct_e_tweak;
+    ct_ph3 = ct_e_ph3;
+}
+void ctEditLoad() {
+    ct_e_kind = ct_kind;
+    ct_e_port = ct_port;
+    ct_e_rssi = ct_rssi;
+    ct_e_ttl = ct_ttl;
+    ct_e_offset = ct_offset;
+    ct_e_tweak = ct_tweak;
+    ct_e_ph3 = ct_ph3;
+}
+
 // ─── Consumer table (one row per battery, keyed by its MAC) ────────────────
 char ct_smac[CT_NSLOT][16];
 int  ct_sused[CT_NSLOT];
@@ -573,6 +598,7 @@ int ct_webnum;                       // webOn handler number for /ctreg
 // From main(). `webnum` is the webOn handler id the wiring reserves for
 // /ctreg - only slot 0 can serve it at all.
 void ctInit(int webnum) {
+    ctEditLoad();
     ct_once = 0;
     ct_idx  = 0;
     ct_rxc  = 0;
@@ -627,6 +653,7 @@ void ctPoll() {
 
 // From EverySecond().
 void ctTick() {
+    if (ui_applying) ctCommit();
     if (tasm_wifi == 1 && ct_once == 0) {
         if (ct_port < 1) ct_port = 12345;
         if (udp(0, ct_port) == 1) {
@@ -717,29 +744,32 @@ void ctPanel() {
     webSend("<style>a.i{text-decoration:none;margin-left:6px}</style>");
 
     uiHead("&#x1F50C;", "CT", "CT", "ct002/#ct");
+    // CT MAC read-only: webText writes through a broken sv= path in the
+    // firmware and corrupted the neighbouring settings. It is set on /ctreg.
+    if (ct_mac[0]) sprintf(ct_buf, "<div style='font-size:12px;color:#444'>CT MAC: <b>%s</b></div>", ct_mac);
+    else           strcpy(ct_buf, "<div style='font-size:12px;color:#444'>CT MAC: &mdash;</div>");
+    webSend(ct_buf);
     if (ui_de) {
-        webPulldown(ct_kind, "Typ (Neustart)", "CT002 (HME-4)|CT003 (HME-3)");
-        webText(ct_mac, 16, "CT-MAC");
-        webNumber(ct_port, 1024, 65535, "UDP-Port");
-        webNumber(ct_rssi, -90, -20, "RSSI [dBm]");
-        webNumber(ct_ttl, 0, 300, "Akku-Timeout [s]");
+        webPulldown(ct_e_kind, "Typ (Neustart)", "CT002 (HME-4)|CT003 (HME-3)");
+        webNumber(ct_e_port, 1024, 65535, "UDP-Port");
+        webNumber(ct_e_rssi, -90, -20, "RSSI [dBm]");
+        webNumber(ct_e_ttl, 0, 300, "Akku-Timeout [s]");
     } else {
-        webPulldown(ct_kind, "Type (restart)", "CT002 (HME-4)|CT003 (HME-3)");
-        webText(ct_mac, 16, "CT MAC");
-        webNumber(ct_port, 1024, 65535, "UDP port");
-        webNumber(ct_rssi, -90, -20, "RSSI [dBm]");
-        webNumber(ct_ttl, 0, 300, "Battery timeout [s]");
+        webPulldown(ct_e_kind, "Type (restart)", "CT002 (HME-4)|CT003 (HME-3)");
+        webNumber(ct_e_port, 1024, 65535, "UDP port");
+        webNumber(ct_e_rssi, -90, -20, "RSSI [dBm]");
+        webNumber(ct_e_ttl, 0, 300, "Battery timeout [s]");
     }
 
     uiHead("&#x1F50B;", "Battery", "Akku", "ct002/#battery");
     if (ui_de) {
-        webNumber(ct_offset, -200, 200, "Offset [W]");
-        webCheckbox(ct_tweak, "Regleroptimierung");
-        webCheckbox(ct_ph3, "3 Phasen");
+        webNumber(ct_e_offset, -200, 200, "Offset [W]");
+        webCheckbox(ct_e_tweak, "Regleroptimierung");
+        webCheckbox(ct_e_ph3, "3 Phasen");
     } else {
-        webNumber(ct_offset, -200, 200, "Offset [W]");
-        webCheckbox(ct_tweak, "Regulator tweak");
-        webCheckbox(ct_ph3, "3 phases");
+        webNumber(ct_e_offset, -200, 200, "Offset [W]");
+        webCheckbox(ct_e_tweak, "Regulator tweak");
+        webCheckbox(ct_e_ph3, "3 phases");
     }
 
     uiHead("&#x2601;&#xFE0F;", "Marstek", "Marstek", "ct002/#marstek");

@@ -14,6 +14,8 @@ char sml_vers[] = "16.08.2026";
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int sml_sndpwr;      // 1 = publish power via MQTT and serve /pwr
 
+int sml_e_sndpwr;             // edit buffer, applied by Save
+
 // ─── Runtime ───────────────────────────────────────────────────────────────
 float sml_power2;
 int   sml_pwr_last;
@@ -29,6 +31,8 @@ void Every100ms() {
 }
 
 void EverySecond() {
+    uiApplyBegin();
+    if (ui_applying) sml_sndpwr = sml_e_sndpwr;
     sml_descriptor_apply();
     esTick();
     mbTick();
@@ -87,19 +91,19 @@ void WebCall() {
 void WebUI() {
     if (webPage() != 0) return;
     sml_render_settings_panel();
-    uiLang();
     esPanel();
 
     uiHead("&#x1F4E1;", "Telemetry", "Telemetrie", "sml/#telemetry");
-    if (ui_de) webCheckbox(sml_sndpwr, "Leistung senden");
-    else       webCheckbox(sml_sndpwr, "Publish power");
-    if (sml_sndpwr > 0) {
+    if (ui_de) webCheckbox(sml_e_sndpwr, "Leistung senden");
+    else       webCheckbox(sml_e_sndpwr, "Publish power");
+    if (sml_e_sndpwr > 0) {
         sprintf(sml_buf, "<div style='font-size:12px;color:#444'>MQTT: stat/%s/script/power2 + /cpwr<br>HTTP: <a href='/pwr'>/pwr</a></div>", sml_mtopic);
         webSend(sml_buf);
     }
     mbPanel();
 
     webSend("<hr>");
+    uiSaveButton();
     if (ui_de) webButton(do_reset, "SML neu laden|neu geladen");
     else       webButton(do_reset, "Restart SML|restarted");
 
@@ -120,6 +124,7 @@ int main() {
     }
     if (sml_activ != tasm_rule) tasm_rule = sml_activ;
 
+    sml_e_sndpwr = sml_sndpwr;
     tasmInfo(0, sml_mtopic);
     sml_power2 = smlGet(1);
     sml_pwr_last = 0;

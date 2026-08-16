@@ -14,6 +14,19 @@
 persist watch int mb_on;      // 1 = run the slave
 persist watch int mb_port;    // TCP port, standard 502
 
+// ─── Edit buffer ───────────────────────────────────────────────────────────
+// The panel writes here; Save copies it onto the settings above.
+int mb_e_on; int mb_e_port;
+
+void mbCommit() {
+    mb_on = mb_e_on;
+    mb_port = mb_e_port;
+}
+void mbEditLoad() {
+    mb_e_on = mb_on;
+    mb_e_port = mb_port;
+}
+
 // ─── Runtime ───────────────────────────────────────────────────────────────
 int   mb_started;             // 0 until tcpServer() succeeded
 int   mb_rx[16];              // request frame (FC03 request = exactly 12 B)
@@ -29,6 +42,7 @@ void mbInit() {
     if (mb_port < 1 || mb_port > 65535) mb_port = 502;   // 0 = never set
     snapshot(mb_port);
     snapshot(mb_on);
+    mbEditLoad();
 }
 
 // From Every100ms(). One request → one response, connection kept open
@@ -98,6 +112,8 @@ void mbPoll() {
 
 // From EverySecond(). Applies port / on-off changes without a reboot.
 void mbTick() {
+    if (ui_applying == 0) return;     // a half-typed port would rebind at once
+    mbCommit();
     if (changed(mb_port) || changed(mb_on)) {
         if (mb_port < 1 || mb_port > 65535) mb_port = 502;
         if (mb_started) tcpClose();
@@ -123,12 +139,12 @@ void mbRows() {
 // From WebUI(): emitted inside an already-open settings panel.
 void mbPanel() {
     uiHead("&#x1F5A7;&#xFE0F;", "Modbus-TCP", "Modbus-TCP", "sml/#modbus");
-    if (ui_de) webCheckbox(mb_on, "Slave aktiv");
-    else       webCheckbox(mb_on, "Slave active");
-    if (mb_on == 0) return;
+    if (ui_de) webCheckbox(mb_e_on, "Slave aktiv");
+    else       webCheckbox(mb_e_on, "Slave active");
+    if (mb_e_on == 0) return;
 
-    if (ui_de) webNumber(mb_port, 1, 65535, "TCP-Port");
-    else       webNumber(mb_port, 1, 65535, "TCP port");
+    if (ui_de) webNumber(mb_e_port, 1, 65535, "TCP-Port");
+    else       webNumber(mb_e_port, 1, 65535, "TCP port");
     if (ui_de) {
         webSend("<div class='hint'>FC03 &middot; 40000 Leistung W &middot; 40002 Bezug kWh &middot; 40004 Einspeisung kWh<br>je 2 Register, IEEE-754 float, big-endian</div>");
     } else {

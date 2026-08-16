@@ -14,6 +14,45 @@ persist watch int ui_de;     // 0 = English (default), 1 = Deutsch
 char ui_base[] = " <a class='i' target='_blank' href='https://ottelo9.github.io/tasmota-sml-script/";
 char ui_buf[220];
 
+// ── Save button ────────────────────────────────────────────────────────────
+// Widgets write straight into their variable, so a change would otherwise take
+// effect at once - mid-edit pin changes restart the SML driver, a half-typed
+// port rebinds the socket. The disruptive part therefore waits for Save.
+int ui_apply;                // set by the button, cleared by uiApplyBegin()
+int ui_applying;             // latched for the current tick
+
+// From EverySecond, BEFORE the other tick functions: latches the press so
+// every module sees it in the same tick, whatever order they run in.
+void uiApplyBegin() {
+    ui_applying = ui_apply;
+    ui_apply = 0;
+}
+
+// Save button + the "unsaved changes" guard. Goes green with OK for 2.5 s
+// (the firmware does that for any "Label|Done" button).
+//
+// The guard wraps seva(), the one function every widget calls to write its
+// value. Any write except the Save button's own marks the page dirty. The
+// page reloads itself every 2 s, so the wrapper is installed once and keeps
+// its state in a closure.
+void uiSaveButton() {
+    if (ui_de) webButton(ui_apply, "Speichern|OK");
+    else       webButton(ui_apply, "Save|OK");
+
+    sprintf(ui_buf, "<script>(function(){if(window.__tcg)return;window.__tcg=1;var s=%d,d=0,o=window.seva;", varIdx(ui_apply));
+    webSend(ui_buf);
+    webSend("window.seva=function(v,i){d=(i==s)?0:1;return o(v,i)};");
+    // Reload / close / back: browsers show their own generic wording here and
+    // ignore any text we pass, so this is only the backstop.
+    webSend("addEventListener('beforeunload',function(e){if(d){e.preventDefault();e.returnValue=''}});");
+    // In-page navigation is ours to handle, so here the short text shows.
+    if (ui_de) webSend("var m='Nicht gespeichert. Trotzdem verlassen?';");
+    else       webSend("var m='Unsaved changes. Leave anyway?';");
+    webSend("addEventListener('click',function(e){if(!d)return;var t=e.target.closest('a[href],button');if(!t)return;");
+    webSend("var h=t.getAttribute('onclick')||'';if(/seva|tcbtn|siva|sivat|pr\\(/.test(h))return;");
+    webSend("if(confirm(m)){d=0}else{e.preventDefault();e.stopPropagation()}},true)})();</script>");
+}
+
 // Language picker. Belongs at the top of the settings page.
 void uiLang() {
     if (ui_de) {

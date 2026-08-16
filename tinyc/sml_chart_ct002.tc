@@ -15,10 +15,11 @@ char sml_vers[] = "16.08.2026";
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int sml_pv;          // 1 = show feed-in rows and charts
 
+int sml_e_pv; int sml_e_sndpwr;   // edit buffer, applied by Save
+
 // ─── Transient WebButton flags ─────────────────────────────────────────────
 int do_init;
 int do_init2;
-int do_save;
 int do_reset;
 
 // ─── Callbacks ─────────────────────────────────────────────────────────────
@@ -29,6 +30,8 @@ void Every100ms() {
 }
 
 void EverySecond() {
+    uiApplyBegin();
+    if (ui_applying) { sml_pv = sml_e_pv; sml_sndpwr = sml_e_sndpwr; }
     sml_descriptor_apply();
     ctTick();
     mbTick();
@@ -51,12 +54,6 @@ void EverySecond() {
         sml_chart_pv_init_columns();
         do_init2 = 0;
     }
-    if (do_save) {
-        sml_chart_save();
-        sml_chart_pv_save();
-        do_save = 0;
-    }
-
     sml_t1 = sml_t1 - 1;
     if (sml_t1 <= 0) {
         sml_t1 = 5;
@@ -140,31 +137,25 @@ void WebPage() {
 void WebUI() {
     if (webPage() != 0) return;
     sml_render_settings_panel();
-    uiLang();
     ctPanel();
 
     uiHead("&#x2600;&#xFE0F;", "PV", "PV", "sml/#pv");
-    if (ui_de) webCheckbox(sml_pv, "Einspeisung anzeigen");
-    else       webCheckbox(sml_pv, "Show feed-in");
+    if (ui_de) webCheckbox(sml_e_pv, "Einspeisung anzeigen");
+    else       webCheckbox(sml_e_pv, "Show feed-in");
 
     uiHead("&#x1F527;", "Telemetry", "Telemetrie", "sml/#telemetry");
-    if (ui_de) webCheckbox(sml_sndpwr, "Gemittelte Leistung senden");
-    else       webCheckbox(sml_sndpwr, "Publish smoothed power");
-    if (sml_sndpwr > 0) {
+    if (ui_de) webCheckbox(sml_e_sndpwr, "Gemittelte Leistung senden");
+    else       webCheckbox(sml_e_sndpwr, "Publish smoothed power");
+    if (sml_e_sndpwr > 0) {
         webSend("<div style='font-size:12px;color:#444'>MQTT: power2 + cpwr &middot; HTTP: <a href='/pwr'>/pwr</a></div>");
     }
     mbPanel();
 
     sml_chart_data_panel(varIdx(do_init), varIdx(do_init2));
-    if (ui_de) {
-        webButton(do_save,  "Diagrammdaten speichern|gespeichert");
-        webSend("<hr>");
-        webButton(do_reset, "SML neu laden|neu geladen");
-    } else {
-        webButton(do_save,  "Save chart data|saved");
-        webSend("<hr>");
-        webButton(do_reset, "Restart SML|restarted");
-    }
+    webSend("<hr>");
+    uiSaveButton();
+    if (ui_de) webButton(do_reset, "SML neu laden|neu geladen");
+    else       webButton(do_reset, "Restart SML|restarted");
 
     sprintf(sml_buf, "<hr><div style='text-align:center;font-size:10px;color:#555;line-height:1.5'>sml_chart_ct002.tc &middot; Version %s<br>", sml_vers);
     webSend(sml_buf);
@@ -189,6 +180,8 @@ int main() {
     if (sml_da == 0) sml_da = 1;
     if (sml_activ != tasm_rule) tasm_rule = sml_activ;
 
+    sml_e_pv = sml_pv;
+    sml_e_sndpwr = sml_sndpwr;
     sml_chart_load();
     sml_chart_pv_load();
 

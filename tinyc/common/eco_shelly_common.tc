@@ -17,6 +17,29 @@ persist int es_tweak;       // regulator shaping 0/1
 persist int es_force;       // Shelly: push UDP even without a request
 persist int es_throttle;    // update rate [s]
 
+// ─── Edit buffer ───────────────────────────────────────────────────────────
+// The panel writes here; Save copies it onto the settings above.
+int es_e_mode; int es_e_port; int es_e_offset;
+int es_e_tweak; int es_e_force; int es_e_throttle;
+
+void esCommit() {
+    es_mode = es_e_mode;
+    es_port = es_e_port;
+    es_offset = es_e_offset;
+    es_tweak = es_e_tweak;
+    es_force = es_e_force;
+    es_throttle = es_e_throttle;
+    if (es_throttle < 1) es_throttle = 1;
+}
+void esEditLoad() {
+    es_e_mode = es_mode;
+    es_e_port = es_port;
+    es_e_offset = es_offset;
+    es_e_tweak = es_tweak;
+    es_e_force = es_force;
+    es_e_throttle = es_throttle;
+}
+
 // ─── Runtime ───────────────────────────────────────────────────────────────
 float es_cpwr;              // power handed to the battery [W]
 float es_avg;               // heavily smoothed (EcoTracker powerAvg)
@@ -68,6 +91,7 @@ void esInit(int w1, int w2, int w3) {
     es_avg  = 0.0;
     if (es_throttle < 1) es_throttle = 1;
 
+    esEditLoad();
     tasmInfo(1, es_mac);        // hex without colons - but UPPERCASE, while a
     strToLower(es_mac);         // real Shelly reports its src in lowercase
     es_w1 = w1; es_w2 = w2; es_w3 = w3;
@@ -112,6 +136,7 @@ void esPoll() {
 
 // From EverySecond().
 void esTick() {
+    if (ui_applying) esCommit();
     if (tasm_wifi == 1) {
         // Register once and ignore the result: mdnsRegister returns -1 while
         // Tasmota's own discovery holds the responder, and retrying every
@@ -200,24 +225,24 @@ void esPanel() {
 
     uiHead("&#x1F50C;", "Emulation", "Emulation", "eco_shelly/#mode");
     if (ui_de) {
-        webPulldown(es_mode, "Modus (Neustart)", "EcoTracker|Shelly Pro 3EM");
-        if (es_mode == 1) webPulldown(es_port, "UDP-Port", "1010|2220 (B2500)");
+        webPulldown(es_e_mode, "Modus (Neustart)", "EcoTracker|Shelly Pro 3EM");
+        if (es_e_mode == 1) webPulldown(es_e_port, "UDP-Port", "1010|2220 (B2500)");
     } else {
-        webPulldown(es_mode, "Mode (restart)", "EcoTracker|Shelly Pro 3EM");
-        if (es_mode == 1) webPulldown(es_port, "UDP port", "1010|2220 (B2500)");
+        webPulldown(es_e_mode, "Mode (restart)", "EcoTracker|Shelly Pro 3EM");
+        if (es_e_mode == 1) webPulldown(es_e_port, "UDP port", "1010|2220 (B2500)");
     }
 
     uiHead("&#x1F50B;", "Battery", "Akku", "eco_shelly/#battery");
     if (ui_de) {
-        webNumber(es_offset, -200, 200, "Offset [W]");
-        webCheckbox(es_tweak, "Regleroptimierung");
-        webNumber(es_throttle, 1, 60, "Update-Rate [s]");
-        if (es_mode == 1) webCheckbox(es_force, "Senden erzwingen");
+        webNumber(es_e_offset, -200, 200, "Offset [W]");
+        webCheckbox(es_e_tweak, "Regleroptimierung");
+        webNumber(es_e_throttle, 1, 60, "Update-Rate [s]");
+        if (es_e_mode == 1) webCheckbox(es_e_force, "Senden erzwingen");
     } else {
-        webNumber(es_offset, -200, 200, "Offset [W]");
-        webCheckbox(es_tweak, "Regulator tweak");
-        webNumber(es_throttle, 1, 60, "Update rate [s]");
-        if (es_mode == 1) webCheckbox(es_force, "Force sending");
+        webNumber(es_e_offset, -200, 200, "Offset [W]");
+        webCheckbox(es_e_tweak, "Regulator tweak");
+        webNumber(es_e_throttle, 1, 60, "Update rate [s]");
+        if (es_e_mode == 1) webCheckbox(es_e_force, "Force sending");
     }
 }
 

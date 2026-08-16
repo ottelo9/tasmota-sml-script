@@ -25,17 +25,28 @@ int  sml_drv_init;              // 0 until the display option was applied once
 // Idempotent: zero file IO when nothing changed; smlApplyPins itself
 // only rewrites /sml_meter.def when a substituted value differs.
 // ============================================================================
+// Driver rows on/off. Bit 2 drops the driver's own sensor block (it puts the
+// meter name in front of every value), bit 0 keeps the SENSOR JSON. The
+// script renders the values itself.
+void sml_apply_drvrows() {
+    if (sml_drvrows > 0) {
+        smlSetOptions(0x101);       // 0x100 = write-enable, bit 0 = JSON
+    } else {
+        smlSetOptions(0x105);       // + bit 2 = no driver rows
+    }
+}
+
 void sml_descriptor_apply() {
-    // Driver rows on/off. Bit 2 drops the driver's own sensor block (it puts
-    // the meter name in front of every value), bit 0 keeps the SENSOR JSON.
-    // The script renders the values itself.
-    if (changed(sml_drvrows) || sml_drv_init == 0) {
+    // Once at startup: the driver's default is to show its own rows.
+    if (sml_drv_init == 0) {
         sml_drv_init = 1;
-        if (sml_drvrows > 0) {
-            smlSetOptions(0x101);   // 0x100 = write-enable, bit 0 = JSON
-        } else {
-            smlSetOptions(0x105);   // + bit 2 = no driver rows
-        }
+        sml_apply_drvrows();
+        snapshot(sml_drvrows);
+    }
+    if (ui_applying == 0) return;   // everything below waits for Save
+
+    if (changed(sml_drvrows)) {
+        sml_apply_drvrows();
         snapshot(sml_drvrows);
     }
 
@@ -59,22 +70,16 @@ void sml_descriptor_apply() {
         tasmCmd("Sensor53 r", sml_buf);
         // A driver restart resets sml_options to its default, so the display
         // choice has to be applied again afterwards.
-        if (sml_drvrows > 0) {
-            smlSetOptions(0x101);   // 0x100 = write-enable, bit 0 = JSON
-        } else {
-            smlSetOptions(0x105);   // + bit 2 = no driver rows
-        }
-        // Persist the new pins/filter/activ NOW. TinyC only auto-saves persist
-        // vars at slot-stop; a main()-only SML slot (sml_simple / deye / charts)
-        // stops right after main(), so a UI pin/activ change made while it runs
-        // would otherwise never reach flash and be lost on the next reboot
-        // (slot would come back with -1/-1 pins and SML deactivated).
-        saveVars();
+        sml_apply_drvrows();
     }
     if (meter_changed) {
         snapshot(sml_meter_sel);
         smlScripterLoad("/sml_meter.def");
     }
+    // Save always writes: TinyC only auto-saves persist vars at slot-stop, and
+    // a main()-only slot stops right after main() - a change made while it runs
+    // would otherwise never reach flash.
+    saveVars();
 }
 
 // ============================================================================
@@ -87,6 +92,7 @@ void sml_render_settings_panel() {
     webSend("<style>.sml-p{max-width:340px;margin:12px auto;background:#f0f0f0;color:#000;padding:16px;border:2px solid #ccc;border-radius:6px;text-align:left}.sml-p h3{margin:0 0 8px}.sml-p hr{border:0;border-top:1px solid #bbb;margin:12px 0}.sml-p b{display:inline-block;margin-bottom:4px;font-size:13px}.sml-p div{margin:6px 0}.sml-p .hint{font-size:9px;color:#555;line-height:1.4}</style>");
     if (ui_de) webSend("<div class='sml-p'><h3>&#x26A1; SML-Zähler</h3>");
     else       webSend("<div class='sml-p'><h3>&#x26A1; SML meter</h3>");
+    uiLang();                       // topmost - it relabels everything below
     int up_d = tasm_uptime / 86400;
     int up_h = (tasm_uptime / 3600) % 24;
     int up_m = (tasm_uptime / 60) % 60;

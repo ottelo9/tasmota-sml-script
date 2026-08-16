@@ -37,6 +37,7 @@ th{background:var(--code);font-weight:600;white-space:nowrap}
 footer{color:var(--mut);font-size:13px;text-align:center;margin-top:26px}
 footer a{color:var(--accent)}
 footer .dis{font-size:12px;line-height:1.45;max-width:560px;margin:12px auto 0;opacity:.85}
+.sw{display:inline-block;background:var(--code);border:1px solid var(--line);border-radius:4px;padding:0 6px;font:600 .8em/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.06em;vertical-align:baseline}
 body.lang-en .de{display:none}
 body.lang-de .en{display:none}
 </style>
@@ -132,8 +133,8 @@ body.lang-de .en{display:none}
 <div class="en">
 <table>
 <tr><th>Offset [W]</th><td>Target grid power instead of zero. A small positive value keeps you slightly on the import side so nothing is fed back. Applied <b>per phase</b>, because each battery regulates its own phase &mdash; with three batteries on three phases the household total ends up at three times the value.</td></tr>
-<tr><th>Regulator tweak</th><td>Scales the deviation before it is sent: divided by 4 above the offset, by 0.8 below it. Damps overshoot on import, reacts faster on export. Off is the honest reading of the meter.</td></tr>
-<tr><th>3 phases</th><td>On: L1/L2/L3 come from the meter individually (not all meter supports this). Off: the total goes onto L1 and B/C stay at 0 &mdash; then set every battery to phase A or D, otherwise a battery on B or C would read 0&nbsp;W forever.</td></tr>
+<tr><th>Regulator tweak</th><td>Scales the deviation before it is sent: divided by 4 above the offset, by 0.8 below it. Damps overshoot on import, reacts faster on export. <span class="sw">OFF</span> is the honest reading of the meter.</td></tr>
+<tr><th>3 phases</th><td><span class="sw">ON</span>: L1/L2/L3 come from the meter individually (not all meter supports this). <span class="sw">OFF</span>: the total goes onto L1 and B/C stay at 0 &mdash; then set every battery to phase A or D, otherwise a battery on B or C would read 0&nbsp;W forever.</td></tr>
 </table>
 <h3>Phase selection</h3>
 <p>The phase is set on the battery, in the Marstek app &mdash; not here:</p>
@@ -147,7 +148,7 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>Offset [W]</th><td>Zielwert am Netz statt null. Ein kleiner positiver Wert hält dich knapp über der Bezugsseite, damit nichts eingespeist wird. Wirkt <b>pro Phase</b>, weil jeder Akku seine eigene Phase regelt &mdash; bei drei Akkus auf drei Phasen liegt der Hausanschluss am Ende beim Dreifachen.</td></tr>
 <tr><th>Regulator tweak</th><td>Skaliert die Abweichung vor dem Senden: oberhalb des Offsets geteilt durch 4, unterhalb durch 0,8. Dämpft Überschwingen beim Bezug, reagiert schneller bei Einspeisung.</td></tr>
-<tr><th>3 phases</th><td>Ein: L1/L2/L3 kommen einzeln vom Zähler (nicht alle Stromzähler unterstützten das). Aus: die Gesamtleistung liegt auf L1, B und C bleiben 0 &mdash; dann alle Akkus auf Phase A oder D stellen, sonst liest ein Akku auf B oder C dauerhaft 0&nbsp;W.</td></tr>
+<tr><th>3 phases</th><td><span class="sw">EIN</span>: L1/L2/L3 kommen einzeln vom Zähler (nicht alle Stromzähler unterstützten das). <span class="sw">AUS</span>: die Gesamtleistung liegt auf L1, B und C bleiben 0 &mdash; dann alle Akkus auf Phase A oder D stellen, sonst liest ein Akku auf B oder C dauerhaft 0&nbsp;W.</td></tr>
 </table>
 <h3>Phasenwahl</h3>
 <p>Die Phase wird am Akku eingestellt, in der Marstek-App &mdash; nicht hier:</p>
