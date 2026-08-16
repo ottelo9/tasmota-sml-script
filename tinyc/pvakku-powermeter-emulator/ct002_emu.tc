@@ -36,6 +36,7 @@ persist int  ctrlopt;          // regulator shaping 0/1 (as in the .tas scripts)
 persist int  ph3;              // 1 = per-phase values from smlGet(4/5/6)
 persist char ct_mac[16];       // CT MAC, 12 hex lowercase. Empty = answer all
 persist char mk_mail[64];      // Marstek account mail (registration only)
+persist int  sndpwr;           // 1 = publish power via MQTT and serve /pwr
 persist watch int sml_activ;   // SML enable (mirrors tasm_rule)
 persist watch int meter_sel;   // SML descriptor picker
 persist watch int rx_pin;      // SML serial RX (-1 = unset)
@@ -61,6 +62,14 @@ int  g_cx; int g_cA; int g_cB; int g_cC; int g_cD;    // charge    (< 0)
 int  g_dx; int g_dA; int g_dB; int g_dC; int g_dD;    // discharge (> 0)
 int  once_udp;                       // UDP socket bound once
 int  rx_cnt; int tx_cnt; int bad_cnt;
+
+// Telemetry: power2 is the heavily smoothed grid power a second battery polls
+// over HTTP (opendtu-onbattery DPL), cpwr is what this CT hands the batteries.
+float power2;
+int   pwr_last;                      // tasm_uptime of the last 5 s tick
+char  mtopic[64];                    // own MQTT topic
+char  pubtop[96];
+char  pubval[32];
 char hexd[] = "0123456789abcdef";
 char cttype[8];                      // "HME-4" or "HME-3"
 
@@ -623,6 +632,21 @@ void EverySecond() {
     slotAge();
     strToLower(ct_mac);          // the web field may have been typed in upper case
 
+    // ── telemetry, same 5 s raster and EMA as the .tas scripts ──
+    if (tasm_uptime - pwr_last >= 5) {
+        pwr_last = tasm_uptime;
+        power2 = (0.9 * power2) + (0.1 * smlGet(1));
+        // Via Tasmota's Publish command, not mqttPublish: that one wants a
+        // string literal for the topic, and the topic carries the device name.
+        // Same path the .tas scripts take with =>publish.
+        if (sndpwr > 0) {
+            sprintf(pubtop, "Publish stat/%s/script/power2 %.0f", mtopic, power2);
+            tasmCmd(pubtop, pubval);
+            sprintf(pubtop, "Publish stat/%s/script/cpwr %d", mtopic, ptot);
+            tasmCmd(pubtop, pubval);
+        }
+    }
+
     // Drop the cached password once it is stale
     if (strlen(mk_pass) > 0 && reg_busy == 0) {
         if (millis() - pass_ts > 600000) {
@@ -731,6 +755,15 @@ void WebUI() {
         webCheckbox(smlfo, "Median filter");
 
         webSend("<hr>");
+        sprintf(scanb, "<b>&#x1F4E1; Telemetry</b>%s#telemetry'>&#x2139;&#xFE0F;</a>", helpa);
+        webSend(scanb);
+        webCheckbox(sndpwr, "Publish power");
+        if (sndpwr > 0) {
+            sprintf(scanb, "<div style='font-size:12px;color:#444'>MQTT: stat/%s/script/power2 + /cpwr<br>HTTP: <a href='/pwr'>/pwr</a></div>", mtopic);
+            webSend(scanb);
+        }
+
+        webSend("<hr>");
         sprintf(scanb, "<b>&#x2601;&#xFE0F; Marstek</b>%s#marstek'>&#x2139;&#xFE0F;</a>", helpa);
         webSend(scanb);
         // Login and CT MAC live on /ctreg, not here: this block re-renders
@@ -754,7 +787,23 @@ void WebUI() {
 //
 // webOn endpoints only work in slot 0.
 void WebOn() {
-    if (webHandler() != 4) return;
+    int h = webHandler();
+
+    // /pwr - JSON for a second battery polling over HTTP, and for HA.
+    if (h == 1) {
+        if (sndpwr > 0) {
+            sprintf(scanb, "{\"power2\":%.0f", power2);
+            sprintfAppend(scanb, ",\"cpwr\":%d", ptot);
+            sprintfAppend(scanb, ",\"L1\":%d", pa);
+            sprintfAppend(scanb, ",\"L2\":%d", pb);
+            sprintfAppend(scanb, ",\"L3\":%d}", pc);
+        } else {
+            strcpy(scanb, "{\"enabled\":0}");
+        }
+        webSend(scanb);
+        return;
+    }
+    if (h != 4) return;
 
     char a[96];
 
@@ -931,8 +980,11 @@ void JsonCall() {
     for (i = 0; i < NSLOT; i = i + 1) {
         if (s_used[i] == 1) live = live + 1;
     }
-    sprintf(scanb, ",\"CT002\":{\"L1\":%d,\"L2\":%d,\"L3\":%d", pa, pb, pc);
-    sprintfAppend(scanb, ",\"Total\":%d,\"Slaves\":%d}", ptot, live);
+    // "Power" (not "Total"): Home Assistant's Tasmota integration maps key
+    // names, and "Total" is its energy key - the watts showed up as kWh.
+    sprintf(scanb, ",\"CT002\":{\"Power\":%d", ptot);
+    sprintfAppend(scanb, ",\"L1\":%d,\"L2\":%d,\"L3\":%d", pa, pb, pc);
+    sprintfAppend(scanb, ",\"Slaves\":%d}", live);
     responseAppend(scanb);
 }
 
@@ -980,6 +1032,10 @@ int main() {
     webPageLabel(0, "CT emulator");
     webPageLabel(1, "");        // clear the old page - labels survive a slot restart
     webOn(4, "/ctreg");         // own page, see WebOn() - slot 0 only
+    webOn(1, "/pwr");           // telemetry JSON
+    tasmInfo(0, mtopic);        // MQTT topic for the publish paths
+    power2 = smlGet(1);         // start the EMA at the current reading
+    pwr_last = 0;
 
     smlScripterLoad("/sml_meter.def");
 

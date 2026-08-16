@@ -59,6 +59,7 @@ body.lang-de .en{display:none}
   <a href="#ct">CT</a>
   <a href="#battery"><span class="en">Battery</span><span class="de">Akku</span></a>
   <a href="#meter"><span class="en">Meter</span><span class="de">Zähler</span></a>
+  <a href="#telemetry"><span class="en">Telemetry</span><span class="de">Telemetrie</span></a>
   <a href="#marstek"><span class="en">Marstek account</span><span class="de">Marstek-Konto</span></a>
   <a href="#console"><span class="en">Console</span><span class="de">Konsole</span></a>
   <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
@@ -177,6 +178,34 @@ body.lang-de .en{display:none}
 <tr><th>Median filter</th><td>Glättet einzelne Ausreißer, kostet aber Reaktionszeit &mdash; für Nulleinspeisung besser aus lassen, die Akkus filtern selbst.</td></tr>
 </table>
 <p>Die Reihenfolge der Werte zählt: <code>1</code> Leistung, <code>2</code> Bezug, <code>3</code> Einspeisung, <code>4/5/6</code> die drei Phasenleistungen. Nur Zähler, die Einzelphasen liefern, können die Option <b>3 phases</b> bedienen.</p>
+</div>
+</section>
+
+<section id="telemetry">
+<h2><span class="en">Telemetry</span><span class="de">Telemetrie</span></h2>
+<div class="en">
+<p><b>Publish power</b> hands two values to the outside: <code>power2</code>, the heavily smoothed grid power, and <code>cpwr</code>, what this CT reports to the batteries. Both go out over MQTT every 5&nbsp;s and are served as JSON.</p>
+<h3>MQTT</h3>
+<pre><code>stat/&lt;topic&gt;/script/power2
+stat/&lt;topic&gt;/script/cpwr</code></pre>
+<p>Same topics the <code>.tas</code> emulators use, so existing Home Assistant sensors keep working unchanged.</p>
+<h3>HTTP</h3>
+<pre><code>http://&lt;ip&gt;/pwr
+{"power2":-694,"cpwr":-620,"L1":-620,"L2":0,"L3":0}</code></pre>
+<p>For a second battery that polls a meter over HTTP (e.g. opendtu-onbattery DPL): enter that URL and use the JSON path <code>power2</code>. No password parameter needed. With the checkbox off the endpoint answers <code>{"enabled":0}</code> and nothing is published.</p>
+<p><code>power2</code> is an exponential average, <code>0.9&nbsp;&times;&nbsp;old + 0.1&nbsp;&times;&nbsp;reading</code> every 5&nbsp;s &mdash; about a 50&nbsp;s time constant. It is meant for a slow consumer that must not chase every spike; use <code>cpwr</code> or <code>L1..L3</code> if you want the live value.</p>
+</div>
+<div class="de">
+<p><b>Publish power</b> gibt zwei Werte nach au&szlig;en: <code>power2</code>, die stark gegl&auml;ttete Netzleistung, und <code>cpwr</code>, das was dieses CT den Akkus meldet. Beide gehen alle 5&nbsp;s per MQTT raus und stehen als JSON bereit.</p>
+<h3>MQTT</h3>
+<pre><code>stat/&lt;topic&gt;/script/power2
+stat/&lt;topic&gt;/script/cpwr</code></pre>
+<p>Dieselben Topics wie in den <code>.tas</code>-Emulatoren, vorhandene Home-Assistant-Sensoren laufen also unver&auml;ndert weiter.</p>
+<h3>HTTP</h3>
+<pre><code>http://&lt;ip&gt;/pwr
+{"power2":-694,"cpwr":-620,"L1":-620,"L2":0,"L3":0}</code></pre>
+<p>F&uuml;r einen zweiten Akku, der einen Z&auml;hler per HTTP abfragt (z.&nbsp;B. opendtu-onbattery DPL): diese URL eintragen und als JSON-Pfad <code>power2</code> verwenden. Ohne Passwort-Parameter. Ist die Checkbox aus, antwortet der Endpunkt <code>{"enabled":0}</code> und es wird nichts publiziert.</p>
+<p><code>power2</code> ist ein exponentieller Mittelwert, <code>0,9&nbsp;&times;&nbsp;alt + 0,1&nbsp;&times;&nbsp;Messwert</code> alle 5&nbsp;s &mdash; rund 50&nbsp;s Zeitkonstante. Gedacht f&uuml;r einen tr&auml;gen Verbraucher, der nicht jeder Spitze hinterherlaufen soll; wer den Live-Wert will, nimmt <code>cpwr</code> oder <code>L1..L3</code>.</p>
 </div>
 </section>
 
