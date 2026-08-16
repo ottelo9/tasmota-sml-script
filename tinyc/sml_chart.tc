@@ -5,7 +5,7 @@
 // Docs: https://ottelo9.github.io/tasmota-sml-script/sml/
 // Needs ESP32, TinyC in slot 0 (for /pwr), USE_SML.
 
-#include "sml_chart_pv_common.tc"
+#include "sml_chart_common.tc"
 #include "sml_modbus_common.tc"
 
 char sml_vers[] = "16.08.2026";

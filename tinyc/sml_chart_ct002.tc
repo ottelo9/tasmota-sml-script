@@ -6,7 +6,7 @@
 // there - Tasmota dispatches every webOn to slot 0), USE_SML.
 
 #include "ui_common.tc"
-#include "sml_chart_pv_common.tc"
+#include "sml_chart_common.tc"
 #include "sml_modbus_common.tc"
 #include "ct002_common.tc"
 

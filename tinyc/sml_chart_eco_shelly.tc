@@ -5,7 +5,7 @@
 // Needs ESP32, TinyC in SLOT 0 (Tasmota dispatches every webOn to slot 0),
 // USE_SML.
 
-#include "sml_chart_pv_common.tc"
+#include "sml_chart_common.tc"
 #include "sml_modbus_common.tc"
 #include "eco_shelly_common.tc"
 

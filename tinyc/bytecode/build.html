@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TinyC Batch-Build</title>
+<style>
+:root{--bg:#f7f7f8;--fg:#1c1c1e;--mut:#5b5b60;--card:#fff;--line:#dcdce0;--accent:#0a6ebd;--ok:#1a7f37;--err:#b3261e;--code:#f0f0f2}
+@media (prefers-color-scheme:dark){
+:root{--bg:#17171a;--fg:#e9e9ec;--mut:#a1a1a8;--card:#1f1f23;--line:#33333a;--accent:#5ab0f0;--ok:#4ac26b;--err:#f2705f;--code:#26262b}
+}
+*{box-sizing:border-box}
+body{margin:0;padding:24px 16px 64px;background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:820px;margin:0 auto}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--mut);font-size:14px;margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:0 0 14px}
+button{font:inherit;padding:8px 16px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:6px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button:disabled{opacity:.45;cursor:default}
+label.opt{display:block;margin:6px 0;font-size:14px}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace}
+table{border-collapse:collapse;width:100%;margin:12px 0 0;font-size:14px}
+th,td{border:1px solid var(--line);padding:6px 9px;text-align:left}
+th{background:var(--code);font-weight:600}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.ok{color:var(--ok)}.err{color:var(--err)}
+#log{white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--mut);margin-top:12px;max-height:220px;overflow:auto}
+.step{color:var(--mut);font-size:13px;margin:0 0 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>TinyC Batch-Build</h1>
+<p class="sub">Kompiliert alle Programme in <code>tinyc/</code> nach <code>tinyc/bytecode/</code></p>
+
+<div class="card">
+  <p class="step">Ordner <code>tinyc</code> wählen — nicht <code>bytecode</code>, sonst fehlen Programme und <code>common/</code>.
+  Schreibrecht bestätigen. Die <code>tinyc_ide.html</code> wird in <code>bytecode/</code> erwartet und sonst abgefragt.
+  Der Ordner wird gemerkt; beim nächsten Mal genügt ein Klick.</p>
+  <button id="pick" class="primary">Ordner wählen …</button>
+  <button id="pickOther" style="display:none">Anderer Ordner …</button>
+  <span id="picked" class="sub"></span>
+</div>
+
+<div class="card">
+  <label class="opt"><input type="checkbox" id="optTcb" checked> <b>.tcb</b> schreiben — fertiger Bytecode</label>
+  <label class="opt"><input type="checkbox" id="optIndex" checked> <b>index.txt</b> schreiben — Dateiliste für die Repository-Box auf der TinyC-Seite</label>
+  <button id="build" class="primary" disabled>Build</button>
+</div>
+
+<div class="card" id="resultCard" style="display:none">
+  <div id="result"></div>
+  <div id="log"></div>
+</div>
+
+<script>
+let dirHandle = null, ideText = null;
+
+const $ = (id) => document.getElementById(id);
+const log = (s) => { $('log').textContent += s + '\n'; $('log').scrollTop = 1e9; };
+
+// Den gewählten Ordner merken. Ein Handle überlebt in IndexedDB, ein Pfad
+// liesse sich gar nicht speichern - der Browser gibt ihn nie heraus.
+const DB_NAME = 'tinycBuild', DB_STORE = 'handles', DB_KEY = 'root';
+let savedHandle = null;
+
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(DB_STORE);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function handleSave(h) {
+  try {
+    const db = await idbOpen();
+    await new Promise((res, rej) => {
+      const t = db.transaction(DB_STORE, 'readwrite');
+      t.objectStore(DB_STORE).put(h, DB_KEY);
+      t.oncomplete = res; t.onerror = () => rej(t.error);
+    });
+  } catch (e) { /* ohne Merken geht es auch, nur unbequemer */ }
+}
+async function handleLoad() {
+  try {
+    const db = await idbOpen();
+    return await new Promise((res, rej) => {
+      const t = db.transaction(DB_STORE, 'readonly');
+      const q = t.objectStore(DB_STORE).get(DB_KEY);
+      q.onsuccess = () => res(q.result || null);
+      q.onerror = () => rej(q.error);
+    });
+  } catch (e) { return null; }
+}
+
+// IDE holen und die Auswahl übernehmen. Gibt 1 zurück, wenn alles steht.
+async function useDir(h) {
+  dirHandle = h;
+  // IDE erst in bytecode/ suchen (dort liegt sie neben dieser Seite), dann im
+  // gewählten Ordner, sonst separat fragen.
+  ideText = null;
+  let ideFrom = null;
+  for (const sub of ['bytecode', null]) {
+    try {
+      const d = sub ? await dirHandle.getDirectoryHandle(sub) : dirHandle;
+      const h = await d.getFileHandle('tinyc_ide.html');
+      ideText = await (await h.getFile()).text();
+      ideFrom = (sub ? sub + '/' : '') + 'tinyc_ide.html';
+      break;
+    } catch (e) { /* weiter suchen */ }
+  }
+  if (ideText) {
+    $('picked').textContent = ' ' + dirHandle.name + '/ — IDE: ' + ideFrom;
+  } else {
+    try {
+      const [fh] = await window.showOpenFilePicker({
+        types: [{ description: 'TinyC IDE', accept: { 'text/html': ['.html'] } }]
+      });
+      ideText = await (await fh.getFile()).text();
+      $('picked').textContent = ' ' + dirHandle.name + '/ — IDE: ' + fh.name;
+    } catch (e2) { $('picked').textContent = ' ' + dirHandle.name + '/ — keine IDE gewählt'; return 0; }
+  }
+  $('build').disabled = false;
+  return 1;
+}
+
+// Picker öffnen. startIn + id lassen ihn im zuletzt benutzten Ordner aufgehen
+// statt irgendwo; id merkt sich das auch über einen Neustart hinweg.
+async function pickDir() {
+  if (!window.showDirectoryPicker) {
+    alert('Dieser Browser kann keine Ordner beschreiben.\nChrome oder Edge verwenden (File System Access API).');
+    return;
+  }
+  const opts = { mode: 'readwrite', id: 'tinycRoot' };
+  if (savedHandle) opts.startIn = savedHandle;
+  let h;
+  try { h = await window.showDirectoryPicker(opts); } catch (e) { return; }   // abgebrochen
+  if (await useDir(h)) { savedHandle = h; await handleSave(h); $('pickOther').style.display = ''; }
+}
+
+$('pickOther').onclick = pickDir;
+
+$('pick').onclick = async () => {
+  // Gemerkter Ordner: nur die Freigabe erneuern, das ist ein kleiner Dialog
+  // statt des ganzen Pickers.
+  if (savedHandle) {
+    let p = await savedHandle.queryPermission({ mode: 'readwrite' });
+    if (p !== 'granted') p = await savedHandle.requestPermission({ mode: 'readwrite' });
+    if (p === 'granted') { await useDir(savedHandle); return; }
+  }
+  await pickDir();
+};
+
+// Beim Laden: gemerkten Ordner holen. Ist die Freigabe noch gültig, steht
+// alles ohne Klick bereit - sonst wartet der Knopf.
+(async () => {
+  savedHandle = await handleLoad();
+  if (!savedHandle) return;
+  $('pick').textContent = 'Ordner freigeben: ' + savedHandle.name;
+  $('pickOther').style.display = '';
+  if (await savedHandle.queryPermission({ mode: 'readwrite' }) === 'granted') {
+    await useDir(savedHandle);
+  } else {
+    $('picked').textContent = ' zuletzt: ' + savedHandle.name + '/ — Freigabe bestätigen';
+  }
+})();
+
+// Compiler aus der IDE holen. Deren Script ist ein einziger Block mit UI-Code;
+// der wirft ohne IDE-DOM, aber Funktionsdeklarationen sind vorher gehoistet.
+function loadCompiler(html) {
+  const m = html.match(/<script>([\s\S]*)<\/script>\s*<\/body>/);
+  if (!m) throw new Error('Script-Block in der IDE nicht gefunden');
+  const f = document.createElement('iframe');
+  f.style.display = 'none';
+  document.body.appendChild(f);
+  try { f.contentWindow.eval(m[1]); } catch (e) { /* UI-Init braucht das IDE-DOM */ }
+  const w = f.contentWindow;
+  if (typeof w.compile !== 'function' || typeof w.resolveIncludes !== 'function') {
+    throw new Error('compile/resolveIncludes nicht gefunden — IDE-Version zu alt?');
+  }
+  return w;
+}
+
+async function readTcFiles(handle) {
+  const out = {};
+  for await (const [name, h] of handle.entries()) {
+    if (h.kind === 'file' && name.endsWith('.tc')) out[name] = await (await h.getFile()).text();
+  }
+  return out;
+}
+
+$('build').onclick = async () => {
+  $('build').disabled = true;
+  $('resultCard').style.display = 'block';
+  $('result').innerHTML = '';
+  $('log').textContent = '';
+
+  const wantTcb = $('optTcb').checked, wantIndex = $('optIndex').checked;
+  if (!wantTcb) { alert('Nichts ausgewählt.'); $('build').disabled = false; return; }
+
+  let w;
+  try { w = loadCompiler(ideText); }
+  catch (e) { $('result').innerHTML = '<span class="err">' + e.message + '</span>'; $('build').disabled = false; return; }
+  log('Compiler geladen.');
+
+  const progs = await readTcFiles(dirHandle);
+  let blocks = {};
+  try {
+    blocks = await readTcFiles(await dirHandle.getDirectoryHandle('common'));
+    log('Bausteine aus common/: ' + Object.keys(blocks).length);
+  } catch (e) { log('Kein common/ gefunden — nur Dateien aus dem Hauptordner.'); }
+
+  // Auflösung wie in der IDE: Nachschlagen über den reinen Dateinamen.
+  const all = Object.assign({}, blocks, progs);
+  const get = (n) => {
+    const k = n.replace(/^.*[\/\\]/, '').replace(/^\/+/, '');
+    if (all[k] == null) throw new Error('Include "' + k + '" nicht gefunden');
+    return all[k];
+  };
+
+  const outDir = await dirHandle.getDirectoryHandle('bytecode', { create: true });
+  const write = async (name, data) => {
+    const fh = await outDir.getFileHandle(name, { create: true });
+    const s = await fh.createWritable();
+    await s.write(data);
+    await s.close();
+  };
+
+  const names = Object.keys(progs).sort();
+  const rows = [], built = [];
+  let ok = 0, failed = 0, skipped = 0;
+
+  for (const name of names) {
+    const src = progs[name];
+    // Bausteine haben kein main() - die werden eingebunden, nicht gebaut.
+    if (!/^\s*int\s+main\s*\(/m.test(src)) { skipped++; log('übersprungen (kein main): ' + name); continue; }
+    const base = name.replace(/\.tc$/, '');
+    try {
+      const r = w.compile(w.resolveIncludes(src, get));
+      if (r.error) throw new Error(r.error);
+      await write(base + '.tcb', r.binary);
+      built.push(base + '.tcb');
+      rows.push('<tr><td>' + name + '</td><td class="num">' + r.binary.length.toLocaleString('de-DE') +
+                '</td><td class="ok">ok</td></tr>');
+      log('ok: ' + base + '.tcb (' + r.binary.length + ' B)');
+      ok++;
+    } catch (e) {
+      rows.push('<tr><td>' + name + '</td><td class="num">–</td><td class="err">' + e.message + '</td></tr>');
+      log('FEHLER ' + name + ': ' + e.message);
+      failed++;
+    }
+  }
+
+  // Die Repository-Box liest index.txt: eine Datei pro Zeile, nur .tcb zaehlen.
+  // LF, kein CRLF - getrimmt wird zwar, aber so steht es sauber im Repo.
+  if (wantIndex && built.length) {
+    await write('index.txt', built.join('\n') + '\n');
+    log('index.txt: ' + built.length + ' Einträge');
+  }
+
+  $('result').innerHTML =
+    '<b>' + ok + ' gebaut</b>, ' + failed + ' fehlgeschlagen, ' + skipped + ' übersprungen → <code>bytecode/</code>' +
+    '<table><tr><th>Programm</th><th>Bytes</th><th>Status</th></tr>' + rows.join('') + '</table>';
+  $('build').disabled = false;
+};
+</script>
+</div>
+</body>
+</html>

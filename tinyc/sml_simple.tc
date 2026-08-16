@@ -35,9 +35,8 @@ void EverySecond() {
         do_reset = 0;
     }
 
-    // 5 s raster and EMA as in the .tas scripts. Tasmota's Publish command,
-    // not mqttPublish(): that one wants a literal topic and ours carries the
-    // device name.
+    // Tasmota's Publish command, not mqttPublish(): that one wants a literal
+    // topic and ours carries the device name.
     if (tasm_uptime - sml_pwr_last >= 5) {
         sml_pwr_last = tasm_uptime;
         sml_power2 = (0.9 * sml_power2) + (0.1 * smlGet(1));

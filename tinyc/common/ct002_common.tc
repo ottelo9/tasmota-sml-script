@@ -1,7 +1,8 @@
-// Marstek CT002 / CT003 emulator for Tasmota, UDP port 12345.
+// ct002_common.tc — Marstek CT002 / CT003 emulator on UDP 12345, as a
+// building block. Defines no callbacks; the including program owns them and
+// calls ctInit/ctPoll/ctTick/ctTask/ctRows/ctPanel/ctWebOn/ctCmd/ctJson.
 // Feeds a Venus / Jupiter / B2500 from the SML meter. Relay mode only.
 // Docs: https://ottelo9.github.io/tasmota-sml-script/ct002/
-// Needs ESP32, TinyC in slot 0, USE_SML.
 //
 // Frame:    SOH STX <total-len> |f1|..|fN ETX <xor-hex>
 // Length:   whole packet incl. length digits and checksum
@@ -14,6 +15,8 @@
 // built and measured — accepted, but the app still showed "--", so it is gone.
 // The app's live view comes over MQTT only; a fake CT there is always offline.
 
+#include "ui_common.tc"
+
 #define CT_NSLOT     9        // consumer slots — the real CT keeps 9
 #define CT_RXMAX   320        // request buffer  (a request is ~55 B)
 #define CT_TXMAX   420        // response buffer (a response is ~140 B)
@@ -23,17 +26,13 @@
 char ct_host[] = "eu.hamedata.com";
 
 
-// Online help, EN/DE switch on the page. Anchor appended per section:
-// sprintf(buf, "...%s#ct'>i</a>", ct_helpa)
-char ct_helpa[] = " <a class='i' target='_blank' href='https://ottelo9.github.io/tasmota-sml-script/ct002/";
-
 // ─── Persistent settings ───────────────────────────────────────────────────
 persist int  ct_kind;          // 0 = CT002 (HME-4), 1 = CT003 (HME-3)
 persist int  ct_port;          // UDP listen port (12345)
 persist int  ct_rssi;          // Wi-Fi RSSI reported to the batteries [dBm]
 persist int  ct_ttl;           // consumer timeout [s], 0 = adaptive (~2 polls)
 persist int  ct_offset;        // zero-feed offset [W]
-persist int  ct_tweak;          // regulator shaping 0/1 (as in the .tas scripts)
+persist int  ct_tweak;          // regulator shaping 0/1
 persist int  ct_ph3;              // 1 = per-phase values from smlGet(4/5/6)
 persist char ct_mac[16];       // CT MAC, 12 hex lowercase. Empty = answer all
 persist char ct_mail[64];      // Marstek account mail (registration only)
@@ -319,8 +318,8 @@ void ctHandle(int n) {
 
 // ─── Meter ─────────────────────────────────────────────────────────────────
 
-// Offset + optional regulator shaping — same law as the .tas emulators, and
-// applied per phase for the same reason: each battery regulates its own phase.
+// Offset + optional regulator shaping, applied per phase because each
+// battery regulates its own phase.
 int ctCtrl(float raw) {
     float off = (float)ct_offset;
     float v = raw - off;
@@ -844,8 +843,8 @@ int ctWebOn(int h) {
     webSend("a.i{text-decoration:none;margin-left:6px}");
     webSend(".s{background:#fff;border:1px solid #bbb;padding:8px;font-size:13px;margin-top:10px}");
     webSend(".s.ok{background:#e6f6e6;border-color:#5f9e5f;color:#155f15}</style></head><body><div class='p'>");
-    sprintf(ct_buf, "<h3>&#x2601;&#xFE0F; Marstek</h3>%sct002/#marstek'>&#x2139;&#xFE0F;</a>", ct_helpa);
-    webSend(ct_buf);
+    webSend("<h3>&#x2601;&#xFE0F; Marstek</h3>");
+    uiI("ct002/#marstek");
     uiText("<div class='n'>The battery only talks to a CT that exists in your Marstek account.</div>",
            "<div class='n'>Der Akku spricht nur mit einem CT, das im Marstek-Konto existiert.</div>");
 

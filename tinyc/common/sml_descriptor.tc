@@ -1,24 +1,10 @@
-// ============================================================================
-// sml_descriptor.tc — SML descriptor + pin management helpers
-// ============================================================================
+// sml_descriptor.tc — the meter setup every program of the family shares:
+// descriptor, pins, filter, driver rows, restart. Defines no callbacks.
 //
-// Shared building block for any TinyC script that needs to expose the
-// "pick a meter / pick the pins / toggle the filter / restart the driver"
-// settings panel. Used by:
-//   * sml_simple.tc          — readings only
-//   * sml_chart_common.tc    — base for the chart family (sml_chart,
-//                              sml_chart_pv, sml_chart_bezug, …)
-//   * sml_water.tc           — m³ counter
-//   * sml_chart_modbus.tc    — pins / activ still apply, descriptor is
-//                              skipped at runtime but UI is identical
-//
-// Exposes:
-//   - persist watch state (5 vars)
-//   - sml_descriptor_apply()       call from EverySecond
-//   - sml_render_settings_panel()  call from WebUI to draw the styled box
-//
-// No callbacks / no main() here — the including script wires these.
-// ============================================================================
+// The including program calls:
+//   sml_descriptor_apply()        every second - change detect + re-apply
+//   sml_render_settings_panel()   from WebUI; opens the panel div and
+//                                 leaves it open for the caller to fill
 
 #include "ui_common.tc"
 
@@ -99,7 +85,7 @@ void sml_descriptor_apply() {
 // ============================================================================
 void sml_render_settings_panel() {
     webSend("<style>.sml-p{max-width:340px;margin:12px auto;background:#f0f0f0;color:#000;padding:16px;border:2px solid #ccc;border-radius:6px;text-align:left}.sml-p h3{margin:0 0 8px}.sml-p hr{border:0;border-top:1px solid #bbb;margin:12px 0}.sml-p b{display:inline-block;margin-bottom:4px;font-size:13px}.sml-p div{margin:6px 0}.sml-p .hint{font-size:9px;color:#555;line-height:1.4}</style>");
-    if (ui_de) webSend("<div class='sml-p'><h3>&#x26A1; SML-Zaehler</h3>");
+    if (ui_de) webSend("<div class='sml-p'><h3>&#x26A1; SML-Zähler</h3>");
     else       webSend("<div class='sml-p'><h3>&#x26A1; SML meter</h3>");
     int up_d = tasm_uptime / 86400;
     int up_h = (tasm_uptime / 3600) % 24;
@@ -108,7 +94,7 @@ void sml_render_settings_panel() {
     webSend(sml_buf);
 
     if (ui_de) {
-        webCheckbox(sml_activ, "Zaehler aktiv");
+        webCheckbox(sml_activ, "Zähler aktiv");
         webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Descriptor bearbeiten</a>");
     } else {
         webCheckbox(sml_activ, "Meter active");
@@ -136,7 +122,7 @@ void sml_render_settings_panel() {
         webPulldown(sml_rx_pin, "RX pin", "@getfreepins");
         webPulldown(sml_tx_pin, "TX pin", "@getfreepins");
     }
-    webSend("<div class='hint'>RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwaechter<br>RX=5 TX=4: bitShake</div>");
+    webSend("<div class='hint'>RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>RX=5 TX=4: bitShake</div>");
 
     uiHead("&#x1F4CA;", "Filter", "Filter", "sml/#filter");
     if (ui_de) webCheckbox(sml_filter, "Median-Filter");

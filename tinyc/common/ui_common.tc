@@ -29,7 +29,7 @@ void uiI(char page[]) {
     webSend(ui_buf);
 }
 
-// Section heading with a help link: uiHead("&#x26A1;", "Meter", "Zaehler", "sml/#meter")
+// Section heading with a help link: uiHead("&#x26A1;", "Meter", "Zähler", "sml/#meter")
 void uiHead(char icon[], char en[], char de[], char page[]) {
     if (ui_de) {
         sprintf(ui_buf, "<hr><b>%s %s</b>", icon, de);

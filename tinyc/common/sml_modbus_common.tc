@@ -2,9 +2,6 @@
 // callbacks; the including program owns them and calls the functions below.
 // Off by default, switched on in the settings panel.
 //
-// Extracted from gemu's sml_chart_modbus.tc, the TinyC port of ottelo's
-// 2_SML_Chart_PV_Modbus.tas.
-//
 // Register map (FC03 only, holding registers, 2 registers per value,
 // IEEE-754 float big-endian):
 //   40000 (PDU 0) Power       [W]    smlGet(1)

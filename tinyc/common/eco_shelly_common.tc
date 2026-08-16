@@ -3,9 +3,6 @@
 // functions below. Meter setup comes from sml_descriptor.tc, telemetry from
 // the base program.
 //
-// Ported from gemu's ecotracker_shelly_emu.tc, which in turn is the TinyC
-// port of ottelo's *_EcoTrackerEmu / *_ShellyEmu Scripter scripts.
-//
 // Two dialects, one program - the battery picks the one it speaks:
 //   EcoTracker  mDNS "ecotracker-<mac>",  HTTP /v1/json
 //   Shelly 3EM  mDNS "shellypro3em-<mac>", HTTP /rpc/*, UDP 1010 or 2220
