@@ -109,6 +109,7 @@ char ct_resp[2048];                // API response body
 char ct_fnd[6][16];                     // distinct fake-CT MACs seen while scanning
 int  ct_rreq;                        // 0 idle, 1 = login+scan, 2 = create
 int  ct_busy;
+int  ct_savemail;                     // mail write deferred past the cloud call
 int  ct_okflag;                         // 1 = last action succeeded (green status)
 int  ct_pts;                        // millis() when the password was set
 
@@ -416,9 +417,22 @@ int ctLogin() {
     strcat(ct_req, "&pwd=");
     strcat(ct_req, dighex);
 
+    // The TLS handshake wants one large contiguous block. On a fragmented
+    // heap it fails to allocate and httpGet just returns 0, so log what was
+    // available - that is the difference between "no network" and "no RAM".
+    addLog("CT002: login, heap %d, largest block %d", tasm_heap, tasm_maxblock);
     int n = httpGet(ct_req, ct_resp);
     if (n <= 0) {
-        sprintf(ct_msg, "No reply from Marstek (rc=%d)", n);
+        // BearSSL wants one contiguous 16 kB record buffer. Measured on an
+        // ESP32-C3: the handshake went through at ~12.7 kB largest block and
+        // failed at ~9.1 kB. It is fragmentation, not the total - switching
+        // TinyC programs at runtime leaves the heap in pieces (60 kB free,
+        // largest block 10 kB), a reboot restores it.
+        if (tasm_maxblock < 13000) {
+            sprintf(ct_msg, "Not enough contiguous RAM (%d B) - restart the device, then log in right away", tasm_maxblock);
+        } else {
+            sprintf(ct_msg, "No reply from Marstek (rc=%d, free block %d B)", n, tasm_maxblock);
+        }
         return 0;
     }
     int p = strFind(ct_resp, "\"token\":\"");
@@ -692,6 +706,10 @@ void ctTask() {
         // Password stays in RAM for step 2 (both steps need a token) and is
         // dropped on success or by timeout in ctTick(). Never on flash.
         ct_busy = 0;
+        if (ct_savemail) {          // deferred by ctWebOn - see there
+            ct_savemail = 0;
+            saveVars();
+        }
     }
 }
 
@@ -834,7 +852,12 @@ int ctWebOn(int h) {
     }
     if (webArg("mail", a) > 0) {
         strcpy(ct_mail, a);
-        saveVars();
+        // Deferred when a cloud job follows: saveVars() writes the whole .pvs
+        // through LittleFS, and that buffer costs the contiguous block the TLS
+        // handshake needs moments later. Measured: maxblk 11164 -> 9116, 16 ms
+        // before the login. ctTask() saves once the job is done.
+        if (act > 0) ct_savemail = 1;
+        else         saveVars();
     }
     // An empty field keeps the cached password, so step 2 does not need it
     // typed again.
