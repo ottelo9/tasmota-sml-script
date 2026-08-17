@@ -1,5 +1,4 @@
 >D 250
-;1_SML_ShellyEmu_Simple.tas
 p:dval=0
 p:dval2=0
 p:mval2=0
@@ -7,28 +6,20 @@ p:mval=0
 p:yval=0
 p:yval2=0
 p:pwroffset=0
-p:pwrforce=0
 p:throttle=1
-p:ctrlopt=0
 t:t1=60
 tmp=0
+tmp2=0
 hr=0
 res=0
-c1p=0
-c2p=0
-c3p=0
-c1c=0
-c2c=0
-c3c=0
 cpwr=0
 str=""
+pstr1=""
+pstr2=""
 mstr1=""
 mstr2=""
-mstr3=""
 header=""
 once=0
-udpsent=0
-udpapi=0
 >B
 ->SetOption57 0
 ->sensor53 r
@@ -44,12 +35,9 @@ mval2=sml[3]
 yval=sml[2]
 yval2=sml[3]
 pwroffset=0
-pwrforce=0
 throttle=1
-ctrlopt=0
 ->Backlog2 otaurl KEIN OTA UPGRADE VIA WEBSERVER!
 ->Backlog2 Timezone 99;TimeStd 0,0,10,1,3,60;TimeDst 0,0,3,1,2,120
-svars
 #save
 svars
 print gespeichert!
@@ -61,73 +49,59 @@ if (str!="") {
 res=ins(str "EM.GetStatus")
 if res>=0 {
 =#getstat
-tmp=sl(mstr1)+sl(mstr2)
+tmp=sl(pstr1)+sl(pstr2)
 =#header
 wcs so(4)
 wcs %header%
-wcs %mstr1%
-wcs %mstr2%
+wcs %pstr1%
+wcs %pstr2%
 wcf
 break
 }
 res=ins(str "Shelly.GetStatus")
 if res>=0 {
-=#getshellystat
-tmp=sl(mstr1)+sl(mstr2)+sl(mstr3)
+=#getstat
+tmp=sl(pstr1)+sl(pstr2)+sl(mstr1)+sl(mstr2)+9
 =#header
 wcs so(4)
 wcs %header%
+wcs {"em:0":
+wcs %pstr1%
+wcs %pstr2%
+wcs ,
 wcs %mstr1%
 wcs %mstr2%
-wcs %mstr3%
 wcf
 break
 }
-print unknown rpc request: %str%
+print unknown rpc: %str%
 }
 #getstat
 dp(0 2)
-mstr1="{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+","
-mstr2="\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"}"
-#getshellystat
-dp(0 2)
-mstr1="{\"em:0\":{\"id\":0,\"a_act_power\":"+s(c1p)+",\"b_act_power\":"+s(c2p)+",\"c_act_power\":"+s(c3p)+",\"total_act_power\":"+s(cpwr)+"},"
-mstr2="\"emdata:0\":{\"id\":0,\"a_total_act_energy\":"+s(sml[2]*1000)+",\"a_total_act_ret_energy\":"+s(sml[3]*1000)+",\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,"
-mstr3="\"total_act\":"+s(sml[2]*1000)+",\"total_act_ret\":"+s(sml[3]*1000)+"}}"
+pstr1="{\"id\":0,\"a_act_power\":"+s(sml[4])+",\"b_act_power\":"+s(sml[5])+",\"c_act_power\":"+s(sml[6])+",\"total_act_power\":"+s(cpwr)+",\"total_act_ret_power\":"+s(tmp2)+",\"a_aprt_power\":"+s(sml[11]*sml[7])+",\"b_aprt_power\":"+s(sml[12]*sml[8])+",\"c_aprt_power\":"+s(sml[13]*sml[9])+",\"total_aprt_power\":"+s(sml[10]*sml[14])+","
+pstr2="\"a_current\":"+s(sml[7])+",\"b_current\":"+s(sml[8])+",\"c_current\":"+s(sml[9])+",\"a_voltage\":"+s(sml[11])+",\"b_voltage\":"+s(sml[12])+",\"c_voltage\":"+s(sml[13])+"}"
+mstr1="\"emdata:0\":{\"id\":0,\"a_total_act_energy\":"+s(sml[2]*1000)+",\"a_total_act_ret_energy\":"+s(sml[3]*1000)+",\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,"
+mstr2="\"total_act\":"+s(sml[2]*1000)+",\"total_act_ret\":"+s(sml[3]*1000)+"}}"
 #header
 header="HTTP/1.1 200 OK\r\nServer: ShellyHTTP/1.0.0\r\nContent-Type: application/json\r\nContent-Length: "+s(0tmp)+"\r\nConnection: close\r\n\r\n"
 >F
 str=udp(1)
-if (str=="") {
-if (udpsent==0 or udpapi==0) {
-break
-}
-switch udpapi
-case 1
-str="EM.GetStatus"
-case 2
-str="Shelly.GetStatus"
-ends
-}
+if (str!="") {
 header="{\"id\":0,\"src\":\"shellypro3em-"+maca+"\",\"result\":"
 res=ins(str "EM.GetStatus")
 if (res>=0) {
 =#getstat
-mstr2+="}"
-udp(2 header mstr1 mstr2)
-udpapi=1
-udpsent=0
+udp(2 header pstr1 pstr2)
 break
 }
 res=ins(str "Shelly.GetStatus")
 if res>=0 {
-=#getshellystat
-mstr3+="}"
-udp(2 header mstr1 mstr2)
-udp(2 mstr3)
-udpapi=2
-udpsent=0
+=#getstat
+udp(2 header "{\"em:0\":" pstr1)
+udp(2 pstr2 "," mstr1)
+udp(2 mstr2)
 break
+}
 }
 >S
 if ((year<2020) or (sml[2]==0)) {
@@ -158,20 +132,8 @@ udp(0 1010)
 once=1
 }
 if (upsecs%throttle==0) {
-if (ctrlopt>0) {
-if (sml[1]>pwroffset) {
-cpwr=(sml[1]-pwroffset)/4
-} else {
-cpwr=(sml[1]-pwroffset)/0.8
-}
-} else {
 cpwr=sml[1]-pwroffset
-}
-c1p=cpwr
-c1c=c1p/230
-}
-if (pwrforce>0) {
-udpsent=1
+tmp2=mp(cpwr*-1 <0 0)
 }
 >W
 bu(_save "" "Daten speichern")
@@ -183,22 +145,32 @@ Tageseinspeisung{m}%2(sml[3]-dval2)% kWh
 Monatseinspeisung{m}%2(sml[3]-mval2)% kWh
 Jahreseinspeisung{m}%2(sml[3]-yval2)% kWh
 Uptime{m}%0uptime% min
-$<button type="submit" onclick="if(confirm('init?')){seva(1,'_init');}">Daten initialisieren</button>
 $<span style="font-size:10px;">
-$<b>PV-Akku Einstellungen</b><br>
-$[Variable] in Console ändern: script>var=x<br>
-$- Update verzögern [throttle]: %0throttle% s (1s = AUS)<br>
-$- Regleroptimierung [ctrlopt]: %0ctrlopt% (0 = AUS)<br>
-$- Offset [pwroffset]: %0pwroffset% W (0W = AUS)<br>
-$- UDP-Pakete erzwingen [pwrforce]: %0pwrforce% (0 = AUS)<br>
 $Script: %0slen% chars / 4096(1M) 8192(4M)
 $<hr>
 $<center>Version 02.04.2026 (ShellyEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015<br>
 $</span></center>
 >M 1
-+1,3,s,0,9600,MT175,1
-1,77070100100700ff@1,Leistung,W,Power_curr,0
-1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
++1,3,s,0,9600,SML,1
+1,77070100100700ff@1,Aktuelle Leistung,W,Power_curr,0
+1,=h================
+1,77070100010800ff@1000,Verbrauch Total,kWh,Total_in,3
+1,77070100020800ff@1000,Einspeisung Total,kWh,Total_out,3
+1,=h================
+1,77070100240700ff@1,Leistung P1,W,L1,2
+1,77070100380700ff@1,Leistung P2,W,L2,2
+1,770701004c0700ff@1,Leistung P3,W,L3,2
+1,=h================
+1,770701001f0700ff@1,Strom P1,A,A1,3
+1,77070100330700ff@1,Strom P2,A,A2,3
+1,77070100470700ff@1,Strom P3,A,A3,3
+1,=h   ----
+1,=m 7+8+9 @1,Strom gesamt,A,A_sum,3
+1,=h================
+1,77070100200700ff@1,Spannung P1,V,U1,3
+1,77070100340700ff@1,Spannung P2,V,U2,3
+1,77070100480700ff@1,Spannung P3,V,U3,3
+1,=h   ----
+1,=m 11+12+13/#3 @1,Spannung gemittelt,V,U_avg,3
 #
