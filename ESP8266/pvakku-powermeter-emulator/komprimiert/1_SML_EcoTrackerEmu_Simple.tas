@@ -42,7 +42,7 @@ res=won(1 "/v1/json")
 >on1
 json=warg
 if (json!="") {
-json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0cpwr)+",\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
+json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0sml[4])+",\"powerPhase2\":"+s(0sml[5])+",\"powerPhase3\":"+s(0sml[6])+",\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
 tmp=sl(json)
 header="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "+s(0tmp)+"\r\nConnection: close\r\n\r\n"
 wcs so(4)
@@ -86,7 +86,7 @@ cpwr=(sml[1]-pwroffset)/0.8
 } else {
 cpwr=sml[1]-pwroffset
 }
-power3=(0.9*power3)+((1-0.9)*cpwr)
+power3=(0.9833*power3)+((1-0.9833)*cpwr)
 >W
 bu(_save "" "Daten speichern")
 Leistung (an PV-Akku){m}%0cpwr% W
@@ -109,8 +109,32 @@ $<center>Version 02.04.2026 (EcoTrackerEmuSimple) by ottelo.jimdo.de<br>
 $Credits to gemu2015 (Tasmota Script Dev)<br>
 $</span></center>
 >M 1
-+1,3,s,0,9600,MT175,1
-1,77070100100700ff@1,Leistung,W,Power_curr,0
-1,77070100010800ff@1000,Verbrauch,KWh,Total_in,2
-1,77070100020800ff@1000,Einspeisung,KWh,Total_out,2
++1,3,s,0,9600,SML,1
+1,77070100100700ff@1,Aktuelle Leistung,W,Power_curr,0
+1,=h==================
+1,77070100010800ff@1000,Verbrauch Total,kWh,Total_in,3
+1,77070100020800ff@1000,Einspeisung Total,kWh,Total_out,3
+1,=h==================
+1,77070100240700ff@1,Leistung P1,W,L1,2
+1,77070100380700ff@1,Leistung P2,W,L2,2
+1,770701004c0700ff@1,Leistung P3,W,L3,2
+1,=h==================
+1,770701001f0700ff@1,Strom P1,A,A1,3
+1,77070100330700ff@1,Strom P2,A,A2,3
+1,77070100470700ff@1,Strom P3,A,A3,3
+1,=h   ----
+1,=m 7+8+9 @1,Strom gesamt,A,A_sum,3
+1,=h==================
+1,77070100200700ff@1,Spannung P1,V,U1,3
+1,77070100340700ff@1,Spannung P2,V,U2,3
+1,77070100480700ff@1,Spannung P3,V,U3,3
+1,=h   ----
+1,=m 11+12+13/#3 @1,Spannung gemittelt,V,U_avg,3
+1,=h==================
+1,77070100510701ff@1,Phasenversch. P2-P1,Grad,PV_P2_P1,0
+1,77070100510702ff@1,Phasenversch. P3-P1,Grad,PV_P3_P1,0
+1,77070100510704ff@1,Phasenwinkel I/U P1,Grad,PW_1,1 
+1,7707010051070fff@1,Phasenwinkel I/U P2,Grad,PW_2,1  
+1,7707010051071aff@1,Phasenwinkel I/U P3,Grad,PW_3,1 
+1,770701000e0700ff@1,Frequenz,Hz,Freq,1
 #
