@@ -128,7 +128,7 @@ int main() {
     sml_pwr_last = 0;
 
     mbInit();
-    webPageLabel(0, "Settings");
+    webPageLabel(0, "&#x2699;&#xFE0F; SML");
     webOn(1, "/pwr");
     smlScripterLoad("/sml_meter.def");
 

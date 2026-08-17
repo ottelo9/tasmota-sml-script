@@ -131,7 +131,7 @@ int main() {
 
     esInit(1, 2, 3);             // /v1/json, /rpc/EM, /rpc/Shelly
     mbInit();
-    webPageLabel(0, "Settings");
+    webPageLabel(0, "&#x2699;&#xFE0F; SML & Battery");
     webOn(4, "/pwr");
     smlScripterLoad("/sml_meter.def");
 

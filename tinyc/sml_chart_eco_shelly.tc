@@ -60,7 +60,7 @@ void EverySecond() {
         sml_chart_pv_5s_tick();       // smooths power2 and publishes it
         // cpwr - what the emulator hands the battery - only exists here.
         if (sml_sndpwr) {
-            sprintf(sml_buf, "publish stat/%%topic%%/script/cpwr %d", (int)es_cpwr);
+            sprintf(sml_buf, "publish stat/%s/script/cpwr %d", sml_mtopic, (int)es_cpwr);
             tasmCmd(sml_buf, sml_pv_resp);
         }
     }
@@ -176,7 +176,7 @@ int main() {
 
     esInit(1, 2, 3);             // /v1/json, /rpc/EM, /rpc/Shelly
     mbInit();
-    webPageLabel(0, "Settings");
+    webPageLabel(0, "&#x2699;&#xFE0F; SML & Battery");
     webPageLabel(1, "");
     webOn(4, "/pwr");
     smlScripterLoad("/sml_meter.def");

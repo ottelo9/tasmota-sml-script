@@ -83,12 +83,21 @@ void mbPoll() {
         tcpWriteArray(mb_hdr, 9, 0);
         return;
     }
-    // Inside 0..6 and 2-register aligned, or it is not one of our floats.
-    if (qty + addr > 6 || (qty % 2) != 0 || (addr % 2) != 0) {
+    // We serve whole floats only: address must be even and inside 0..4,
+    // quantity even. Odd quantity is a data-value fault, not an address one.
+    if (mb_rx[8] != 0 || addr > 4 || (addr % 2) != 0) {
         mb_hdr[4] = 0;
         mb_hdr[5] = 3;
         mb_hdr[7] = fc + 128;
         mb_hdr[8] = 2;                // illegal data address
+        tcpWriteArray(mb_hdr, 9, 0);
+        return;
+    }
+    if (qty == 0 || (qty % 2) != 0 || qty + addr > 6) {
+        mb_hdr[4] = 0;
+        mb_hdr[5] = 3;
+        mb_hdr[7] = fc + 128;
+        mb_hdr[8] = 3;                // illegal data value (quantity)
         tcpWriteArray(mb_hdr, 9, 0);
         return;
     }
@@ -139,8 +148,8 @@ void mbRows() {
 // From WebUI(): emitted inside an already-open settings panel.
 void mbPanel() {
     uiHead("&#x1F5A7;&#xFE0F;", "Modbus-TCP", "Modbus-TCP", "sml/#modbus");
-    if (ui_de) webCheckbox(mb_e_on, "Slave aktiv");
-    else       webCheckbox(mb_e_on, "Slave active");
+    if (ui_de) webCheckbox(mb_e_on, "Slave (Server) aktiv");
+    else       webCheckbox(mb_e_on, "Slave (Server) active");
     if (mb_e_on == 0) return;
 
     if (ui_de) webNumber(mb_e_port, 1, 65535, "TCP-Port");

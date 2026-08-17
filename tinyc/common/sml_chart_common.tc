@@ -66,7 +66,10 @@ int sml_hr_last;                // last seen tasm_hour (midnight edge detect)
 #define CHART_CSV_DEC 3
 #endif
 
+char sml_mtopic[64];        // device topic - Publish never expands %topic%
+
 void sml_chart_load() {
+    tasmInfo(0, sml_mtopic);
     int h = fileOpen("/sml_chart.bin", "r");
     if (h < 0) return;                          // nothing to import
     fileReadBin(h, sml_s4h,  481);
@@ -482,7 +485,7 @@ void sml_chart_pv_init_columns() {
 void sml_chart_pv_5s_tick() {
     sml_power2 = 0.9 * sml_power2 + 0.1 * smlGet(1);
     if (sml_sndpwr) {
-        sprintf(sml_buf, "publish stat/%%topic%%/script/power2 %d", (int)sml_power2);
+        sprintf(sml_buf, "publish stat/%s/script/power2 %d", sml_mtopic, (int)sml_power2);
         tasmCmd(sml_buf, sml_pv_resp);
     }
 }

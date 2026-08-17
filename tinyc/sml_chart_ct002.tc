@@ -61,7 +61,7 @@ void EverySecond() {
         sml_chart_pv_5s_tick();       // smooths power2 and publishes it
         // cpwr - what the CT hands the batteries - only exists here.
         if (sml_sndpwr) {
-            sprintf(sml_buf, "publish stat/%%topic%%/script/cpwr %d", ct_ptot);
+            sprintf(sml_buf, "publish stat/%s/script/cpwr %d", sml_mtopic, ct_ptot);
             tasmCmd(sml_buf, sml_pv_resp);
         }
     }
@@ -135,6 +135,9 @@ void WebPage() {
 }
 
 void WebUI() {
+    // Page 1 exists only for its button in Tasmota's main menu: webPageLabel is
+    // the only way to get one, and it always points at /tc_ui - so hand over.
+    if (webPage() == 1) { webSend("<script>location.replace('/ctreg')</script>"); return; }
     if (webPage() != 0) return;
     sml_render_settings_panel();
     ctPanel();
@@ -188,8 +191,8 @@ int main() {
     ctInit(4);                        // /ctreg on handler 4, /pwr keeps 1
     mbInit();
     addCommand("CT");
-    webPageLabel(0, "Settings");
-    webPageLabel(1, "");
+    webPageLabel(0, "&#x2699;&#xFE0F; SML & Battery");
+    webPageLabel(1, "&#x2601;&#xFE0F; Marstek");
     webOn(1, "/pwr");
     smlScripterLoad("/sml_meter.def");
 

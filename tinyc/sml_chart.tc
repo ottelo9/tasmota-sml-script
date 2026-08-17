@@ -161,7 +161,7 @@ int main() {
     sml_chart_pv_load();
 
     mbInit();
-    webPageLabel(0, "Settings");
+    webPageLabel(0, "&#x2699;&#xFE0F; SML");
     webPageLabel(1, "");
     webOn(1, "/pwr");
     smlScripterLoad("/sml_meter.def");
