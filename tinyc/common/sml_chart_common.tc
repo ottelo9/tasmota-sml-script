@@ -234,6 +234,7 @@ void sml_chart_render_totals() {
     int up_h = (tasm_uptime / 3600) % 24;
     int up_m = (tasm_uptime / 60) % 60;
     sprintf(sml_buf, "{s}Uptime{m}%d d %d h %d min{e}", up_d, up_h, up_m); webSend(sml_buf);
+    uiSep();
 
     float ein = smlGet(2);
     if (ui_de) {
@@ -251,7 +252,7 @@ void sml_chart_render_totals() {
 // readability) + DE date in the tooltip (dd.MM.yyyy), independent of the
 // browser locale. WebChartJS runs in the chart's draw scope (dt/o/el) and
 // o.done=1 takes over the draw so it renders as an AreaChart.
-char sml_chart_js[224];   // must hold the full snippet incl. trailing o.done=1
+char sml_chart_js[176];   // snippet is 163 chars incl. trailing o.done=1
 
 void sml_chart_area_de() {
     strcpy(sml_chart_js,
@@ -370,6 +371,7 @@ void sml_chart_render_months() {
 persist float sml_dval2;             // daily zero point for energy-out (kWh)
 persist float sml_mval2;             // monthly zero point
 persist float sml_yval2;             // yearly zero point
+persist int   sml_pv;                  // 1 = show feed-in rows and charts
 persist float sml_dprod[31];         // 31 days of production totals
 persist float sml_mprod[12];         // 12 months of production totals
 
@@ -485,8 +487,9 @@ void sml_chart_pv_init_columns() {
 void sml_chart_pv_5s_tick() {
     sml_power2 = 0.9 * sml_power2 + 0.1 * smlGet(1);
     if (sml_sndpwr) {
-        sprintf(sml_buf, "publish stat/%s/script/power2 %d", sml_mtopic, (int)sml_power2);
-        tasmCmd(sml_buf, sml_pv_resp);
+        sprintf(sml_ftopic, "stat/%s/script/power2", sml_mtopic);
+        sprintf(sml_buf, "%d", (int)sml_power2);
+        smlPublish(sml_ftopic, sml_buf);
     }
 }
 
@@ -563,4 +566,31 @@ void sml_chart_pv_render_months_dual() {
         webSend("Import / export per month");
     }
     webSend("',series:{0:{color:'#27ae60',targetAxisIndex:0},1:{color:'#f39c12',targetAxisIndex:1}},vAxes:{0:{format:'# kWh'},1:{format:'# kWh'}},hAxis:{slantedText:false,showTextEvery:1}});}google.charts.setOnLoadCallback(_smlDM2);</script>");
+}
+
+// ── Charts on their own TinyC page (/tc_ui?p=2) ────────────────────────────
+// pr(0) kills the 2 s auto-refresh: redrawing ~1700 points every two seconds
+// would be worse than the main page ever was. It runs while the page parses,
+// so the window.onload call to la() already sees rfsh=0 and returns.
+// WebChart works here because tc_chart_lib_sent is reset before every /tc_ui
+// render - on a webOn endpoint it is not, and the loader would be sent once.
+void sml_chart_page_render() {
+    webSend("<script>pr(0)</script>");
+    webSend("<div style='margin-left:-30px'>");
+    sml_chart_render_4h();
+    sml_chart_render_24h();
+    sml_chart_render_days();
+    if (sml_pv > 0) {
+        sml_chart_pv_render_dayprod();
+        sml_chart_pv_render_months_dual();
+    } else {
+        sml_chart_render_months();
+    }
+    webSend("</div>");
+}
+
+// One row on the main page, from WebCall().
+void sml_chart_link() {
+    if (ui_de) webSend("{s}Diagramme{m}<a href='/tc_ui?p=2' title='Diagramme' style='font-size:20px;text-decoration:none'>&#x1F4C8;</a>{e}");
+    else       webSend("{s}Charts{m}<a href='/tc_ui?p=2' title='Charts' style='font-size:20px;text-decoration:none'>&#x1F4C8;</a>{e}");
 }

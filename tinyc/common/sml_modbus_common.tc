@@ -32,7 +32,7 @@ int   mb_started;             // 0 until tcpServer() succeeded
 int   mb_rx[16];              // request frame (FC03 request = exactly 12 B)
 int   mb_hdr[9];              // MBAP + PDU header / exception bytes (uint8)
 float mb_dat[6];              // up to 3 floats
-char  mb_txt[192];
+char  mb_txt[48];            // only "{s}Modbus-TCP{m}NNNNN{e}"
 
 // ─── Building-block API ────────────────────────────────────────────────────
 

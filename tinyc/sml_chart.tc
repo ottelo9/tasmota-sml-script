@@ -11,7 +11,6 @@
 char sml_vers[] = "16.08.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
-persist int sml_pv;          // 1 = show feed-in rows and charts
 
 int sml_e_pv; int sml_e_sndpwr;   // edit buffer, applied by Save
 
@@ -68,7 +67,8 @@ void EverySecond() {
 
 // /pwr — JSON for a second battery polling over HTTP (opendtu-onbattery DPL)
 void WebOn() {
-    if (webHandler() != 1) return;
+    int h = webHandler();
+    if (h != 1) return;
     if (sml_sndpwr > 0) {
         sprintf(sml_buf, "{\"power2\":%.0f", sml_power2);
         sprintfAppend(sml_buf, ",\"power\":%.0f", smlGet(1));
@@ -86,9 +86,6 @@ void WebCall() {
         return;
     }
     sml_chart_render_totals();
-    if (ui_de) sprintf(sml_buf, "{s}Leistung (gefiltert){m}%.0f W{e}", sml_power2);
-    else       sprintf(sml_buf, "{s}Power (smoothed){m}%.0f W{e}", sml_power2);
-    webSend(sml_buf);
 
     if (sml_pv > 0) {
         float eout = smlGet(3);
@@ -103,23 +100,12 @@ void WebCall() {
         }
     }
     mbRows();
-}
-
-void WebPage() {
-    webSend("<div style='margin-left:-30px'>");
-    sml_chart_render_4h();
-    sml_chart_render_24h();
-    sml_chart_render_days();
-    if (sml_pv > 0) {
-        sml_chart_pv_render_dayprod();
-        sml_chart_pv_render_months_dual();
-    } else {
-        sml_chart_render_months();
-    }
-    webSend("</div>");
+    sml_chart_link();
 }
 
 void WebUI() {
+    if (webPage() == 2) { sml_chart_page_render(); return; }
+    if (webPage() == 3) { webSend("<script>location.replace('/tc')</script>"); return; }
     if (webPage() != 0) return;
     sml_render_settings_panel();
 
@@ -130,6 +116,9 @@ void WebUI() {
     uiHead("&#x1F527;", "Telemetry", "Telemetrie", "sml/#telemetry");
     if (ui_de) webCheckbox(sml_e_sndpwr, "Gemittelte Leistung senden");
     else       webCheckbox(sml_e_sndpwr, "Publish smoothed power");
+    if (ui_de) sprintf(sml_buf, "<div style='font-size:12px;color:#444'>Leistung (gefiltert): <b>%.0f W</b></div>", sml_power2);
+    else       sprintf(sml_buf, "<div style='font-size:12px;color:#444'>Power (smoothed): <b>%.0f W</b></div>", sml_power2);
+    webSend(sml_buf);
     if (sml_e_sndpwr > 0) {
         webSend("<div style='font-size:12px;color:#444'>MQTT: power2 &middot; HTTP: <a href='/pwr'>/pwr</a></div>");
     }
@@ -163,6 +152,8 @@ int main() {
     mbInit();
     webPageLabel(0, "&#x2699;&#xFE0F; SML");
     webPageLabel(1, "");
+    webPageLabel(2, "");                // charts page, reached by link
+    webPageLabel(3, "&#x1F4BB; TinyC");   // hands over to /tc
     webOn(1, "/pwr");
     smlScripterLoad("/sml_meter.def");
 

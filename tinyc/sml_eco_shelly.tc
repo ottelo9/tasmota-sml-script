@@ -46,10 +46,12 @@ void EverySecond() {
         sml_pwr_last = tasm_uptime;
         sml_power2 = (0.9 * sml_power2) + (0.1 * smlGet(1));
         if (sml_sndpwr > 0) {
-            sprintf(sml_pub, "Publish stat/%s/script/power2 %.0f", sml_mtopic, sml_power2);
-            tasmCmd(sml_pub, sml_buf);
-            sprintf(sml_pub, "Publish stat/%s/script/cpwr %.0f", sml_mtopic, es_cpwr);
-            tasmCmd(sml_pub, sml_buf);
+            sprintf(sml_ftopic, "stat/%s/script/power2", sml_mtopic);
+            sprintf(sml_pub, "%.0f", sml_power2);
+            smlPublish(sml_ftopic, sml_pub);
+            sprintf(sml_ftopic, "stat/%s/script/cpwr", sml_mtopic);
+            sprintf(sml_pub, "%.0f", es_cpwr);
+            smlPublish(sml_ftopic, sml_pub);
         }
     }
 }
@@ -75,6 +77,7 @@ void WebCall() {
         uiText("{s}SML{m}off (Rule1){e}", "{s}SML{m}aus (Rule1){e}");
         return;
     }
+    uiSep();
     if (ui_de) {
         sprintf(sml_buf, "{s}Leistung{m}%.0f W{e}", smlGet(1));      webSend(sml_buf);
         sprintf(sml_buf, "{s}Bezug{m}%.3f kWh{e}", smlGet(2));       webSend(sml_buf);
@@ -84,11 +87,13 @@ void WebCall() {
         sprintf(sml_buf, "{s}Import{m}%.3f kWh{e}", smlGet(2));      webSend(sml_buf);
         sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", smlGet(3));      webSend(sml_buf);
     }
+    uiSep();
     esRows();
     mbRows();
 }
 
 void WebUI() {
+    if (webPage() == 3) { webSend("<script>location.replace('/tc')</script>"); return; }
     if (webPage() != 0) return;
     sml_render_settings_panel();
     esPanel();
@@ -96,6 +101,9 @@ void WebUI() {
     uiHead("&#x1F4E1;", "Telemetry", "Telemetrie", "sml/#telemetry");
     if (ui_de) webCheckbox(sml_e_sndpwr, "Leistung senden");
     else       webCheckbox(sml_e_sndpwr, "Publish power");
+    if (ui_de) sprintf(sml_buf, "<div style='font-size:12px;color:#444'>Leistung (gemittelt): <b>%.0f W</b></div>", sml_power2);
+    else       sprintf(sml_buf, "<div style='font-size:12px;color:#444'>Power (smoothed): <b>%.0f W</b></div>", sml_power2);
+    webSend(sml_buf);
     if (sml_e_sndpwr > 0) {
         sprintf(sml_buf, "<div style='font-size:12px;color:#444'>MQTT: stat/%s/script/power2 + /cpwr<br>HTTP: <a href='/pwr'>/pwr</a></div>", sml_mtopic);
         webSend(sml_buf);
@@ -132,6 +140,7 @@ int main() {
     esInit(1, 2, 3);             // /v1/json, /rpc/EM, /rpc/Shelly
     mbInit();
     webPageLabel(0, "&#x2699;&#xFE0F; SML & Battery");
+    webPageLabel(3, "&#x1F4BB; TinyC");   // hands over to /tc
     webOn(4, "/pwr");
     smlScripterLoad("/sml_meter.def");
 

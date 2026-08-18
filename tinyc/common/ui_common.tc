@@ -12,7 +12,8 @@
 persist watch int ui_de;     // 0 = English (default), 1 = Deutsch
 
 char ui_base[] = " <a class='i' target='_blank' href='https://ottelo9.github.io/tasmota-sml-script/";
-char ui_buf[220];
+char ui_buf[220];        // uiText() copies whole HTML blocks through here -
+                         // longest measured 144 chars, some span source lines
 
 // ── Save button ────────────────────────────────────────────────────────────
 // Widgets write straight into their variable, so a change would otherwise take
@@ -87,4 +88,10 @@ void uiText(char en[], char de[]) {
         sprintf(ui_buf, "%s", en);
     }
     webSend(ui_buf);
+}
+
+// Separator row for the Tasmota main page. WebCall output lands inside
+// Tasmota's sensor table, so a full-width rule needs its own row.
+void uiSep() {
+    webSend("<tr><td colspan='2'><hr style='border:0;border-top:1px solid #666;margin:5px 0'></td></tr>");
 }

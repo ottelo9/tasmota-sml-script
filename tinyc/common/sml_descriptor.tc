@@ -18,6 +18,9 @@ persist watch int sml_drvrows;  // 1 = also show the SML driver's own rows
 
 // ── Shared sprintf scratch (also used by chart/totals renderers) ────────────
 char sml_buf[160];
+char sml_ftopic[96];       // full MQTT topic - mqttPublish takes it at runtime
+int  sml_pub_rc;           // last mqttPublish result, logged when it changes
+int  sml_pub_seen;
 int  sml_drv_init;              // 0 until the display option was applied once
 
 // ============================================================================
@@ -151,4 +154,16 @@ void sml_render_settings_panel() {
     uiHead("&#x1F5A5;&#xFE0F;", "Display", "Anzeige", "sml/#display");
     if (ui_de) webCheckbox(sml_drvrows, "Treiberzeilen zeigen");
     else       webCheckbox(sml_drvrows, "Show driver rows");
+}
+
+// Publish at log level 3 - silent until weblog 3. Reports a changed result
+// once: 0 = sent, -1 = bad topic, -2 = MQTT off (SetOption3). Without this a
+// device with MQTT disabled would drop every value without a word.
+void smlPublish(char topic[], char payload[]) {
+    int rc = mqttPublish(topic, payload, 3);
+    if (sml_pub_seen == 0 || rc != sml_pub_rc) {
+        sml_pub_seen = 1;
+        sml_pub_rc = rc;
+        addLog("SML: mqttPublish rc=%d topic=%s", rc, topic);
+    }
 }

@@ -18,8 +18,8 @@
 #include "ui_common.tc"
 
 #define CT_NSLOT     9        // consumer slots — the real CT keeps 9
-#define CT_RXMAX   320        // request buffer  (a request is ~55 B)
-#define CT_TXMAX   420        // response buffer (a response is ~140 B)
+#define CT_RXMAX   192        // request buffer  (a request is ~55 B)
+#define CT_TXMAX   256        // response buffer (worst case ~190 B incl. CT003)
 
 // char[] not #define: a #define stays an Identifier in the AST, which
 // syscalls taking a const-pool string must not be handed.
@@ -103,9 +103,9 @@ char ct_pass[64];                    // NOT persisted — cleared after use
 char ct_msg[128];                   // status line shown in the web UI
 char ct_tok[96];                     // session token
 char ct_umail[96];                      // url-encoded mailbox
-char ct_req[600];                       // request line + headers
-char ct_buf[600];                     // scratch for parsing
-char ct_resp[2048];                // API response body
+char ct_req[384];                       // URL; code rejects >250, worst unguarded build ~373
+char ct_buf[320];                     // scratch for parsing
+char ct_resp[1024];                // API response body; measured 555 chars for one CT
 char ct_fnd[6][16];                     // distinct fake-CT MACs seen while scanning
 int  ct_rreq;                        // 0 idle, 1 = login+scan, 2 = create
 int  ct_busy;
@@ -422,6 +422,8 @@ int ctLogin() {
     // available - that is the difference between "no network" and "no RAM".
     addLog("CT002: login, heap %d, largest block %d", tasm_heap, tasm_maxblock);
     int n = httpGet(ct_req, ct_resp);
+    if (n >= 1000) addLog("CT002: WARNING login reply %d chars, ct_resp holds 1023 - may be truncated", n);
+    else           addLog("CT002: login reply %d chars", n);
     if (n <= 0) {
         // BearSSL wants one contiguous 16 kB record buffer. Measured on an
         // ESP32-C3: the handshake went through at ~12.7 kB largest block and
@@ -578,6 +580,8 @@ void ctDoCreate() {
     httpHeader("token", ct_tok);
 
     int rn = httpGet(ct_req, ct_resp);
+    if (rn >= 1000) addLog("CT002: WARNING create reply %d chars, ct_resp holds 1023 - may be truncated", rn);
+    else            addLog("CT002: create reply %d chars", rn);
     if (rn <= 0) {
         sprintf(ct_msg, "No reply on create (rc=%d)", rn);
         return;
@@ -751,9 +755,6 @@ void ctRows() {
         sprintf(ct_buf, "{s}Batteries{m}%d{e}", live);        webSend(ct_buf);
         sprintf(ct_buf, "{s}CT sees{m}%d W{e}", ct_ptot);     webSend(ct_buf);
     }
-    sprintf(ct_buf, "{s}UDP rx/tx/bad{m}%d / %d / ", ct_rxc, ct_txc);
-    sprintfAppend(ct_buf, "%d{e}", ct_badc);
-    webSend(ct_buf);
 }
 
 // From WebUI(): emitted inside an already-open settings panel, so no <div>
@@ -778,6 +779,9 @@ void ctPanel() {
         webNumber(ct_e_rssi, -90, -20, "RSSI [dBm]");
         webNumber(ct_e_ttl, 0, 300, "Battery timeout [s]");
     }
+    sprintf(ct_buf, "<div style='font-size:12px;color:#444'>UDP rx/tx/bad: %d / %d / ", ct_rxc, ct_txc);
+    sprintfAppend(ct_buf, "%d</div>", ct_badc);
+    webSend(ct_buf);
 
     uiHead("&#x1F50B;", "Battery", "Akku", "ct002/#battery");
     if (ui_de) {
@@ -790,13 +794,8 @@ void ctPanel() {
         webCheckbox(ct_e_ph3, "3 phases");
     }
 
-    uiHead("&#x2601;&#xFE0F;", "Marstek", "Marstek", "ct002/#marstek");
-    // Login and CT MAC live on /ctreg, not here: this block re-renders every
-    // 2 s and the sv= string write path is broken in the firmware.
-    sprintf(ct_buf, "<div style='font-size:12px;color:#444'>Account: <b>%s</b></div>", ct_mail);
-    webSend(ct_buf);
-    if (ui_de) webSend("<div><a href='/ctreg'><button type='button'>&#x1F511; Konto einrichten</button></a></div>");
-    else       webSend("<div><a href='/ctreg'><button type='button'>&#x1F511; Set up account</button></a></div>");
+    // No Marstek block here - the account lives on /ctreg, reachable from the
+    // main menu button. Having it twice only invites editing the stale copy.
 }
 
 // From JsonCall(): appended to the SENSOR telemetry.
