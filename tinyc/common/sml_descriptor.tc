@@ -107,41 +107,29 @@ void sml_render_settings_panel() {
     // with its widest child - pinning it is what widens the page. Same value
     // as the /tc slot page uses. 96vw keeps it inside a phone screen.
     webSend("<style>body>div{width:480px;max-width:96vw;box-sizing:border-box}.sml-p{max-width:100%;box-sizing:border-box;margin:12px auto;background:#f0f0f0;color:#000;padding:16px;border:2px solid #ccc;border-radius:6px;text-align:left}.sml-p h3{margin:0 0 8px}.sml-p hr{border:0;border-top:1px solid #bbb;margin:12px 0}.sml-p b{display:inline-block;margin-bottom:4px;font-size:13px}.sml-p div{margin:6px 0}.sml-p .hint{font-size:9px;color:#555;line-height:1.4}</style>");
-    if (ui_de) webSend("<div class='sml-p'><h3>&#x26A1; SML-Zähler</h3>");
-    else       webSend("<div class='sml-p'><h3>&#x26A1; SML meter</h3>");
+    if (ui_de) webSend("<div class='sml-p'><h3>&#x26A1; Einstellungen</h3>");
+    else       webSend("<div class='sml-p'><h3>&#x26A1; Settings</h3>");
     uiLang();                       // topmost - it relabels everything below
-    int up_d = tasm_uptime / 86400;
-    int up_h = (tasm_uptime / 3600) % 24;
-    int up_m = (tasm_uptime / 60) % 60;
-    sprintf(sml_buf, "<div>Uptime: %d d %d h %d min</div>", up_d, up_h, up_m);
-    webSend(sml_buf);
 
+    // Meter active, descriptor and pins belong together - one section, one
+    // heading, so it is clear which settings describe the meter itself.
+    uiHead("&#x1F50C;", "Meter settings", "Zähler-Einstellungen", "sml/#meter");
     if (ui_de) {
         webCheckbox(sml_activ, "Zähler aktiv");
         webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Descriptor bearbeiten</a>");
-    } else {
-        webCheckbox(sml_activ, "Meter active");
-        webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Edit descriptor</a>");
-    }
-
-    uiHead("&#x1F4E6;", "Descriptor", "Descriptor", "sml/#meter");
-    if (ui_de) {
         webRepoPulldown(sml_meter_sel, "Aus Repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
                         "smartmeter",
                         "/sml_meter.new");
+        webPulldown(sml_rx_pin, "RX-Pin", "@getfreepins");
+        webPulldown(sml_tx_pin, "TX-Pin", "@getfreepins");
     } else {
+        webCheckbox(sml_activ, "Meter active");
+        webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Edit descriptor</a>");
         webRepoPulldown(sml_meter_sel, "From repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
                         "smartmeter",
                         "/sml_meter.new");
-    }
-
-    uiHead("&#x1F50C;", "Pins", "Pins", "sml/#pins");
-    if (ui_de) {
-        webPulldown(sml_rx_pin, "RX-Pin", "@getfreepins");
-        webPulldown(sml_tx_pin, "TX-Pin", "@getfreepins");
-    } else {
         webPulldown(sml_rx_pin, "RX pin", "@getfreepins");
         webPulldown(sml_tx_pin, "TX pin", "@getfreepins");
     }
@@ -154,6 +142,12 @@ void sml_render_settings_panel() {
     uiHead("&#x1F5A5;&#xFE0F;", "Display", "Anzeige", "sml/#display");
     if (ui_de) webCheckbox(sml_drvrows, "Treiberzeilen zeigen");
     else       webCheckbox(sml_drvrows, "Show driver rows");
+
+    int up_d = tasm_uptime / 86400;
+    int up_h = (tasm_uptime / 3600) % 24;
+    int up_m = (tasm_uptime / 60) % 60;
+    sprintf(sml_buf, "<div class='hint'>Uptime: %d d %d h %d min</div>", up_d, up_h, up_m);
+    webSend(sml_buf);
 }
 
 // Publish at log level 3 - silent until weblog 3. Reports a changed result

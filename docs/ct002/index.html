@@ -115,6 +115,7 @@ body.lang-de .en{display:none}
 <tr><th>UDP port</th><td>12345 in every known firmware. Only change it if you know why.</td></tr>
 <tr><th>RSSI</th><td>Wi-Fi signal strength reported to the battery.</td></tr>
 <tr><th>Battery timeout</th><td>Seconds after which a offline battery is dropped from the table. <code>0</code> = automatic: about two of its own poll cycles, at least 5&nbsp;s. That mirrors a real CT.</td></tr>
+<tr><th>UDP rx/tx/bad</th><td>Counters below the settings, not a setting: received, answered, and frames rejected by the checksum. <code>bad</code> should stay at 0 &mdash; a rising value means the request did not arrive intact. They used to sit on the main page.</td></tr>
 </table>
 </div>
 <div class="de">
@@ -123,7 +124,8 @@ body.lang-de .en{display:none}
 <tr><th>CT MAC</th><td>12 Hex-Zeichen, die MAC des CT im Marstek-Konto. Ist sie gesetzt, antwortet der Emulator nur auf Anfragen für diese MAC (oder die Wildcard <code>000000000000</code>). Leer bedeutet: antwortet auf alles &mdash; praktisch zum Testen, falsch sobald es mehrere CTs gibt.</td></tr>
 <tr><th>UDP port</th><td>12345 in jeder bekannten Firmware. Nur ändern, wenn du weißt warum.</td></tr>
 <tr><th>RSSI</th><td>WLAN-Signalstärke, die dem Akku gemeldet wird.</td></tr>
-<tr><th>Battery timeout</th><td>Sekunden, nach denen ein Akku, der micht mehr antwortet, aus der Tabelle fällt. <code>0</code> = automatisch: etwa zwei Abfragezyklen, mindestens 5&nbsp;s. So macht es ein echter CT auch.</td></tr>
+<tr><th>Akku-Timeout</th><td>Sekunden, nach denen ein Akku, der nicht mehr antwortet, aus der Tabelle fällt. <code>0</code> = automatisch: etwa zwei Abfragezyklen, mindestens 5&nbsp;s. So macht es ein echter CT auch.</td></tr>
+<tr><th>UDP rx/tx/bad</th><td>Zähler unter den Einstellungen, keine Einstellung: empfangen, beantwortet, und wegen Prüfsumme verworfen. <code>bad</code> sollte 0 bleiben &mdash; ein steigender Wert heißt, die Anfrage kam nicht heil an. Früher standen sie auf der Hauptseite.</td></tr>
 </table>
 </div>
 </section>
@@ -215,7 +217,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 <div class="en">
 <p>A battery only talks to a CT that exists in the owner's Marstek account. The emulator can create such an entry &mdash; a managed device whose id and MAC start with <code>02b250</code>, the same record AstraMeter creates.</p>
 <ol>
-<li>On the <b>CT emulator</b> page, section <b>Marstek</b>, press <b>Set up account</b> (opens <code>/ctreg</code>) and enter mail and password.</li>
+<li>Press <b>&#x2601;&#xFE0F; Marstek</b> in Tasmota's main menu (opens <code>/ctreg</code>) and enter mail and password.</li>
 <li><b>Log in + check account</b> fetches a token and adopts an existing fake CT if there is one.</li>
 <li>If none was found: <b>Create fake CT</b> and confirm the dialog. The status line updates by itself and turns green on success.</li>
 <li>In the Marstek app refresh the CT list (log out and in if needed), select the new CT, switch the battery to automatic.</li>
@@ -233,7 +235,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 <div class="de">
 <p>Ein Akku spricht nur mit einem CT, das im Marstek-Konto des Besitzers existiert. Der Emulator kann so einen Eintrag anlegen &mdash; ein verwaltetes Gerät, dessen Id und MAC mit <code>02b250</code> beginnen, derselbe Datensatz, den auch AstraMeter erzeugt.</p>
 <ol>
-<li>Auf der Seite <b>CT emulator</b> im Abschnitt <b>Marstek</b> auf <b>Set up account</b> (öffnet <code>/ctreg</code>), Mail und Passwort eintragen.</li>
+<li>Im Hauptmenü von Tasmota auf <b>&#x2601;&#xFE0F; Marstek</b> (öffnet <code>/ctreg</code>), Mail und Passwort eintragen.</li>
 <li><b>Log in + check account</b> holt ein Token und übernimmt ein vorhandenes Fake-CT, falls eines da ist.</li>
 <li>Wurde keines gefunden: <b>Create fake CT</b> und den Dialog bestätigen. Die Statuszeile aktualisiert sich von selbst und wird bei Erfolg grün.</li>
 <li>In der Marstek-App die CT-Liste aktualisieren (notfalls ab- und wieder anmelden), das neue CT auswählen, den Akku auf Automatik stellen.</li>

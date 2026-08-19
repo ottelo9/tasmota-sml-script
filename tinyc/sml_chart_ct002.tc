@@ -181,7 +181,7 @@ int main() {
     ctInit(4);                        // /ctreg on handler 4, /pwr keeps 1
     mbInit();
     addCommand("CT");
-    webPageLabel(0, "&#x2699;&#xFE0F; SML & Battery");
+    webPageLabel(0, "&#x2699;&#xFE0F; SML /&#x1F50B;");
     webPageLabel(1, "&#x2601;&#xFE0F; Marstek");
     webPageLabel(2, "");                // charts page, reached by link
     webPageLabel(3, "&#x1F4BB; TinyC");   // hands over to /tc

@@ -166,7 +166,7 @@ int main() {
 
     esInit(1, 2, 3);             // /v1/json, /rpc/EM, /rpc/Shelly
     mbInit();
-    webPageLabel(0, "&#x2699;&#xFE0F; SML & Battery");
+    webPageLabel(0, "&#x2699;&#xFE0F; SML /&#x1F50B;");
     webPageLabel(1, "");
     webPageLabel(2, "");                // charts page, reached by link
     webPageLabel(3, "&#x1F4BB; TinyC");   // hands over to /tc

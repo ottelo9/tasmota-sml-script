@@ -139,7 +139,7 @@ int main() {
 
     esInit(1, 2, 3);             // /v1/json, /rpc/EM, /rpc/Shelly
     mbInit();
-    webPageLabel(0, "&#x2699;&#xFE0F; SML & Battery");
+    webPageLabel(0, "&#x2699;&#xFE0F; SML /&#x1F50B;");
     webPageLabel(3, "&#x1F4BB; TinyC");   // hands over to /tc
     webOn(4, "/pwr");
     smlScripterLoad("/sml_meter.def");

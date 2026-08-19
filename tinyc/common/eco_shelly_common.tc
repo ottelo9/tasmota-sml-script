@@ -16,11 +16,13 @@ persist int es_offset;      // zero-feed offset [W]
 persist int es_tweak;       // regulator shaping 0/1
 persist int es_force;       // Shelly: push UDP even without a request
 persist int es_throttle;    // update rate [s]
+persist int es_ph3;         // 1 = per-phase values from smlGet(4/5/6)
 
 // ─── Edit buffer ───────────────────────────────────────────────────────────
 // The panel writes here; Save copies it onto the settings above.
 int es_e_mode; int es_e_port; int es_e_offset;
 int es_e_tweak; int es_e_force; int es_e_throttle;
+int es_e_ph3;
 
 void esCommit() {
     es_mode = es_e_mode;
@@ -29,6 +31,7 @@ void esCommit() {
     es_tweak = es_e_tweak;
     es_force = es_e_force;
     es_throttle = es_e_throttle;
+    es_ph3 = es_e_ph3;
     if (es_throttle < 1) es_throttle = 1;
 }
 void esEditLoad() {
@@ -38,10 +41,12 @@ void esEditLoad() {
     es_e_tweak = es_tweak;
     es_e_force = es_force;
     es_e_throttle = es_throttle;
+    es_e_ph3 = es_ph3;
 }
 
 // ─── Runtime ───────────────────────────────────────────────────────────────
 float es_cpwr;              // power handed to the battery [W]
+float es_pa; float es_pb; float es_pc;   // per-phase, es_ph3 only
 float es_avg;               // heavily smoothed (EcoTracker powerAvg)
 int   es_once_mdns;
 int   es_once_udp;
@@ -56,22 +61,33 @@ char  es_body[640];
 char  es_wrap[768];
 char  es_hdr[160];
 
+
+// Offset and regulator shaping, applied per phase exactly as CT002 does it.
+float esCtrl(float raw) {
+    float off  = (float)es_offset;
+    float base = raw - off;
+    if (es_tweak > 0) {
+        if (raw > off) return base / 4.0;
+        return base / 0.8;
+    }
+    return base;
+}
 // ─── Payload builders ──────────────────────────────────────────────────────
 
 void esBuildEco() {
     float ein  = smlGet(2) * 1000.0;      // kWh -> Wh
     float eout = smlGet(3) * 1000.0;
-    sprintf(es_body, "{\"power\":%.0f,\"powerAvg\":%.0f,\"agePower\":1000,\"powerPhase1\":%.0f,\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":%.0f,\"energyCounterOut\":%.0f}", es_cpwr, es_avg, es_cpwr, ein, eout);
+    sprintf(es_body, "{\"power\":%.0f,\"powerAvg\":%.0f,\"agePower\":1000,\"powerPhase1\":%.0f,\"powerPhase2\":%.0f,\"powerPhase3\":%.0f,\"energyCounterIn\":%.0f,\"energyCounterOut\":%.0f}", es_cpwr, es_avg, es_pa, es_pb, es_pc, ein, eout);
 }
 
 void esBuildEm() {
-    sprintf(es_body, "{\"id\":0,\"a_act_power\":%.0f,\"b_act_power\":0,\"c_act_power\":0,\"total_act_power\":%.0f}", es_cpwr, es_cpwr);
+    sprintf(es_body, "{\"id\":0,\"a_act_power\":%.0f,\"b_act_power\":%.0f,\"c_act_power\":%.0f,\"total_act_power\":%.0f}", es_pa, es_pb, es_pc, es_cpwr);
 }
 
 void esBuildFull() {
     float ein  = smlGet(2) * 1000.0;
     float eout = smlGet(3) * 1000.0;
-    sprintf(es_body, "{\"em:0\":{\"id\":0,\"a_act_power\":%.0f,\"b_act_power\":0,\"c_act_power\":0,\"total_act_power\":%.0f},\"emdata:0\":{\"id\":0,\"a_total_act_energy\":%.0f,\"a_total_act_ret_energy\":%.0f,\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,\"total_act\":%.0f,\"total_act_ret\":%.0f}}", es_cpwr, es_cpwr, ein, eout, ein, eout);
+    sprintf(es_body, "{\"em:0\":{\"id\":0,\"a_act_power\":%.0f,\"b_act_power\":%.0f,\"c_act_power\":%.0f,\"total_act_power\":%.0f},\"emdata:0\":{\"id\":0,\"a_total_act_energy\":%.0f,\"a_total_act_ret_energy\":%.0f,\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,\"total_act\":%.0f,\"total_act_ret\":%.0f}}", es_pa, es_pb, es_pc, es_cpwr, ein, eout, ein, eout);
 }
 
 void esWrapUdp() {
@@ -163,17 +179,15 @@ void esTick() {
     if (tasm_uptime - es_last_upd < es_throttle) return;
     es_last_upd = tasm_uptime;
 
-    float raw  = smlGet(1);
-    float off  = (float)es_offset;
-    float base = raw - off;
-    if (es_tweak > 0) {
-        if (raw > off) {
-            es_cpwr = base / 4.0;
-        } else {
-            es_cpwr = base / 0.8;
-        }
+    es_cpwr = esCtrl(smlGet(1));      // saldierend total, as before
+    if (es_ph3 == 1) {
+        es_pa = esCtrl(smlGet(4));
+        es_pb = esCtrl(smlGet(5));
+        es_pc = esCtrl(smlGet(6));
     } else {
-        es_cpwr = base;
+        es_pa = es_cpwr;              // single-value meter: all on L1
+        es_pb = 0.0;
+        es_pc = 0.0;
     }
     es_avg = (0.9 * es_avg) + (0.1 * es_cpwr);
 }
@@ -217,6 +231,10 @@ void esRows() {
     if (ui_de) sprintf(es_body, "{s}An den Akku{m}%.0f W{e}", es_cpwr);
     else       sprintf(es_body, "{s}To battery{m}%.0f W{e}", es_cpwr);
     webSend(es_body);
+    if (es_ph3 == 1) {
+        sprintf(es_body, "{s}L1 / L2 / L3{m}%.0f / %.0f / %.0f W{e}", es_pa, es_pb, es_pc);
+        webSend(es_body);
+    }
 }
 
 // From WebUI(): emitted inside an already-open settings panel.
@@ -236,11 +254,13 @@ void esPanel() {
     if (ui_de) {
         webNumber(es_e_offset, -200, 200, "Offset [W]");
         webCheckbox(es_e_tweak, "Regleroptimierung");
+        webCheckbox(es_e_ph3, "3 Phasen");
         webNumber(es_e_throttle, 1, 60, "Update-Rate [s]");
         if (es_e_mode == 1) webCheckbox(es_e_force, "Senden erzwingen");
     } else {
         webNumber(es_e_offset, -200, 200, "Offset [W]");
         webCheckbox(es_e_tweak, "Regulator tweak");
+        webCheckbox(es_e_ph3, "3 phases");
         webNumber(es_e_throttle, 1, 60, "Update rate [s]");
         if (es_e_mode == 1) webCheckbox(es_e_force, "Force sending");
     }

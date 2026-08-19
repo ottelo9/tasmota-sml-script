@@ -133,19 +133,23 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>Offset [W]</th><td>Shifts the reported power. A positive value makes the battery aim for that much import instead of exactly zero &mdash; a safety margin against feeding into the grid. Negative aims the other way.</td></tr>
 <tr><th>Regulator tweak</th><td>Shapes the value instead of passing it through: above the offset it is damped to a quarter, below it is exaggerated. The battery then approaches from above carefully and corrects downwards quickly. Helps against oscillation; if your battery already regulates calmly, leave it <span class="sw">OFF</span>.</td></tr>
+<tr><th>3 phases</th><td>Default <span class="sw">OFF</span>: the meter's single netted value goes onto L1, the other two report 0. Switched <span class="sw">ON</span>, L1/L2/L3 are taken from the descriptor's values <code>4</code>, <code>5</code> and <code>6</code>, each through the same offset and shaping. Only useful if your descriptor actually delivers per-phase power.</td></tr>
 <tr><th>Update rate [s]</th><td>How often the value is recalculated. 1&nbsp;s is fine. Slower makes the whole loop calmer at the cost of response time.</td></tr>
 <tr><th>Force sending</th><td>Shelly mode only. Repeats the last answer over UDP even without a request. Some firmwares regulate better with a steady stream; most do not need it.</td></tr>
 </table>
 <p>The <b>To battery</b> row on the main page shows what actually leaves the device, after offset and shaping. Compare it with the raw power to see what the settings do.</p>
+<p>With <b>3 phases</b> on, an extra <b>L1 / L2 / L3</b> row appears there too, and the sample payloads below carry those three values instead of zeros in <code>powerPhase2</code>, <code>powerPhase3</code> and <code>b_act_power</code>, <code>c_act_power</code>. The total stays the netted meter value either way &mdash; that is what the battery regulates on.</p>
 </div>
 <div class="de">
 <table>
 <tr><th>Offset [W]</th><td>Verschiebt die gemeldete Leistung. Ein positiver Wert lässt den Akku auf so viel Bezug statt auf genau null regeln &mdash; ein Sicherheitsabstand gegen Einspeisung. Negativ geht in die andere Richtung.</td></tr>
 <tr><th>Regleroptimierung</th><td>Formt den Wert, statt ihn durchzureichen: oberhalb des Offsets wird er auf ein Viertel gedämpft, unterhalb überzeichnet. Der Akku nähert sich dadurch von oben vorsichtig an und korrigiert nach unten schnell. Hilft gegen Schwingen; wenn dein Akku ohnehin ruhig regelt, auf <span class="sw">AUS</span> lassen.</td></tr>
+<tr><th>3 Phasen</th><td>Standard <span class="sw">AUS</span>: der saldierte Einzelwert des Zählers geht auf L1, die anderen beiden melden 0. Auf <span class="sw">EIN</span> kommen L1/L2/L3 aus den Descriptor-Werten <code>4</code>, <code>5</code> und <code>6</code>, jeder durch denselben Offset und dieselbe Formung. Nur sinnvoll, wenn dein Descriptor die Leistung je Phase überhaupt liefert.</td></tr>
 <tr><th>Update-Rate [s]</th><td>Wie oft der Wert neu berechnet wird. 1&nbsp;s ist gut. Langsamer beruhigt den ganzen Regelkreis, kostet aber Reaktionszeit.</td></tr>
 <tr><th>Senden erzwingen</th><td>Nur im Shelly-Modus. Wiederholt die letzte Antwort über UDP auch ohne Anfrage. Manche Firmware regelt mit einem stetigen Strom besser; die meisten brauchen es nicht.</td></tr>
 </table>
 <p>Die Zeile <b>An den Akku</b> auf der Hauptseite zeigt, was das Gerät tatsächlich verlässt &mdash; nach Offset und Formung. Im Vergleich mit der Rohleistung sieht man, was die Einstellungen bewirken.</p>
+<p>Mit <b>3 Phasen</b> erscheint dort zusätzlich eine Zeile <b>L1 / L2 / L3</b>, und die Beispiel-Antworten weiter unten tragen diese drei Werte statt Nullen in <code>powerPhase2</code>, <code>powerPhase3</code> sowie <code>b_act_power</code> und <code>c_act_power</code>. Der Gesamtwert bleibt in beiden Fällen der saldierte Zählerwert &mdash; darauf regelt der Akku.</p>
 </div>
 </section>
 

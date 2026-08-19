@@ -57,8 +57,7 @@ body.lang-de .en{display:none}
 <nav>
   <a href="#overview"><span class="en">Overview</span><span class="de">Überblick</span></a>
   <a href="#programs"><span class="en">Programs</span><span class="de">Programme</span></a>
-  <a href="#meter"><span class="en">Descriptor</span><span class="de">Descriptor</span></a>
-  <a href="#pins">Pins</a>
+  <a href="#meter"><span class="en">Meter settings</span><span class="de">Zähler-Einstellungen</span></a>
   <a href="#filter">Filter</a>
   <a href="#display"><span class="en">Display</span><span class="de">Anzeige</span></a>
   <a href="#pv">PV</a>
@@ -74,11 +73,27 @@ body.lang-de .en{display:none}
 <p>An ESP32 with a reading head sits on your electricity meter and reads it over SML. Every program of this family shares the same meter setup; they differ in what they add on top: charts, a meter emulator for a PV battery, a Modbus slave.</p>
 <p><b>Requirements:</b> ESP32 (no ESP8266), Tasmota with TinyC and <code>USE_SML</code>, and a reading head (examples on my <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">blog</a>).</p>
 <p>Everything is set up on the web page, no code editing. Language, meter, pins and options are stored on the device.</p>
+<p><b>Buttons in Tasmota's main menu.</b> A running program adds its own entries:</p>
+<table>
+<tr><th>&#x2699;&#xFE0F; SML</th><td>All settings. Programs with a battery emulator show <b>&#x2699;&#xFE0F; SML /&#x1F50B;</b> instead.</td></tr>
+<tr><th>&#x2601;&#xFE0F; Marstek</th><td>Only in the CT002 programs: account and CT registration.</td></tr>
+<tr><th>&#x1F4BB; TinyC</th><td>Tasmota's TinyC page &mdash; slots, upload, editor.</td></tr>
+</table>
+<p>The charts have a page of their own, reached by the <b>&#x1F4C8;</b> link under the readings on the main page. They are no longer drawn into the main page, which used to make it slow.</p>
 </div>
 <div class="de">
 <p>Ein ESP32 mit Lesekopf sitzt am Stromzähler und liest ihn über SML aus. Alle Programme dieser Familie teilen sich die gleiche Zählereinrichtung; sie unterscheiden sich nur in dem, was oben drauf kommt: Diagramme, ein Zähler-Emulator für eine PV-Batterie, ein Modbus-Slave.</p>
 <p><b>Voraussetzungen:</b> ESP32 (kein ESP8266), Tasmota mit TinyC und <code>USE_SML</code> und ein Lesekopf (Beispiele auf meinem <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">Blog</a>).</p>
 <p>Alles wird auf der Weboberfläche eingestellt, nichts im Code. Sprache, Zähler, Pins und Optionen liegen auf dem Gerät.</p>
+<p>The current smoothed value is shown in this section on the settings page. It used to sit on the main page as <i>Power (smoothed)</i> and moved here, next to the switch that publishes it.</p>
+<p>The publishes carry log level&nbsp;3: the console stays quiet at <code>weblog&nbsp;2</code> and shows them from <code>weblog&nbsp;3</code>, without recompiling. A failed publish is logged once with its return code &mdash; <code>-2</code> means MQTT is switched off on the device (<code>SetOption3</code>).</p>
+<p><b>Buttons in Tasmotas Hauptmenü.</b> Ein laufendes Programm ergänzt eigene Einträge:</p>
+<table>
+<tr><th>&#x2699;&#xFE0F; SML</th><td>Alle Einstellungen. Programme mit Akku-Emulator zeigen stattdessen <b>&#x2699;&#xFE0F; SML /&#x1F50B;</b>.</td></tr>
+<tr><th>&#x2601;&#xFE0F; Marstek</th><td>Nur in den CT002-Programmen: Konto und CT-Registrierung.</td></tr>
+<tr><th>&#x1F4BB; TinyC</th><td>Tasmotas TinyC-Seite &mdash; Slots, Upload, Editor.</td></tr>
+</table>
+<p>Die Diagramme haben eine eigene Seite, erreichbar über das <b>&#x1F4C8;</b> unter den Messwerten auf der Hauptseite. Sie werden nicht mehr in die Hauptseite gezeichnet, was diese früher langsam gemacht hat.</p>
 </div>
 </section>
 
@@ -125,7 +140,8 @@ body.lang-de .en{display:none}
 </section>
 
 <section id="meter">
-<h2>Descriptor</h2>
+<h2><span class="en">Meter settings</span><span class="de">Zähler-Einstellungen</span></h2>
+<h3>Descriptor</h3>
 <div class="en">
 <p>The descriptor tells the SML driver how to read your meter: baud rate, protocol and which OBIS codes go into which value. It lives in <code>/sml_meter.def</code>.</p>
 <table>
@@ -144,10 +160,8 @@ body.lang-de .en{display:none}
 </table>
 <p>Die ersten drei Werte sind per Konvention festgelegt, alles andere baut darauf auf: <code>1</code> Leistung&nbsp;[W], <code>2</code> Bezug&nbsp;[kWh], <code>3</code> Einspeisung&nbsp;[kWh].</p>
 </div>
-</section>
-
-<section id="pins">
-<h2>Pins</h2>
+<a id="pins"></a>
+<h3>Pins</h3>
 <div class="en">
 <p>RX is the pin the reading head's data line goes to. TX is only needed for meters that have to be woken up or that expect a request.</p>
 <table>
@@ -259,37 +273,56 @@ body.lang-de .en{display:none}
 <pre><code>{"power2":-217,"cpwr":-180,"power":-440,"in":26714.950,"out":659.775}</code></pre>
 <p>Für einen zweiten Akku, der über HTTP pollt statt auf einen Zähler zu horchen &mdash; zum Beispiel der Dynamic Power Limiter von opendtu-onbattery. Bei ausgeschalteter Telemetrie antwortet der Endpunkt mit <code>{"enabled":0}</code>.</p>
 <p>Warum gemittelt: ein Akku, der jeder Spitze folgt, schwingt. <code>power</code> ist der Rohwert, <code>power2</code> der ruhige.</p>
+<p>Der aktuelle gefilterte Wert steht in diesem Abschnitt auf der Einstellungsseite. Früher stand er als <i>Leistung (gefiltert)</i> auf der Hauptseite und ist hierher gewandert, neben den Schalter, der ihn versendet.</p>
+<p>Die Publishes tragen Log-Stufe&nbsp;3: bei <code>weblog&nbsp;2</code> bleibt die Konsole ruhig, ab <code>weblog&nbsp;3</code> werden sie sichtbar, ohne neu zu übersetzen. Ein fehlgeschlagener Publish wird einmal mit Rückgabewert protokolliert &mdash; <code>-2</code> heißt, MQTT ist auf dem Gerät abgeschaltet (<code>SetOption3</code>).</p>
 </div>
 </section>
 
 <section id="modbus">
 <h2>Modbus-TCP</h2>
 <div class="en">
-<p>Default <span class="sw">OFF</span>. Switched <span class="sw">ON</span>, the device is a Modbus-TCP slave and any client can read the meter from it &mdash; a home automation system, a wallbox, an energy manager.</p>
+<p>Default <span class="sw">OFF</span>. Switched <span class="sw">ON</span>, the device is a Modbus-TCP slave (server) and any client can read the meter.</p>
 <table>
-<tr><th><span class="en">Register</span></th><th>PDU</th><th><span class="en">Value</span></th><th><span class="en">Unit</span></th></tr>
-<tr><td>40000</td><td>0</td><td><span class="en">Power</span></td><td>W</td></tr>
-<tr><td>40002</td><td>2</td><td><span class="en">Import</span></td><td>kWh</td></tr>
-<tr><td>40004</td><td>4</td><td><span class="en">Export</span></td><td>kWh</td></tr>
+<tr><th>Address</th><th>4x reference</th><th><span class="en">Value</span></th><th><span class="en">Unit</span></th></tr>
+<tr><td>0</td><td>40001</td><td><span class="en">Power</span></td><td>W</td></tr>
+<tr><td>2</td><td>40003</td><td><span class="en">Import</span></td><td>kWh</td></tr>
+<tr><td>4</td><td>40005</td><td><span class="en">Export</span></td><td>kWh</td></tr>
 </table>
-<p>Two registers per value, 32-bit IEEE-754 float, big-endian. Holding registers, <b>FC03 only</b>. Reads must start on a value boundary and cover whole values, so address and count are both even.</p>
+<p>Two numbering conventions exist for the same registers, which is the usual source of an <code>illegal data address</code>. The left column is the address that goes on the wire; the right one is the 4x notation that counts from 1.</p>
+<h3>Testing with Modbus Poll</h3>
+<p>Modbus Poll counts <b>from 0</b> unless <i>PLC addresses (base 1)</i> is ticked &mdash; then it shows the 4x references instead.</p>
+<table>
+<tr><th>Function</th><td>03 Read Holding Registers</td></tr>
+<tr><th>Address</th><td><code>0</code> (or <code>40001</code> with PLC addresses)</td></tr>
+<tr><th>Quantity</th><td><code>2</code> for one value, <code>6</code> for all three</td></tr>
+</table>
+<p>The reply arrives as single 16-bit registers. To see a real number, select the <b>two registers that belong to one value</b>, then <i>Format &rarr; 32-bit Float Big-Endian</i>.</p>
+<p>Two registers per value, 32-bit IEEE-754 float, big-endian. Holding registers, <b>FC03 only</b>. Reads must start on a value boundary and cover whole values.</p>
 <p>Port 502 is standard. Change it if something else on the device already uses it. The change takes effect within a second, no reboot.</p>
-<p>Anything outside the map is answered properly: a wrong function code gives exception&nbsp;<code>01</code>, a bad address exception&nbsp;<code>02</code>. Connections stay open, so a client can poll as fast as it likes.</p>
+<p>Anything outside the map is answered properly: a wrong function code gives exception&nbsp;<code>01</code>, a bad address exception&nbsp;<code>02</code>, and an odd or oversized quantity exception&nbsp;<code>03</code>. A quantity of 1 is therefore refused &mdash; half a float is not a value.</p>
 </div>
 <div class="de">
-<p>Standard <span class="sw">AUS</span>. Auf <span class="sw">EIN</span> ist das Gerät ein Modbus-TCP-Slave, und jeder Client kann den Zähler auslesen &mdash; Hausautomatisierung, Wallbox, Energiemanager.</p>
+<p>Standard <span class="sw">AUS</span>. Auf <span class="sw">EIN</span> ist das Gerät ein Modbus-TCP-Slave (Server), und jeder Client kann den Zähler lesen.</p>
 <table>
-<tr><th>Register</th><th>PDU</th><th>Wert</th><th>Einheit</th></tr>
-<tr><td>40000</td><td>0</td><td>Leistung</td><td>W</td></tr>
-<tr><td>40002</td><td>2</td><td>Bezug</td><td>kWh</td></tr>
-<tr><td>40004</td><td>4</td><td>Einspeisung</td><td>kWh</td></tr>
+<tr><th>Adresse</th><th>4x-Bezeichnung</th><th>Wert</th><th>Einheit</th></tr>
+<tr><td>0</td><td>40001</td><td>Leistung</td><td>W</td></tr>
+<tr><td>2</td><td>40003</td><td>Bezug</td><td>kWh</td></tr>
+<tr><td>4</td><td>40005</td><td>Einspeisung</td><td>kWh</td></tr>
 </table>
-<p>Zwei Register je Wert, 32-Bit-IEEE-754-Float, big-endian. Holding-Register, <b>nur FC03</b>. Ein Lesezugriff muss auf einer Wertgrenze beginnen und ganze Werte umfassen, Adresse und Anzahl sind also beide gerade.</p>
+<p>Für dieselben Register gibt es zwei Zählweisen, und daher kommt fast jedes <code>illegal data address</code>. Links steht die Adresse, die auf die Leitung geht, rechts die 4x-Schreibweise, die ab 1 zählt.</p>
+<h3>Testen mit Modbus Poll</h3>
+<p>Modbus Poll zählt <b>ab 0</b>, solange <i>PLC addresses (base 1)</i> nicht angehakt ist &mdash; mit Haken zeigt es die 4x-Bezeichnungen.</p>
+<table>
+<tr><th>Function</th><td>03 Read Holding Registers</td></tr>
+<tr><th>Address</th><td><code>0</code> (mit PLC addresses <code>40001</code>)</td></tr>
+<tr><th>Quantity</th><td><code>2</code> für einen Wert, <code>6</code> für alle drei</td></tr>
+</table>
+<p>Die Antwort kommt als einzelne 16-Bit-Register. Damit eine echte Zahl erscheint, die <b>zwei zusammengehörenden Register markieren</b> und dann <i>Format &rarr; 32-Bit Float Big-Endian</i> wählen.</p>
+<p>Zwei Register je Wert, 32-Bit-IEEE-754-Float, big-endian. Holding-Register, <b>nur FC03</b>. Ein Lesezugriff muss auf einer Wertgrenze beginnen und ganze Werte umfassen.</p>
 <p>Port 502 ist Standard. Nur ändern, wenn ihn auf dem Gerät schon etwas anderes benutzt. Die Änderung greift innerhalb einer Sekunde, ohne Neustart.</p>
-<p>Alles außerhalb der Tabelle wird sauber beantwortet: falscher Funktionscode gibt Exception&nbsp;<code>01</code>, falsche Adresse Exception&nbsp;<code>02</code>. Verbindungen bleiben offen, ein Client kann also so schnell pollen, wie er möchte.</p>
+<p>Alles außerhalb der Tabelle wird sauber beantwortet: falscher Funktionscode gibt Exception&nbsp;<code>01</code>, falsche Adresse Exception&nbsp;<code>02</code>, eine ungerade oder zu große Anzahl Exception&nbsp;<code>03</code>. Quantity&nbsp;1 wird deshalb abgelehnt &mdash; ein halber Float ist kein Wert.</p>
 </div>
 </section>
-
 <section id="trouble">
 <h2><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></h2>
 <div class="en">
