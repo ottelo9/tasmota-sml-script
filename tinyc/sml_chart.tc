@@ -18,6 +18,7 @@ int sml_e_pv; int sml_e_sndpwr;   // edit buffer, applied by Save
 int do_init;
 int do_init2;
 int do_reset;
+int do_csv;      // write the chart arrays out as readable .csv files
 
 // ─── Callbacks ─────────────────────────────────────────────────────────────
 
@@ -34,6 +35,15 @@ void EverySecond() {
     if (do_reset) {
         tasmCmd("Sensor53 r", sml_pv_resp);
         do_reset = 0;
+    }
+
+    // CSV export deliberately BEFORE the NTP/meter returns below: getting the
+    // stored data out has to work on a device whose meter is silent, which is
+    // exactly when someone wants it (mi-hol, #119).
+    if (do_csv) {
+        sml_chart_export_csv();
+        if (sml_pv > 0) sml_chart_pv_export_csv();
+        do_csv = 0;
     }
 
     if (tasm_year < 2020) return;
@@ -104,7 +114,7 @@ void WebCall() {
 }
 
 void WebUI() {
-    if (webPage() == 2) { sml_chart_page_render(); return; }
+    if (webPage() == 2) { sml_chart_page_render(varIdx(do_csv)); return; }
     if (webPage() == 3) { webSend("<script>location.replace('/tc')</script>"); return; }
     if (webPage() != 0) return;
     sml_render_settings_panel();

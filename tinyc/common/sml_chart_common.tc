@@ -93,7 +93,9 @@ void sml_chart_save() {
 }
 
 // Readable export for backup and spreadsheets. Not the storage path.
-// Baselines go in line 1 on purpose - a backup without them was the old bug.
+// Every line names itself in column 1, so the file stays readable without
+// this source at hand. Baselines go in line 2 on purpose - a backup without
+// them was the old bug.
 void sml_chart_export_csv() {
     int h = fileOpen("/sml_chart.csv", "w");
     if (h < 0) {
@@ -101,14 +103,24 @@ void sml_chart_export_csv() {
         return;
     }
     char kopf[96];
-    sprintf(kopf, "%.3f\t%.3f\t%.3f\t%d\n", sml_dval, sml_mval, sml_yval, sml_da);
+    strcpy(kopf, "# row\tvalues -> import side, tab separated\n");
+    fileWrite(h, kopf, strlen(kopf));
+    sprintf(kopf, "baselines\t%.3f\t%.3f\t%.3f\t%d\n", sml_dval, sml_mval, sml_yval, sml_da);
+    fileWrite(h, kopf, strlen(kopf));
+    strcpy(kopf, "power_4h_30s\t");
     fileWrite(h, kopf, strlen(kopf));
     fileWriteArray(sml_s4h,  h, 481,  0, CHART_CSV_DEC);
+    strcpy(kopf, "power_24h_60s\t");
+    fileWrite(h, kopf, strlen(kopf));
     fileWriteArray(sml_s24h, h, 1441, 0, CHART_CSV_DEC);
+    strcpy(kopf, "import_day_1_31\t");
+    fileWrite(h, kopf, strlen(kopf));
     fileWriteArray(sml_dcon, h, 31,   0, CHART_CSV_DEC);
+    strcpy(kopf, "import_month_1_12\t");
+    fileWrite(h, kopf, strlen(kopf));
     fileWriteArray(sml_mcon, h, 12,   0, CHART_CSV_DEC);
     fileClose(h);
-    addLog("sml_chart: wrote /sml_chart.csv (baselines in line 1)");
+    addLog("sml_chart: wrote /sml_chart.csv (header + 5 rows)");
 }
 
 // Save on shutdown: CleanUp() = device restart / OTA, OnExit() = this slot
@@ -219,11 +231,11 @@ void sml_chart_render_totals() {
     if (ui_de) {
         sprintf(sml_buf, "{s}Leistung{m}%.0f W{e}", smlGet(1));      webSend(sml_buf);
         sprintf(sml_buf, "{s}Bezug{m}%.3f kWh{e}", smlGet(2));       webSend(sml_buf);
-        sprintf(sml_buf, "{s}Einspeisung{m}%.3f kWh{e}", smlGet(3)); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Einspeisung{m}%.3f kWh{e}", SML_PV_TOTAL); webSend(sml_buf);
     } else {
         sprintf(sml_buf, "{s}Power{m}%.0f W{e}", smlGet(1));         webSend(sml_buf);
         sprintf(sml_buf, "{s}Import{m}%.3f kWh{e}", smlGet(2));      webSend(sml_buf);
-        sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", smlGet(3));      webSend(sml_buf);
+        sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", SML_PV_TOTAL);    webSend(sml_buf);
     }
 
     // Date + uptime, wanted on the main page
@@ -252,16 +264,16 @@ void sml_chart_render_totals() {
 // readability) + DE date in the tooltip (dd.MM.yyyy), independent of the
 // browser locale. WebChartJS runs in the chart's draw scope (dt/o/el) and
 // o.done=1 takes over the draw so it renders as an AreaChart.
-char sml_chart_js[176];   // snippet is 163 chars incl. trailing o.done=1
+char sml_chart_js[240];   // snippet incl. chartArea override and o.done=1
 
 void sml_chart_area_de() {
     strcpy(sml_chart_js,
-        "var f=new google.visualization.DateFormat({pattern:'dd.MM.yyyy HH:mm'});f.format(dt,0);o.areaOpacity=0.3;new google.visualization.AreaChart(el).draw(dt,o);o.done=1");
+        "var f=new google.visualization.DateFormat({pattern:'dd.MM.yyyy HH:mm'});f.format(dt,0);o.chartArea={left:58,right:16,top:30,height:'65%'};o.areaOpacity=0.3;new google.visualization.AreaChart(el).draw(dt,o);o.done=1");
     WebChartJS(sml_chart_js);
 }
 
 void sml_chart_render_4h() {
-    WebChartSize(600, 280);
+    WebChartSize(0, 280);   // 0 = card width (see #111)
     // 240 points at interval=1 min = a 4 h x-axis (matches the 240-slot 1-min
     // ring). Filled area + DE date via the hook.
     if (ui_de) WebChart(0, "Verbrauch 4 Stunden [Watt]", "W", 0x3498db, sml_s4h_pos, 240, sml_s4h, 0, 1, 0.0, 0.0);
@@ -270,7 +282,7 @@ void sml_chart_render_4h() {
 }
 
 void sml_chart_render_24h() {
-    WebChartSize(600, 280);
+    WebChartSize(0, 280);   // 0 = card width (see #111)
     if (ui_de) WebChart(0, "Verbrauch 24 Stunden [Watt]", "W", 0x3498db, sml_s24h_pos, 1440, sml_s24h, 0, 1, 0.0, 0.0);
     else       WebChart(0, "Power 24 hours [Watt]", "W", 0x3498db, sml_s24h_pos, 1440, sml_s24h, 0, 1, 0.0, 0.0);
     sml_chart_area_de();
@@ -281,8 +293,10 @@ void sml_chart_render_24h() {
 //    formatter shows DD.MM. for >7 column points and doesn't support
 //    per-bar styles, so we bypass it for the column charts. Loader is
 //    already on the page from the WebChart line-chart calls above.
-// The two destructive data buttons, identical in every chart wiring - so they
-// live here once. Pass the already-resolved widget indices:
+// The data buttons, identical in every chart wiring - so they live here once.
+// Pass the already-resolved widget indices:
+// The two reset buttons overwrite history and ask first. The CSV export sits
+// on the charts page instead - it belongs to the data you are looking at.
 //     sml_chart_data_panel(varIdx(do_init), varIdx(do_init2));
 void sml_chart_data_panel(int idx_init, int idx_init2) {
     uiHead("&#x1F4BE;", "Data", "Daten", "sml/#data");
@@ -311,7 +325,7 @@ void sml_chart_data_panel(int idx_init, int idx_init2) {
 void sml_chart_render_days() {
     int today = tasm_day;
     if (today < 1) today = 1;
-    webSend("<div id='sml_dch' style='text-align:center;width:600px;height:280px'></div>");
+    webSend("<div id='sml_dch' class='tcc' style='width:100%;box-sizing:border-box;height:280px'></div>");
     if (ui_de) webSend("<script>function _smlDD(){var d=google.visualization.arrayToDataTable([['Tag','Energie [kWh]',{role:'style'}]");
     else       webSend("<script>function _smlDD(){var d=google.visualization.arrayToDataTable([['Day','Energy [kWh]',{role:'style'}]");
     int i = 1;
@@ -342,7 +356,7 @@ void sml_chart_render_months() {
     if (ui_de) strcpy(mn_names, "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez");
     else       strcpy(mn_names, "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec");
     char mn[6];
-    webSend("<div id='sml_mch' style='text-align:center;width:600px;height:280px'></div>");
+    webSend("<div id='sml_mch' class='tcc' style='width:100%;box-sizing:border-box;height:280px'></div>");
     if (ui_de) webSend("<script>function _smlDM(){var d=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]',{role:'style'}]");
     else       webSend("<script>function _smlDM(){var d=google.visualization.arrayToDataTable([['Month','Import [kWh]',{role:'style'}]");
     int i = 1;
@@ -368,6 +382,15 @@ void sml_chart_render_months() {
 // ════ Feed-in side ═════════════════════════════════════════════════════════
 
 // ── Production-side persist state ──────────────────────────────────────────
+// Where the "energy fed back" total comes from. Default is the meter's own
+// export register (OBIS 1.8.x -> smlGet(3)). A Bezugszaehler has no such
+// register, so sml_chart_bezug.tc integrates the total from negative power
+// readings and points this at its own persist variable before the #include.
+// Default behaviour is unchanged for every program that ignores it.
+#ifndef SML_PV_TOTAL
+#define SML_PV_TOTAL smlGet(3)
+#endif
+
 persist float sml_dval2;             // daily zero point for energy-out (kWh)
 persist float sml_mval2;             // monthly zero point
 persist float sml_yval2;             // yearly zero point
@@ -457,16 +480,22 @@ void sml_chart_pv_export_csv() {
         return;
     }
     char kopf[96];
-    sprintf(kopf, "%.3f\t%.3f\t%.3f\n", sml_dval2, sml_mval2, sml_yval2);
+    strcpy(kopf, "# row\tvalues -> feed-in side, tab separated\n");
+    fileWrite(h, kopf, strlen(kopf));
+    sprintf(kopf, "baselines\t%.3f\t%.3f\t%.3f\n", sml_dval2, sml_mval2, sml_yval2);
+    fileWrite(h, kopf, strlen(kopf));
+    strcpy(kopf, "export_day_1_31\t");
     fileWrite(h, kopf, strlen(kopf));
     fileWriteArray(sml_dprod, h, 31, 0, CHART_CSV_DEC);
+    strcpy(kopf, "export_month_1_12\t");
+    fileWrite(h, kopf, strlen(kopf));
     fileWriteArray(sml_mprod, h, 12, 0, CHART_CSV_DEC);
     fileClose(h);
-    addLog("sml_chart_pv: wrote /sml_chart_pv.csv (baselines in line 1)");
+    addLog("sml_chart_pv: wrote /sml_chart_pv.csv (header + 3 rows)");
 }
 
 void sml_chart_pv_init_baselines() {
-    float eout = smlGet(3);
+    float eout = SML_PV_TOTAL;
     sml_dval2 = eout;
     sml_mval2 = eout;
     sml_yval2 = eout;
@@ -495,7 +524,7 @@ void sml_chart_pv_5s_tick() {
 
 // 60-s tick: production counters + midnight rollover of the PV baselines.
 void sml_chart_pv_60s_tick() {
-    float eout = smlGet(3);
+    float eout = SML_PV_TOTAL;
     int   d    = tasm_day;
     int   m    = tasm_month;
 
@@ -523,7 +552,7 @@ void sml_chart_pv_60s_tick() {
 void sml_chart_pv_render_dayprod() {
     int today = tasm_day;
     if (today < 1) today = 1;
-    webSend("<div id='sml_dpch' style='text-align:center;width:600px;height:280px'></div>");
+    webSend("<div id='sml_dpch' class='tcc' style='width:100%;box-sizing:border-box;height:280px'></div>");
     if (ui_de) webSend("<script>function _smlDP(){var d=google.visualization.arrayToDataTable([['Tag','Einspeisung [kWh]',{role:'style'}]");
     else       webSend("<script>function _smlDP(){var d=google.visualization.arrayToDataTable([['Day','Export [kWh]',{role:'style'}]");
     int i = 1;
@@ -549,7 +578,7 @@ void sml_chart_pv_render_months_dual() {
     if (ui_de) strcpy(mn_names, "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez");
     else       strcpy(mn_names, "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec");
     char mn[6];
-    webSend("<div id='sml_mch2' style='text-align:center;width:600px;height:280px'></div>");
+    webSend("<div id='sml_mch2' class='tcc' style='width:100%;box-sizing:border-box;height:280px'></div>");
     if (ui_de) webSend("<script>function _smlDM2(){var d=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]','Einspeisung [kWh]']");
     else       webSend("<script>function _smlDM2(){var d=google.visualization.arrayToDataTable([['Month','Import [kWh]','Export [kWh]']");
     int i = 1;
@@ -574,9 +603,15 @@ void sml_chart_pv_render_months_dual() {
 // so the window.onload call to la() already sees rfsh=0 and returns.
 // WebChart works here because tc_chart_lib_sent is reset before every /tc_ui
 // render - on a webOn endpoint it is not, and the loader would be sent once.
-void sml_chart_page_render() {
+void sml_chart_page_render(int idx_csv) {
+    // No width rule here: since 1.6.55 the firmware pins the page container
+    // itself (body>div{width:min(96vw,960px)}) next to the chart library, and a
+    // second rule would fight it. The charts are width:100% of that container.
     webSend("<script>pr(0)</script>");
-    webSend("<div style='margin-left:-30px'>");
+    // Plain wrapper. The old margin-left:-30px compensated Tasmota's 5 px div
+    // padding stacking up inside Google's nested chart divs; the firmware now
+    // switches that off with `.tcc div{padding:0}` (gemu, 1.6.55).
+    webSend("<div>");
     sml_chart_render_4h();
     sml_chart_render_24h();
     sml_chart_render_days();
@@ -586,6 +621,13 @@ void sml_chart_page_render() {
     } else {
         sml_chart_render_months();
     }
+    // Export sits under the charts, as an icon - it exports exactly what is
+    // shown above. Reads only, so no confirm(). Split across webSend/sprintf:
+    // the whole tag is ~190 chars and sml_buf holds 160.
+    if (ui_de) webSend("<div style='text-align:center;margin:8px 0'><button style='width:auto;padding:4px 18px;font-size:17px' title='CSV exportieren' data-a='&#10003;' onclick='tcbtn(this,1,");
+    else       webSend("<div style='text-align:center;margin:8px 0'><button style='width:auto;padding:4px 18px;font-size:17px' title='Export CSV' data-a='&#10003;' onclick='tcbtn(this,1,");
+    sprintf(sml_buf, "%d)'>&#x1F4BE; CSV</button></div>", idx_csv);
+    webSend(sml_buf);
     webSend("</div>");
 }
 
