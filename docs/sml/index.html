@@ -230,10 +230,11 @@ body.lang-de .en{display:none}
 <h2><span class="en">Chart data</span><span class="de">Diagrammdaten</span></h2>
 <div class="en">
 <table>
-<tr><th>Reset baselines + clear power charts</th><td>Sets the day, month and year baselines to the current meter reading and empties the 4&nbsp;h and 24&nbsp;h charts. Do this once after installing. Asks first &mdash; it overwrites history.</td></tr>
-<tr><th>Reset bar charts</th><td>Clears the day and month columns. The counters keep running. Asks first.</td></tr>
+<tr><th>&#x1F522; Reset</th><td>Restarts the day, month and year values from the current meter reading. Do this once after installing, and whenever the counters show nonsense &mdash; a full meter reading instead of a daily figure means the baselines are missing. The charts keep their history.</td></tr>
+<tr><th>&#x1F4C8; Reset</th><td>Empties the 4&nbsp;h and 24&nbsp;h power charts. The values above and the bar charts stay as they are.</td></tr>
+<tr><th>&#x1F4CA; Reset</th><td>Clears the day and month columns. The counters keep running. Asks first.</td></tr>
 </table>
-<p>The <b>&#x1F4BE;</b> button at the bottom of the charts page writes <code>/sml_chart.csv</code>, and <code>/sml_chart_pv.csv</code> as well when the feed-in side is on. It reads only, so it fires without asking. Download the files in Tasmota's <a href="/ufsd">file manager</a>.</p>
+<p>The <b>&#x1F4BE; CSV</b> button at the bottom of the settings page writes <code>/sml_chart.csv</code>, and <code>/sml_chart_pv.csv</code> as well when the feed-in side is on. It reads only, so it fires without asking. Download the files in Tasmota's <a href="/ufsd">file manager</a>.</p>
 <p>The CSV holds the baselines in line&nbsp;1, then the 4&nbsp;h, 24&nbsp;h, daily and monthly arrays &mdash; tab separated, one array per line. That is the format to keep a backup in or to open in a spreadsheet.</p>
 <p>The live data lives in the slot's <code>.pvs</code> file, saved by name. A backup is that one file: copy it away, copy it back, restart the slot. <code>/sml_chart.bin</code> is only read once at startup, for importing data from an older version.</p>
 <p>The export also works while the meter is silent &mdash; that is deliberate, since a meter that stopped is exactly when the stored data matters.</p>
@@ -241,10 +242,11 @@ body.lang-de .en{display:none}
 </div>
 <div class="de">
 <table>
-<tr><th>Nullpunkte setzen + Power-Charts leeren</th><td>Setzt die Tages-, Monats- und Jahresbasis auf den aktuellen Zählerstand und leert die 4-h- und 24-h-Diagramme. Einmal nach der Installation. Fragt vorher nach &mdash; es überschreibt Verlaufsdaten.</td></tr>
-<tr><th>Balkendiagramme zurücksetzen</th><td>Löscht die Tages- und Monatsspalten. Die Zähler laufen weiter. Fragt vorher nach.</td></tr>
+<tr><th>&#x1F522; Reset</th><td>Lässt Tages-, Monats- und Jahreswert neu beim aktuellen Zählerstand beginnen. Einmal nach der Installation, und immer dann, wenn die Zähler Unsinn zeigen &mdash; ein voller Zählerstand statt eines Tageswerts heißt, die Nullpunkte fehlen. Die Diagramme behalten ihren Verlauf.</td></tr>
+<tr><th>&#x1F4C8; Reset</th><td>Leert die 4-h- und 24-h-Verlaufsdiagramme. Die Werte darüber und die Balkendiagramme bleiben unberührt.</td></tr>
+<tr><th>&#x1F4CA; Reset</th><td>Löscht die Tages- und Monatsspalten. Die Zähler laufen weiter. Fragt vorher nach.</td></tr>
 </table>
-<p>Der Knopf <b>&#x1F4BE;</b> unten auf der Diagrammseite schreibt <code>/sml_chart.csv</code>, bei eingeschalteter Einspeiseseite zusätzlich <code>/sml_chart_pv.csv</code>. Er liest nur und fragt deshalb nicht nach. Heruntergeladen werden die Dateien im <a href="/ufsd">Dateimanager</a> von Tasmota.</p>
+<p>Der Knopf <b>&#x1F4BE; CSV</b> ganz unten auf der Einstellungsseite schreibt <code>/sml_chart.csv</code>, bei eingeschalteter Einspeiseseite zusätzlich <code>/sml_chart_pv.csv</code>. Er liest nur und fragt deshalb nicht nach. Heruntergeladen werden die Dateien im <a href="/ufsd">Dateimanager</a> von Tasmota.</p>
 <p>Die CSV enthält in Zeile&nbsp;1 die Nullpunkte, danach die Arrays für 4&nbsp;h, 24&nbsp;h, Tage und Monate &mdash; tabgetrennt, ein Array je Zeile. Das ist das Format für eine Sicherung oder zum Öffnen in der Tabellenkalkulation.</p>
 <p>Die laufenden Daten liegen in der <code>.pvs</code>-Datei des Slots, namensbasiert gespeichert. Eine Sicherung ist genau diese eine Datei: wegkopieren, zurückkopieren, Slot neu starten. <code>/sml_chart.bin</code> wird nur einmal beim Start gelesen, zum Übernehmen von Daten aus einer älteren Version.</p>
 <p>Der Export funktioniert auch, während der Zähler schweigt &mdash; das ist Absicht, denn ein ausgefallener Zähler ist genau der Moment, in dem die gespeicherten Daten zählen.</p>

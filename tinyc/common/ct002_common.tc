@@ -671,6 +671,7 @@ void ctPoll() {
 
 // From EverySecond().
 void ctTick() {
+    if (ui_reloading) ctEditLoad();
     if (ui_applying) ctCommit();
     if (tasm_wifi == 1 && ct_once == 0) {
         if (ct_port < 1) ct_port = 12345;
@@ -1000,4 +1001,13 @@ int ctCmd(char cmd[]) {
         return 0;      // not ours - the wiring answers
     }
     return 1;
+}
+
+// Per-phase meter values, right below Power/Import/Export. Only with the
+// 3-phase option: without it the meter delivers one netted value and the
+// emulator puts everything on L1, so three rows would be a lie.
+void ctPhaseRows() {
+    if (ct_ph3 == 0) return;
+    sprintf(ct_buf, "{s}L1 / L2 / L3{m}%.0f / %.0f / %.0f W{e}", smlGet(4), smlGet(5), smlGet(6));
+    webSend(ct_buf);
 }

@@ -6,10 +6,10 @@
 //   sml_chart_load()      / sml_chart_pv_load()       once from main()
 //   sml_chart_5s_tick()   / sml_chart_pv_5s_tick()    every 5 s
 //   sml_chart_60s_tick()  / sml_chart_pv_60s_tick()   every 60 s
-//   sml_chart_init_baselines/_init_columns/_save()    and their _pv_ twins
+//   sml_chart_init_baselines/_clear_power/_init_columns/_save() + _pv_ twins
 //   sml_chart_render_totals/_4h/_24h/_days/_months()  the charts
 //   sml_chart_pv_render_dayprod/_render_months_dual() the PV charts
-//   sml_chart_data_panel()                            the two reset buttons
+//   sml_chart_data_panel()                            the three reset buttons
 // Exception: CleanUp() and OnExit() are defined here, both only saveVars().
 //
 // Chart state ~8 KB: s4h 481 + s24h 1441 + dcon 31 + mcon 12 + dprod 31 +
@@ -135,11 +135,19 @@ void OnExit() {
 // ============================================================================
 // Init helpers — reset baselines from current meter, reset chart arrays
 // ============================================================================
+// Baselines only: day, month and year restart from the current meter reading.
+// The charts keep their history - clearing them is a separate button.
 void sml_chart_init_baselines() {
     float ein = smlGet(2);
     sml_dval = ein;
     sml_mval = ein;
     sml_yval = ein;
+    sml_chart_save();
+    addLog("sml_chart: baselines set from meter");
+}
+
+// The two rolling power charts, emptied. Baselines and bars are untouched.
+void sml_chart_clear_power() {
     sml_s4h_pos  = 0;
     sml_s24h_pos = 0;
     int i = 0;
@@ -147,7 +155,7 @@ void sml_chart_init_baselines() {
     i = 0;
     while (i < 1441) { sml_s24h[i] = 0.0; i = i + 1; }
     sml_chart_save();
-    addLog("sml_chart: baselines set from meter, power charts cleared");
+    addLog("sml_chart: 4h/24h power charts cleared");
 }
 
 void sml_chart_init_columns() {
@@ -225,9 +233,10 @@ void sml_chart_60s_tick() {
 // ============================================================================
 // Render helpers — chart + table blocks for the WebUI main page
 // ============================================================================
-void sml_chart_render_totals() {
-    // The live meter values, so the driver's own rows can be switched off -
-    // they prefix every value with the meter name, which reads badly.
+// The live meter values, so the driver's own rows can be switched off - they
+// prefix every value with the meter name, which reads badly. Split from the
+// totals below so a per-phase row can go between them, where it belongs.
+void sml_chart_render_meter() {
     if (ui_de) {
         sprintf(sml_buf, "{s}Leistung{m}%.0f W{e}", smlGet(1));      webSend(sml_buf);
         sprintf(sml_buf, "{s}Bezug{m}%.3f kWh{e}", smlGet(2));       webSend(sml_buf);
@@ -237,15 +246,9 @@ void sml_chart_render_totals() {
         sprintf(sml_buf, "{s}Import{m}%.3f kWh{e}", smlGet(2));      webSend(sml_buf);
         sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", SML_PV_TOTAL);    webSend(sml_buf);
     }
+}
 
-    // Date + uptime, wanted on the main page
-    if (ui_de) sprintf(sml_buf, "{s}Datum{m}%02d.%02d.%04d %02d:%02d{e}", tasm_day, tasm_month, tasm_year, tasm_hour, tasm_minute);
-    else       sprintf(sml_buf, "{s}Date{m}%02d.%02d.%04d %02d:%02d{e}", tasm_day, tasm_month, tasm_year, tasm_hour, tasm_minute);
-    webSend(sml_buf);
-    int up_d = tasm_uptime / 86400;
-    int up_h = (tasm_uptime / 3600) % 24;
-    int up_m = (tasm_uptime / 60) % 60;
-    sprintf(sml_buf, "{s}Uptime{m}%d d %d h %d min{e}", up_d, up_h, up_m); webSend(sml_buf);
+void sml_chart_render_totals() {
     uiSep();
 
     float ein = smlGet(2);
@@ -295,31 +298,46 @@ void sml_chart_render_24h() {
 //    already on the page from the WebChart line-chart calls above.
 // The data buttons, identical in every chart wiring - so they live here once.
 // Pass the already-resolved widget indices:
-// The two reset buttons overwrite history and ask first. The CSV export sits
+// The three reset buttons overwrite history and ask first. The CSV export sits
 // on the charts page instead - it belongs to the data you are looking at.
-//     sml_chart_data_panel(varIdx(do_init), varIdx(do_init2));
-void sml_chart_data_panel(int idx_init, int idx_init2) {
+//     sml_chart_data_panel(varIdx(do_base), varIdx(do_power), varIdx(do_bars));
+void sml_chart_data_panel(int idx_base, int idx_power, int idx_bars) {
     uiHead("&#x1F4BE;", "Data", "Daten", "sml/#data");
-    uiText("<div style='font-size:11px;color:#a00;margin:4px 0'>&#9888; Both actions overwrite history.</div>",
-           "<div style='font-size:11px;color:#a00;margin:4px 0'>&#9888; Beide Aktionen überschreiben Verlaufsdaten.</div>");
+    uiText("<div style='font-size:11px;color:#a00;margin:4px 0'>&#9888; All three overwrite history.</div>",
+           "<div style='font-size:11px;color:#a00;margin:4px 0'>&#9888; Alle drei überschreiben Verlaufsdaten.</div>");
+
+    // One row. flex:1 1 90px so they share the width evenly and wrap onto a
+    // second line rather than shrinking to nothing on a narrow phone.
+    // Icon plus "Reset": the word reads the same in both languages, the icon
+    // says which of the three it is, and the confirm() spells the consequence
+    // out in full - that is the text that matters here.
+    webSend("<div style='display:flex;flex-wrap:wrap;gap:6px;margin:6px 0'>");
 
     if (ui_de) {
-        webSend("<div><button style='width:100%' data-a='erledigt' onclick='if(confirm(\"Nullpunkte neu vom Zählerstand setzen und 4h/24h-Charts leeren?\"))tcbtn(this,1,");
-        sprintf(sml_buf, "%d)'>Nullpunkte setzen + Power-Charts leeren</button></div>", idx_init);
+        webSend("<button style='flex:1 1 90px' data-a='erledigt' onclick='if(confirm(\"Tages/Monats/Jahres-Verbrauchswerte zurücksetzen?\"))tcbtn(this,1,");
     } else {
-        webSend("<div><button style='width:100%' data-a='done' onclick='if(confirm(\"Reset the day/month/year baselines from the meter and clear the 4h/24h charts?\"))tcbtn(this,1,");
-        sprintf(sml_buf, "%d)'>Reset baselines + clear power charts</button></div>", idx_init);
+        webSend("<button style='flex:1 1 90px' data-a='done' onclick='if(confirm(\"Reset day/month/year consumption values?\"))tcbtn(this,1,");
     }
+    sprintf(sml_buf, "%d)'>&#x1F522; Reset</button>", idx_base);
     webSend(sml_buf);
 
     if (ui_de) {
-        webSend("<div><button style='width:100%' data-a='erledigt' onclick='if(confirm(\"ALLE Tages- und Monatsbalken loeschen?\"))tcbtn(this,1,");
-        sprintf(sml_buf, "%d)'>Balkendiagramme zurücksetzen</button></div>", idx_init2);
+        webSend("<button style='flex:1 1 90px' data-a='erledigt' onclick='if(confirm(\"4h- und 24h-Verlauf leeren?\"))tcbtn(this,1,");
     } else {
-        webSend("<div><button style='width:100%' data-a='done' onclick='if(confirm(\"Delete ALL day and month bars?\"))tcbtn(this,1,");
-        sprintf(sml_buf, "%d)'>Reset bar charts</button></div>", idx_init2);
+        webSend("<button style='flex:1 1 90px' data-a='done' onclick='if(confirm(\"Clear the 4h and 24h charts?\"))tcbtn(this,1,");
     }
+    sprintf(sml_buf, "%d)'>&#x1F4C8; Reset</button>", idx_power);
     webSend(sml_buf);
+
+    if (ui_de) {
+        webSend("<button style='flex:1 1 90px' data-a='erledigt' onclick='if(confirm(\"Alle Balkendiagramme zurücksetzen?\"))tcbtn(this,1,");
+    } else {
+        webSend("<button style='flex:1 1 90px' data-a='done' onclick='if(confirm(\"Reset all bar charts?\"))tcbtn(this,1,");
+    }
+    sprintf(sml_buf, "%d)'>&#x1F4CA; Reset</button>", idx_bars);
+    webSend(sml_buf);
+
+    webSend("</div>");
 }
 
 void sml_chart_render_days() {
@@ -603,7 +621,7 @@ void sml_chart_pv_render_months_dual() {
 // so the window.onload call to la() already sees rfsh=0 and returns.
 // WebChart works here because tc_chart_lib_sent is reset before every /tc_ui
 // render - on a webOn endpoint it is not, and the loader would be sent once.
-void sml_chart_page_render(int idx_csv) {
+void sml_chart_page_render() {
     // No width rule here: since 1.6.55 the firmware pins the page container
     // itself (body>div{width:min(96vw,960px)}) next to the chart library, and a
     // second rule would fight it. The charts are width:100% of that container.
@@ -621,13 +639,6 @@ void sml_chart_page_render(int idx_csv) {
     } else {
         sml_chart_render_months();
     }
-    // Export sits under the charts, as an icon - it exports exactly what is
-    // shown above. Reads only, so no confirm(). Split across webSend/sprintf:
-    // the whole tag is ~190 chars and sml_buf holds 160.
-    if (ui_de) webSend("<div style='text-align:center;margin:8px 0'><button style='width:auto;padding:4px 18px;font-size:17px' title='CSV exportieren' data-a='&#10003;' onclick='tcbtn(this,1,");
-    else       webSend("<div style='text-align:center;margin:8px 0'><button style='width:auto;padding:4px 18px;font-size:17px' title='Export CSV' data-a='&#10003;' onclick='tcbtn(this,1,");
-    sprintf(sml_buf, "%d)'>&#x1F4BE; CSV</button></div>", idx_csv);
-    webSend(sml_buf);
     webSend("</div>");
 }
 
@@ -635,4 +646,27 @@ void sml_chart_page_render(int idx_csv) {
 void sml_chart_link() {
     if (ui_de) webSend("{s}Diagramme{m}<a href='/tc_ui?p=2' title='Diagramme' style='font-size:20px;text-decoration:none'>&#x1F4C8;</a>{e}");
     else       webSend("{s}Charts{m}<a href='/tc_ui?p=2' title='Charts' style='font-size:20px;text-decoration:none'>&#x1F4C8;</a>{e}");
+}
+
+// CSV export, last thing on the settings page. Reads only, so no confirm().
+// Split across webSend/sprintf: the whole tag is ~190 chars, sml_buf holds 160.
+void sml_chart_csv_button(int idx_csv) {
+    if (ui_de) webSend("<div><button style='width:100%' title='Schreibt /sml_chart.csv' data-a='&#10003;' onclick='tcbtn(this,1,");
+    else       webSend("<div><button style='width:100%' title='Writes /sml_chart.csv' data-a='&#10003;' onclick='tcbtn(this,1,");
+    sprintf(sml_buf, "%d)'>&#x1F4BE; CSV</button></div>", idx_csv);
+    webSend(sml_buf);
+}
+
+// Date and uptime, last rows on the main page. They are context, not readings -
+// between the meter values and the totals they read like measurements and
+// pushed the interesting numbers down.
+void sml_chart_datetime_rows() {
+    if (ui_de) sprintf(sml_buf, "{s}Datum{m}%02d.%02d.%04d %02d:%02d{e}", tasm_day, tasm_month, tasm_year, tasm_hour, tasm_minute);
+    else       sprintf(sml_buf, "{s}Date{m}%02d.%02d.%04d %02d:%02d{e}", tasm_day, tasm_month, tasm_year, tasm_hour, tasm_minute);
+    webSend(sml_buf);
+    int up_d = tasm_uptime / 86400;
+    int up_h = (tasm_uptime / 3600) % 24;
+    int up_m = (tasm_uptime / 60) % 60;
+    sprintf(sml_buf, "{s}Uptime{m}%d d %d h %d min{e}", up_d, up_h, up_m);
+    webSend(sml_buf);
 }

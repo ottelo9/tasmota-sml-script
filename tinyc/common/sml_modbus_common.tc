@@ -121,6 +121,7 @@ void mbPoll() {
 
 // From EverySecond(). Applies port / on-off changes without a reboot.
 void mbTick() {
+    if (ui_reloading) mbEditLoad();
     if (ui_applying == 0) return;     // a half-typed port would rebind at once
     mbCommit();
     if (changed(mb_port) || changed(mb_on)) {

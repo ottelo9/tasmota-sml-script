@@ -16,6 +16,30 @@ persist watch int sml_filter;   // 0 = raw, 1 = on → smlf=16 in descriptor
 persist watch int sml_activ;    // mirrors tasm_rule bit 0
 persist watch int sml_drvrows;  // 1 = also show the SML driver's own rows
 
+// ── Edit buffer ────────────────────────────────────────────────────────────
+// The widgets write here, Save copies it onto the settings above. Before this
+// the widgets wrote the persist variables directly: leaving without saving
+// then left a changed pin or meter in the device - inactive, but stored.
+int sml_e_meter_sel; int sml_e_rx_pin; int sml_e_tx_pin;
+int sml_e_filter;    int sml_e_activ;  int sml_e_drvrows;
+
+void smlDescCommit() {
+    sml_meter_sel = sml_e_meter_sel;
+    sml_rx_pin    = sml_e_rx_pin;
+    sml_tx_pin    = sml_e_tx_pin;
+    sml_filter    = sml_e_filter;
+    sml_activ     = sml_e_activ;
+    sml_drvrows   = sml_e_drvrows;
+}
+void smlDescEditLoad() {
+    sml_e_meter_sel = sml_meter_sel;
+    sml_e_rx_pin    = sml_rx_pin;
+    sml_e_tx_pin    = sml_tx_pin;
+    sml_e_filter    = sml_filter;
+    sml_e_activ     = sml_activ;
+    sml_e_drvrows   = sml_drvrows;
+}
+
 // ── Shared sprintf scratch (also used by chart/totals renderers) ────────────
 char sml_buf[160];
 char sml_ftopic[96];       // full MQTT topic - mqttPublish takes it at runtime
@@ -43,10 +67,13 @@ void sml_descriptor_apply() {
     // Once at startup: the driver's default is to show its own rows.
     if (sml_drv_init == 0) {
         sml_drv_init = 1;
+        smlDescEditLoad();          // widgets start from what is in effect
         sml_apply_drvrows();
         snapshot(sml_drvrows);
     }
+    if (ui_reloading) smlDescEditLoad();   // drop unsaved edits on a fresh page
     if (ui_applying == 0) return;   // everything below waits for Save
+    smlDescCommit();                // widgets wrote the edit buffer, not these
 
     if (changed(sml_drvrows)) {
         sml_apply_drvrows();
@@ -115,33 +142,33 @@ void sml_render_settings_panel() {
     // heading, so it is clear which settings describe the meter itself.
     uiHead("&#x1F50C;", "Meter settings", "Zähler-Einstellungen", "sml/#meter");
     if (ui_de) {
-        webCheckbox(sml_activ, "Zähler aktiv");
+        webCheckbox(sml_e_activ, "Zähler aktiv");
         webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Descriptor bearbeiten</a>");
-        webRepoPulldown(sml_meter_sel, "Aus Repo",
+        webRepoPulldown(sml_e_meter_sel, "Aus Repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
                         "smartmeter",
                         "/sml_meter.new");
-        webPulldown(sml_rx_pin, "RX-Pin", "@getfreepins");
-        webPulldown(sml_tx_pin, "TX-Pin", "@getfreepins");
+        webPulldown(sml_e_rx_pin, "RX-Pin", "@getfreepins");
+        webPulldown(sml_e_tx_pin, "TX-Pin", "@getfreepins");
     } else {
-        webCheckbox(sml_activ, "Meter active");
+        webCheckbox(sml_e_activ, "Meter active");
         webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Edit descriptor</a>");
-        webRepoPulldown(sml_meter_sel, "From repo",
+        webRepoPulldown(sml_e_meter_sel, "From repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
                         "smartmeter",
                         "/sml_meter.new");
-        webPulldown(sml_rx_pin, "RX pin", "@getfreepins");
-        webPulldown(sml_tx_pin, "TX pin", "@getfreepins");
+        webPulldown(sml_e_rx_pin, "RX pin", "@getfreepins");
+        webPulldown(sml_e_tx_pin, "TX pin", "@getfreepins");
     }
     webSend("<div class='hint'>RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>RX=5 TX=4: bitShake</div>");
 
     uiHead("&#x1F4CA;", "Filter", "Filter", "sml/#filter");
-    if (ui_de) webCheckbox(sml_filter, "Median-Filter");
-    else       webCheckbox(sml_filter, "Median filter");
+    if (ui_de) webCheckbox(sml_e_filter, "Median-Filter");
+    else       webCheckbox(sml_e_filter, "Median filter");
 
     uiHead("&#x1F5A5;&#xFE0F;", "Display", "Anzeige", "sml/#display");
-    if (ui_de) webCheckbox(sml_drvrows, "Treiberzeilen zeigen");
-    else       webCheckbox(sml_drvrows, "Show driver rows");
+    if (ui_de) webCheckbox(sml_e_drvrows, "Treiberzeilen zeigen");
+    else       webCheckbox(sml_e_drvrows, "Show driver rows");
 
     int up_d = tasm_uptime / 86400;
     int up_h = (tasm_uptime / 3600) % 24;

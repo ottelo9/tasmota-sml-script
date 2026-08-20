@@ -30,7 +30,8 @@ void Every100ms() {
 
 void EverySecond() {
     uiApplyBegin();
-    if (ui_applying) sml_sndpwr = sml_e_sndpwr;
+    if (ui_reloading) sml_e_sndpwr = sml_sndpwr;
+    if (ui_applying)  sml_sndpwr = sml_e_sndpwr;
     sml_descriptor_apply();
     mbTick();
 

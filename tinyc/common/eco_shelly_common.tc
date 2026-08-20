@@ -152,6 +152,7 @@ void esPoll() {
 
 // From EverySecond().
 void esTick() {
+    if (ui_reloading) esEditLoad();
     if (ui_applying) esCommit();
     if (tasm_wifi == 1) {
         // Register once and ignore the result: mdnsRegister returns -1 while
@@ -231,10 +232,6 @@ void esRows() {
     if (ui_de) sprintf(es_body, "{s}An den Akku{m}%.0f W{e}", es_cpwr);
     else       sprintf(es_body, "{s}To battery{m}%.0f W{e}", es_cpwr);
     webSend(es_body);
-    if (es_ph3 == 1) {
-        sprintf(es_body, "{s}L1 / L2 / L3{m}%.0f / %.0f / %.0f W{e}", es_pa, es_pb, es_pc);
-        webSend(es_body);
-    }
 }
 
 // From WebUI(): emitted inside an already-open settings panel.
@@ -272,4 +269,12 @@ void esJson() {
     sprintfAppend(es_body, ",\"Avg\":%.0f", es_avg);
     sprintfAppend(es_body, ",\"Mode\":%d}", es_mode);
     responseAppend(es_body);
+}
+
+// Per-phase meter values, right below Power/Import/Export. Only with the
+// 3-phase option - see ctPhaseRows() in ct002_common.tc, same reasoning.
+void esPhaseRows() {
+    if (es_ph3 == 0) return;
+    sprintf(es_body, "{s}L1 / L2 / L3{m}%.0f / %.0f / %.0f W{e}", smlGet(4), smlGet(5), smlGet(6));
+    webSend(es_body);
 }

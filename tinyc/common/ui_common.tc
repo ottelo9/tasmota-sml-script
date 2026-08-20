@@ -21,12 +21,19 @@ char ui_buf[220];        // uiText() copies whole HTML blocks through here -
 // port rebinds the socket. The disruptive part therefore waits for Save.
 int ui_apply;                // set by the button, cleared by uiApplyBegin()
 int ui_applying;             // latched for the current tick
+int ui_reload;               // set once per full page render, see uiSaveButton()
+int ui_reloading;            // latched for the current tick
 
 // From EverySecond, BEFORE the other tick functions: latches the press so
 // every module sees it in the same tick, whatever order they run in.
 void uiApplyBegin() {
     ui_applying = ui_apply;
     ui_apply = 0;
+    // A fresh page render discards whatever was typed but not saved: every
+    // module reloads its edit buffer from the settings that are actually in
+    // effect. Without this the widgets kept showing values that do nothing.
+    ui_reloading = ui_reload;
+    ui_reload = 0;
 }
 
 // Save button + the "unsaved changes" guard. Goes green with OK for 2.5 s
@@ -40,9 +47,33 @@ void uiSaveButton() {
     if (ui_de) webButton(ui_apply, "Speichern|OK");
     else       webButton(ui_apply, "Save|OK");
 
-    sprintf(ui_buf, "<script>(function(){if(window.__tcg)return;window.__tcg=1;var s=%d,d=0,o=window.seva;", varIdx(ui_apply));
+    sprintf(ui_buf, "<script>(function(){if(window.__tcg)return;window.__tcg=1;var s=%d,r=%d,d=0,a=0,o=window.seva,b=window.tcbtn;", varIdx(ui_apply), varIdx(ui_reload));
     webSend(ui_buf);
-    webSend("window.seva=function(v,i){d=(i==s)?0:1;return o(v,i)};");
+    // tcbtn fires an action that has ALREADY happened - it is not a pending
+    // edit, so it must not arm the guard. It reaches the device through seva,
+    // so mark the window in which that is legitimate.
+    webSend("window.tcbtn=function(e,v,i){a=1;if(i==s)d=0;try{return b(e,v,i)}finally{a=0}};");
+    webSend("window.seva=function(v,i){if(!a)d=(i==s)?0:1;return o(v,i)};");
+    // One shot, and only on a REAL page load - an AJAX refresh re-runs this
+    // script but finds __tcg already set. That makes it the right moment to
+    // tell the device to drop unsaved edits, whichever way the last visit
+    // ended: Save, our own popup, or the browser back button.
+    //
+    // Its OWN request, not seva(): seva goes through la(), which reuses one
+    // XMLHttpRequest - and window.onload fires la() a moment later and aborts
+    // whatever is still in flight. Measured: net::ERR_ABORTED, edit buffer
+    // never reloaded.
+    webSend("var q=location.search?location.search+'&':'?';");
+    // The device reloads the buffer in its next EverySecond, so the response to
+    // THIS request is still the stale render. Force one refresh once that tick
+    // has certainly passed instead of waiting for the 2 s timer to come round -
+    // its phase is arbitrary, and if it is paused the stale values just stay.
+    webSend("function rl(){d=0;fetch(location.pathname+q+'m=1&sv='+r+'_1').then(function(){setTimeout(la,1200)})}rl();");
+    // Chrome keeps the whole page alive for back/forward (bfcache): no re-parse,
+    // __tcg still set, so the block above never runs again and the stale values
+    // just stay until a manual reload. pageshow with persisted is the hook for
+    // exactly that case.
+    webSend("addEventListener('pageshow',function(e){if(e.persisted)rl()});");
     // Reload / close / back: browsers show their own generic wording here and
     // ignore any text we pass, so this is only the backstop.
     webSend("addEventListener('beforeunload',function(e){if(d){e.preventDefault();e.returnValue=''}});");

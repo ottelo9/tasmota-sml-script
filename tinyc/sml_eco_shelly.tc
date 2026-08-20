@@ -32,7 +32,8 @@ void Every100ms() {
 
 void EverySecond() {
     uiApplyBegin();
-    if (ui_applying) sml_sndpwr = sml_e_sndpwr;
+    if (ui_reloading) sml_e_sndpwr = sml_sndpwr;
+    if (ui_applying)  sml_sndpwr = sml_e_sndpwr;
     sml_descriptor_apply();
     esTick();
     mbTick();
@@ -87,6 +88,7 @@ void WebCall() {
         sprintf(sml_buf, "{s}Import{m}%.3f kWh{e}", smlGet(2));      webSend(sml_buf);
         sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", smlGet(3));      webSend(sml_buf);
     }
+    esPhaseRows();
     uiSep();
     esRows();
     mbRows();

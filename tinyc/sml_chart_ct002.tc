@@ -17,8 +17,9 @@ char sml_vers[] = "16.08.2026";
 int sml_e_pv; int sml_e_sndpwr;   // edit buffer, applied by Save
 
 // ─── Transient WebButton flags ─────────────────────────────────────────────
-int do_init;
-int do_init2;
+int do_base;      // reset consumption baselines
+int do_power;     // clear the 4h/24h charts
+int do_bars;      // clear the day/month bars
 int do_reset;
 int do_csv;      // write the chart arrays out as readable .csv files
 
@@ -31,7 +32,8 @@ void Every100ms() {
 
 void EverySecond() {
     uiApplyBegin();
-    if (ui_applying) { sml_pv = sml_e_pv; sml_sndpwr = sml_e_sndpwr; }
+    if (ui_reloading) { sml_e_pv = sml_pv; sml_e_sndpwr = sml_sndpwr; }
+    if (ui_applying)  { sml_pv = sml_e_pv; sml_sndpwr = sml_e_sndpwr; }
     sml_descriptor_apply();
     ctTick();
     mbTick();
@@ -53,15 +55,19 @@ void EverySecond() {
     if (tasm_year < 2020) return;
     if (smlGet(2) == 0.0) return;
 
-    if (do_init) {
+    if (do_base) {
         sml_chart_init_baselines();
         sml_chart_pv_init_baselines();
-        do_init = 0;
+        do_base = 0;
     }
-    if (do_init2) {
+    if (do_power) {
+        sml_chart_clear_power();
+        do_power = 0;
+    }
+    if (do_bars) {
         sml_chart_init_columns();
         sml_chart_pv_init_columns();
-        do_init2 = 0;
+        do_bars = 0;
     }
     sml_t1 = sml_t1 - 1;
     if (sml_t1 <= 0) {
@@ -109,6 +115,8 @@ void WebCall() {
         uiText("{s}SML{m}off (Rule1){e}", "{s}SML{m}aus (Rule1){e}");
         return;
     }
+    sml_chart_render_meter();
+    ctPhaseRows();
     sml_chart_render_totals();
 
     if (sml_pv > 0) {
@@ -126,14 +134,16 @@ void WebCall() {
     uiSep();
     ctRows();
     mbRows();
+    uiSep();
     sml_chart_link();
+    sml_chart_datetime_rows();
 }
 
 void WebUI() {
     // Page 1 exists only for its button in Tasmota's main menu: webPageLabel is
     // the only way to get one, and it always points at /tc_ui - so hand over.
     if (webPage() == 1) { webSend("<script>location.replace('/ctreg')</script>"); return; }
-    if (webPage() == 2) { sml_chart_page_render(varIdx(do_csv)); return; }
+    if (webPage() == 2) { sml_chart_page_render(); return; }
     if (webPage() == 3) { webSend("<script>location.replace('/tc')</script>"); return; }
     if (webPage() != 0) return;
     sml_render_settings_panel();
@@ -154,11 +164,12 @@ void WebUI() {
     }
     mbPanel();
 
-    sml_chart_data_panel(varIdx(do_init), varIdx(do_init2));
+    sml_chart_data_panel(varIdx(do_base), varIdx(do_power), varIdx(do_bars));
     webSend("<hr>");
     uiSaveButton();
     if (ui_de) webButton(do_reset, "SML neu laden|neu geladen");
     else       webButton(do_reset, "Restart SML|restarted");
+    sml_chart_csv_button(varIdx(do_csv));
 
     sprintf(sml_buf, "<hr><div style='text-align:center;font-size:10px;color:#555;line-height:1.5'>sml_chart_ct002.tc &middot; Version %s<br>", sml_vers);
     webSend(sml_buf);
