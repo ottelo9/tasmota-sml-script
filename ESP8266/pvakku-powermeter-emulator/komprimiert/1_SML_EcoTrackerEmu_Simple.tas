@@ -14,6 +14,9 @@ power3=0
 res=0
 tmp=0
 cpwr=0
+c1p=0
+c2p=0
+c3p=0
 once=0
 header=""
 json=""
@@ -42,7 +45,7 @@ res=won(1 "/v1/json")
 >on1
 json=warg
 if (json!="") {
-json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0cpwr)+",\"powerPhase2\":0,\"powerPhase3\":0,\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
+json="{\"power\":"+s(0cpwr)+",\"powerAvg\":"+s(0power3)+",\"agePower\":1000,\"powerPhase1\":"+s(0c1p)+",\"powerPhase2\":"+s(0c2p)+",\"powerPhase3\":"+s(0c3p)+",\"energyCounterIn\":"+s(0sml[2]*1000)+",\"energyCounterOut\":"+s(0sml[3]*1000)+"}"
 tmp=sl(json)
 header="HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "+s(0tmp)+"\r\nConnection: close\r\n\r\n"
 wcs so(4)
@@ -87,6 +90,7 @@ cpwr=(sml[1]-pwroffset)/0.8
 cpwr=sml[1]-pwroffset
 }
 power3=(0.9*power3)+((1-0.9)*cpwr)
+c1p=cpwr
 >W
 bu(_save "" "Daten speichern")
 Leistung (an PV-Akku){m}%0cpwr% W
