@@ -15,6 +15,7 @@ persist watch int sml_tx_pin;
 persist watch int sml_filter;   // 0 = raw, 1 = on → smlf=16 in descriptor
 persist watch int sml_activ;    // mirrors tasm_rule bit 0
 persist watch int sml_drvrows;  // 1 = also show the SML driver's own rows
+persist watch int sml_ph3;      // 1 = meter delivers per-phase power in 4/5/6
 
 // ── Edit buffer ────────────────────────────────────────────────────────────
 // The widgets write here, Save copies it onto the settings above. Before this
@@ -22,6 +23,7 @@ persist watch int sml_drvrows;  // 1 = also show the SML driver's own rows
 // then left a changed pin or meter in the device - inactive, but stored.
 int sml_e_meter_sel; int sml_e_rx_pin; int sml_e_tx_pin;
 int sml_e_filter;    int sml_e_activ;  int sml_e_drvrows;
+int sml_e_ph3;
 
 void smlDescCommit() {
     sml_meter_sel = sml_e_meter_sel;
@@ -30,6 +32,7 @@ void smlDescCommit() {
     sml_filter    = sml_e_filter;
     sml_activ     = sml_e_activ;
     sml_drvrows   = sml_e_drvrows;
+    sml_ph3       = sml_e_ph3;
 }
 void smlDescEditLoad() {
     sml_e_meter_sel = sml_meter_sel;
@@ -38,6 +41,7 @@ void smlDescEditLoad() {
     sml_e_filter    = sml_filter;
     sml_e_activ     = sml_activ;
     sml_e_drvrows   = sml_drvrows;
+    sml_e_ph3       = sml_ph3;
 }
 
 // ── Shared sprintf scratch (also used by chart/totals renderers) ────────────
@@ -143,6 +147,7 @@ void sml_render_settings_panel() {
     uiHead("&#x1F50C;", "Meter settings", "Zähler-Einstellungen", "sml/#meter");
     if (ui_de) {
         webCheckbox(sml_e_activ, "Zähler aktiv");
+        webCheckbox(sml_e_ph3, "3 Phasen");
         webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Descriptor bearbeiten</a>");
         webRepoPulldown(sml_e_meter_sel, "Aus Repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
@@ -152,6 +157,7 @@ void sml_render_settings_panel() {
         webPulldown(sml_e_tx_pin, "TX-Pin", "@getfreepins");
     } else {
         webCheckbox(sml_e_activ, "Meter active");
+        webCheckbox(sml_e_ph3, "3 phases");
         webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Edit descriptor</a>");
         webRepoPulldown(sml_e_meter_sel, "From repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
@@ -187,4 +193,13 @@ void smlPublish(char topic[], char payload[]) {
         sml_pub_rc = rc;
         addLog("SML: mqttPublish rc=%d topic=%s", rc, topic);
     }
+}
+
+// Per-phase meter values, right below Power/Import/Export. Only when the meter
+// actually delivers them (values 4/5/6 in the descriptor) - otherwise the SML
+// driver returns 0 for all three and three empty rows would be a lie.
+void sml_phase_rows() {
+    if (sml_ph3 == 0) return;
+    sprintf(sml_buf, "{s}L1 / L2 / L3{m}%.0f / %.0f / %.0f W{e}", smlGet(4), smlGet(5), smlGet(6));
+    webSend(sml_buf);
 }

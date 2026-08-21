@@ -33,7 +33,6 @@ persist int  ct_rssi;          // Wi-Fi RSSI reported to the batteries [dBm]
 persist int  ct_ttl;           // consumer timeout [s], 0 = adaptive (~2 polls)
 persist int  ct_offset;        // zero-feed offset [W]
 persist int  ct_tweak;          // regulator shaping 0/1
-persist int  ct_ph3;              // 1 = per-phase values from smlGet(4/5/6)
 persist char ct_mac[16];       // CT MAC, 12 hex lowercase. Empty = answer all
 persist char ct_mail[64];      // Marstek account mail (registration only)
 
@@ -41,7 +40,7 @@ persist char ct_mail[64];      // Marstek account mail (registration only)
 // The panel writes here; Save copies it onto the settings above. ct_mac and
 // ct_mail are not in here - those are handled on /ctreg.
 int ct_e_kind; int ct_e_port; int ct_e_rssi; int ct_e_ttl;
-int ct_e_offset; int ct_e_tweak; int ct_e_ph3;
+int ct_e_offset; int ct_e_tweak;
 
 void ctCommit() {
     ct_kind = ct_e_kind;
@@ -50,7 +49,6 @@ void ctCommit() {
     ct_ttl = ct_e_ttl;
     ct_offset = ct_e_offset;
     ct_tweak = ct_e_tweak;
-    ct_ph3 = ct_e_ph3;
 }
 void ctEditLoad() {
     ct_e_kind = ct_kind;
@@ -59,7 +57,6 @@ void ctEditLoad() {
     ct_e_ttl = ct_ttl;
     ct_e_offset = ct_offset;
     ct_e_tweak = ct_tweak;
-    ct_e_ph3 = ct_ph3;
 }
 
 // ─── Consumer table (one row per battery, keyed by its MAC) ────────────────
@@ -360,7 +357,7 @@ int ctCtrl(float raw) {
 }
 
 void ctPower() {
-    if (ct_ph3 == 1) {
+    if (sml_ph3 == 1) {
         ct_pa = ctCtrl(smlGet(4));
         ct_pb = ctCtrl(smlGet(5));
         ct_pc = ctCtrl(smlGet(6));
@@ -788,11 +785,9 @@ void ctPanel() {
     if (ui_de) {
         webNumber(ct_e_offset, -200, 200, "Offset [W]");
         webCheckbox(ct_e_tweak, "Regleroptimierung");
-        webCheckbox(ct_e_ph3, "3 Phasen");
     } else {
         webNumber(ct_e_offset, -200, 200, "Offset [W]");
         webCheckbox(ct_e_tweak, "Regulator tweak");
-        webCheckbox(ct_e_ph3, "3 phases");
     }
 
     // No Marstek block here - the account lives on /ctreg, reachable from the
@@ -1001,13 +996,4 @@ int ctCmd(char cmd[]) {
         return 0;      // not ours - the wiring answers
     }
     return 1;
-}
-
-// Per-phase meter values, right below Power/Import/Export. Only with the
-// 3-phase option: without it the meter delivers one netted value and the
-// emulator puts everything on L1, so three rows would be a lie.
-void ctPhaseRows() {
-    if (ct_ph3 == 0) return;
-    sprintf(ct_buf, "{s}L1 / L2 / L3{m}%.0f / %.0f / %.0f W{e}", smlGet(4), smlGet(5), smlGet(6));
-    webSend(ct_buf);
 }

@@ -94,7 +94,7 @@ void WebCall() {
         sprintf(sml_buf, "{s}Import{m}%.3f kWh{e}", smlGet(2));      webSend(sml_buf);
         sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", smlGet(3));      webSend(sml_buf);
     }
-    ctPhaseRows();
+    sml_phase_rows();
     uiSep();
     ctRows();
     mbRows();

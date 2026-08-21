@@ -146,6 +146,7 @@ body.lang-de .en{display:none}
 <p>The descriptor tells the SML driver how to read your meter: baud rate, protocol and which OBIS codes go into which value. It lives in <code>/sml_meter.def</code>.</p>
 <table>
 <tr><th>Meter active</th><td>Switches the SML driver on and off (Rule1). Off means no readings at all.</td></tr>
+<tr><th>3 phases</th><td>Default <span class="sw">OFF</span>. Only switch it on if your descriptor delivers power per phase &mdash; values <code>4</code>, <code>5</code> and <code>6</code> (<code>smlGet(4)</code> to <code>smlGet(6)</code>). The main page then shows an <b>L1 / L2 / L3</b> row and the emulators report real per-phase values instead of putting everything on L1. Without those values you get three zeros.</td></tr>
 <tr><th>From repo</th><td>Pulldown with ready-made descriptors from my repository. Picking one downloads it and restarts the driver.</td></tr>
 <tr><th>Edit descriptor</th><td>Opens the file editor for hand-tuning. Your meter not in the list? Start from the closest one.</td></tr>
 </table>
@@ -155,6 +156,7 @@ body.lang-de .en{display:none}
 <p>Der Descriptor sagt dem SML-Treiber, wie dein Zähler zu lesen ist: Baudrate, Protokoll und welcher OBIS-Code in welchen Wert geht. Er liegt in <code>/sml_meter.def</code>.</p>
 <table>
 <tr><th>Zähler aktiv</th><td>Schaltet den SML-Treiber ein und aus (Rule1). Aus heißt: gar keine Messwerte.</td></tr>
+<tr><th>3 Phasen</th><td>Standard <span class="sw">AUS</span>. Nur einschalten, wenn der Descriptor die Leistung je Phase liefert &mdash; also die Werte <code>4</code>, <code>5</code> und <code>6</code> belegt sind (<code>smlGet(4)</code> bis <code>smlGet(6)</code>). Dann erscheint auf der Hauptseite eine Zeile <b>L1 / L2 / L3</b>, und die Emulatoren melden echte Phasenwerte statt alles auf L1. Liefert der Zähler sie nicht, kommen drei Nullen.</td></tr>
 <tr><th>Aus Repo</th><td>Auswahlliste mit fertigen Descriptoren aus meinem Repository. Eine Auswahl lädt ihn herunter und startet den Treiber neu.</td></tr>
 <tr><th>Descriptor bearbeiten</th><td>Öffnet den Dateieditor zum Anpassen. Zähler nicht in der Liste? Mit dem ähnlichsten anfangen.</td></tr>
 </table>
