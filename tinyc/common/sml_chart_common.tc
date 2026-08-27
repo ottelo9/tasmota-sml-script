@@ -12,8 +12,9 @@
 //   sml_chart_data_panel()                            the three reset buttons
 // Exception: CleanUp() and OnExit() are defined here, both only saveVars().
 //
-// Chart state ~8 KB: s4h 481 + s24h 1441 + dcon 31 + mcon 12 + dprod 31 +
-// mprod 12 floats.
+// Chart state ~4.1 KB: s4h 481 + s24h 1441 as PACKED int16 (3.7 KB as floats,
+// 1.9 packed), plus dcon 31 + mcon 12 + dprod 31 + mprod 12 floats (0.4 KB).
+// Needs firmware ABI 27 for the packed rings.
 
 #include "sml_descriptor.tc"
 
@@ -24,11 +25,21 @@ persist float sml_yval;         // yearly zero point
 persist int   sml_da;           // last seen day-of-month (month-wrap detector)
 
 // ── Rolling-power chart arrays — head index in a separate cursor ────────────
-// MUST be float arrays — WebChart memcpy's each int32 slot into a float
-// (vm.h SYS_WEB_CHART: `memcpy(&fval, &arr[idx], sizeof(float))`). Int
-// arrays render as garbage values (bit-cast).
-persist float sml_s4h[481];     // 4 h chart, 30 s per slot
-persist float sml_s24h[1441];   // 24 h chart, 60 s per slot
+// PACKED int16: two samples per int32 slot, so these two rings cost 3.7 KB
+// instead of 7.5 — and on a C3 the chart rings are the largest single heap
+// item, claimed as ONE contiguous block at load time.
+//
+// Whole watts, and nothing is lost by that: both charts render with
+// decimals=0 (see sml_chart_render_4h/_24h), so the fractional part of the
+// moving average was never drawn. int16 covers +-32767 W, which is why byte[]
+// was NOT the answer here — at +-20 kW a byte quantises to 160 W steps and a
+// fridge draws 100.
+//
+// ⚠️ `int[]` still may NOT be used: WebChart memcpy's each int32 slot into a
+// float (bit-cast garbage). int16[]/uint16[] are read as integers instead —
+// that is new in ABI 27, and this file now requires it.
+persist int16 sml_s4h[481];     // 4 h chart, 1 min per slot
+persist int16 sml_s24h[1441];   // 24 h chart, 1 min per slot
 persist int   sml_s4h_pos;
 persist int   sml_s24h_pos;
 
@@ -66,15 +77,35 @@ int sml_hr_last;                // last seen tasm_hour (midnight edge detect)
 #define CHART_CSV_DEC 3
 #endif
 
-char sml_mtopic[64];        // device topic - Publish never expands %topic%
+byte sml_mtopic[64];        // device topic - Publish never expands %topic%
+
+// Import a run of `n` FLOATS from the open handle into a packed int16 ring.
+// The .bin predates the packing and still holds one float per sample, so the
+// values have to be converted on the way in — fileReadBin moves raw storage,
+// it does not convert types.
+// Chunked through a small scratch on purpose: a full-size float buffer would
+// cost the 5.6 KB the packing just saved, and it would cost it at load time,
+// which is exactly when the heap is claimed as one contiguous block.
+void sml_chart_imp16(int h, int16 ziel[], int n) {
+    float puf[32];
+    int i = 0;
+    while (i < n) {
+        int m = n - i;
+        if (m > 32) { m = 32; }
+        if (fileReadBin(h, puf, m) != m) { return; }   // file ended early
+        int k = 0;
+        while (k < m) { ziel[i + k] = sml_chart_w16(puf[k]); k = k + 1; }
+        i = i + m;
+    }
+}
 
 void sml_chart_load() {
     tasmInfo(0, sml_mtopic);
     int h = fileOpen("/sml_chart.bin", "r");
     if (h < 0) return;                          // nothing to import
-    fileReadBin(h, sml_s4h,  481);
-    fileReadBin(h, sml_s24h, 1441);
-    fileReadBin(h, sml_dcon, 31);
+    sml_chart_imp16(h, sml_s4h,  481);
+    sml_chart_imp16(h, sml_s24h, 1441);
+    fileReadBin(h, sml_dcon, 31);               // still float rings
     fileReadBin(h, sml_mcon, 12);
     fileClose(h);
     saveVars();                                 // the .pvs rules from here on
@@ -102,7 +133,7 @@ void sml_chart_export_csv() {
         addLog("sml_chart_export_csv: fileOpen failed");
         return;
     }
-    char kopf[96];
+    byte kopf[96];
     strcpy(kopf, "# row\tvalues -> import side, tab separated\n");
     fileWrite(h, kopf, strlen(kopf));
     sprintf(kopf, "baselines\t%.3f\t%.3f\t%.3f\t%d\n", sml_dval, sml_mval, sml_yval, sml_da);
@@ -151,9 +182,9 @@ void sml_chart_clear_power() {
     sml_s4h_pos  = 0;
     sml_s24h_pos = 0;
     int i = 0;
-    while (i < 481)  { sml_s4h[i]  = 0.0; i = i + 1; }
+    while (i < 481)  { sml_s4h[i]  = 0; i = i + 1; }
     i = 0;
-    while (i < 1441) { sml_s24h[i] = 0.0; i = i + 1; }
+    while (i < 1441) { sml_s24h[i] = 0; i = i + 1; }
     sml_chart_save();
     addLog("sml_chart: 4h/24h power charts cleared");
 }
@@ -165,6 +196,20 @@ void sml_chart_init_columns() {
     while (i < 12) { sml_mcon[i] = 0.0; i = i + 1; }
     sml_chart_save();
     addLog("sml_chart: daily + monthly column charts cleared");
+}
+
+// Watts as they go into a packed int16 ring: rounded, and CLAMPED.
+// ⚠️ The clamp is not decoration. A packed store keeps the low 16 bits and
+// throws the rest away, it does not saturate — 40000 W would land as -25536 W,
+// a plausible-looking wrong value in the middle of the chart rather than an
+// obvious spike off the top. Same trap as `h_temp[i] = 300` storing 44 on a
+// byte[]. +-32000 leaves headroom below the type's own limit so the reading
+// pins visibly at the edge instead of silently wrapping.
+int sml_chart_w16(float w) {
+    if (w >  32000.0) return  32000;
+    if (w < -32000.0) return -32000;
+    if (w >= 0.0) return (int)(w + 0.5);
+    return (int)(w - 0.5);
 }
 
 // 5-s tick: feed the moving-average filters, push to the rolling arrays.
@@ -193,11 +238,11 @@ void sml_chart_5s_tick() {
     int idx4  = (tasm_hour * 60 + tasm_minute) % 240;
     int idx24 = tasm_hour * 60 + tasm_minute;
     if (idx4 >= 0 && idx4 < 240) {
-        sml_s4h[idx4] = s4h_avg;
+        sml_s4h[idx4] = sml_chart_w16(s4h_avg);
         sml_s4h_pos = idx4;
     }
     if (idx24 >= 0 && idx24 < 1440) {
-        sml_s24h[idx24] = s24h_avg;
+        sml_s24h[idx24] = sml_chart_w16(s24h_avg);
         sml_s24h_pos = idx24;
     }
 }
@@ -267,7 +312,7 @@ void sml_chart_render_totals() {
 // readability) + DE date in the tooltip (dd.MM.yyyy), independent of the
 // browser locale. WebChartJS runs in the chart's draw scope (dt/o/el) and
 // o.done=1 takes over the draw so it renders as an AreaChart.
-char sml_chart_js[240];   // snippet incl. chartArea override and o.done=1
+byte sml_chart_js[240];   // snippet incl. chartArea override and o.done=1
 
 void sml_chart_area_de() {
     strcpy(sml_chart_js,
@@ -340,6 +385,14 @@ void sml_chart_data_panel(int idx_base, int idx_power, int idx_bars) {
     webSend("</div>");
 }
 
+// class='tcc' matters: the firmware emits `.tcc div{padding:0}` with the chart
+// library, which switches off Tasmota's blanket 5 px div padding INSIDE the
+// chart - without it Google's nested divs push the drawing right and over the
+// edge of the card. The divs also deliberately carry NO text-align:center. Google puts its
+// SVG in an inline-block wrapper, so centring shifts the drawing 5 px to the
+// right against the WebChart diagrams above it (gemu, 2026-08-19: svg left
+// 43 instead of 38). Same width rule as the firmware emits, so all charts on
+// the page line up exactly.
 void sml_chart_render_days() {
     int today = tasm_day;
     if (today < 1) today = 1;
@@ -370,10 +423,10 @@ void sml_chart_render_months() {
     // strToken needs the source as a resolvable char[] variable — string
     // literals fall through tc_resolve_ref and return empty (the earlier
     // version produced ['',12.3,...] with no month names on the x-axis).
-    char mn_names[64];
+    byte mn_names[64];
     if (ui_de) strcpy(mn_names, "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez");
     else       strcpy(mn_names, "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec");
-    char mn[6];
+    byte mn[6];
     webSend("<div id='sml_mch' class='tcc' style='width:100%;box-sizing:border-box;height:280px'></div>");
     if (ui_de) webSend("<script>function _smlDM(){var d=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]',{role:'style'}]");
     else       webSend("<script>function _smlDM(){var d=google.visualization.arrayToDataTable([['Month','Import [kWh]',{role:'style'}]");
@@ -421,7 +474,7 @@ persist watch int sml_sndpwr;        // 1 = publish smoothed power via MQTT
 // ── Runtime state ──────────────────────────────────────────────────────────
 float sml_power2;                    // exponentially-smoothed power [W]
 int   sml_pv_hr_last;                // PV-side midnight edge detector
-char  sml_pv_resp[64];               // tasmCmd response buffer
+byte  sml_pv_resp[64];               // tasmCmd response buffer
 
 #ifdef SML_CHART_DEMO
 void sml_chart_pv_demo_fill() {
@@ -432,7 +485,7 @@ void sml_chart_pv_demo_fill() {
         float x = ((float)i - 240.0) / 60.0;
         float bell = cos(x * 0.5);
         if (bell < 0.0) bell = 0.0;
-        sml_s4h[i] = bell * bell * 5000.0 + 200.0;
+        sml_s4h[i] = sml_chart_w16(bell * bell * 5000.0 + 200.0);
         i = i + 1;
     }
     sml_s4h_pos = 240;
@@ -446,7 +499,7 @@ void sml_chart_pv_demo_fill() {
             solar = sin(phase * 3.14159);
             solar = solar * solar * 4500.0;
         }
-        sml_s24h[i] = solar + 150.0;
+        sml_s24h[i] = sml_chart_w16(solar + 150.0);
         i = i + 1;
     }
     sml_s24h_pos = 720;
@@ -497,7 +550,7 @@ void sml_chart_pv_export_csv() {
         addLog("sml_chart_pv_export_csv: fileOpen failed");
         return;
     }
-    char kopf[96];
+    byte kopf[96];
     strcpy(kopf, "# row\tvalues -> feed-in side, tab separated\n");
     fileWrite(h, kopf, strlen(kopf));
     sprintf(kopf, "baselines\t%.3f\t%.3f\t%.3f\n", sml_dval2, sml_mval2, sml_yval2);
@@ -592,10 +645,10 @@ void sml_chart_pv_render_dayprod() {
 // Dual-series month chart, replaces sml_chart_common's single-series one:
 // consumption and feed-in side by side, two y-axes so both ranges scale.
 void sml_chart_pv_render_months_dual() {
-    char mn_names[64];
+    byte mn_names[64];
     if (ui_de) strcpy(mn_names, "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez");
     else       strcpy(mn_names, "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec");
-    char mn[6];
+    byte mn[6];
     webSend("<div id='sml_mch2' class='tcc' style='width:100%;box-sizing:border-box;height:280px'></div>");
     if (ui_de) webSend("<script>function _smlDM2(){var d=google.visualization.arrayToDataTable([['Monat','Verbrauch [kWh]','Einspeisung [kWh]']");
     else       webSend("<script>function _smlDM2(){var d=google.visualization.arrayToDataTable([['Month','Import [kWh]','Export [kWh]']");

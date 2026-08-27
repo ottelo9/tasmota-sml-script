@@ -10,7 +10,7 @@
 #include "sml_modbus_common.tc"
 #include "ct002_common.tc"
 
-char sml_vers[] = "16.08.2026";
+byte sml_vers[] = "16.08.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int  sml_sndpwr;         // 1 = publish power via MQTT and serve /pwr
@@ -20,8 +20,8 @@ int sml_e_sndpwr;             // edit buffer, applied by Save
 // ─── Runtime ───────────────────────────────────────────────────────────────
 float sml_power2;
 int   sml_pwr_last;
-char  sml_mtopic[64];
-char  sml_pub[128];
+byte  sml_mtopic[64];
+byte  sml_pub[128];
 int   do_reset;
 
 // ─── Callbacks ─────────────────────────────────────────────────────────────

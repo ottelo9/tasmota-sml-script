@@ -51,11 +51,11 @@ int   es_last_api;          // 0 none, 1 EM.GetStatus, 2 Shelly.GetStatus
 int   es_last_upd;          // tasm_uptime of the last regulation step
 int   es_w1; int es_w2; int es_w3;   // webOn handler numbers
 
-char  es_mac[32];
+byte  es_mac[32];
 char  es_rxb[256];
-char  es_body[640];
+byte  es_body[640];
 char  es_wrap[768];
-char  es_hdr[160];
+byte  es_hdr[160];
 
 
 // Offset and regulator shaping, applied per phase exactly as CT002 does it.

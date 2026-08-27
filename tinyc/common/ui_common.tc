@@ -11,8 +11,8 @@
 
 persist watch int ui_de;     // 0 = English (default), 1 = Deutsch
 
-char ui_base[] = " <a class='i' target='_blank' href='https://ottelo9.github.io/tasmota-sml-script/";
-char ui_buf[220];        // uiText() copies whole HTML blocks through here -
+byte ui_base[] = " <a class='i' target='_blank' href='https://ottelo9.github.io/tasmota-sml-script/";
+byte ui_buf[220];        // uiText() copies whole HTML blocks through here -
                          // longest measured 144 chars, some span source lines
 
 // ── Save button ────────────────────────────────────────────────────────────
