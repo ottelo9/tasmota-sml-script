@@ -521,7 +521,7 @@
     <!-- Header -->
     <div class="header">
         <div>
-            <h1>TinyC IDE v1.6.62</h1>
+            <h1>TinyC IDE v1.6.64</h1>
             <!-- Version + heap limit are AUTO-INJECTED by bundle.py
                  from TC_RELEASE / TC_MAX_HEAP in xdrv_124_tinyc_vm.h
                  (user_config_override.h wins for heap). No hand-sync —
@@ -2231,7 +2231,7 @@ const VERSION = 6;       // V6: self-describing header (header_size + total_size
 // whenever syscall NUMBERS are inserted/renumbered (pure appends do NOT need a
 // bump — old bytecode still calls the same numbers). The loader warns (but still
 // loads) when a .tcb's abi_rev disagrees with the firmware it runs on.
-const SYSCALL_ABI = 27;  // V27: KEIN neuer Syscall — zwoelf neue OPCODES (0xB6..0xC1) fuer gepackte 16-Bit-Arrays, `int16[]` und `uint16[]`. Zwei Bytes je Element statt vier: (n+1)/2 Slots, Element i bei ((int16*)basis)[i]. Der Zweck ist derselbe wie bei byte[], nur eine Stufe feiner — ein byte[] spart zwar das Vierfache, kostet aber Aufloesung, weshalb es ueberhaupt WebChartQ mit Skala und Versatz gibt; ein int16 traegt eine Temperatur in Hundertstel Kelvin, einen rohen ADC-Wert oder ein Modbus-Register OHNE Umrechnung, bei der Haelfte des Speichers eines int[]. Gemessen an einem Ring mit 1441 Werten: float 5,6 KB, int16 2,8 KB, byte 1,4 KB. ⚠️ Das Vorzeichen steckt im LADEN, nicht in der Ablage: STORE_*_I16 schreibt fuer int16 und uint16 dieselben sechzehn Bit, waehrend der Compiler aus dem deklarierten Typ die vorzeichenerweiternde (0xB6/0xB8/0xBA/0xBC) oder die nullerweiternde Ladung (0xBE..0xC1) waehlt. Deshalb kostet uint16 vier Opcodes statt acht. ⚠️ Das Kennbit in der Referenz wurde zum ZWEI-BIT-Feld erweitert (Heap 8-9, Global 16-17, Lokal 24-25): 00 = int32, 01 = byte, 10 = int16, 11 = uint16. Die 01 ist bitgleich das alte byte-Bit, jedes vorhandene .tcb bedeutet also unveraendert dasselbe — der ABI-Sprung haengt allein an den neuen Opcodes, und der Compiler stempelt ihn genau dann, wenn er einen davon ausgibt (Haken in emit()). Ein aelteres Geraet weist das .tcb ab, statt mitten in der Schleife an BAD_OPCODE zu sterben. || VORHER V26: KEIN neuer Syscall — eine FEHLERKORREKTUR, die aendert, was vorhandene akzeptieren. httpGet, httpPost, smlGetStr und tasmCmd fuellten ihren Zielpuffer mit int32-SLOTS, waehrend tc_ref_maxlen() fuer ein gepacktes byte[] laengst in BYTES antwortete: ein byte[] dorthin zu geben schrieb das Vierfache seiner Groesse und ueberschrieb die Nachbar-Arrays im Heap — lautlos, und erst ab einer Antwort, die weit genug reichte. Alle vier gehen jetzt ueber tc_chr_put(). ⚠️ Man sieht einem solchen Aufruf nichts an, deshalb stempelt der Compiler abi_rev 26, sobald ein byte[] an eines dieser Argumente geht (BUILTINS[].byteAbi) — ein aelteres Geraet weist das .tcb ab, statt seinen Heap zu zerlegen. Ein char[]-Argument bleibt unberuehrt. || VORHER V25: + WEB_CHART_Q (545) — WebChartQ(scale, offset), eine affine Umrechnung auf die Messwerte des NAECHSTEN WebChart. Der Zweck ist der gepackte byte[]: ein Byte je Messwert statt eines int32-Slots, plus Skala/Versatz, traegt eine Temperatur in 0,5-K-Schritten ueber -40..87,5 degC oder eine Feuchte in 0,4 % — bei einem VIERTEL des Speichers. Das ist die groesste einzelne Heap-Position auf einem C3: die mitgelieferten Beispiele halten drei float[1441]-Ringe zu je 5,7 KB, aus einem TC_MAX_HEAP von 64 KB, und der Heap wird beim Laden als EIN zusammenhaengender Block geholt. ⚠️ Der byte[]-Teil ist trotz des reinen Syscall-Anhangs KEIN reines Anhaengen: WebChart (166) behaelt Nummer und Signatur, aber der Compiler markiert ein byte[]-Arrayargument jetzt mit dem Packungs-Bit, und AELTERE Firmware streift das Bit ab und liest das Array als float-Slots — Unsinn, lautlos, ohne fehlenden Syscall, der darauf zeigen wuerde. Deshalb stempelt der Compiler abi_rev 25 auf jedes WebChart, dessen Arrayargument ein byte[] ist (_istBytesVar); ein altes Geraet weist das .tcb dann ab, statt Unfug zu zeichnen. Ein WebChart auf einem float[] erzeugt weiterhin byte-identisches Bytecode und behaelt sein altes abi_rev. Ebenfalls in dieser Fassung, und voellig ohne ABI, weil rein serverseitiges HTML: die Drahtform je Messwert wechselte von _tcA mit [x,y]-Paaren auf _tcAy mit blosser y-Liste plus x0/Schrittweite — die x-Werte waren immer die Folge -(count-1-i)*interval + timebase. Aus rund 14 Byte je Punkt wurden rund 6; eine 1441-Punkt-Reihe schrumpfte von ~20 KB Antwortkoerper auf ~8 KB. _tcA bleibt daneben stehen. || VORHER V24: + SYS_MQTT_PUBLISH_REF (544) — mqttPublish mit LAUFZEIT-Strings und Log-Stufe. Bisher nahm mqttPublish nur Literale, also war ein Thema, das den Geraetenamen traegt, gar nicht erreichbar: Hans ging deshalb ueber den Befehl `Publish`, also eine geparste Befehlszeile, um eine Funktion zwei Rahmen tiefer zu treffen. Und es log IMMER mit — zwei Zeilen alle fuenf Sekunden bei weblog 2; `MqttPublishPayload` kennt die Stufe LOG_LEVEL_NONE laengst, nur TinyC kam nicht heran. Reines Anhaengen: die Zwei-Literal-Form bleibt Syscall 297 und erzeugt byte-identisches Bytecode, die neue Form entsteht nur, wenn ein Argument keine Konstante ist oder eine dritte Zahl dasteht. || VORHER V23: + LK32_OP_ST (0xB3) fuer Konstanten ausserhalb i8, sowie der Schleifenkopf LL_CMP_JZ / LK32_CMP_JZ (0xB4/0xB5). Der Vergleich-und-Springe laeuft einmal je Runde in JEDER Schleife und ist damit die breiteste der Verschmelzungen. || VORHER V22: + LK_OP_ST/LL_OP_ST (0xB1/0xB2) -- `x = y OP z` bzw. `x = y OP konst` auf einfachen int-Locals in EINEM Opcode statt vier (laden, laden/schieben, rechnen, ablegen). Genau die Stelle, an der eine Stapel-VM gegen eine Register-VM verliert. || VORHER V21: + Superinstruktionen (0xB0+). Erste: INC_LOCAL (0xB0) fuer `i++` als ANWEISUNG -- ersetzt LOAD_LOCAL/DUP/PUSH_I8/ADD/STORE_LOCAL/POP, also sechs Opcodes durch einen. Reine Verschmelzung, KEINE neue Ausdruckskraft: die unverschmolzene Form bleibt gueltig, ein Programm bedeutet dasselbe. ⚠️ Erster ABI-Sprung, bei dem NEUERES Bytecode auf AELTERER Firmware nicht mehr bloss einen fehlenden Syscall meldet, sondern mit BAD_OPCODE mitten in der Schleife stirbt -- deshalb weist der Lader ab sofort ein .tcb mit hoeherem abi_rev AB, statt es zu warnen und trotzdem zu laden. || VORHER V20: + BLE "SPP" (535-543) — bleSppTarget/Connect/State/Sub/Available/Read/Write/Close + bleGattDump. Der bisherige GATT-Client (bleTarget..bleResult) verbindet, macht EINEN Lese-/Schreib-/Notify-Vorgang und trennt danach — richtig fuer ein Geraet, das aufwacht, einmal meldet und wieder schlaeft, falsch fuer einen Strom: ein BlueRadios/Nordic-UART-artiges Geraet wuerde die Verbindung verlieren, bevor ein zweiter Messwert je ankommen koennte. Deshalb eine ZWEITE, unabhaengige NimBLE-Verbindung mit eigenem Notify-Ringpuffer, komplett in der TinyC-eigenen Datei (xdrv_79_tinyc_ble_glue.ino) — der bestehende GATT-Client (Waage, MI32, EQ3) bleibt unberuehrt. UUIDs sind hier ZEICHENKETTEN (16-Bit "180a" oder volle 128-Bit) statt der bisherigen int16-Variante — ein proprietaerer UART-Dienst ist so gut wie immer 128-Bit, int16 erreicht ihn gar nicht. bleGattDump() ist der Einzelvorgang davor: verbinden, alle Dienste+Merkmale auflisten, trennen — noetig, weil eine proprietaere UUID kein Datenblatt-Nachschlagen erlaubt. ⭐ VERIFIZIERT an echter Hardware 2026-08-05 (.39, ESP32-S3) gegen ein BlueRadios-Dualmodul: verbinden, BRSP_TX abonnieren, Datenmodus setzen, "VS\r" schreiben — Antwort kam in vier Haeppchen, und die Verbindung stand DANACH weiter. Pure append, kein .tcb-Formatwechsel. || VORHER V19: + lvglChartUpdateMode (534) — legt lv_chart_set_update_mode offen. 0 = schieben (LVGL-Vorgabe, macht die GANZE Diagrammflaeche je Wert ungueltig), 1 = umlaufend (wandernder Schreibstrich, nur eine schmale Spalte). Faktor ~250 bei einer 760x300-Flaeche — entscheidet, ob eine schnelle Messkurve ueberhaupt darstellbar ist. Pure append. || VORHER V18: + sppDeinit (533) — baut den Bluetooth-Classic-Stapel ab und gibt seine ~85 KB Heap zurueck. Ohne das scheitert der naechste Slot-Neustart an der Speicheranforderung, und das meldet sich als "Stack overflow". Pure append. || VORHER V17: + Bluetooth Classic / SPP (524-532) — sppInit, sppConnect (525 Literal / 526 char[]), sppState, sppAvailable, sppRead, sppWrite, sppClose, sppScan. Serial link to ANY Classic device; the protocol lives in the SCRIPT. ORIGINAL ESP32 ONLY (BR/EDR) and needs a firmware built with USE_TINYC_SPP against a Bluedroid framework. Pure append, no .tcb format change. || VORHER V16: + webCard (521, per-slot main-page card-frame toggle; webCard(0) renders bare like pre-card). Pure append. V15: + lvglLinePoly (517, one lv_line draws a whole N-point polyline) / lvglArcBgAngles (518, arc sweep) / lvglArcStyle (519, arc part colour+width — zoned gauges) / lvglRotate (520, rotate any object, for vertical y-axis titles). Pure append. V14: + lvglCanvas (514) / lvglCanvasSetImgSlot (515) / dspFreeImage (516) — a PSRAM RGB565 image slot (e.g. a HW-decoded camera frame from dspLoadImageFromCam) becomes an lv_canvas (an lv_image, so lvglImageAngle/Scale rotate+size it); dspFreeImage frees a slot so a live cam loop doesn't exhaust the 4. Pure append. V13: + audioMicGain (513, set mic gain 1-100 via the audio plugin, mirror of audioVol). Pure append. V12: + rsaEncrypt (512, RSA PKCS#1 v1.5 type-2 encrypt via BearSSL br_rsa_public, for RSA-encrypted-password logins). Pure append. V11: + utcSecs (511, current UTC unix epoch for stamps/signing). Pure append. V10: + raw TLS client (503-509: tlsConnect/tlsWrite/tlsReadLine/tlsRead/tlsAvailable/tlsConnected/tlsStop) + base64Enc (510) — a TinyC app can speak raw HTTPS (OAuth redirect/cookie flows, request signing), hot-reloadable. Pure append. V9: + SYS_I2S_DUPLEX_BEGIN (502, i2sDuplexBegin — full-duplex TX+RX for combined codecs like the WM8960 whose ADC is clocked by the I2S TX). Pure append. V8: i2sBegin (271) gained a leading mclk arg (i2sBegin(mclk,bclk,lrclk,dout,rate)) — existing syscall's arg count changed, so a mandatory bump. V7: + SYS_I2S_MIC_BEGIN/READ/LEVEL/STOP (498-501, mic RX / loudness). Pure append. V6: + SYS_LVGL_LINE/LINE_POINTS/LINE_STYLE (495-497, radial/vector bars). Pure append. V5: + SYS_LVGL_IMAGE_SCALE (494, lvglImageScale(h,sx,sy)). Pure append. V4: + SYS_LVGL_SET_FONT (493, lvglSetFont(h,size)). Pure append (old bytecode unaffected); bumped so the IDE flags a lvglSetFont .tcb on pre-font firmware. V3: + SYS_TOUCH_GET (492, touchGet(sel) -> Touch_Status). V2: + SYS_BLIB_CALL_F (371, fcall float blib call).
+const SYSCALL_ABI = 28;  // V28: NO new syscall -- a BUG FIX that changes what eleven existing ones accept, the same shape as V26 and found the same way. tc_ref_maxlen() has long answered in BYTES for a packed byte[], but webArg, webParse, jsonStr, fileReadDir, fileGetStr, smlRead, pluginQuery, tlsReadLine, tlsRead, pwlStr and sppScan still wrote one int32 SLOT per character: handing any of them a byte[] wrote four times the array's size straight over the neighbouring heap. Reported by Hans against webArg() into a `byte a[96]` -- the mail address came back as "o", first character right and string over, which is the harmless half of the same write. All eleven now go through tc_chr_put(). ⚠️ webParse was wrong in BOTH directions: it also READ its source as int32 slots, so a byte[] source yielded one character; it goes through tc_ref_to_cstr() now, which knows both packings. jsonStr had the same reading problem on its source argument. ⚠️ Nothing about such a call LOOKS different, so the compiler stamps abi_rev 28 whenever a byte[] reaches one of those arguments (BUILTINS[].byteAbi in codegen.js) -- an older device refuses the .tcb instead of corrupting its heap. A char[] argument is unaffected and keeps its old abi_rev. Measured on an ESP32-C3 with a byte[] and a char[] in one handler on one request: before byte[16]="o" / char[16]="otto@example.org", after both "otto@example.org", and UTF-8 survives. || PREVIOUS V27: KEIN neuer Syscall — zwoelf neue OPCODES (0xB6..0xC1) fuer gepackte 16-Bit-Arrays, `int16[]` und `uint16[]`. Zwei Bytes je Element statt vier: (n+1)/2 Slots, Element i bei ((int16*)basis)[i]. Der Zweck ist derselbe wie bei byte[], nur eine Stufe feiner — ein byte[] spart zwar das Vierfache, kostet aber Aufloesung, weshalb es ueberhaupt WebChartQ mit Skala und Versatz gibt; ein int16 traegt eine Temperatur in Hundertstel Kelvin, einen rohen ADC-Wert oder ein Modbus-Register OHNE Umrechnung, bei der Haelfte des Speichers eines int[]. Gemessen an einem Ring mit 1441 Werten: float 5,6 KB, int16 2,8 KB, byte 1,4 KB. ⚠️ Das Vorzeichen steckt im LADEN, nicht in der Ablage: STORE_*_I16 schreibt fuer int16 und uint16 dieselben sechzehn Bit, waehrend der Compiler aus dem deklarierten Typ die vorzeichenerweiternde (0xB6/0xB8/0xBA/0xBC) oder die nullerweiternde Ladung (0xBE..0xC1) waehlt. Deshalb kostet uint16 vier Opcodes statt acht. ⚠️ Das Kennbit in der Referenz wurde zum ZWEI-BIT-Feld erweitert (Heap 8-9, Global 16-17, Lokal 24-25): 00 = int32, 01 = byte, 10 = int16, 11 = uint16. Die 01 ist bitgleich das alte byte-Bit, jedes vorhandene .tcb bedeutet also unveraendert dasselbe — der ABI-Sprung haengt allein an den neuen Opcodes, und der Compiler stempelt ihn genau dann, wenn er einen davon ausgibt (Haken in emit()). Ein aelteres Geraet weist das .tcb ab, statt mitten in der Schleife an BAD_OPCODE zu sterben. || VORHER V26: KEIN neuer Syscall — eine FEHLERKORREKTUR, die aendert, was vorhandene akzeptieren. httpGet, httpPost, smlGetStr und tasmCmd fuellten ihren Zielpuffer mit int32-SLOTS, waehrend tc_ref_maxlen() fuer ein gepacktes byte[] laengst in BYTES antwortete: ein byte[] dorthin zu geben schrieb das Vierfache seiner Groesse und ueberschrieb die Nachbar-Arrays im Heap — lautlos, und erst ab einer Antwort, die weit genug reichte. Alle vier gehen jetzt ueber tc_chr_put(). ⚠️ Man sieht einem solchen Aufruf nichts an, deshalb stempelt der Compiler abi_rev 26, sobald ein byte[] an eines dieser Argumente geht (BUILTINS[].byteAbi) — ein aelteres Geraet weist das .tcb ab, statt seinen Heap zu zerlegen. Ein char[]-Argument bleibt unberuehrt. || VORHER V25: + WEB_CHART_Q (545) — WebChartQ(scale, offset), eine affine Umrechnung auf die Messwerte des NAECHSTEN WebChart. Der Zweck ist der gepackte byte[]: ein Byte je Messwert statt eines int32-Slots, plus Skala/Versatz, traegt eine Temperatur in 0,5-K-Schritten ueber -40..87,5 degC oder eine Feuchte in 0,4 % — bei einem VIERTEL des Speichers. Das ist die groesste einzelne Heap-Position auf einem C3: die mitgelieferten Beispiele halten drei float[1441]-Ringe zu je 5,7 KB, aus einem TC_MAX_HEAP von 64 KB, und der Heap wird beim Laden als EIN zusammenhaengender Block geholt. ⚠️ Der byte[]-Teil ist trotz des reinen Syscall-Anhangs KEIN reines Anhaengen: WebChart (166) behaelt Nummer und Signatur, aber der Compiler markiert ein byte[]-Arrayargument jetzt mit dem Packungs-Bit, und AELTERE Firmware streift das Bit ab und liest das Array als float-Slots — Unsinn, lautlos, ohne fehlenden Syscall, der darauf zeigen wuerde. Deshalb stempelt der Compiler abi_rev 25 auf jedes WebChart, dessen Arrayargument ein byte[] ist (_istBytesVar); ein altes Geraet weist das .tcb dann ab, statt Unfug zu zeichnen. Ein WebChart auf einem float[] erzeugt weiterhin byte-identisches Bytecode und behaelt sein altes abi_rev. Ebenfalls in dieser Fassung, und voellig ohne ABI, weil rein serverseitiges HTML: die Drahtform je Messwert wechselte von _tcA mit [x,y]-Paaren auf _tcAy mit blosser y-Liste plus x0/Schrittweite — die x-Werte waren immer die Folge -(count-1-i)*interval + timebase. Aus rund 14 Byte je Punkt wurden rund 6; eine 1441-Punkt-Reihe schrumpfte von ~20 KB Antwortkoerper auf ~8 KB. _tcA bleibt daneben stehen. || VORHER V24: + SYS_MQTT_PUBLISH_REF (544) — mqttPublish mit LAUFZEIT-Strings und Log-Stufe. Bisher nahm mqttPublish nur Literale, also war ein Thema, das den Geraetenamen traegt, gar nicht erreichbar: Hans ging deshalb ueber den Befehl `Publish`, also eine geparste Befehlszeile, um eine Funktion zwei Rahmen tiefer zu treffen. Und es log IMMER mit — zwei Zeilen alle fuenf Sekunden bei weblog 2; `MqttPublishPayload` kennt die Stufe LOG_LEVEL_NONE laengst, nur TinyC kam nicht heran. Reines Anhaengen: die Zwei-Literal-Form bleibt Syscall 297 und erzeugt byte-identisches Bytecode, die neue Form entsteht nur, wenn ein Argument keine Konstante ist oder eine dritte Zahl dasteht. || VORHER V23: + LK32_OP_ST (0xB3) fuer Konstanten ausserhalb i8, sowie der Schleifenkopf LL_CMP_JZ / LK32_CMP_JZ (0xB4/0xB5). Der Vergleich-und-Springe laeuft einmal je Runde in JEDER Schleife und ist damit die breiteste der Verschmelzungen. || VORHER V22: + LK_OP_ST/LL_OP_ST (0xB1/0xB2) -- `x = y OP z` bzw. `x = y OP konst` auf einfachen int-Locals in EINEM Opcode statt vier (laden, laden/schieben, rechnen, ablegen). Genau die Stelle, an der eine Stapel-VM gegen eine Register-VM verliert. || VORHER V21: + Superinstruktionen (0xB0+). Erste: INC_LOCAL (0xB0) fuer `i++` als ANWEISUNG -- ersetzt LOAD_LOCAL/DUP/PUSH_I8/ADD/STORE_LOCAL/POP, also sechs Opcodes durch einen. Reine Verschmelzung, KEINE neue Ausdruckskraft: die unverschmolzene Form bleibt gueltig, ein Programm bedeutet dasselbe. ⚠️ Erster ABI-Sprung, bei dem NEUERES Bytecode auf AELTERER Firmware nicht mehr bloss einen fehlenden Syscall meldet, sondern mit BAD_OPCODE mitten in der Schleife stirbt -- deshalb weist der Lader ab sofort ein .tcb mit hoeherem abi_rev AB, statt es zu warnen und trotzdem zu laden. || VORHER V20: + BLE "SPP" (535-543) — bleSppTarget/Connect/State/Sub/Available/Read/Write/Close + bleGattDump. Der bisherige GATT-Client (bleTarget..bleResult) verbindet, macht EINEN Lese-/Schreib-/Notify-Vorgang und trennt danach — richtig fuer ein Geraet, das aufwacht, einmal meldet und wieder schlaeft, falsch fuer einen Strom: ein BlueRadios/Nordic-UART-artiges Geraet wuerde die Verbindung verlieren, bevor ein zweiter Messwert je ankommen koennte. Deshalb eine ZWEITE, unabhaengige NimBLE-Verbindung mit eigenem Notify-Ringpuffer, komplett in der TinyC-eigenen Datei (xdrv_79_tinyc_ble_glue.ino) — der bestehende GATT-Client (Waage, MI32, EQ3) bleibt unberuehrt. UUIDs sind hier ZEICHENKETTEN (16-Bit "180a" oder volle 128-Bit) statt der bisherigen int16-Variante — ein proprietaerer UART-Dienst ist so gut wie immer 128-Bit, int16 erreicht ihn gar nicht. bleGattDump() ist der Einzelvorgang davor: verbinden, alle Dienste+Merkmale auflisten, trennen — noetig, weil eine proprietaere UUID kein Datenblatt-Nachschlagen erlaubt. ⭐ VERIFIZIERT an echter Hardware 2026-08-05 (.39, ESP32-S3) gegen ein BlueRadios-Dualmodul: verbinden, BRSP_TX abonnieren, Datenmodus setzen, "VS\r" schreiben — Antwort kam in vier Haeppchen, und die Verbindung stand DANACH weiter. Pure append, kein .tcb-Formatwechsel. || VORHER V19: + lvglChartUpdateMode (534) — legt lv_chart_set_update_mode offen. 0 = schieben (LVGL-Vorgabe, macht die GANZE Diagrammflaeche je Wert ungueltig), 1 = umlaufend (wandernder Schreibstrich, nur eine schmale Spalte). Faktor ~250 bei einer 760x300-Flaeche — entscheidet, ob eine schnelle Messkurve ueberhaupt darstellbar ist. Pure append. || VORHER V18: + sppDeinit (533) — baut den Bluetooth-Classic-Stapel ab und gibt seine ~85 KB Heap zurueck. Ohne das scheitert der naechste Slot-Neustart an der Speicheranforderung, und das meldet sich als "Stack overflow". Pure append. || VORHER V17: + Bluetooth Classic / SPP (524-532) — sppInit, sppConnect (525 Literal / 526 char[]), sppState, sppAvailable, sppRead, sppWrite, sppClose, sppScan. Serial link to ANY Classic device; the protocol lives in the SCRIPT. ORIGINAL ESP32 ONLY (BR/EDR) and needs a firmware built with USE_TINYC_SPP against a Bluedroid framework. Pure append, no .tcb format change. || VORHER V16: + webCard (521, per-slot main-page card-frame toggle; webCard(0) renders bare like pre-card). Pure append. V15: + lvglLinePoly (517, one lv_line draws a whole N-point polyline) / lvglArcBgAngles (518, arc sweep) / lvglArcStyle (519, arc part colour+width — zoned gauges) / lvglRotate (520, rotate any object, for vertical y-axis titles). Pure append. V14: + lvglCanvas (514) / lvglCanvasSetImgSlot (515) / dspFreeImage (516) — a PSRAM RGB565 image slot (e.g. a HW-decoded camera frame from dspLoadImageFromCam) becomes an lv_canvas (an lv_image, so lvglImageAngle/Scale rotate+size it); dspFreeImage frees a slot so a live cam loop doesn't exhaust the 4. Pure append. V13: + audioMicGain (513, set mic gain 1-100 via the audio plugin, mirror of audioVol). Pure append. V12: + rsaEncrypt (512, RSA PKCS#1 v1.5 type-2 encrypt via BearSSL br_rsa_public, for RSA-encrypted-password logins). Pure append. V11: + utcSecs (511, current UTC unix epoch for stamps/signing). Pure append. V10: + raw TLS client (503-509: tlsConnect/tlsWrite/tlsReadLine/tlsRead/tlsAvailable/tlsConnected/tlsStop) + base64Enc (510) — a TinyC app can speak raw HTTPS (OAuth redirect/cookie flows, request signing), hot-reloadable. Pure append. V9: + SYS_I2S_DUPLEX_BEGIN (502, i2sDuplexBegin — full-duplex TX+RX for combined codecs like the WM8960 whose ADC is clocked by the I2S TX). Pure append. V8: i2sBegin (271) gained a leading mclk arg (i2sBegin(mclk,bclk,lrclk,dout,rate)) — existing syscall's arg count changed, so a mandatory bump. V7: + SYS_I2S_MIC_BEGIN/READ/LEVEL/STOP (498-501, mic RX / loudness). Pure append. V6: + SYS_LVGL_LINE/LINE_POINTS/LINE_STYLE (495-497, radial/vector bars). Pure append. V5: + SYS_LVGL_IMAGE_SCALE (494, lvglImageScale(h,sx,sy)). Pure append. V4: + SYS_LVGL_SET_FONT (493, lvglSetFont(h,size)). Pure append (old bytecode unaffected); bumped so the IDE flags a lvglSetFont .tcb on pre-font firmware. V3: + SYS_TOUCH_GET (492, touchGet(sel) -> Touch_Status). V2: + SYS_BLIB_CALL_F (371, fcall float blib call).
 
 // Release version — bump on any compiler/VM/syscall change
 const TINYC_RELEASE = "1.3.23"; // RGB LED via RMT: new builtin 'rgbLed(gpio, 0xRRGGBB)' (SYS_RGB_LED=405) drives a single WS2812/SK6812 addressable LED (the onboard RGB LED on most ESP32-C3/C6/S3 dev boards) straight off the RMT peripheral — no USE_LIGHT, no GPIO template, no NeoPixelBus. Bit timing at 0.1us/tick (0=0.3/0.9us, 1=0.9/0.3us) + 50us reset; colour 0xRRGGBB sent in WS2812 G,R,B order. Mirrors the ESP-IDF RMT WS2812 example. Distinct from the existing setPixels (which drives a strip through Tasmota's light stack). Prior: Matter command callback: 'MatterInvoke(ep, cluster, cmd)' added to CALLBACK_NAMES so a .tc script can handle controller-invoked commands (the Matter twin of HomeKitWrite). The firmware routes an OnOff/app-cluster Invoke to MatterInvoke on every slot that defines it; if no script handles it, the built-in OnOff->relay default applies (no double-toggle). Device-verified on a C6: OnOff.Toggle -> MatterInvoke -> relay flip. Prior: Matter data-model scripting syscalls (398-404): matterAdd / matterCluster / matterAttr / matterSet / matterGet / matterStart / matterReset. A .tc script declares the Matter device (endpoints/clusters/attributes) on the firmware-agnostic matter_c engine and publishes attribute values; the IM Read/Subscribe paths + the report engine serve them. ESP32-only via USE_MATTER_C (replaces USE_HOMEKIT in the shared TinyC integration slot); non-Matter builds pop args + return -1/0. Predefined script constants: device types MATTER_PLUG/MATTER_ONOFF_LIGHT/MATTER_DIMM_LIGHT/MATTER_TEMP_SENSOR/MATTER_HUM_SENSOR, clusters CLUSTER_ONOFF/CLUSTER_LEVEL/CLUSTER_TEMP/CLUSTER_HUM/CLUSTER_POWER/CLUSTER_ENERGY, attr types MTR_BOOL/MTR_U8/MTR_U16/MTR_U32/MTR_U64/MTR_ENUM8. Prior: Symmetric crypto syscalls (360-365): aesEcb / aesCbc (AES-128, in-place on TinyC char[] buffers), hmacSha256, sha256, plus hex2bin / bin2hex byte-twiddling helpers. ESP32-only via mbedtls (already linked for HTTPS/MQTT-TLS); ESP8266 returns 0/no-op. Motivating use case: TinyC scripts speaking the Tuya local protocol (v3.3 = AES-128-ECB) so users can drive Smart-Life-controlled devices (pool heat pumps, plugs, switches, dehumidifiers) directly from Tasmota without a cloud round-trip or a bridge. Also enables custom signed REST APIs (HMAC-SHA256), encrypted SML decoders not covered by AmsLib, and per-device MQTT-TLS fingerprinting. Buffers follow TinyC convention (one byte per int32 slot, low 8 bits used); lengths in bytes. AES-CBC stack-allocates up to 4 KB per call, falls back to malloc above; HMAC/SHA bounded at 1024 B key / 4 KB data. AES key fixed at 128 bits (Tuya/most Smart-Life devices). Tuya v3.4 (ECDH+AES-GCM) not exposed — most Smart-Life devices still use v3.3.
@@ -4140,7 +4140,7 @@ const BUILTINS = {
     'smlGet':           { syscall: Syscall.SML_GET,         args: 1, returns: true },
     'smlGetStr':        { syscall: Syscall.SML_GETSTR,      args: 2, returns: true,  strArgs: [1], byteAbi: { args: [1], abi: 26 } },
     'smlWrite':         { syscall: Syscall.SML_WRITE,       args: 2, returns: true,  strArgs: [1] },
-    'smlRead':          { syscall: Syscall.SML_READ,        args: 2, returns: true,  strArgs: [1] },
+    'smlRead':          { syscall: Syscall.SML_READ,        args: 2, returns: true,  strArgs: [1], byteAbi: { args: [1], abi: 28 } },
     'smlSetBaud':       { syscall: Syscall.SML_SETBAUD,     args: 2, returns: true },
     'smlSetWStr':       { syscall: Syscall.SML_SETWSTR,     args: 2, returns: true,  strArgs: [1] },
     'smlSetOptions':    { syscall: Syscall.SML_SETOPT,      args: 1, returns: true },
@@ -4233,7 +4233,7 @@ const BUILTINS = {
     'sppRead':          { syscall: Syscall.SPP_READ,       args: 2, returns: true,  strArgs: [0], intArgs: [1] },
     'sppWrite':         { syscall: Syscall.SPP_WRITE,      args: 2, returns: true,  strArgs: [0], intArgs: [1] },
     'sppClose':         { syscall: Syscall.SPP_CLOSE,      args: 0, returns: true },
-    'sppScan':          { syscall: Syscall.SPP_SCAN,       args: 3, returns: true,  strArgs: [0], intArgs: [1, 2] },
+    'sppScan':          { syscall: Syscall.SPP_SCAN,       args: 3, returns: true,  strArgs: [0], intArgs: [1, 2], byteAbi: { args: [0], abi: 28 } },
     'sppDeinit':        { syscall: Syscall.SPP_DEINIT,     args: 0, returns: true },
     'fileSize':         { syscall: Syscall.FILE_SIZE,       args: 1, returns: true,  constArgs: [0] },
     'fileFormat':       { syscall: Syscall.FILE_FORMAT,    args: 0, returns: true },
@@ -4244,9 +4244,9 @@ const BUILTINS = {
     // fileReadArray / fileWriteArray handled as special cases in compileCallExpr (optional count/append/decimals)
     'fileLog':          { syscall: Syscall.FILE_LOG,       args: 3, returns: true,  constArgs: [0], strArgs: [1] },
     'fileDownload':     { syscall: Syscall.FILE_DOWNLOAD, args: 2, returns: true,  constArgs: [0], strArgs: [1] },
-    'fileGetStr':       { syscall: Syscall.FILE_GET_STR, args: 5, returns: true,  strArgs: [0], constArgs: [2] },
+    'fileGetStr':       { syscall: Syscall.FILE_GET_STR, args: 5, returns: true,  strArgs: [0], constArgs: [2], byteAbi: { args: [0], abi: 28 } },
     'fileOpenDir':      { syscall: Syscall.FILE_OPENDIR,   args: 1, returns: true,  constArgs: [0] },
-    'fileReadDir':      { syscall: Syscall.FILE_READDIR,   args: 2, returns: true,  strArgs: [1] },
+    'fileReadDir':      { syscall: Syscall.FILE_READDIR,   args: 2, returns: true,  strArgs: [1], byteAbi: { args: [1], abi: 28 } },
     'fileRange':        { syscall: Syscall.FILE_RANGE,     args: 3, returns: true,  strArgs: [1, 2] },
     'fsInfo':           { syscall: Syscall.FS_INFO,        args: 1, returns: true },
 
@@ -4291,7 +4291,7 @@ const BUILTINS = {
     // Generic JSON parsing on ANY char[] buffer (e.g. an httpGet response from a
     // remote device). Path is '#'-separated like sensorGet ("StatusSNS#SHT3X#Temperature").
     'jsonNum':          { syscall: Syscall.JSON_NUM,        args: 2, returns: true,  strArgs: [0, 1], returnFloat: true },
-    'jsonStr':          { syscall: Syscall.JSON_STR,        args: 3, returns: true,  strArgs: [0, 1, 2] },
+    'jsonStr':          { syscall: Syscall.JSON_STR,        args: 3, returns: true,  strArgs: [0, 1, 2], byteAbi: { args: [0, 2], abi: 28 } },
 
     // Cross-VM shared key/value store — let two slots share named scalars/strings
     'shareSetInt':      { syscall: Syscall.SHARE_SET_INT,   args: 2, returns: false, constArgs: [0], intArgs: [1] },
@@ -4341,15 +4341,15 @@ const BUILTINS = {
     'httpGet':          { syscall: Syscall.HTTP_GET,         args: 2, returns: true,  strArgs: [0, 1], byteAbi: { args: [1], abi: 26 } },
     'httpPost':         { syscall: Syscall.HTTP_POST,        args: 3, returns: true,  strArgs: [0, 1, 2], byteAbi: { args: [2], abi: 26 } },
     'httpHeader':       { syscall: Syscall.HTTP_HEADER,      args: 2, returns: false, strArgs: [0, 1] },
-    'webParse':         { syscall: Syscall.WEB_PARSE,        args: 4, returns: true,  strArgs: [0, 3], constArgs: [1] },
+    'webParse':         { syscall: Syscall.WEB_PARSE,        args: 4, returns: true,  strArgs: [0, 3], constArgs: [1], byteAbi: { args: [0, 3], abi: 28 } },
 
     // Raw TLS client (one connection at a time; ESP32; call from a TaskLoop — these BLOCK).
     // Speak raw HTTPS yourself: write a request, read status/headers/body → OAuth flows,
     // redirects, cookies, request signing all stay in the .tcb (hot-reloadable).
     'tlsConnect':       { syscall: Syscall.TLS_CONNECT,     args: 2, returns: true,  strArgs: [0] },     // (host, port) 0=ok -1=fail
     'tlsWrite':         { syscall: Syscall.TLS_WRITE,       args: 1, returns: true,  strArgs: [0] },     // (request) -> bytes written
-    'tlsReadLine':      { syscall: Syscall.TLS_READ_LINE,   args: 1, returns: true,  strArgs: [0] },     // (buf) -> len, -1 none (headers)
-    'tlsRead':          { syscall: Syscall.TLS_READ,        args: 2, returns: true,  strArgs: [0] },     // (buf, maxbytes) -> count (body)
+    'tlsReadLine':      { syscall: Syscall.TLS_READ_LINE,   args: 1, returns: true,  strArgs: [0], byteAbi: { args: [0], abi: 28 } },     // (buf) -> len, -1 none (headers)
+    'tlsRead':          { syscall: Syscall.TLS_READ,        args: 2, returns: true,  strArgs: [0], byteAbi: { args: [0], abi: 28 } },     // (buf, maxbytes) -> count (body)
     'tlsAvailable':     { syscall: Syscall.TLS_AVAILABLE,   args: 0, returns: true },
     'tlsConnected':     { syscall: Syscall.TLS_CONNECTED,   args: 0, returns: true },
     'tlsStop':          { syscall: Syscall.TLS_STOP,        args: 0, returns: false },
@@ -4454,7 +4454,7 @@ const BUILTINS = {
     'webSendJsonArray': { syscall: Syscall.WEB_SEND_JSON_ARRAY, args: 2, returns: false, strArgs: [0] },
     'webOn':            { syscall: Syscall.WEB_ON,          args: 2, returns: false, constArgs: [1] },
     'webHandler':       { syscall: Syscall.WEB_HANDLER,     args: 0, returns: true },
-    'webArg':           { syscall: Syscall.WEB_ARG,         args: 2, returns: true, constArgs: [0], strArgs: [1] },
+    'webArg':           { syscall: Syscall.WEB_ARG,         args: 2, returns: true, constArgs: [0], strArgs: [1], byteAbi: { args: [1], abi: 28 } },
     'mdnsRegister':     { syscall: Syscall.MDNS,            args: 3, returns: true, constArgs: [0, 1, 2] },
     'webConsoleButton': { syscall: Syscall.WEB_CONSOLE_BUTTON, args: 2, returns: false, constArgs: [0, 1] },
     // byteRefArgs: this ref argument may be a packed byte[], and the syscall
@@ -4465,7 +4465,7 @@ const BUILTINS = {
     'WebChartSize':     { syscall: Syscall.WEB_CHART_SIZE,      args: 2, returns: false },
     'WebChartTimeBase': { syscall: Syscall.WEB_CHART_TBASE,     args: 1, returns: false },
     'WebChartJS':       { syscall: Syscall.WEB_CHART_JS,        args: 1, returns: false, strArgs: [0] },
-    'pluginQuery':      { syscall: Syscall.PLUGIN_QUERY,        args: 4, returns: true,  strArgs: [0] },
+    'pluginQuery':      { syscall: Syscall.PLUGIN_QUERY,        args: 4, returns: true,  strArgs: [0], byteAbi: { args: [0], abi: 28 } },
     // sortArray sorts IN PLACE, so it has to know the element width or it
     // reorders int32 slots across a packed array. packedAbi says which firmware
     // is needed once the ref carries a kind: WebChart has taken a byte[] since
@@ -4581,7 +4581,7 @@ const BUILTINS = {
     'pwlRequest':       { syscall: Syscall.PWL_REQUEST,      args: 1, returns: true,  strArgs:   [0] },
     'pwlBind':          { syscall: Syscall.PWL_BIND,         args: 2, returns: false, refArgs: [0], constArgs: [1] },
     'pwlGet':           { syscall: Syscall.PWL_GET_FLOAT,    args: 1, returns: true,  constArgs: [0] },
-    'pwlStr':           { syscall: Syscall.PWL_GET_STR,      args: 2, returns: true,  constArgs: [0], strArgs: [1] },
+    'pwlStr':           { syscall: Syscall.PWL_GET_STR,      args: 2, returns: true,  constArgs: [0], strArgs: [1], byteAbi: { args: [1], abi: 28 } },
 
     // HomeKit (ESP32 — requires USE_HOMEKIT)
     'hkSetCode':        { syscall: Syscall.HK_SET_CODE,      args: 1, returns: false, constArgs: [0] },
@@ -4730,6 +4730,8 @@ class CodeGenerator {
             ? Math.min(targetAbi, SYSCALL_ABI) : SYSCALL_ABI;
         this._abiMin = CodeGenerator._ABI_BASIS;   // tatsaechlicher Mindestbedarf, siehe emit()
         this._syscallOffen = 0;                    // 1 = SYSCALL, 2 = SYSCALL2, Nummer folgt
+        this._metaName = '';        // // @name:  -> header TLV 1, see compile()
+        this._metaInfo = '';        // // @info:  -> header TLV 2
         this.code = [];             // bytecode output
         this.constants = [];        // constant pool (strings, large numbers)
         this.globals = new Map();   // name -> { index, type, isArray, arraySize }
@@ -9378,6 +9380,46 @@ class CodeGenerator {
         header.push((abiRev >> 8) & 0xFF);
         header.push(abiRev & 0xFF);
         for (let i = 0; i < 12; i++) header.push(0);  // reserved[12] (B28-39), zero-filled for future fields
+
+        // ─── Metadata behind the fixed header (from B40) ─────────────────────
+        // Plain name and info URL, so the pickers on the /tc page do not have to
+        // show `sml_chart_ct002.tcb` and nothing else.
+        //
+        // ⚠️ THIS BREAKS NOTHING. The V6 header is self-describing: header_size
+        // sits in B20-21 and the loader finds EVERYTHING relative to it
+        // (`const_end = header_size + const_pool_size`, `offset = header_size` in
+        // xdrv_124_tinyc_vm.h). Firmware that knows nothing about these fields
+        // therefore skips them correctly -- no ABI step, no format break, every
+        // device in the field loads a .tcb built this way.
+        //
+        // TLV rather than fixed fields so more can be added later without
+        // tripping older firmware: it reads the tags it knows and skips the rest
+        // by `len`.
+        //   u8 tag, u8 len, len bytes UTF-8    tag 1 = name, 2 = info URL
+        const metaBytes = [];
+        const pushMeta = (tag, text, max) => {
+            if (!text) return;
+            let b = Array.from(new TextEncoder().encode(String(text).trim()));
+            if (!b.length) return;
+            // ⚠️ Truncate on a CHARACTER boundary, not on bytes: a name cut
+            // through the middle of a UTF-8 sequence ends in half a character
+            // and smears the rest of the line in the display.
+            if (b.length > max) {
+                b = b.slice(0, max);
+                while (b.length && (b[b.length - 1] & 0xC0) === 0x80) b.pop();
+                if (b.length && (b[b.length - 1] & 0x80)) b.pop();
+            }
+            if (!b.length) return;
+            metaBytes.push(tag, b.length, ...b);
+        };
+        pushMeta(1, this._metaName, 48);
+        pushMeta(2, this._metaInfo, 160);
+        if (metaBytes.length) {
+            const hs = HEADER_SIZE_V6 + metaBytes.length;
+            header[20] = (hs >> 8) & 0xFF;      // rewrite header_size
+            header[21] = hs & 0xFF;
+            header.push(...metaBytes);
+        }
 
         // Combine: header + constant pool + heap declarations + function table + persist table + globals table + code
         const totalSize = header.length + constPool.length + heapDecl.length + funcTable.length + persistTable.length + globalsTable.length + this.code.length;
@@ -14408,8 +14450,31 @@ class CompilerError extends Error {
     }
 }
 
+// Pull the plain name and info URL out of the source. Same shape as the
+// existing `// @defines:` in the preprocessor -- a comment at the top of the
+// file, not a new language construct:
+//
+//   // @name: SML Chart CT002
+//   // @info: https://github.com/.../wiki/sml_chart_ct002
+//
+// ⚠️ The FIRST match wins. compile() sees the source with #includes already
+// substituted, and a block from examples/common/ could carry such a line
+// itself. In the usual layout the program header precedes the includes and
+// therefore wins on its own; where it actually matters (build.html writing
+// index.json) the value is handed in via options.meta from the UNRESOLVED
+// file, so nothing has to be guessed.
+function pragmaMeta(source) {
+    const hol = (schluessel) => {
+        const m = String(source || '').match(
+            new RegExp('^[ \t]*//[ \t]*@' + schluessel + ':[ \t]*(.+)$', 'm'));
+        return m ? m[1].trim() : '';
+    };
+    return { name: hol('name'), info: hol('info') };
+}
+
 function compile(source, options = {}) {
     const predefined = options.defines || [];
+    const meta = options.meta || pragmaMeta(source);
     // Phase 0: Preprocess (#ifdef, #ifndef, #if, #else, #endif)
     let preprocessed;
     try {
@@ -14446,6 +14511,8 @@ function compile(source, options = {}) {
         // die ABI des Geraets durch, das im Feld "Device IP" steht — also genau des
         // Geraets, auf dem die .tcb landet. Ohne Angabe: volles SYSCALL_ABI wie bisher.
         const codegen = new CodeGenerator(options.targetAbi);
+        codegen._metaName = meta.name || '';
+        codegen._metaInfo = meta.info || '';
         compiled = codegen.compile(ast);
     } catch (e) {
         if (e instanceof CodeGenError) throw new CompilerError('CodeGen', e);
@@ -14454,6 +14521,7 @@ function compile(source, options = {}) {
 
     return {
         ...compiled,
+        meta,
         tokens,
         ast,
     };
@@ -15143,7 +15211,8 @@ int main() {
     printStr("Done!");
     return 0;
 }`,
-            blink: `// Blink LED on pin 8 (classic Arduino blink)
+            blink: `// @name: Blink
+// Blink LED on pin 8 (classic Arduino blink)
 #define LED_PIN 8
 #define INPUT         0x01
 #define OUTPUT        0x03

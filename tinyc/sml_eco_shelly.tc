@@ -1,3 +1,5 @@
+// @name: SML + EcoTracker / Shelly
+// @info: https://ottelo9.github.io/tasmota-sml-script/eco_shelly/
 // sml_eco_shelly.tc — SML meter + EcoTracker / Shelly Pro 3EM emulator,
 // no charts. Feeds a PV battery (Marstek, Jackery, NOAH, Hoymiles, ...) for
 // zero feed-in. For the charts variant use sml_chart_eco_shelly.tc.

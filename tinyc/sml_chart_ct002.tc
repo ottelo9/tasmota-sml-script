@@ -1,3 +1,5 @@
+// @name: SML Chart + Marstek CT002
+// @info: https://ottelo9.github.io/tasmota-sml-script/ct002/
 // sml_chart_ct002.tc — sml_chart_pv + Marstek CT002/CT003 emulator.
 // Charts, tables and PV tracking as in sml_chart_pv.tc, plus the CT
 // emulator on UDP 12345. Without charts use sml_ct002.tc.

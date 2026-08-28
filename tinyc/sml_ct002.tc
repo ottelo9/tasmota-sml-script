@@ -1,3 +1,5 @@
+// @name: SML + Marstek CT002
+// @info: https://ottelo9.github.io/tasmota-sml-script/ct002/
 // sml_ct002.tc — SML meter + Marstek CT002/CT003 emulator, no charts.
 // Meter setup and telemetry as in sml_simple.tc, plus the CT emulator on
 // UDP 12345. For the charts variant use sml_chart_ct002.tc.

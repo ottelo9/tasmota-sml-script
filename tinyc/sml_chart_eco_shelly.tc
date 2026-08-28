@@ -1,3 +1,5 @@
+// @name: SML Chart + EcoTracker / Shelly
+// @info: https://ottelo9.github.io/tasmota-sml-script/eco_shelly/
 // sml_chart_eco_shelly.tc — charts + EcoTracker / Shelly Pro 3EM emulator.
 // Same charts and PV switch as sml_chart.tc, plus the meter emulation a PV
 // battery polls. Without charts use sml_eco_shelly.tc.

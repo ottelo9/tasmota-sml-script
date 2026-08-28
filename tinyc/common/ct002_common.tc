@@ -82,12 +82,7 @@ int  ct_rxc; int ct_txc; int ct_badc;
 byte ct_hexd[] = "0123456789abcdef";
 byte ct_type[8];                      // "HME-4" or "HME-3"
 
-// ⚠️ char[], NOT byte[]: udp(1, buf) writes one int32 SLOT per byte
-// (vm.h SYS_UDP_FUNC case 1: `buf[i] = (int32_t)(uint8_t)packet[i]`), so a
-// packed byte[] would take 4x its own size and run over the heap behind it -
-// the same class as the six syscalls fixed in 1.6.61. gemu left es_rxb as
-// char[] for exactly this reason; ct_rxb was missed in the same round.
-char ct_rxb[CT_RXMAX];                     // UDP receive buffer
+byte ct_rxb[CT_RXMAX];                     // UDP receive buffer
 byte ct_txb[CT_TXMAX];                     // outgoing frame
 byte ct_innb[CT_TXMAX];                    // frame body ("|f1|f2|...")
 
@@ -825,11 +820,11 @@ int ctWebOn(int h) {
     if (h != ct_webnum) return 0;
 
 
-    // ⚠️ char[], NOT byte[]: webArg() writes one int32 slot per character
-    // (vm.h SYS_WEB_ARG). With a byte[] the first character lands and the next
-    // three bytes are zero - the Marstek mail arrived as "o" - and the write
-    // runs 4x past the end of the array.
-    char a[96];
+    // byte[]: needs firmware >= 1.6.64. webArg() wrote int32 slots into it until
+    // then - the mail arrived as "o" - and the compiler now stamps abi_rev 28
+    // for this argument, so an older device refuses the .tcb instead of
+    // corrupting its heap.
+    byte a[96];
 
     // Poller status query: text only, no side effects.
     // Format "<status>|<ct-mac>|<busy>"

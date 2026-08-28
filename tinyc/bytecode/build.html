@@ -46,7 +46,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 
 <div class="card">
   <label class="opt"><input type="checkbox" id="optTcb" checked> <b>.tcb</b> schreiben — fertiger Bytecode</label>
-  <label class="opt"><input type="checkbox" id="optIndex" checked> <b>index.txt</b> schreiben — Dateiliste für die Repository-Box auf der TinyC-Seite</label>
+  <label class="opt"><input type="checkbox" id="optIndex" checked> <b>index.txt + index.json</b> schreiben — Dateiliste für die Repository-Box auf der TinyC-Seite</label>
   <button id="build" class="primary" disabled>Build</button>
 </div>
 
@@ -229,8 +229,15 @@ $('build').onclick = async () => {
     await s.close();
   };
 
+  // `// @name:` / `// @info:` aus der UNAUFGELOESTEN Quelle ziehen: nach dem
+  // Einsetzen der #includes koennte eine Zeile aus common/ dazwischenfunken.
+  const pragma = (src, key) => {
+    const m = src.match(new RegExp('^[ \t]*//[ \t]*@' + key + ':[ \t]*(.+)$', 'm'));
+    return m ? m[1].trim() : '';
+  };
+
   const names = Object.keys(progs).sort();
-  const rows = [], built = [];
+  const rows = [], built = [], meta = [];
   let ok = 0, failed = 0, skipped = 0;
 
   for (const name of names) {
@@ -243,6 +250,7 @@ $('build').onclick = async () => {
       if (r.error) throw new Error(r.error);
       await write(base + '.tcb', r.binary);
       built.push(base + '.tcb');
+      meta.push({ file: base + '.tcb', name: pragma(src, 'name'), info: pragma(src, 'info') });
       rows.push('<tr><td>' + name + '</td><td class="num">' + r.binary.length.toLocaleString('de-DE') +
                 '</td><td class="ok">ok</td></tr>');
       log('ok: ' + base + '.tcb (' + r.binary.length + ' B)');
@@ -259,6 +267,20 @@ $('build').onclick = async () => {
   if (wantIndex && built.length) {
     await write('index.txt', built.join('\n') + '\n');
     log('index.txt: ' + built.length + ' Einträge');
+
+    // index.json daneben: dieselbe Liste, zusaetzlich Klarname und Info-URL aus
+    // den @name-/@info-Zeilen. ⚠️ BEIDE Dateien, immer - die Repository-Box
+    // nimmt index.json und faellt auf index.txt zurueck, ältere Firmware kennt
+    // nur die alte Datei.
+    // Leere Felder bleiben weg statt als "" dazustehen.
+    const eintraege = meta.map(m => {
+      const o = { file: m.file };
+      if (m.name) o.name = m.name;
+      if (m.info) o.info = m.info;
+      return o;
+    });
+    await write('index.json', JSON.stringify({ programs: eintraege }, null, 0) + '\n');
+    log('index.json: ' + eintraege.length + ' Einträge, ' + eintraege.filter(e => e.name).length + ' mit Klarname');
   }
 
   $('result').innerHTML =
