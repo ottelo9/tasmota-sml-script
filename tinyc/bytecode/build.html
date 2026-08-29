@@ -243,7 +243,9 @@ $('build').onclick = async () => {
   for (const name of names) {
     const src = progs[name];
     // Bausteine haben kein main() - die werden eingebunden, nicht gebaut.
-    if (!/^\s*int\s+main\s*\(/m.test(src)) { skipped++; log('übersprungen (kein main): ' + name); continue; }
+    // Auch `void main()`: die Sprachreferenz verwendet es selbst. Nur auf `int`
+    // zu pruefen hat bei gemu 14 Programme stillschweigend uebersprungen.
+    if (!/^\s*(?:int|void)\s+main\s*\(/m.test(src)) { skipped++; log('übersprungen (kein main): ' + name); continue; }
     const base = name.replace(/\.tc$/, '');
     try {
       const r = w.compile(w.resolveIncludes(src, get));
