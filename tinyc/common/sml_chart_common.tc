@@ -68,11 +68,21 @@ int sml_hr_last;                // last seen tasm_hour (midnight edge detect)
 // and is the .pvs name-based. Older firmware returns the arrays as zeros.
 // ============================================================================
 
-// ── One-time import of the old /sml_chart.bin ──────────────────────────────
-// Read once, written into the .pvs, then renamed to /sml_chart.bin.done. The
-// renamed file is both the backup and the "already imported" marker.
-// Same path for a .bin from sml_chart_editor.html: upload it as
-// /sml_chart.bin and restart the slot.
+// ── One-time import of /sml_chart.bin ──────────────────────────────────────
+// Read once, written into the .pvs, then DELETED - the file being gone is the
+// "already imported" marker. Same path for a .bin from the editor or from
+// script_charts_to_tinyc_pvs.html: upload it as /sml_chart.bin, restart the
+// slot. The .pvs is the backup from then on; tinyc_chart_editor.html reads and
+// writes it directly.
+//
+// Layout, raw float32 little-endian, no header:
+//   s4h 481 | s24h 1441 | dcon 31 | mcon 12          = 1965  (as before)
+//   + dval | mval | yval | da                        = 1969  (optional)
+// and for the feed-in file:
+//   dprod 31 | mprod 12                              =   43  (as before)
+//   + dval2 | mval2 | yval2                          =   46  (optional)
+// The baseline block is read only if it is actually there, so a 1965-value
+// file from an older editor still imports exactly as it used to.
 #ifndef CHART_CSV_DEC
 #define CHART_CSV_DEC 3
 #endif
@@ -107,15 +117,28 @@ void sml_chart_load() {
     sml_chart_imp16(h, sml_s24h, 1441);
     fileReadBin(h, sml_dcon, 31);               // still float rings
     fileReadBin(h, sml_mcon, 12);
+    // Optional baseline block, four more floats. Without them sml_dval keeps
+    // whatever the .pvs held - 0 on a fresh install - and the next 60 s tick
+    // writes the WHOLE meter reading into today's bar, which flattens every
+    // imported bar beside it. A file that ends after 1965 values reads short
+    // here and nothing is assigned, so every older .bin stays valid.
+    float base[4];
+    if (fileReadBin(h, base, 4) == 4) {
+        sml_dval = base[0];
+        sml_mval = base[1];
+        sml_yval = base[2];
+        sml_da   = (int)base[3];
+        addLog("sml_chart: .bin carried baselines");
+    }
     fileClose(h);
     saveVars();                                 // the .pvs rules from here on
-    if (fileRename("/sml_chart.bin", "/sml_chart.bin.done") < 0) {
-        // Target exists from an earlier import. Drop it and retry, or the .bin
-        // would be re-read on every start and overwrite newer data.
-        fileDelete("/sml_chart.bin.done");
-        fileRename("/sml_chart.bin", "/sml_chart.bin.done");
-    }
-    addLog("sml_chart: imported .bin into .pvs, renamed to /sml_chart.bin.done");
+    // Delete, not rename. The values are in the .pvs now, and the file being
+    // GONE is what stops a re-import on the next start - a kept copy would only
+    // be an older duplicate of what the .pvs already holds. The .bin.done from
+    // earlier versions goes too, so the filesystem does not collect leftovers.
+    fileDelete("/sml_chart.bin");
+    fileDelete("/sml_chart.bin.done");
+    addLog("sml_chart: imported .bin into .pvs, /sml_chart.bin deleted");
 }
 
 // Writing the persist vars covers arrays and baselines in one go.
@@ -534,13 +557,19 @@ void sml_chart_pv_load() {
     if (h < 0) return;
     fileReadBin(h, sml_dprod, 31);
     fileReadBin(h, sml_mprod, 12);
+    // Optional baseline block, three more floats - see sml_chart_load().
+    float base[3];
+    if (fileReadBin(h, base, 3) == 3) {
+        sml_dval2 = base[0];
+        sml_mval2 = base[1];
+        sml_yval2 = base[2];
+        addLog("sml_chart_pv: .bin carried baselines");
+    }
     fileClose(h);
     saveVars();
-    if (fileRename("/sml_chart_pv.bin", "/sml_chart_pv.bin.done") < 0) {
-        fileDelete("/sml_chart_pv.bin.done");
-        fileRename("/sml_chart_pv.bin", "/sml_chart_pv.bin.done");
-    }
-    addLog("sml_chart_pv: imported .bin into .pvs, renamed to /sml_chart_pv.bin.done");
+    fileDelete("/sml_chart_pv.bin");            // see sml_chart_load()
+    fileDelete("/sml_chart_pv.bin.done");
+    addLog("sml_chart_pv: imported .bin into .pvs, /sml_chart_pv.bin deleted");
 }
 
 // Readable export incl. baselines, see sml_chart_export_csv.

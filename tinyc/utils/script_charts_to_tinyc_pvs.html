@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scripter-Diagramme → TinyC</title>
+<style>
+  :root { --bg:#f0f2f5; --card:#fff; --ink:#222; --mut:#666; --line:#1565c0; --accent:#1565c0; --warn:#c62828; --ok:#2e7d32; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin:0; background:var(--bg); color:var(--ink); }
+  header { background:var(--card); padding:14px 18px; border-bottom:1px solid #ddd; position:sticky; top:0; z-index:10; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  .sub { color:var(--mut); font-size:13px; }
+  main { padding:16px; max-width:1100px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid #e0e0e0; border-radius:8px; padding:14px 16px; margin-bottom:16px; }
+  .row { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; }
+  .drop { border:2px dashed #aac; border-radius:8px; padding:22px; text-align:center; color:var(--mut); cursor:pointer; transition:.15s; }
+  .drop.hover { background:#eef4ff; border-color:var(--accent); color:var(--accent); }
+  button { font:inherit; padding:7px 13px; border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:6px; cursor:pointer; }
+  button.sec { background:#fff; color:var(--accent); }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  label { font-size:13px; color:var(--mut); }
+  input[type=number], input[type=text] { font:inherit; padding:5px 7px; border:1px solid #ccc; border-radius:5px; width:90px; }
+  table.schema td { padding:3px 6px; }
+  .seg-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  .seg-title { font-weight:600; font-size:15px; }
+  .stats { color:var(--mut); font-size:12px; font-variant-numeric:tabular-nums; }
+  canvas { cursor:crosshair; width:100%; height:140px; display:block; background:#fafbfc; border:1px solid #eee; border-radius:6px; margin:8px 0; }
+  textarea { width:100%; min-height:90px; max-height:240px; font:12px/1.4 ui-monospace, Menlo, Consolas, monospace; padding:8px; border:1px solid #ccc; border-radius:6px; resize:vertical; white-space:pre; overflow:auto; }
+  .msg { font-size:13px; padding:8px 10px; border-radius:6px; margin:8px 0; display:none; }
+  .msg.warn { background:#fdecea; color:var(--warn); display:block; }
+  .msg.ok { background:#e8f5e9; color:var(--ok); display:block; }
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .toolbar button { padding:4px 9px; font-size:12px; }
+  code { background:#eef; padding:1px 5px; border-radius:4px; font-size:12px; }
+  button code { background:transparent; color:inherit; padding:0; font-size:inherit; }
+  .hint { font-size:12px; color:var(--mut); margin-top:4px; }
+  details.card > summary { list-style:none; }
+  details.card > summary::-webkit-details-marker { display:none; }
+  details.card > summary::before { content:"▸ "; color:var(--mut); }
+  details.card[open] > summary::before { content:"▾ "; }
+  #segments .card { border:1px solid #eee; box-shadow:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Scripter-Diagramme &rarr; TinyC</h1>
+  <div class="sub">Übernimmt die Balkendiagramme (Tages- und Monatsverbrauch, Einspeisung) aus den
+  Scripter-Scripten in die TinyC-Programme. In vier Schritten, ohne Vorkenntnisse. Wer schon auf
+  TinyC ist und nur seine Diagramme ansehen will, nimmt
+  <a href="tinyc_chart_editor.html">tinyc_chart_editor.html</a>.</div>
+  <div class="sub" style="margin-top:6px"><b>Die .bin ist nur für den einmaligen Import zum TinyC Programm gedacht.</b>
+  Die Daten liegen in der <code>.pvs</code> Datei des Slots
+  (z.B. <code>/sml_chart.tcb</code> &rarr; <code>/sml_chart.pvs</code>). Beim Start liest das Programm
+  <code>/sml_chart.bin</code> <b>einmal</b>, schreibt sie in die <code>.pvs</code> und löscht sie
+  danach — die Datei ist weg, das ist die Markierung „schon importiert".</div>
+</header>
+
+<main>
+  <div class="card">
+    <div class="seg-head"><span class="seg-title">1. Scripter-<code>data.csv</code> einlesen</span>
+      <span class="stats" id="step1Status">noch nichts geladen</span></div>
+    <div class="hint">Die <code>data.csv</code> im Dateimanager des alten Geräts herunterladen
+      (<code>http://&lt;geraet&gt;/ufsd</code>) und hier auswählen. Es wird nichts hochgeladen — die
+      Umrechnung passiert vollständig im Browser.
+      <br><b>Bequemer: in Schritt 2 die IP eintragen, dann steht dort ein fertiger Link zur
+      <code>data.csv</code> — anklicken, herunterladen, hier auswählen.</b></div>
+    <div class="toolbar" style="margin-top:10px">
+      <button id="impTas">Scripter-<code>data.csv</code> auswählen…</button>
+      <input id="impTasFile" type="file" accept=".csv,.txt,*/*" style="display:none">
+    </div>
+    <div id="impTasMsg" class="msg"></div>
+    <details style="margin-top:10px">
+      <summary class="hint" style="cursor:pointer">Welche Scripte erkannt werden</summary>
+      <div class="hint">Das Layout wird an den Zeilen- und Spaltenzahlen erkannt:
+        <table class="schema" style="margin:6px 0"><tbody>
+          <tr><td><code>1_SML_Chart.tas</code></td><td>4 Zeilen</td><td>481 / 1441 / 31 / 12</td><td>ohne Einspeisung</td></tr>
+          <tr><td><code>2_SML_Chart_PV[2].tas</code>, <code>_Modbus</code>, <code>3_…_Bezugszaehler</code></td><td>5 Zeilen</td><td>481 / 1441 / 31 / 31 / 24</td><td></td></tr>
+          <tr><td><code>2_SML_Chart_PV3.tas</code></td><td>7 Zeilen</td><td>… + 53 / 53</td><td>Wochenbalken entfallen</td></tr>
+          <tr><td><code>4_SML_Chart_PV_no_4h24h.tas</code></td><td>3 Zeilen</td><td>31 / 31 / 24</td><td>4 h/24 h werden genullt</td></tr>
+          <tr><td><code>5_SteckdoseLeistungsmesser_1</code>, <code>6_SML_Wasseruhr</code></td><td>4 Zeilen</td><td>481 / 1441 / 31 / 12</td><td>gleiche Form, aber kein TinyC-Gegenstück</td></tr>
+        </tbody></table>
+        Nicht dabei: <code>0_SML_Simple.tas</code> schreibt gar keine <code>data.csv</code>, und
+        <code>5_SteckdoseLeistungsmesser_2</code> hat <code>s4h</code> mit 721 statt 481 Werten — das
+        passt in kein TinyC-Array.
+        Das <code>mcon[24]</code> des Scripters wird aufgeteilt in <code>sml_mcon[12]</code>
+        (Verbrauch) und <code>sml_mprod[12]</code> (Einspeisung) — deshalb entstehen zwei Dateien.</div>
+    </details>
+  </div>
+
+  <div class="card" id="baseCard">
+    <div class="seg-head"><span class="seg-title">2. Basiswerte auslesen und eintragen</span>
+      <span class="stats" id="baseStatus"></span></div>
+    <div class="hint"><b>Die Basiswerte stehen nicht in der data.csv</b> — im Scripter sind es
+      <code>p:</code>-Variablen in den Tasmota-Einstellungen. Ohne sie rechnet das Programm
+      <code>Zählerstand − dval</code> und schreibt den <b>ganzen Zählerstand</b> in den heutigen
+      Balken. Sie werden an die <code>.bin</code> angehängt (1969 statt 1965 bzw. 46 statt 43).
+      Bleiben die Felder leer, musst du auf dem Gerät einmal
+      <i>Tages/Monats/Jahres-Verbrauchswerte zurücksetzen</i> drücken.</div>
+    <div class="hint" style="margin-top:8px">IP des alten Geräts eintragen, auf den Link klicken, die
+      Antwort aus dem Browser-Tab hierher kopieren:</div>
+    <div class="row" style="margin-top:8px">
+      <label>Altes Gerät (IP) <input id="devIp" type="text" placeholder="192.168.178.31" style="width:150px"></label>
+      <span id="baseLinks" class="stats"></span>
+    </div>
+    <textarea id="basePaste" style="min-height:52px;margin-top:8px" spellcheck="false"
+      placeholder='Antwort hier einfügen, z. B. {"script":{"dval":45231.5,"mval":44980.2,...}}'></textarea>
+    <div class="toolbar">
+      <button class="sec" id="baseParse">Antwort übernehmen</button>
+      <button class="sec" id="baseClear">Felder leeren</button>
+      <span class="stats" id="baseMsg"></span>
+    </div>
+    <table class="schema" style="margin-top:10px"><tbody id="baseFields"></tbody></table>
+  </div>
+
+  <div class="card" id="dlCard">
+    <div class="seg-head"><span class="seg-title">3. Import-Dateien herunterladen</span>
+      <span class="stats" id="dlStatus"></span></div>
+    <div class="hint">Erst jetzt herunterladen — so sind die Basiswerte aus Schritt 2 mit drin.</div>
+    <div class="toolbar" style="margin-top:10px">
+      <button id="dlCons">sml_chart.bin</button>
+      <button id="dlProd">sml_chart_pv.bin</button>
+      <span class="stats" id="dlMsg"></span>
+    </div>
+    <div class="hint" style="margin-top:10px"><b>Einbauen — die Reihenfolge zählt:</b>
+      <ol style="margin:4px 0 0 18px;padding:0">
+        <li>Slot stoppen: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das rote &#x25A0;</li>
+        <li>Datei(en) hochladen: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload</li>
+        <li>Slot starten: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das grüne &#x25B6;</li>
+
+      </ol>
+      Läuft der Slot beim Hochladen noch, schreibt <code>saveVars()</code> die <code>.pvs</code> neu,
+      bevor die <code>.bin</code> gelesen wird. Das Programm importiert die <code>.bin</code> einmal und
+      <b>löscht sie danach</b> — ab dann ist die <code>.pvs</code> der Speicher. Im Log steht
+      <code>sml_chart: .bin carried baselines</code> und
+      <code>sml_chart: imported .bin into .pvs, /sml_chart.bin deleted</code>.</div>
+  </div>
+
+  <details class="card" id="advCard">
+    <summary class="seg-title" style="cursor:pointer">4. Vorschau der umgerechneten Daten</summary>
+    <div class="hint" style="margin-top:10px">Nur zum Nachsehen, ob die Werte richtig gelandet sind.
+      Zum Bearbeiten gibt es <code>tinyc_chart_editor.html</code>.</div>
+    <div class="row" style="margin:10px 0">
+      <label>Datei <select id="presetSel" style="width:230px">
+        <option value="standard">Verbrauch — sml_chart.bin</option>
+        <option value="pv">Einspeisung — sml_chart_pv.bin</option>
+      </select></label>
+      <span class="stats" id="schemaTotal"></span>
+    </div>
+    <div id="segments"></div>
+  </details>
+</main>
+
+<script>
+"use strict";
+
+// ─── Presets ──────────────────────────────────────────────────────────────────
+// Each entry: a display name and the float32 layout, in file order. Totals:
+// standard=1965, pv=43, plus the optional baseline block. The split into two
+// files mirrors sml_chart_common.tc, which has two independent importers — sml_chart_load()
+// reads /sml_chart.bin, sml_chart_pv_load() reads /sml_chart_pv.bin. A device
+// with feed-in needs BOTH; the data.csv importer below writes both.
+//
+// The .bin still holds float32 for every array even though sml_s4h/sml_s24h are
+// `persist int16` today: sml_chart_imp16() converts float -> int16 while reading,
+// so the on-disk import format did not change. Values outside +-32767 W are
+// clamped by the device, not here.
+const PRESETS = {
+  standard: {
+    label: "Verbrauch",
+    schema: [
+      { name: "sml_s4h  (Leistung 4 h, 481)",        count: 481,  unit: "W"   },
+      { name: "sml_s24h (Leistung 24 h, 1441)",      count: 1441, unit: "W"   },
+      { name: "sml_dcon (Verbrauch je Tag, 31)",     count: 31,   unit: "kWh" },
+      { name: "sml_mcon (Verbrauch je Monat, 12)",   count: 12,   unit: "kWh" },
+    ],
+  },
+  pv: {
+    label: "Einspeisung",
+    // /sml_chart_pv.bin holds the feed-in side only (43 floats).
+    // The consumption arrays live in /sml_chart.bin (the 'standard' preset).
+    schema: [
+      { name: "sml_dprod (Einspeisung je Tag, 31)",   count: 31, unit: "kWh" },
+      { name: "sml_mprod (Einspeisung je Monat, 12)", count: 12, unit: "kWh" },
+    ],
+  },
+};
+const DEFAULT_SCHEMA = PRESETS.standard.schema;
+const CSV_DECIMALS = 3;   // matches CHART_CSV_DEC-ish; trailing zeros stripped
+
+// ─── Locale ──────────────────────────────────────────────────────────────────
+// Display the user's decimal separator (`,` in DE / FR / IT, `.` in EN / etc.)
+// — detected from the browser's locale at load. Parser accepts BOTH `,` and `.`
+// regardless (we just normalize before parseFloat), so pasted point-decimal
+// values still work for a comma-locale user and vice versa. CSV export keeps
+// `.` always to match `fileWriteArray` on the device.
+const DECIMAL_CHAR = (1.5).toLocaleString().replace(/[0-9]/g, "") || ".";
+const NF = new Intl.NumberFormat(undefined, { maximumFractionDigits: 3, useGrouping: false });
+
+let schema = DEFAULT_SCHEMA.map(s => ({...s}));
+let lastFloats = null;     // Float32 values from the most recent load (flat)
+let lastName   = "sml_chart";
+
+const $ = id => document.getElementById(id);
+// Optional elements: the editor and the converter share this script but not
+// every card, so writing to a missing one must be a no-op, not a crash.
+const setTxt = (id, s) => { const e = $(id); if (e) e.textContent = s; };
+
+// Apply a preset by name: swaps the layout and re-renders the schema table.
+// Called from the preset <select> onchange and from importScripterCsv().
+function applyPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  schema = p.schema.map(s => ({...s}));
+  if ($("presetSel")) $("presetSel").value = name;
+  renderSchema();
+}
+
+// Detect which preset a float-count matches. Returns preset name or null.
+// Also matches a file that carries the optional baseline block, so 1969 and 46
+// point at the right preset instead of reading as an unknown size.
+function detectPreset(floatCount) {
+  for (const [name, p] of Object.entries(PRESETS)) {
+    const t = p.schema.reduce((a, s) => a + s.count, 0);
+    const extra = (BASE_GROUP[name] === "cons") ? 4 : 3;
+    if (t === floatCount || t + extra === floatCount) return name;
+  }
+  return null;
+}
+
+// ─── Schema table ─────────────────────────────────────────────────────────────
+function renderSchema() {
+  // The converter has no schema editor - only the total line. Both files share
+  // this script, so the table is optional rather than duplicated away.
+  const tb = $("schemaBody");
+  if (!tb) { updateSchemaTotal(); return; }
+  tb.innerHTML = "";
+  schema.forEach((s, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td><input type="text" value="${s.name}" data-i="${i}" data-k="name" style="width:220px"></td>` +
+      `<td><label>Anzahl</label> <input type="number" min="0" value="${s.count}" data-i="${i}" data-k="count"></td>`;
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll("input").forEach(inp => inp.addEventListener("change", e => {
+    const i = +e.target.dataset.i, k = e.target.dataset.k;
+    schema[i][k] = (k === "count") ? Math.max(0, parseInt(e.target.value || "0", 10)) : e.target.value;
+    updateSchemaTotal();
+  }));
+  updateSchemaTotal();
+}
+function schemaTotal() { return schema.reduce((a, s) => a + s.count, 0); }
+function updateSchemaTotal() {
+  const t = schemaTotal();
+  setTxt("schemaTotal", `Summe ${t} Werte · ${t*4} Bytes (.bin) · Dezimalzeichen: "${DECIMAL_CHAR}"`);
+}
+
+// ─── File loading ─────────────────────────────────────────────────────────────
+function setMsg(el, text, kind) { if (!el) return; el.className = "msg " + (kind || ""); el.textContent = text; }
+
+function loadArrayBuffer(buf, fname) {
+  const bytes = new Uint8Array(buf);
+  // Heuristic: text (CSV/tab) if it looks like printable ASCII digits/tabs/newlines.
+  const isText = looksLikeText(bytes);
+  let floats;
+  if (isText || /\.(csv|tab|txt)$/i.test(fname)) {
+    const p = parseDeviceCsv(new TextDecoder().decode(bytes));
+    floats = p.values;
+    // The device CSV carries the zero points in its `baselines` row - put them
+    // straight into the card, that is the only way they ever come back off a device.
+    if (p.baselines && p.baselines.length) {
+      setBaseBlock(p.baselines.length >= 4 ? "cons" : "prod", p.baselines);
+    }
+    const tail = p.baselines
+      ? ` Basiswerte (Tag/Monat/Jahr${p.baselines.length > 3 ? "/Monatstag" : ""}): ${p.baselines.map(fmt).join(" · ")} — stehen jetzt in der Karte „Basiswerte".`
+      : "";
+    setMsg($("loadmsg"), `Text/CSV "${fname}" geladen — ${floats.length} Werte aus ${p.rows} Datenzeile(n).${tail}`, "ok");
+  } else {
+    if (buf.byteLength % 4 !== 0) {
+      setMsg($("loadmsg"), `Achtung: "${fname}" hat ${buf.byteLength} Bytes — kein Vielfaches von 4. Wird als float32 gelesen, der angebrochene letzte Wert entfällt.`, "warn");
+    }
+    const n = Math.floor(buf.byteLength / 4);
+    const dv = new DataView(buf);
+    floats = new Array(n);
+    for (let i = 0; i < n; i++) floats[i] = dv.getFloat32(i * 4, true); // little-endian
+    const exp = schemaTotal();
+    // A file exactly one baseline block longer carries the zero points behind
+    // the arrays (1969 / 46). Split them off before the panels are built, or
+    // they would surface as a "leftover values" panel.
+    const grp = BASE_GROUP[$("presetSel").value];
+    const nbase = (grp === "cons") ? 4 : (grp === "prod" ? 3 : 0);
+    let tookBase = false;
+    if (nbase && n === exp + nbase) {
+      setBaseBlock(grp, floats.slice(exp));
+      floats = floats.slice(0, exp);
+      tookBase = true;
+    }
+    if (floats.length === exp) {
+      setMsg($("loadmsg"), `Binärdatei "${fname}" geladen — ${exp} float32-Werte (passt zur Aufteilung ✓).` +
+        (tookBase ? ` Die ${nbase} Basiswerte am Ende stehen jetzt in der Karte darunter.` : ""), "ok");
+    } else {
+      // Size mismatch — but does it match a known preset? If so, say which one
+      // instead of just complaining about the count.
+      const hit = detectPreset(n);
+      const tail = hit
+        ? ` — das ist die Größe der Vorlage "${PRESETS[hit].label}". Oben auswählen, dann stimmt die Aufteilung.`
+        : ` Die Anzahlen unten anpassen, dann "Datei mit dieser Aufteilung neu zerlegen".`;
+      setMsg($("loadmsg"), `Binärdatei "${fname}" geladen — ${n} float32-Werte, die Aufteilung erwartet aber ${exp}.${tail}`, "warn");
+    }
+  }
+  lastFloats = floats;
+  // A complete file is also the buffer step 3 writes back out.
+  const pp = $("presetSel").value;
+  if (floats.length === bufTotal(pp)) BUF[pp] = floats;
+  updateDlStatus();
+  // ".done" too, for a leftover from a firmware that still renamed instead of
+  // deleting: it must still export as sml_chart.bin.
+  lastName = fname.replace(/\.done$/i, "").replace(/\.(bin|csv|tab|txt|dat)$/i, "") || "sml_chart";
+  renderSegments();
+}
+
+function looksLikeText(bytes) {
+  const n = Math.min(bytes.length, 256);
+  if (n === 0) return false;
+  let printable = 0;
+  for (let i = 0; i < n; i++) {
+    const b = bytes[i];
+    if (b === 9 || b === 10 || b === 13 || (b >= 32 && b <= 126)) printable++;
+  }
+  return printable / n > 0.95;
+}
+function parseCsv(text) {
+  // Each line = one array of whitespace-separated floats; flatten in order.
+  // Locale: when the user's decimal is ',', don't split on ',' — it'd shred
+  // "1,5" into [1, 5]. In point-locales, comma is still a valid field
+  // separator (legacy). Then normalize ',' → '.' in each token before
+  // parseFloat so both decimal styles are always accepted.
+  const splitRe = (DECIMAL_CHAR === ",") ? /[\s;\t]+/ : /[\s,;\t]+/;
+  const out = [];
+  text.split(/\r?\n/).forEach(line => {
+    line.trim().split(splitRe).forEach(tok => {
+      if (tok === "") return;
+      const v = parseFloat(tok.replace(",", "."));
+      if (!Number.isNaN(v)) out.push(v);
+    });
+  });
+  return out;
+}
+
+// The device CSV is row-oriented and self-labelling since the persist rewrite:
+//   # row<TAB>values -> import side, tab separated
+//   baselines<TAB>dval<TAB>mval<TAB>yval<TAB>da
+//   power_4h_30s<TAB>...481 values
+//   power_24h_60s<TAB>...1441 values
+//   import_day_1_31<TAB>...31 values
+//   import_month_1_12<TAB>...12 values
+// (the feed-in CSV has 3 baselines and the two export_* rows.)
+// Flattening every number the way the old parser did shifted the whole layout by
+// the 4 baseline cells. So: drop the comment row, pull the baselines out
+// separately, and strip the leading label from every data row.
+function parseDeviceCsv(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  const values = [];
+  let baselines = null, rows = 0;
+  for (const line of lines) {
+    if (/^\s*#/.test(line)) continue;
+    // Strip the leading label, but only when it really is one — the editor's own
+    // "Download .csv" writes label-less rows whose first cell is a number.
+    const body = line.replace(/^\s*[A-Za-z_][^\t]*\t/, "");
+    const v = parseCsv(body);
+    if (/^\s*baselines\b/i.test(line)) { baselines = v; continue; }
+    if (!v.length) continue;
+    values.push(...v);
+    rows++;
+  }
+  return { values, baselines, rows };
+}
+
+// ─── Segment rendering (one panel per array) ──────────────────────────────────
+function renderSegments() {
+  const host = $("segments"); host.innerHTML = "";
+  const ec = $("exportCard");
+  if (!lastFloats) { if (ec) ec.style.display = "none"; return; }
+  let off = 0;
+  schema.forEach((s, i) => {
+    const vals = lastFloats.slice(off, off + s.count);
+    off += s.count;
+    host.appendChild(segmentCard(i, s, vals));
+  });
+  if (off < lastFloats.length) {
+    const rest = lastFloats.slice(off);
+    host.appendChild(segmentCard(-1, { name: `(${rest.length} überzählige Werte, nicht in der Aufteilung)`, count: rest.length }, rest));
+  }
+  if (ec) ec.style.display = "";
+  setTxt("exportMsg", "");
+}
+
+function segmentCard(idx, s, vals) {
+  const card = document.createElement("div"); card.className = "card";
+  const stats = statLine(vals);
+  card.innerHTML =
+    `<div class="seg-head"><span class="seg-title">${escapeHtml(s.name)}</span>` +
+    `<span class="stats" data-stats>${stats}</span></div>` +
+    `<canvas data-canvas data-unit="${s.unit || ""}"></canvas>` +
+    `<textarea data-ta spellcheck="false">${vals.map(fmt).join(" ")}</textarea>` +
+    `<div class="hint" data-cnt></div>` +
+    `<div class="toolbar">` +
+      `<button class="sec" data-act="render">Diagramm neu zeichnen</button>` +
+      `<button class="sec" data-act="zero">Alle auf 0</button>` +
+      `<button class="sec" data-act="wrap">Umbrechen (einer je Zeile)</button>` +
+    `</div>`;
+  const ta = card.querySelector("[data-ta]");
+  const canvas = card.querySelector("[data-canvas]");
+  const cnt = card.querySelector("[data-cnt]");
+  const statsEl = card.querySelector("[data-stats]");
+  const expect = s.count;
+
+  const refresh = () => {
+    const v = parseCsv(ta.value);
+    drawSeries(canvas, v);
+    statsEl.innerHTML = statLine(v);
+    cnt.innerHTML = (v.length === expect)
+      ? `${v.length} Werte ✓`
+      : `<span style="color:var(--warn)">${v.length} Werte — erwartet werden ${expect}! Die Ausgabe übernimmt, was hier steht; vor dem Hochladen die Anzahl richtigstellen.</span>`;
+  };
+  card.querySelector('[data-act="render"]').onclick = refresh;
+  card.querySelector('[data-act="zero"]').onclick = () => {
+    const v = parseCsv(ta.value); ta.value = v.map(() => "0").join(" "); refresh();
+  };
+  card.querySelector('[data-act="wrap"]').onclick = () => {
+    const v = parseCsv(ta.value); ta.value = v.map(fmt).join("\n"); refresh();
+  };
+  ta.addEventListener("input", debounce(refresh, 250));
+  requestAnimationFrame(refresh);
+  return card;
+}
+
+function statLine(v) {
+  if (!v.length) return "0 values";
+  let mn = Infinity, mx = -Infinity, sum = 0, nz = 0;
+  for (const x of v) { if (x < mn) mn = x; if (x > mx) mx = x; sum += x; if (x !== 0) nz++; }
+  return `${v.length} vals · min ${fmt(mn)} · max ${fmt(mx)} · avg ${fmt(sum/v.length)} · ${nz} non-zero`;
+}
+
+// ─── Tiny canvas chart (line; bars when few points) ───────────────────────────
+// Round tick values covering [mn, mx] — 1/2/5 times a power of ten, so the
+// labels read 0, 50, 100 rather than 0, 47.3, 94.6.
+function niceTicks(mn, mx, want) {
+  const span = mx - mn;
+  if (!(span > 0)) return [mn];
+  const mag = Math.pow(10, Math.floor(Math.log10(span / want)));
+  const norm = (span / want) / mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  // By index, not by accumulating `t += step`: adding 0.1 thirty times lands
+  // slightly below zero and the label came out as "-0".
+  const out = [];
+  for (let k = Math.ceil(mn / step - 1e-9); k <= Math.floor(mx / step + 1e-9); k++) out.push(k * step);
+  return out;
+}
+
+// Axis labels get fewer decimals the larger they are — 45231 next to 0,001 in
+// the same gutter would be unreadable at 10 px.
+function axisFmt(v) {
+  if (v === 0) v = 0;          // Math.ceil(-1e-9) is -0, and that prints as "-0"
+  const a = Math.abs(v);
+  const d = a >= 1000 ? 0 : (a >= 10 ? 1 : (a >= 1 ? 2 : 3));
+  return v.toLocaleString(undefined, { maximumFractionDigits: d });
+}
+
+// One chart. The y axis is the point of the whole panel: bars without a scale
+// only show the shape, not the value.
+function drawSeries(c, v) {
+  const dpr = window.devicePixelRatio || 1, w = c.clientWidth || 600, h = c.clientHeight || 130;
+  c.width = w * dpr; c.height = h * dpr;
+  const x = c.getContext("2d"); x.scale(dpr, dpr); x.clearRect(0, 0, w, h);
+  if (!v.length) return;
+  let mn = Math.min(0, ...v), mx = Math.max(0, ...v);
+  if (mx === mn) mx = mn + 1;
+  const ticks = niceTicks(mn, mx, 3);
+  x.font = "10px ui-monospace, Menlo, Consolas, monospace";
+  // Gutter wide enough for the longest label, so a 5-digit meter reading is not
+  // clipped and a single-digit one wastes no room.
+  const padL = Math.min(70, Math.max(28, ...ticks.map(t => x.measureText(axisFmt(t)).width)) + 8);
+  const padR = 6, padT = 7, padB = 5;
+  const px = i => padL + (w - padL - padR) * (v.length === 1 ? 0.5 : i / (v.length - 1));
+  const py = q => (h - padB) - (h - padT - padB) * (q - mn) / (mx - mn);
+
+  ticks.forEach(t => {
+    const yy = py(t);
+    x.strokeStyle = (t === 0) ? "#c8c8c8" : "#ececec";
+    x.beginPath(); x.moveTo(padL, yy); x.lineTo(w - padR, yy); x.stroke();
+  });
+
+  if (v.length <= 40) {
+    // Bars sit in SLOTS, not on the endpoints. With the endpoint mapping the
+    // first bar was centred on padL, so half of it covered the axis labels.
+    const slot = (w - padL - padR) / v.length;
+    const bw = Math.max(1, slot * 0.7);
+    x.fillStyle = "#1565c0";
+    v.forEach((q, i) => {
+      const cx = padL + slot * (i + 0.5), yy = py(q);
+      x.fillRect(cx - bw / 2, Math.min(yy, py(0)), bw, Math.abs(yy - py(0)));
+    });
+  } else {
+    x.strokeStyle = "#1565c0"; x.lineWidth = 1; x.beginPath();
+    v.forEach((q, i) => { const cx = px(i), cy = py(q); i ? x.lineTo(cx, cy) : x.moveTo(cx, cy); });
+    x.stroke();
+  }
+
+  // Labels last, over a small opaque strip: a curve reaching the left edge would
+  // otherwise run straight through them.
+  x.fillStyle = "#fafbfc";
+  x.fillRect(0, 0, padL - 2, h);
+  x.textAlign = "right"; x.textBaseline = "middle";
+  x.fillStyle = "#888";
+  ticks.forEach(t => x.fillText(axisFmt(t), padL - 5, py(t)));
+  const unit = c.dataset.unit || "";
+  if (unit) { x.textAlign = "left"; x.fillText(unit, padL + 4, padT + 3); }
+
+  c._plot = { v: v, padL: padL, padR: padR, bars: v.length <= 40 };   // for the hover handler
+}
+
+// ── Hover: the value under the cursor ────────────────────────────────────────
+// Reading a bar off the axis is guesswork, so the exact number follows the
+// mouse. The geometry is stashed on the canvas at draw time and the handler
+// only maps x back to an index — hovering a 1441-point chart costs nothing.
+const tip = document.createElement("div");
+tip.style.cssText = "position:fixed;z-index:50;pointer-events:none;display:none;" +
+  "background:#333;color:#fff;font:12px ui-monospace,Menlo,Consolas,monospace;" +
+  "padding:3px 7px;border-radius:4px;white-space:nowrap";
+document.body.appendChild(tip);
+
+// 31 values are days and 12 are months — both are 1-based on the device, while
+// the box below the chart is 0-based. Naming the position avoids the guess.
+function hoverLabel(v, i, unit) {
+  const pos = (v.length === 31) ? "Tag " + (i + 1)
+            : (v.length === 12) ? "Monat " + (i + 1)
+                                : "[" + i + "]";
+  return pos + " · " + fmt(v[i]) + (unit ? " " + unit : "");
+}
+
+document.addEventListener("mousemove", ev => {
+  const c = ev.target;
+  if (!(c instanceof HTMLCanvasElement) || !c._plot) { tip.style.display = "none"; return; }
+  const p = c._plot, r = c.getBoundingClientRect();
+  const inner = r.width - p.padL - p.padR;
+  const rel = ev.clientX - r.left;
+  if (rel < p.padL || inner <= 0 || !p.v.length) { tip.style.display = "none"; return; }
+  const f = (rel - p.padL) / inner;
+  let i = p.bars ? Math.floor(f * p.v.length) : Math.round(f * (p.v.length - 1));
+  i = Math.max(0, Math.min(p.v.length - 1, i));
+  tip.textContent = hoverLabel(p.v, i, c.dataset.unit || "");
+  tip.style.left = Math.min(ev.clientX + 12, innerWidth - 140) + "px";
+  tip.style.top = (ev.clientY - 26) + "px";
+  tip.style.display = "block";
+});
+
+// ─── Export ───────────────────────────────────────────────────────────────────
+function collectArrays() {
+  const tas = $("segments").querySelectorAll("[data-ta]");
+  return Array.from(tas).map(ta => parseCsv(ta.value));
+}
+function dlBlob(blob, fname) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = fname;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+// Download a flat float array as a raw little-endian float32 .bin (device format).
+function dlFloats(arr, fname) {
+  const buf = new ArrayBuffer(arr.length * 4); const dv = new DataView(buf);
+  arr.forEach((v, i) => dv.setFloat32(i * 4, v, true)); // little-endian
+  dlBlob(new Blob([buf], { type: "application/octet-stream" }), fname);
+}
+// ─── The two import files (step 3) ────────────────────────────────────────────
+// Both are kept here, not just the one on screen: the import produces two files
+// but the editor can only show one at a time, and step 3 has to be able to write
+// either. Downloading was moved out of the import on purpose — the baselines are
+// entered in step 2, so a file written during step 1 would always miss them.
+const BUF = { standard: null, pv: null };
+const BUF_NAME = { standard: "sml_chart.bin", pv: "sml_chart_pv.bin" };
+
+function bufTotal(p) { return PRESETS[p].schema.reduce((a, s) => a + s.count, 0); }
+
+// Push the on-screen textareas back into the buffer of the preset being shown,
+// so edits in step 4 reach the download. Length must still match the layout —
+// a half-edited array must not silently replace a good buffer.
+function syncBuf() {
+  if (!lastFloats) return;
+  const p = $("presetSel").value;
+  const flat = [].concat(...collectArrays());
+  if (flat.length === bufTotal(p)) BUF[p] = flat;
+}
+
+function updateDlStatus() {
+  const parts = [];
+  for (const p of ["standard", "pv"]) {
+    const b = BUF[p];
+    if (!b) { parts.push(BUF_NAME[p] + ": —"); continue; }
+    parts.push(BUF_NAME[p] + ": " + withBase(b, p).length + " Werte");
+  }
+  setTxt("dlStatus", parts.join(" · "));
+  if ($("dlCons")) $("dlCons").disabled = !BUF.standard;
+  if ($("dlProd")) $("dlProd").disabled = !BUF.pv;
+}
+
+function dlFile(preset) {
+  syncBuf();
+  const b = BUF[preset];
+  if (!b) return;
+  const out = withBase(b, preset);
+  dlFloats(out, BUF_NAME[preset]);
+  const withB = out.length > b.length;
+  setTxt("dlMsg", `${BUF_NAME[preset]}: ${out.length} Werte (${out.length * 4} Bytes)` +
+    (withB ? " — Basiswerte sind mit drin." : " — OHNE Basiswerte, Schritt 2 ist unvollständig."));
+  updateDlStatus();
+}
+
+if ($("dlCons")) $("dlCons").onclick = () => dlFile("standard");
+if ($("dlProd")) $("dlProd").onclick = () => dlFile("pv");
+if ($("dlCsv")) $("dlCsv").onclick = () => {
+  const arrays = collectArrays();
+  const text = arrays.map(a => a.map(csvFmt).join("\t")).join("\n") + "\n";
+  dlBlob(new Blob([text], { type: "text/plain" }), lastName + ".csv");
+  $("exportMsg").textContent = `${arrays.length} Zeile(n) geschrieben, ${arrays.reduce((n,a)=>n+a.length,0)} Werte.`;
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function fmt(v) { if (!isFinite(v)) return "0"; return NF.format(Math.round(v*1000)/1000); }   // user-locale (e.g. "1,5" on DE)
+function csvFmt(v) { if (!isFinite(v)) return "0"; let s = v.toFixed(CSV_DECIMALS); if (s.indexOf(".") >= 0) s = s.replace(/0+$/,"").replace(/\.$/,""); return s; }   // always "." — matches device fileWriteArray
+function escapeHtml(s){ return s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+// ─── Wire up file input + drag-drop ───────────────────────────────────────────
+// Drop zone and CSV export live in the editor only.
+const drop = $("drop"), fileInput = $("file");
+if (drop) {
+drop.onclick = () => fileInput.click();
+fileInput.onchange = e => { const f = e.target.files[0]; if (f) readFile(f); };
+["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("hover"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("hover"); }));
+drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) readFile(f); });
+function readFile(f) { const r = new FileReader(); r.onload = () => loadArrayBuffer(r.result, f.name); r.readAsArrayBuffer(f); }
+}
+if ($("resync")) $("resync").onclick = () => { if (lastFloats) renderSegments(); };
+
+
+// Preset dropdown — swaps the in-memory layout between the consumption and the
+// feed-in file.
+$("presetSel").addEventListener("change", e => {
+  syncBuf();                       // keep edits made under the old preset
+  applyPreset(e.target.value);
+  const b = BUF[e.target.value];
+  if (b) { lastFloats = b; lastName = e.target.value === "pv" ? "sml_chart_pv" : "sml_chart"; }
+  renderSegments();
+});
+
+// ── Scripter data.csv → TinyC two-bin migration ───────────────────────────────
+// The Scripter chart scripts all write their arrays with fwa() into data.csv,
+// one array per line, TAB separated — but they do NOT all write the same set.
+// Detect the layout from the line and column counts instead of assuming one:
+//
+//   1_SML_Chart.tas                  s4h s24h dcon mcon12          (no feed-in)
+//   2_SML_Chart_PV[2].tas            s4h s24h dcon dprod mcon24
+//   2_SML_Chart_PV_Modbus.tas        same
+//   3_SML_Chart_PV_Bezugszaehler.tas same
+//   2_SML_Chart_PV3.tas              same + wcon53 wprod53         (weekly)
+//   4_SML_Chart_PV_no_4h24h.tas      dcon dprod mcon24             (bars only)
+//
+// Scripter arrays are 1-based (mcon[24] is a valid index in `M:mcon=0 24`), so
+// column j is day j / month j, and the TinyC side stores day 1 at index 0 —
+// which makes each row a straight 1:1 copy, no shifting.
+//
+// mcon is ONE array of 24 in the PV scripts: [1..12] consumption,
+// [13..24] feed-in (`mcon[month+12]=sml[3]-mval2`). TinyC splits that into
+// sml_mcon[12] and sml_mprod[12], which live in different files.
+//
+// The TinyC side persists into TWO bins — writing all values into one file was
+// the migration bug mi-hol hit (#83): sml_chart_pv_load() reads only the first
+// 43 floats of /sml_chart_pv.bin as dprod|mprod, so the month chart showed the
+// start of the 4 h curve.
+//   /sml_chart.bin    = s4h | s24h | dcon | mcon   (1965)
+//   /sml_chart_pv.bin = dprod | mprod              (43)
+//
+// The weekly bars (PV3) are dropped: sml_chart_common.tc has no weekly array.
+// The 4 h / 24 h curves are carried over where present, but their ring position
+// is not — sml_s4h_pos/sml_s24h_pos live in the .pvs and are not part of the
+// .bin, so those two curves come out rotated. Only the bar charts, which are
+// indexed by day and month rather than by ring position, migrate exactly.
+const TAS_LAYOUTS = [
+  { cols: [481, 1441, 31, 12],             map: "chart",  src: "1_SML_Chart.tas / 5_SteckdoseLeistungsmesser_1 / 6_SML_Wasseruhr" },
+  { cols: [481, 1441, 31, 31, 24],         map: "pv",     src: "2_SML_Chart_PV / _PV2 / _PV_Modbus / 3_…_Bezugszaehler" },
+  { cols: [481, 1441, 31, 31, 24, 53, 53], map: "pv",     src: "2_SML_Chart_PV3.tas (weekly bars dropped)" },
+  { cols: [31, 31, 24],                    map: "bars",   src: "4_SML_Chart_PV_no_4h24h.tas" },
+];
+
+function zeros(n) { return new Array(n).fill(0); }
+
+function parseTabFloats(line) {
+  // Scripter writes TAB-separated; accept comma/space too. Treat empty cells
+  // as 0 (the Scripter `fwa()` never emits truly missing cells, but defensive).
+  return line.split(/[\s,;]+/).filter(t => t.length > 0).map(t => {
+    const n = parseFloat(t.replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  });
+}
+
+// Returns { layout, s4h, s24h, dcon, mcon, dprod, mprod } or null.
+function detectTasLayout(rows) {
+  const shape = rows.map(r => r.length);
+  const hit = TAS_LAYOUTS.find(l =>
+    l.cols.length === shape.length && l.cols.every((c, i) => c === shape[i]));
+  if (!hit) return null;
+  const out = { layout: hit, hasPv: hit.map !== "chart" };
+  if (hit.map === "chart") {
+    out.s4h = rows[0]; out.s24h = rows[1]; out.dcon = rows[2]; out.mcon = rows[3];
+    out.dprod = zeros(31); out.mprod = zeros(12);
+  } else if (hit.map === "pv") {
+    out.s4h = rows[0]; out.s24h = rows[1]; out.dcon = rows[2]; out.dprod = rows[3];
+    out.mcon = rows[4].slice(0, 12); out.mprod = rows[4].slice(12, 24);
+  } else {                                  // "bars" — no 4h/24h curves at all
+    out.s4h = zeros(481); out.s24h = zeros(1441);
+    out.dcon = rows[0]; out.dprod = rows[1];
+    out.mcon = rows[2].slice(0, 12); out.mprod = rows[2].slice(12, 24);
+  }
+  return out;
+}
+
+function importScripterCsv(text, fname) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  const rows = lines.map(parseTabFloats);
+  const m = detectTasLayout(rows);
+  if (!m) {
+    const known = TAS_LAYOUTS.map(l => l.cols.join("/")).join("  |  ");
+    setMsg($("impTasMsg"),
+      `Unbekanntes Layout: ${rows.length} Zeile(n) mit ${rows.map(r => r.length).join("/")} Spalten. ` +
+      `Erwartet wird eines von: ${known}. Ist das wirklich die data.csv eines Diagramm-Scripts?`, "warn");
+    return false;
+  }
+  const cons = [].concat(m.s4h, m.s24h, m.dcon, m.mcon);   // s4h|s24h|dcon|mcon = 1965
+  const prod = [].concat(m.dprod, m.mprod);                // dprod|mprod        = 43
+  if (cons.length !== 1965 || prod.length !== 43) {
+    setMsg($("impTasMsg"), `Interner Fehler: ${cons.length}+${prod.length} Werte erzeugt (erwartet 1965+43).`, "warn");
+    return false;
+  }
+  // Both files go into the buffers; the download is step 3, so that the
+  // baselines from step 2 are already in when the file is written.
+  BUF.standard = cons;
+  BUF.pv = m.hasPv ? prod : null;   // no feed-in in the source: 43 zeros would
+                                    // erase a feed-in history already on the device
+  // Show the consumption file for review.
+  applyPreset("standard");
+  lastFloats = cons;
+  lastName = "sml_chart";
+  renderSegments();
+  updateDlStatus();
+  setTxt("step1Status", m.layout.src);
+  const files = m.hasPv
+    ? "sml_chart.bin (1965) und sml_chart_pv.bin (43)"
+    : "sml_chart.bin (1965) — dieses Script hat keine Einspeisung, also keine sml_chart_pv.bin";
+  setMsg($("impTasMsg"),
+    `"${fname}" erkannt als ${m.layout.src}. Bereit sind ${files}. ` +
+    `Weiter mit Schritt 2: ohne die Basiswerte rechnet das Programm den ganzen Zählerstand in den ` +
+    `heutigen Balken. Danach in Schritt 3 herunterladen.`,
+    "ok");
+  return true;
+}
+
+if ($("impTas")) $("impTas").addEventListener("click", () => $("impTasFile").click());
+if ($("impTasFile")) $("impTasFile").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => importScripterCsv(ev.target.result, f.name);
+  r.readAsText(f);
+  e.target.value = "";   // allow re-picking the same file later
+});
+
+
+// ─── Baselines ────────────────────────────────────────────────────────────────
+// The counter zero points. sml_chart_common.tc computes every running bar from
+// them (`sml_dcon[heute] = Zaehlerstand - sml_dval`), so a migration without
+// them puts the whole meter reading into today's bar. They are NOT in the
+// Scripter's data.csv - there they are `p:` variables in the Tasmota settings -
+// which is why they get their own card here.
+//
+// Appended to the .bin behind the arrays: 4 floats for the consumption file
+// (1965 -> 1969), 3 for the feed-in file (43 -> 46). sml_chart_load() reads the
+// block only if it is there, so a file without it still imports as before.
+// Order must match the .tc.
+const BASE_FIELDS = [
+  { k: "dval",  g: "cons", label: "dval — Tages-Nullpunkt Bezug [kWh]" },
+  { k: "mval",  g: "cons", label: "mval — Monats-Nullpunkt Bezug [kWh]" },
+  { k: "yval",  g: "cons", label: "yval — Jahres-Nullpunkt Bezug [kWh]" },
+  { k: "da",    g: "cons", label: "da — zuletzt gesehener Monatstag (1–31)" },
+  { k: "dval2", g: "prod", label: "dval2 — Tages-Nullpunkt Einspeisung [kWh]" },
+  { k: "mval2", g: "prod", label: "mval2 — Monats-Nullpunkt Einspeisung [kWh]" },
+  { k: "yval2", g: "prod", label: "yval2 — Jahres-Nullpunkt Einspeisung [kWh]" },
+];
+const BASE_GROUP = { standard: "cons", pv: "prod" };
+
+function renderBaseFields() {
+  const tb = $("baseFields"); tb.innerHTML = "";
+  BASE_FIELDS.forEach(f => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><label>${f.label}</label></td>` +
+                   `<td><input type="text" id="b_${f.k}" style="width:130px"></td>`;
+    tb.appendChild(tr);
+  });
+  // `da` is the only one with a sane default: today. Saves the usual question
+  // of what to put there, and it only matters at a month boundary anyway.
+  $("b_da").value = String(new Date().getDate());
+  tb.querySelectorAll("input").forEach(i => i.addEventListener("input", updateBaseStatus));
+  updateBaseStatus();
+}
+
+// Locale-tolerant single number: accepts "45231.5" and "45231,5".
+function parseNum(s) {
+  const v = parseFloat(String(s).trim().replace(",", "."));
+  return Number.isFinite(v) ? v : null;
+}
+
+// Returns the block for one file, or null when it is not complete. All-or-
+// nothing on purpose: the .tc reads 4 (or 3) floats or none, so a half-filled
+// card must not shift the file.
+function baseBlock(group) {
+  const fs = BASE_FIELDS.filter(f => f.g === group);
+  const vals = fs.map(f => parseNum($("b_" + f.k).value));
+  return vals.some(v => v === null) ? null : vals;
+}
+
+function updateBaseStatus() {
+  const c = baseBlock("cons"), p = baseBlock("prod");
+  const bits = [];
+  bits.push(c ? "Bezug ✓ (.bin wird 1969 Werte lang)" : "Bezug unvollständig — .bin bleibt bei 1965");
+  bits.push(p ? "Einspeisung ✓ (46)" : "Einspeisung unvollständig — bleibt bei 43");
+  $("baseStatus").textContent = bits.join(" · ");
+  updateDlStatus();          // the baselines change the file length shown there
+}
+
+// Append the block to a flat array, but only when the array really is the
+// complete file for that preset — appending to a half-edited buffer would push
+// the baselines to an offset the firmware never looks at.
+function withBase(flat, presetName) {
+  const group = BASE_GROUP[presetName];
+  if (!group) return flat;
+  const want = PRESETS[presetName].schema.reduce((a, s) => a + s.count, 0);
+  if (flat.length !== want) return flat;
+  const b = baseBlock(group);
+  return b ? flat.concat(b) : flat;
+}
+
+// Fill the card from a block read out of a loaded .bin.
+function setBaseBlock(group, vals) {
+  const fs = BASE_FIELDS.filter(f => f.g === group);
+  fs.forEach((f, i) => { if (vals[i] !== undefined) $("b_" + f.k).value = fmt(vals[i]); });
+  updateBaseStatus();
+}
+
+$("baseClear").onclick = () => {
+  BASE_FIELDS.forEach(f => { $("b_" + f.k).value = ""; });
+  $("baseMsg").textContent = "";
+  updateBaseStatus();
+};
+
+// ── Read the values off the old device without CORS ───────────────────────────
+// A local page may SEND a request to the device but never read the answer - the
+// browser drops it unless the device sets Access-Control-Allow-Origin, and
+// USE_CORS is not in the standard build. A link the user CLICKS is a normal
+// navigation, not a fetch, so it is not subject to that at all: the answer
+// opens in a tab, and copy/paste carries it back here.
+function renderBaseLinks() {
+  const ip = $("devIp").value.trim();
+  const host = ip.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  if (!host) { $("baseLinks").textContent = "IP eintragen, dann erscheinen hier die Links."; return; }
+  const a = (path, text, title) =>
+    `<a href="http://${host}${path}" target="_blank" rel="noopener" title="${title}">${text}</a>`;
+  $("baseLinks").innerHTML =
+    a("/cm?cmnd=script?dval;mval;yval;da", "Basiswerte Bezug", "Scripter-Variablen auslesen") + " · " +
+    a("/cm?cmnd=script?dval2;mval2;yval2", "Basiswerte Einspeisung", "nur bei den PV-Scripten") + " · " +
+    a("/ufsd?download=/data.csv", "data.csv", "Diagrammdaten herunterladen, dann oben einlesen");
+}
+$("devIp").addEventListener("input", renderBaseLinks);
+
+// Take the pasted answer. JSON first ({"script":{"dval":45231.5,...}}), then a
+// plain key/value sweep - that also swallows two answers pasted one after the
+// other, and a copy that caught some surrounding page text.
+$("baseParse").onclick = () => {
+  const txt = $("basePaste").value;
+  if (!txt.trim()) { setMsg($("baseMsg"), "", ""); $("baseMsg").textContent = "Nichts eingefügt."; return; }
+  const found = {};
+  try {
+    const o = JSON.parse(txt);
+    const src = (o && o.script) ? o.script : o;
+    for (const k in src) found[k.toLowerCase()] = src[k];
+  } catch (e) { /* not JSON - fall through to the sweep */ }
+  BASE_FIELDS.forEach(f => {
+    if (found[f.k] === undefined) {
+      const m = txt.match(new RegExp('"' + f.k + '"\s*:\s*"?(-?[0-9]+(?:[.,][0-9]+)?)', "i"));
+      if (m) found[f.k] = m[1];
+    }
+  });
+  let n = 0;
+  BASE_FIELDS.forEach(f => {
+    const v = parseNum(found[f.k]);
+    if (v !== null) { $("b_" + f.k).value = fmt(v); n++; }
+  });
+  updateBaseStatus();
+  // Emptied on success, because the next thing the user does is fetch the OTHER
+  // link and paste that. On failure the text stays - it is what they need to see.
+  if (n) $("basePaste").value = "";
+  $("baseMsg").textContent = n
+    ? `${n} Wert(e) übernommen: ${BASE_FIELDS.filter(f => parseNum(found[f.k]) !== null).map(f => f.k).join(", ")}.`
+    : "Keine bekannten Variablen gefunden. Erwartet wird die Antwort von cm?cmnd=script?dval;mval;yval;da";
+};
+
+renderBaseFields();
+updateDlStatus();
+renderBaseLinks();
+renderSchema();
+</script>
+</body>
+</html>

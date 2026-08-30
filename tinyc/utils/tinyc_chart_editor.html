@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TinyC .pvs-Editor</title>
+<style>
+  :root { --bg:#f0f2f5; --card:#fff; --ink:#222; --mut:#666; --accent:#1565c0; --warn:#c62828; --ok:#2e7d32; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin:0; background:var(--bg); color:var(--ink); }
+  header { background:var(--card); padding:14px 18px; border-bottom:1px solid #ddd; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  .sub { color:var(--mut); font-size:13px; }
+  main { padding:16px; max-width:1100px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid #e0e0e0; border-radius:8px; padding:14px 16px; margin-bottom:16px; }
+  .drop { border:2px dashed #aac; border-radius:8px; padding:22px; text-align:center; color:var(--mut); cursor:pointer; transition:.15s; }
+  .drop.hover { background:#eef4ff; border-color:var(--accent); color:var(--accent); }
+  button { font:inherit; padding:7px 13px; border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:6px; cursor:pointer; }
+  button.sec { background:#fff; color:var(--accent); }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  label { font-size:13px; color:var(--mut); }
+  input[type=text], select { font:inherit; padding:5px 7px; border:1px solid #ccc; border-radius:5px; }
+  .seg-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  .seg-title { font-weight:600; font-size:15px; }
+  .stats { color:var(--mut); font-size:12px; font-variant-numeric:tabular-nums; }
+  canvas { cursor:crosshair; width:100%; height:130px; display:block; background:#fafbfc; border:1px solid #eee; border-radius:6px; margin:8px 0; }
+  textarea { width:100%; min-height:80px; max-height:220px; font:12px/1.4 ui-monospace, Menlo, Consolas, monospace; padding:8px; border:1px solid #ccc; border-radius:6px; resize:vertical; white-space:pre; overflow:auto; }
+  .msg { font-size:13px; padding:8px 10px; border-radius:6px; margin:8px 0; display:none; }
+  .msg.warn { background:#fdecea; color:var(--warn); display:block; }
+  .msg.ok { background:#e8f5e9; color:var(--ok); display:block; }
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; align-items:center; }
+  .toolbar button { padding:4px 9px; font-size:12px; }
+  code { background:#eef; padding:1px 5px; border-radius:4px; font-size:12px; }
+  .hint { font-size:12px; color:var(--mut); margin-top:4px; }
+  .entry { border:1px solid #e6e6e6; border-radius:6px; padding:10px 12px; margin-top:10px; }
+  .entry.dirty { border-color:var(--accent); background:#f7fbff; }
+  .scal input { width:170px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>TinyC <code>.pvs</code>-Editor</h1>
+  <div class="sub">Bearbeitet die <code>.pvs</code> eines TinyC-Slots direkt — die Datei, in der das
+  laufende Programm seine <code>persist</code>-Variablen hält
+  (<code>/sml_chart.tcb</code> &rarr; <code>/sml_chart.pvs</code>). Diagrammverläufe, Zähler-Nullpunkte,
+  Einstellungen: alles, was den Neustart überlebt.</div>
+  <div class="sub" style="margin-top:6px">Holen und zurückspielen über den Dateimanager des Geräts
+  (<code>http://&lt;geraet&gt;/ufsd</code>). Wer von einem Tasmota-Scripter-Script umzieht, nimmt
+  <a href="script_charts_to_tinyc_pvs.html">script_charts_to_tinyc_pvs.html</a>.</div>
+</header>
+
+<main>
+  <div class="card">
+    <div class="seg-head"><span class="seg-title">1. Datei laden</span>
+      <span class="stats" id="fileInfo">noch nichts geladen</span></div>
+    <div id="drop" class="drop" style="margin-top:10px"><b>.pvs</b> hierher ziehen, oder klicken zum Auswählen…
+      <input id="file" type="file" accept=".pvs,.bin,*/*" style="display:none">
+    </div>
+    <div id="loadmsg" class="msg"></div>
+    <div class="hint">Eine <code>.bin</code> wird auch gelesen — die Werte landen dann in den bekannten
+      Diagramm-Variablen. Sie enthält aber nur diese, nicht die ganze <code>.pvs</code>.</div>
+  </div>
+
+  <div id="entries"></div>
+
+  <div class="card" id="saveCard" style="display:none">
+    <div class="seg-head"><span class="seg-title">3. Speichern</span>
+      <span class="stats" id="saveInfo"></span></div>
+    <div class="toolbar">
+      <button id="dlPvs">.pvs herunterladen</button>
+      <button class="sec" id="dlBin">.bin herunterladen</button>
+      <button class="sec" id="dlCsv">.csv (Tab)</button>
+      <span class="stats" id="saveMsg"></span>
+    </div>
+    <div class="hint" style="margin-top:10px"><b>Zurückspielen — die Reihenfolge zählt:</b>
+      <ol style="margin:4px 0 0 18px;padding:0">
+        <li>Slot stoppen: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das rote &#x25A0;</li>
+        <li>Datei(en) hochladen: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload</li>
+        <li>Slot starten: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das grüne &#x25B6;</li>
+
+      </ol>
+      Läuft der Slot beim Hochladen noch, schreibt <code>saveVars()</code> beim Stoppen seine eigenen
+      Werte darüber. Die <code>.pvs</code> wird beim Start gelesen und <b>nicht</b> umbenannt — sie ist
+      der Speicher, keine Import-Datei.</div>
+  </div>
+</main>
+
+<script>
+"use strict";
+
+// ═══ The .pvs format ═════════════════════════════════════════════════════════
+// PVS3, what the current compiler writes (tc_persist_save in
+// xdrv_124_tinyc_vm.h). Name-keyed and WITHOUT any checksum:
+//
+//   'P' 'V' '3'  count:u8
+//   per entry:   nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE
+//
+// PVS2 is the predecessor: 'P','V','H', layout_hash:u32, count:u8, and index:u16
+// instead of the name. That hash covers the LAYOUT (count, index, slot count) —
+// not the data. Changing values leaves it valid, so the stored hash bytes are
+// simply carried through.
+//
+// The loader is forgiving: unknown names are skipped, a missing entry keeps its
+// current value, a short entry is restored as far as it goes. A file written
+// here is therefore just as valid as one the device wrote.
+//
+// A slot is always 4 bytes. HOW to read them is not in the file — only the
+// program knows. Hence the table below; anything unknown gets a type switch and
+// is otherwise passed through untouched.
+const PV_TYPES = {
+  sml_s4h:      { t: "i16", n: 481,  u: "W",   label: "Leistung 4 h" },
+  sml_s24h:     { t: "i16", n: 1441, u: "W",   label: "Leistung 24 h" },
+  sml_dcon:     { t: "f",   n: 31,   u: "kWh", label: "Verbrauch je Tag" },
+  sml_mcon:     { t: "f",   n: 12,   u: "kWh", label: "Verbrauch je Monat" },
+  sml_dprod:    { t: "f",   n: 31,   u: "kWh", label: "Einspeisung je Tag" },
+  sml_mprod:    { t: "f",   n: 12,   u: "kWh", label: "Einspeisung je Monat" },
+  sml_s4h_pos:  { t: "i",   n: 1,    label: "Ringposition 4 h" },
+  sml_s24h_pos: { t: "i",   n: 1,    label: "Ringposition 24 h" },
+  sml_dval:     { t: "f",   n: 1,    u: "kWh", label: "Tages-Nullpunkt Bezug" },
+  sml_mval:     { t: "f",   n: 1,    u: "kWh", label: "Monats-Nullpunkt Bezug" },
+  sml_yval:     { t: "f",   n: 1,    u: "kWh", label: "Jahres-Nullpunkt Bezug" },
+  sml_da:       { t: "i",   n: 1,    label: "zuletzt gesehener Monatstag" },
+  sml_dval2:    { t: "f",   n: 1,    u: "kWh", label: "Tages-Nullpunkt Einspeisung" },
+  sml_mval2:    { t: "f",   n: 1,    u: "kWh", label: "Monats-Nullpunkt Einspeisung" },
+  sml_yval2:    { t: "f",   n: 1,    u: "kWh", label: "Jahres-Nullpunkt Einspeisung" },
+};
+
+// The .bin order from sml_chart_common.tc. All float32, the two int16 rings
+// included — sml_chart_imp16() converts while reading.
+const BIN_LAYOUT = {
+  sml_chart:    ["sml_s4h", "sml_s24h", "sml_dcon", "sml_mcon"],
+  sml_chart_pv: ["sml_dprod", "sml_mprod"],
+};
+const BIN_BASE = {
+  sml_chart:    ["sml_dval", "sml_mval", "sml_yval", "sml_da"],
+  sml_chart_pv: ["sml_dval2", "sml_mval2", "sml_yval2"],
+};
+
+const $ = id => document.getElementById(id);
+const DECIMAL_CHAR = (1.5).toLocaleString().replace(/[0-9]/g, "") || ".";
+const NF = new Intl.NumberFormat(undefined, { maximumFractionDigits: 3, useGrouping: false });
+
+let pvs = null;
+let srcName = "sml_chart";
+
+// ═══ Read / write the container ══════════════════════════════════════════════
+function parsePvs(bytes) {
+  if (bytes.length < 4 || bytes[0] !== 80 || bytes[1] !== 86) return null;   // 'P','V'
+  const named = bytes[2] === 51;                                            // '3'
+  if (!named && bytes[2] !== 72) return null;                               // 'H'
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let pos = named ? 4 : 8;
+  const count = named ? bytes[3] : bytes[7];
+  const head = bytes.slice(0, pos);          // carried through, PVS2 hash included
+  const entries = [];
+  for (let i = 0; i < count && pos < bytes.length; i++) {
+    let name, index = 0;
+    if (named) {
+      const nlen = bytes[pos++];
+      name = new TextDecoder().decode(bytes.subarray(pos, pos + nlen));
+      pos += nlen;
+    } else {
+      index = dv.getUint16(pos, true); pos += 2;
+      name = "@" + index;                    // PVS2 has no names
+    }
+    if (pos + 2 > bytes.length) break;
+    const slots = dv.getUint16(pos, true); pos += 2;
+    if (pos + slots * 4 > bytes.length) break;
+    entries.push({ name, index, slots, data: bytes.slice(pos, pos + slots * 4) });
+    pos += slots * 4;
+  }
+  return { ver: named ? 3 : 2, head, entries };
+}
+
+function buildPvs(p) {
+  const enc = new TextEncoder();
+  let total = p.head.length;
+  for (const e of p.entries) total += (p.ver === 3 ? 1 + enc.encode(e.name).length : 2) + 2 + e.data.length;
+  const out = new Uint8Array(total);
+  out.set(p.head, 0);
+  let pos = p.head.length;
+  for (const e of p.entries) {
+    if (p.ver === 3) {
+      const nb = enc.encode(e.name);
+      out[pos++] = nb.length;
+      out.set(nb, pos); pos += nb.length;
+    } else {
+      out[pos++] = e.index & 0xFF; out[pos++] = (e.index >> 8) & 0xFF;
+    }
+    out[pos++] = e.slots & 0xFF; out[pos++] = (e.slots >> 8) & 0xFF;
+    out.set(e.data, pos); pos += e.data.length;
+  }
+  return out;
+}
+
+// ═══ Slots <-> values ════════════════════════════════════════════════════════
+// One entry is a block of slotCount*4 bytes. float and int take one slot each,
+// int16 packs two per slot: (n+1)/2 slots, element i at byte offset i*2.
+function decode(e, t, n) {
+  const b = e.data.buffer, o = e.data.byteOffset;
+  if (t === "i16") return Array.from(new Int16Array(b, o, Math.min(n, (e.slots * 4) >> 1)));
+  const A = (t === "f") ? Float32Array : Int32Array;
+  return Array.from(new A(b, o, Math.min(n, e.slots)));
+}
+function encode(e, t, vals) {
+  const b = e.data.buffer, o = e.data.byteOffset;
+  const a = (t === "i16") ? new Int16Array(b, o, (e.slots * 4) >> 1)
+          : (t === "f")   ? new Float32Array(b, o, e.slots)
+                          : new Int32Array(b, o, e.slots);
+  for (let i = 0; i < a.length; i++) a[i] = (i < vals.length) ? vals[i] : 0;
+}
+
+// Type and element count. Known names from the table, everything else float over
+// the whole block; the per-entry switch corrects both.
+function typeOf(e) {
+  const k = PV_TYPES[e.name];
+  const fits = k && ((k.t === "i16") ? (e.slots * 2) >= k.n : e.slots >= k.n);
+  return fits ? { t: k.t, n: k.n, label: k.label } : { t: "f", n: e.slots, label: "" };
+}
+
+// ═══ Display ═════════════════════════════════════════════════════════════════
+function fmt(v) { return isFinite(v) ? NF.format(Math.round(v * 1000) / 1000) : "0"; }
+function parseList(s) {
+  const re = (DECIMAL_CHAR === ",") ? /[\s;\t]+/ : /[\s,;\t]+/;
+  const out = [];
+  s.trim().split(re).forEach(t => { if (t) { const v = parseFloat(t.replace(",", ".")); if (!Number.isNaN(v)) out.push(v); } });
+  return out;
+}
+function esc(s) { return s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function setMsg(el, text, kind) { el.className = "msg " + (kind || ""); el.textContent = text; }
+
+function render() {
+  const host = $("entries"); host.innerHTML = "";
+  if (!pvs) { $("saveCard").style.display = "none"; return; }
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `<div class="seg-head"><span class="seg-title">2. Variablen</span>` +
+    `<span class="stats">${pvs.entries.length} Einträge · PVS${pvs.ver}</span></div>` +
+    `<div class="hint">Geändertes ist blau umrandet. Alles andere geht Byte für Byte unverändert ` +
+    `wieder hinaus — auch Einträge, die dieser Editor nicht kennt.</div>`;
+  pvs.entries.forEach(e => card.appendChild(entryCard(e)));
+  host.appendChild(card);
+  $("saveCard").style.display = "";
+  updateSaveInfo();
+}
+
+function entryCard(e) {
+  const d = document.createElement("div");
+  d.className = "entry" + (e._dirty ? " dirty" : "");
+  if (!e._t) { const ty = typeOf(e); e._t = ty.t; e._n = ty.n; }
+  const meta = PV_TYPES[e.name] || {};
+  const label = meta.label || "";
+  const unit = meta.u || "";
+  const vals = decode(e, e._t, e._n);
+  const scalar = e._n === 1;
+  d.innerHTML =
+    `<div class="seg-head"><span><b>${esc(e.name)}</b>` +
+      (label ? ` <span class="stats">${label}${unit ? " [" + unit + "]" : ""}</span>` : "") + `</span>` +
+      `<span class="stats" data-stats></span></div>` +
+    `<div class="toolbar"><label>Typ <select data-type>` +
+      `<option value="f">float</option><option value="i">int32</option><option value="i16">int16</option>` +
+      `</select></label>` +
+      `<span class="stats">${e.slots} Slot(s) · ${e.slots * 4} Bytes · ${e._n} Wert(e)</span></div>` +
+    (scalar
+      ? `<div class="toolbar scal"><input type="text" data-val value="${fmt(vals[0])}"></div>`
+      : `<canvas data-canvas data-unit="${unit}"></canvas><textarea data-list spellcheck="false">${vals.map(fmt).join(" ")}</textarea>` +
+        `<div class="toolbar"><button class="sec" data-act="zero">Alle auf 0</button>` +
+        `<button class="sec" data-act="wrap">Umbrechen</button>` +
+        `<span class="stats" data-cnt></span></div>`);
+
+  const sel = d.querySelector("[data-type]");
+  sel.value = e._t;
+  sel.onchange = ev => {
+    e._t = ev.target.value;
+    e._n = (e._t === "i16") ? (e.slots * 4) >> 1 : e.slots;   // whole block
+    render();
+  };
+
+  const stats = d.querySelector("[data-stats]");
+  const commit = list => { encode(e, e._t, list); e._dirty = true; d.classList.add("dirty"); updateSaveInfo(); };
+
+  if (scalar) {
+    const inp = d.querySelector("[data-val]");
+    stats.textContent = e._t;
+    inp.onchange = () => {
+      const v = parseFloat(inp.value.replace(",", "."));
+      if (!Number.isNaN(v)) { commit([v]); inp.value = fmt(v); }
+    };
+  } else {
+    const ta = d.querySelector("[data-list]"), cv = d.querySelector("[data-canvas]"), cnt = d.querySelector("[data-cnt]");
+    const refresh = write => {
+      const v = parseList(ta.value);
+      drawSeries(cv, v);
+      stats.textContent = statLine(v);
+      cnt.innerHTML = (v.length === e._n) ? `${v.length} Werte ✓`
+        : `<span style="color:var(--warn)">${v.length} statt ${e._n} — fehlende werden mit 0 aufgefüllt</span>`;
+      if (write) commit(v);
+    };
+    ta.addEventListener("change", () => refresh(true));
+    d.querySelector('[data-act="zero"]').onclick = () => { ta.value = vals.map(() => "0").join(" "); refresh(true); };
+    d.querySelector('[data-act="wrap"]').onclick = () => { ta.value = parseList(ta.value).map(fmt).join("\n"); refresh(false); };
+    requestAnimationFrame(() => refresh(false));
+  }
+  return d;
+}
+
+function statLine(v) {
+  if (!v.length) return "0 Werte";
+  let mn = Infinity, mx = -Infinity, sum = 0, nz = 0;
+  for (const x of v) { if (x < mn) mn = x; if (x > mx) mx = x; sum += x; if (x !== 0) nz++; }
+  return `min ${fmt(mn)} · max ${fmt(mx)} · Mittel ${fmt(sum / v.length)} · ${nz} ungleich 0`;
+}
+
+// Round tick values covering [mn, mx] — 1/2/5 times a power of ten, so the
+// labels read 0, 50, 100 rather than 0, 47.3, 94.6.
+function niceTicks(mn, mx, want) {
+  const span = mx - mn;
+  if (!(span > 0)) return [mn];
+  const mag = Math.pow(10, Math.floor(Math.log10(span / want)));
+  const norm = (span / want) / mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  // By index, not by accumulating `t += step`: adding 0.1 thirty times lands
+  // slightly below zero and the label came out as "-0".
+  const out = [];
+  for (let k = Math.ceil(mn / step - 1e-9); k <= Math.floor(mx / step + 1e-9); k++) out.push(k * step);
+  return out;
+}
+
+// Axis labels get fewer decimals the larger they are — 45231 next to 0,001 in
+// the same gutter would be unreadable at 10 px.
+function axisFmt(v) {
+  if (v === 0) v = 0;          // Math.ceil(-1e-9) is -0, and that prints as "-0"
+  const a = Math.abs(v);
+  const d = a >= 1000 ? 0 : (a >= 10 ? 1 : (a >= 1 ? 2 : 3));
+  return v.toLocaleString(undefined, { maximumFractionDigits: d });
+}
+
+// One chart. The y axis is the point of the whole panel: bars without a scale
+// only show the shape, not the value.
+function drawSeries(c, v) {
+  const dpr = window.devicePixelRatio || 1, w = c.clientWidth || 600, h = c.clientHeight || 130;
+  c.width = w * dpr; c.height = h * dpr;
+  const x = c.getContext("2d"); x.scale(dpr, dpr); x.clearRect(0, 0, w, h);
+  if (!v.length) return;
+  let mn = Math.min(0, ...v), mx = Math.max(0, ...v);
+  if (mx === mn) mx = mn + 1;
+  const ticks = niceTicks(mn, mx, 3);
+  x.font = "10px ui-monospace, Menlo, Consolas, monospace";
+  // Gutter wide enough for the longest label, so a 5-digit meter reading is not
+  // clipped and a single-digit one wastes no room.
+  const padL = Math.min(70, Math.max(28, ...ticks.map(t => x.measureText(axisFmt(t)).width)) + 8);
+  const padR = 6, padT = 7, padB = 5;
+  const px = i => padL + (w - padL - padR) * (v.length === 1 ? 0.5 : i / (v.length - 1));
+  const py = q => (h - padB) - (h - padT - padB) * (q - mn) / (mx - mn);
+
+  ticks.forEach(t => {
+    const yy = py(t);
+    x.strokeStyle = (t === 0) ? "#c8c8c8" : "#ececec";
+    x.beginPath(); x.moveTo(padL, yy); x.lineTo(w - padR, yy); x.stroke();
+  });
+
+  if (v.length <= 40) {
+    // Bars sit in SLOTS, not on the endpoints. With the endpoint mapping the
+    // first bar was centred on padL, so half of it covered the axis labels.
+    const slot = (w - padL - padR) / v.length;
+    const bw = Math.max(1, slot * 0.7);
+    x.fillStyle = "#1565c0";
+    v.forEach((q, i) => {
+      const cx = padL + slot * (i + 0.5), yy = py(q);
+      x.fillRect(cx - bw / 2, Math.min(yy, py(0)), bw, Math.abs(yy - py(0)));
+    });
+  } else {
+    x.strokeStyle = "#1565c0"; x.lineWidth = 1; x.beginPath();
+    v.forEach((q, i) => { const cx = px(i), cy = py(q); i ? x.lineTo(cx, cy) : x.moveTo(cx, cy); });
+    x.stroke();
+  }
+
+  // Labels last, over a small opaque strip: a curve reaching the left edge would
+  // otherwise run straight through them.
+  x.fillStyle = "#fafbfc";
+  x.fillRect(0, 0, padL - 2, h);
+  x.textAlign = "right"; x.textBaseline = "middle";
+  x.fillStyle = "#888";
+  ticks.forEach(t => x.fillText(axisFmt(t), padL - 5, py(t)));
+  const unit = c.dataset.unit || "";
+  if (unit) { x.textAlign = "left"; x.fillText(unit, padL + 4, padT + 3); }
+
+  c._plot = { v: v, padL: padL, padR: padR, bars: v.length <= 40 };   // for the hover handler
+}
+
+// ── Hover: the value under the cursor ────────────────────────────────────────
+// Reading a bar off the axis is guesswork, so the exact number follows the
+// mouse. The geometry is stashed on the canvas at draw time and the handler
+// only maps x back to an index — hovering a 1441-point chart costs nothing.
+const tip = document.createElement("div");
+tip.style.cssText = "position:fixed;z-index:50;pointer-events:none;display:none;" +
+  "background:#333;color:#fff;font:12px ui-monospace,Menlo,Consolas,monospace;" +
+  "padding:3px 7px;border-radius:4px;white-space:nowrap";
+document.body.appendChild(tip);
+
+// 31 values are days and 12 are months — both are 1-based on the device, while
+// the box below the chart is 0-based. Naming the position avoids the guess.
+function hoverLabel(v, i, unit) {
+  const pos = (v.length === 31) ? "Tag " + (i + 1)
+            : (v.length === 12) ? "Monat " + (i + 1)
+                                : "[" + i + "]";
+  return pos + " · " + fmt(v[i]) + (unit ? " " + unit : "");
+}
+
+document.addEventListener("mousemove", ev => {
+  const c = ev.target;
+  if (!(c instanceof HTMLCanvasElement) || !c._plot) { tip.style.display = "none"; return; }
+  const p = c._plot, r = c.getBoundingClientRect();
+  const inner = r.width - p.padL - p.padR;
+  const rel = ev.clientX - r.left;
+  if (rel < p.padL || inner <= 0 || !p.v.length) { tip.style.display = "none"; return; }
+  const f = (rel - p.padL) / inner;
+  let i = p.bars ? Math.floor(f * p.v.length) : Math.round(f * (p.v.length - 1));
+  i = Math.max(0, Math.min(p.v.length - 1, i));
+  tip.textContent = hoverLabel(p.v, i, c.dataset.unit || "");
+  tip.style.left = Math.min(ev.clientX + 12, innerWidth - 140) + "px";
+  tip.style.top = (ev.clientY - 26) + "px";
+  tip.style.display = "block";
+});
+
+function binKind() {
+  const set = new Set(pvs.entries.map(e => e.name));
+  if (BIN_LAYOUT.sml_chart.every(n => set.has(n))) return "sml_chart";
+  if (BIN_LAYOUT.sml_chart_pv.every(n => set.has(n))) return "sml_chart_pv";
+  return null;
+}
+
+function updateSaveInfo() {
+  const dirty = pvs.entries.filter(e => e._dirty).map(e => e.name);
+  $("saveInfo").textContent = dirty.length ? "geändert: " + dirty.join(", ") : "nichts geändert";
+  const k = binKind();
+  $("dlBin").disabled = !k;
+  $("dlBin").textContent = k ? k + ".bin" : ".bin nicht möglich";
+}
+
+// ═══ Loading ═════════════════════════════════════════════════════════════════
+function load(buf, fname) {
+  const bytes = new Uint8Array(buf);
+  srcName = fname.replace(/\.(pvs|bin|csv)$/i, "") || "sml_chart";
+  const p = parsePvs(bytes);
+  if (!p) { loadBin(bytes, fname); return; }
+  pvs = p;
+  $("fileInfo").textContent = `${fname} · PVS${p.ver} · ${p.entries.length} Einträge · ${bytes.length} Bytes`;
+  const unknown = p.entries.filter(e => !PV_TYPES[e.name]).map(e => e.name);
+  setMsg($("loadmsg"),
+    `PVS${p.ver} gelesen: ${p.entries.map(e => e.name + "[" + e.slots + "]").join(", ")}.` +
+    (unknown.length ? ` Unbekannt und deshalb als float gezeigt: ${unknown.join(", ")} — der Typ lässt sich je Eintrag umschalten.` : "") +
+    (p.ver === 2 ? " PVS2 kennt keine Namen; die Einträge heißen nach ihrem Slot-Index. Der Layout-Hash bleibt unverändert." : ""),
+    "ok");
+  render();
+}
+
+// A .bin has no header: it is exactly the BIN_LAYOUT order, all float32. Without
+// a loaded .pvs there is nowhere to put it, so the matching entries are created.
+function loadBin(bytes, fname) {
+  if (bytes.length % 4) {
+    setMsg($("loadmsg"), `"${fname}": kein "PV"-Kopf und ${bytes.length} Bytes sind kein Vielfaches von 4.`, "warn");
+    return;
+  }
+  const f = new Float32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4);
+  for (const key of ["sml_chart", "sml_chart_pv"]) {
+    const arrs = BIN_LAYOUT[key], base = BIN_BASE[key];
+    const need = arrs.reduce((a, n) => a + PV_TYPES[n].n, 0);
+    const withBase = f.length === need + base.length;
+    if (f.length !== need && !withBase) continue;
+    if (!pvs) pvs = { ver: 3, head: new Uint8Array([80, 86, 51, 0]), entries: [] };
+    const put = (name, vals) => {
+      const k = PV_TYPES[name];
+      let e = pvs.entries.find(x => x.name === name);
+      if (!e) {
+        const slots = (k.t === "i16") ? ((k.n + 1) >> 1) : k.n;
+        e = { name, index: 0, slots, data: new Uint8Array(slots * 4) };
+        pvs.entries.push(e);
+      }
+      e._t = k.t; e._n = k.n;
+      encode(e, k.t, vals); e._dirty = true;
+    };
+    let off = 0;
+    arrs.forEach(n => { const k = PV_TYPES[n]; put(n, Array.from(f.slice(off, off + k.n))); off += k.n; });
+    if (withBase) base.forEach(n => put(n, [f[off++]]));
+    pvs.head[3] = pvs.entries.length;
+    $("fileInfo").textContent = `${fname} · .bin · ${f.length} Werte`;
+    setMsg($("loadmsg"),
+      `"${fname}" als ${key}.bin gelesen (${f.length} Werte)` +
+      (withBase ? " inklusive Basiswerte." : ".") +
+      " Eine .bin ist eine Import-Datei — sie enthält nur diese Variablen, nicht die ganze .pvs.",
+      "ok");
+    render();
+    return;
+  }
+  setMsg($("loadmsg"),
+    `"${fname}": kein "PV"-Kopf, und ${f.length} float32 passen zu keiner bekannten .bin ` +
+    `(erwartet 1965 oder 1969 für sml_chart, 43 oder 46 für sml_chart_pv).`, "warn");
+}
+
+// ═══ Saving ══════════════════════════════════════════════════════════════════
+function dl(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+$("dlPvs").onclick = () => {
+  const out = buildPvs(pvs);
+  dl(new Blob([out], { type: "application/octet-stream" }), srcName + ".pvs");
+  $("saveMsg").textContent = `${srcName}.pvs — ${pvs.entries.length} Einträge, ${out.length} Bytes.`;
+};
+
+$("dlBin").onclick = () => {
+  const key = binKind();
+  if (!key) return;
+  const vals = [];
+  BIN_LAYOUT[key].forEach(n => {
+    const k = PV_TYPES[n];
+    vals.push(...decode(pvs.entries.find(x => x.name === n), k.t, k.n));
+  });
+  // Baselines only when all of them are there — the program reads that block
+  // whole or not at all.
+  const names = BIN_BASE[key];
+  const es = names.map(n => pvs.entries.find(x => x.name === n));
+  const complete = es.every(Boolean);
+  if (complete) es.forEach((e, i) => vals.push(decode(e, PV_TYPES[names[i]].t, 1)[0]));
+  const buf = new ArrayBuffer(vals.length * 4), dv = new DataView(buf);
+  vals.forEach((v, i) => dv.setFloat32(i * 4, v, true));
+  dl(new Blob([buf], { type: "application/octet-stream" }), key + ".bin");
+  $("saveMsg").textContent = `${key}.bin — ${vals.length} float32 (${vals.length * 4} Bytes)` +
+    (complete ? ", Basiswerte am Ende." : ", ohne Basiswerte.");
+};
+
+$("dlCsv").onclick = () => {
+  const lines = pvs.entries.map(e => e.name + "\t" + decode(e, e._t, e._n).map(v => {
+    let s = v.toFixed(3);
+    return s.indexOf(".") >= 0 ? s.replace(/0+$/, "").replace(/\.$/, "") : s;
+  }).join("\t"));
+  dl(new Blob([lines.join("\n") + "\n"], { type: "text/plain" }), srcName + ".csv");
+  $("saveMsg").textContent = `${srcName}.csv — ${lines.length} Zeilen. Nur zum Nachlesen; das Gerät liest sie nicht.`;
+};
+
+// ═══ File input ══════════════════════════════════════════════════════════════
+const drop = $("drop"), fileInput = $("file");
+drop.onclick = () => fileInput.click();
+fileInput.onchange = e => { const f = e.target.files[0]; if (f) read(f); };
+["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("hover"); }));
+["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("hover"); }));
+drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) read(f); });
+function read(f) { const r = new FileReader(); r.onload = () => load(r.result, f.name); r.readAsArrayBuffer(f); }
+</script>
+</body>
+</html>
