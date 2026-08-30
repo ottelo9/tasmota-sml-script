@@ -86,8 +86,18 @@ void esBuildFull() {
     sprintf(es_body, "{\"em:0\":{\"id\":0,\"a_act_power\":%.0f,\"b_act_power\":%.0f,\"c_act_power\":%.0f,\"total_act_power\":%.0f},\"emdata:0\":{\"id\":0,\"a_total_act_energy\":%.0f,\"a_total_act_ret_energy\":%.0f,\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,\"total_act\":%.0f,\"total_act_ret\":%.0f}}", es_pa, es_pb, es_pc, es_cpwr, ein, eout, ein, eout);
 }
 
+// NOT one sprintf. A variadic sprintf is split into segments of "literal + one
+// value", and each segment goes through a 256-byte buffer twice in the firmware
+// (SYS_SPRINTF_STR_CAT: tc_ref_to_cstr into srcbuf[256], then snprintf into
+// tmp[256]). Feeding the ~310-character Shelly.GetStatus body through a `%s`
+// therefore cut the reply at 296 bytes - valid-looking JSON with the tail
+// missing, which the Marstek app silently rejects, so the device never showed
+// up. EM.GetStatus (~80 chars) fit and worked, which is what made it look like
+// a discovery problem. strcat copies element by element with no such buffer.
 void esWrapUdp() {
-    sprintf(es_wrap, "{\"id\":0,\"src\":\"shellypro3em-%s\",\"result\":%s}", es_mac, es_body);
+    sprintf(es_wrap, "{\"id\":0,\"src\":\"shellypro3em-%s\",\"result\":", es_mac);
+    strcat(es_wrap, es_body);
+    strcat(es_wrap, "}");
 }
 
 // ─── Building-block API ────────────────────────────────────────────────────

@@ -21,6 +21,7 @@ $accent      = [System.Drawing.Color]::FromArgb(0, 150, 136)
 $accentRed   = [System.Drawing.Color]::FromArgb(200, 60, 60)
 $accentHTTP  = [System.Drawing.Color]::FromArgb(60, 120, 200)
 $accentPing  = [System.Drawing.Color]::FromArgb(200, 160, 0)
+$accentMdns  = [System.Drawing.Color]::FromArgb(140, 90, 200)
 $fgWhite     = [System.Drawing.Color]::White
 $fgGray      = [System.Drawing.Color]::FromArgb(180, 180, 180)
 
@@ -67,8 +68,15 @@ $radioPing.Size = New-Object System.Drawing.Size(60, 24)
 $radioPing.ForeColor = $fgWhite; $radioPing.FlatStyle = "Flat"
 $form.Controls.Add($radioPing)
 
+$radioMdns = New-Object System.Windows.Forms.RadioButton
+$radioMdns.Text = "mDNS"
+$radioMdns.Location = New-Object System.Drawing.Point(320, 13)
+$radioMdns.Size = New-Object System.Drawing.Size(70, 24)
+$radioMdns.ForeColor = $fgWhite; $radioMdns.FlatStyle = "Flat"
+$form.Controls.Add($radioMdns)
+
 $lblModeIndicator = New-Object System.Windows.Forms.Label
-$lblModeIndicator.Location = New-Object System.Drawing.Point(330, 15)
+$lblModeIndicator.Location = New-Object System.Drawing.Point(400, 15)
 $lblModeIndicator.Size = New-Object System.Drawing.Size(150, 22)
 $lblModeIndicator.Text = "[ UDP-Modus ]"
 $lblModeIndicator.ForeColor = $accent
@@ -252,6 +260,34 @@ $lblPingStatus.Size = New-Object System.Drawing.Size(260, 22)
 $lblPingStatus.ForeColor = $fgGray; $lblPingStatus.Text = ""
 $lblPingStatus.Visible = $false
 $form.Controls.Add($lblPingStatus)
+
+# ===================== mDNS-Controls =====================
+$lblMdnsHint = New-Object System.Windows.Forms.Label
+$lblMdnsHint.Location = New-Object System.Drawing.Point(15, 84)
+$lblMdnsHint.Size = New-Object System.Drawing.Size(735, 40)
+$lblMdnsHint.ForeColor = $fgGray
+$lblMdnsHint.Text = "Fragt per Multicast-DNS, welche Geraete sich im Netz als Shelly oder EcoTracker melden." + [Environment]::NewLine + "Findet die Marstek-App den Emulator nicht, muss er hier zuerst auftauchen."
+$lblMdnsHint.Visible = $false
+$form.Controls.Add($lblMdnsHint)
+
+$chkMdnsAll = New-Object System.Windows.Forms.CheckBox
+$chkMdnsAll.Text = "alle Dienste zeigen (auch _http)"
+$chkMdnsAll.Location = New-Object System.Drawing.Point(370, 157)
+$chkMdnsAll.Size = New-Object System.Drawing.Size(240, 24)
+$chkMdnsAll.ForeColor = $fgWhite; $chkMdnsAll.FlatStyle = "Flat"
+$chkMdnsAll.Visible = $false
+$form.Controls.Add($chkMdnsAll)
+
+$btnMdnsScan = New-StyledButton "mDNS suchen" 160 153 150 28 $accentMdns
+$btnMdnsScan.Visible = $false
+$form.Controls.Add($btnMdnsScan)
+
+$lblMdnsStatus = New-Object System.Windows.Forms.Label
+$lblMdnsStatus.Location = New-Object System.Drawing.Point(620, 158)
+$lblMdnsStatus.Size = New-Object System.Drawing.Size(130, 22)
+$lblMdnsStatus.ForeColor = $fgGray; $lblMdnsStatus.Text = ""
+$lblMdnsStatus.Visible = $false
+$form.Controls.Add($lblMdnsStatus)
 
 # ===================== Trennlinie =====================
 $separator = New-Object System.Windows.Forms.Label
