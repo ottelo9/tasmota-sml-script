@@ -271,6 +271,16 @@ void esPanel() {
         webPulldown(es_e_mode, "Mode", "EcoTracker|Shelly Pro 3EM");
         if (es_e_mode == 1) webPulldown(es_e_port, "UDP port", "1010|2220 (B2500)");
     }
+    // Measured, not guessed: after a mode switch the device answered under BOTH
+    // _shelly._tcp and _everhome._tcp at once. mdnsRegister() only ever calls
+    // MDNS.begin() + addService() - nothing removes a service, so the previous
+    // one keeps being announced under the new hostname. A slot restart takes the
+    // same path and does not help; only a device restart clears it. Say so here
+    // instead of letting people hunt for it.
+    webSend("<div style='font-size:12px;color:#888;margin:2px 0 8px'>");
+    if (ui_de) webSend("Modus gewechselt? Wirkt sofort. Die <b>alte</b> mDNS-Anmeldung bleibt aber bis zum Ger&auml;te-Neustart zus&auml;tzlich bestehen.");
+    else       webSend("Changed the mode? Takes effect at once. The <b>previous</b> mDNS announcement stays alongside it until the device restarts.");
+    webSend("</div>");
 
     uiHead("&#x1F50B;", "Battery", "Akku", "eco_shelly/#battery");
     if (ui_de) {
