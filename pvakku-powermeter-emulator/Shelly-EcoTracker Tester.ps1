@@ -796,6 +796,194 @@ $pingControls = @($lblPingInterval, $txtPingInterval, $lblPingHint1,
     $chkPingLogFile, $chkPingErrorsOnly, $lblPingLogPath,
     $btnPingStart, $btnPingStop, $lblPingStatus)
 
+$mdnsControls = @($lblMdnsHint, $chkMdnsAll, $btnMdnsScan, $lblMdnsStatus)
+
+# ===================== mDNS-Pruefer =====================
+# Warum ein eigener Socket und nicht Port 5353: den haelt unter Windows der
+# eigene mDNS-Dienst, ein zweiter Bind bekommt dort keine Pakete geliefert.
+# Stattdessen von einem freien Port fragen und im Query das "unicast response"-
+# Bit setzen (QCLASS 0x8001) - die Antwort kommt dann direkt zurueck.
+
+function New-MdnsQuery([string]$name) {
+    $ms = New-Object System.IO.MemoryStream
+    $w  = New-Object System.IO.BinaryWriter($ms)
+    $w.Write([byte[]]@(0,0, 0,0, 0,1, 0,0, 0,0, 0,0))     # ID, Flags, QDCOUNT=1
+    foreach ($lbl in $name.Split('.')) {
+        if ($lbl.Length -eq 0) { continue }
+        $b = [Text.Encoding]::ASCII.GetBytes($lbl)
+        $w.Write([byte]$b.Length); $w.Write($b)
+    }
+    $w.Write([byte]0)
+    $w.Write([byte]0); $w.Write([byte]12)                 # QTYPE = PTR
+    $w.Write([byte]0x80); $w.Write([byte]0x01)            # QCLASS IN + Unicast-Antwort
+    $w.Flush()
+    ,$ms.ToArray()
+}
+
+# DNS-Namen benutzen Komprimierungszeiger; denen folgen, mit Schleifenschutz.
+function Read-DnsName([byte[]]$buf, [ref]$pos) {
+    $parts = @(); $p = $pos.Value; $jumped = $false; $guard = 0
+    while ($true) {
+        if ($p -ge $buf.Length -or $guard++ -gt 128) { break }
+        $len = $buf[$p]
+        if ($len -eq 0) { $p++; if (-not $jumped) { $pos.Value = $p }; break }
+        if (($len -band 0xC0) -eq 0xC0) {
+            if ($p + 1 -ge $buf.Length) { break }
+            $ptr = ((($len -band 0x3F) -shl 8) -bor $buf[$p+1])
+            if (-not $jumped) { $pos.Value = $p + 2; $jumped = $true }
+            $p = $ptr; continue
+        }
+        $p++
+        if ($p + $len -gt $buf.Length) { break }
+        $parts += [Text.Encoding]::UTF8.GetString($buf, $p, $len)
+        $p += $len
+        if (-not $jumped) { $pos.Value = $p }
+    }
+    ($parts -join '.')
+}
+
+function Read-MdnsRecords([byte[]]$buf) {
+    $out = @()
+    if ($buf.Length -lt 12) { return ,$out }
+    $qd = ($buf[4] -shl 8) -bor $buf[5]
+    $an = (($buf[6] -shl 8) -bor $buf[7]) + (($buf[8] -shl 8) -bor $buf[9]) + (($buf[10] -shl 8) -bor $buf[11])
+    $p = 12
+    for ($i = 0; $i -lt $qd; $i++) { $np = $p; $r = [ref]$np; [void](Read-DnsName $buf $r); $p = $np + 4 }
+    for ($i = 0; $i -lt $an; $i++) {
+        if ($p + 10 -gt $buf.Length) { break }
+        $np = $p; $r = [ref]$np
+        $nm = Read-DnsName $buf $r
+        $p  = $np
+        if ($p + 10 -gt $buf.Length) { break }
+        $type  = ($buf[$p] -shl 8) -bor $buf[$p+1]
+        $rdlen = ($buf[$p+8] -shl 8) -bor $buf[$p+9]
+        $p += 10
+        $rdStart = $p                      # merken: die [ref] unten verschiebt ihre eigene Kopie
+        if ($rdStart + $rdlen -gt $buf.Length) { break }
+        $val = ""
+        switch ($type) {
+            12 { $q = $rdStart; $r2 = [ref]$q; $val = Read-DnsName $buf $r2 }
+            33 { $prt = ($buf[$rdStart+4] -shl 8) -bor $buf[$rdStart+5]
+                 $q = $rdStart + 6; $r2 = [ref]$q
+                 $val = "$(Read-DnsName $buf $r2):$prt" }
+            1  { if ($rdlen -eq 4) { $val = "$($buf[$rdStart]).$($buf[$rdStart+1]).$($buf[$rdStart+2]).$($buf[$rdStart+3])" } }
+            16 { $t = @(); $q = $rdStart
+                 while ($q -lt $rdStart + $rdlen) {
+                     $l = $buf[$q]; $q++
+                     if ($l -gt 0 -and $q + $l -le $buf.Length) { $t += [Text.Encoding]::UTF8.GetString($buf, $q, $l); $q += $l }
+                 }
+                 $val = ($t -join '  ') }
+        }
+        $tn = switch ($type) { 1 {"A"} 12 {"PTR"} 16 {"TXT"} 28 {"AAAA"} 33 {"SRV"} 47 {"NSEC"} default {"T$type"} }
+        if ($val -ne "") { $out += [pscustomobject]@{ Type = $tn; Name = $nm; Value = $val } }
+        $p = $rdStart + $rdlen
+    }
+    ,$out
+}
+
+# Die lokale IP heraussuchen, ueber die das LAN erreichbar ist. Ein Rechner mit
+# Hyper-V, WLAN und Kabel hat oft mehrere 169.254-Adapter, und Windows schickt
+# den Multicast sonst womoeglich ueber einen davon - die Anfrage kommt dann nie an.
+function Get-MdnsLocalIp([string]$peer) {
+    $cands = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+               Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' })
+    if ($peer -and $peer -match '^\d+\.\d+\.\d+\.\d+$') {
+        $pp = ($peer.Split('.')[0..2] -join '.')
+        $m = $cands | Where-Object { ($_.IPAddress.Split('.')[0..2] -join '.') -eq $pp } | Select-Object -First 1
+        if ($m) { return $m.IPAddress }
+    }
+    if ($cands.Count -gt 0) { return ($cands | Select-Object -First 1).IPAddress }
+    return $null
+}
+
+function Invoke-MdnsScan([string[]]$services, [int]$waitMs, [string]$localIp) {
+    $recs = @()
+    $lip  = [System.Net.IPAddress]::Parse($localIp)
+    $grp  = [System.Net.IPAddress]::Parse('224.0.0.251')
+    $sock = New-Object System.Net.Sockets.Socket('InterNetwork','Dgram','Udp')
+    try {
+        $sock.Bind((New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)))
+        try { $sock.SetSocketOption('IP','MulticastInterface', $lip.GetAddressBytes()) } catch { }
+        try { $sock.SetSocketOption('IP','MulticastTimeToLive', 255) } catch { }
+        $dst = New-Object System.Net.IPEndPoint($grp, 5353)
+        foreach ($s in $services) { [void]$sock.SendTo((New-MdnsQuery $s), $dst) }
+
+        $buf = New-Object byte[] 8192
+        $sw  = [Diagnostics.Stopwatch]::StartNew()
+        while ($sw.ElapsedMilliseconds -lt $waitMs) {
+            if ($sock.Poll(200000, 'SelectRead')) {
+                $ep = [System.Net.EndPoint](New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0))
+                try { $n = $sock.ReceiveFrom($buf, [ref]$ep) } catch { continue }
+                if ($n -le 0) { continue }
+                $from = ([System.Net.IPEndPoint]$ep).Address.ToString()
+                if ($from -eq $localIp) { continue }        # eigene Anfrage, zurueckgespiegelt
+                $pkt = New-Object byte[] $n; [Array]::Copy($buf, $pkt, $n)
+                foreach ($rec in (Read-MdnsRecords $pkt)) {
+                    $rec | Add-Member -NotePropertyName From -NotePropertyValue $from
+                    $recs += $rec
+                }
+            }
+        }
+    } finally { $sock.Close() }
+    ,$recs
+}
+
+function Invoke-MdnsCheck {
+    $target = $txtHost.Text.Trim()
+    $lip = Get-MdnsLocalIp $target
+    $ts  = Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff"
+    if (-not $lip) {
+        Write-Log "[$ts]  mDNS: keine brauchbare lokale IPv4 gefunden.`r`n" $colorRed
+        return
+    }
+    $btnMdnsScan.Enabled = $false
+    $lblMdnsStatus.Text = "suche..."
+    $form.Refresh()
+
+    $svc = @('_shelly._tcp.local','_everhome._tcp.local')
+    if ($chkMdnsAll.Checked) { $svc += '_http._tcp.local' }
+    $recs = Invoke-MdnsScan $svc 2500 $lip
+
+    $sb = New-Object System.Text.StringBuilder
+    [void]$sb.AppendLine("[$ts]  mDNS-Suche ueber $lip  (" + ($svc -join ', ') + ")")
+    if ($recs.Count -eq 0) {
+        [void]$sb.AppendLine("KEINE Antwort. Moegliche Ursachen: Emulator laeuft nicht oder ist im")
+        [void]$sb.AppendLine("falschen Modus, Geraet in einem anderen (V)LAN, oder die Firewall")
+        [void]$sb.AppendLine("blockt eingehendes UDP fuer PowerShell.")
+        Write-Log ($sb.ToString() + ("-" * 80) + "`r`n") $colorRed
+    } else {
+        $devs = $recs | Group-Object From | Sort-Object Name
+        foreach ($d in $devs) {
+            $ptr = @($d.Group | Where-Object { $_.Type -eq 'PTR' })
+            $srv = @($d.Group | Where-Object { $_.Type -eq 'SRV' })
+            $txt = @($d.Group | Where-Object { $_.Type -eq 'TXT' })
+            $adr = @($d.Group | Where-Object { $_.Type -eq 'A' })
+            $mark = ""
+            if ($target -and $d.Name -eq $target) { $mark = "   <== Ziel-Host" }
+            [void]$sb.AppendLine("")
+            [void]$sb.AppendLine("  $($d.Name)$mark")
+            foreach ($r in $ptr) { [void]$sb.AppendLine("    Dienst : $($r.Name)  ->  $($r.Value)") }
+            foreach ($r in ($srv | Select-Object -Unique Value)) { [void]$sb.AppendLine("    Adresse: $($r.Value)") }
+            foreach ($r in ($adr | Select-Object -Unique Value)) { [void]$sb.AppendLine("    IP     : $($r.Value)") }
+            foreach ($r in ($txt | Select-Object -Unique Value)) { [void]$sb.AppendLine("    TXT    : $($r.Value)") }
+        }
+        $emu = @($recs | Where-Object { $_.Value -match 'shellypro3em|ecotracker' -or $_.Name -match 'shellypro3em|ecotracker' })
+        [void]$sb.AppendLine("")
+        if ($emu.Count -gt 0) {
+            [void]$sb.AppendLine("  Emulator gefunden - die Marstek-App sollte ihn ebenfalls sehen.")
+            Write-Log ($sb.ToString() + ("-" * 80) + "`r`n") $colorGreen
+        } else {
+            [void]$sb.AppendLine("  KEIN Emulator dabei (kein shellypro3em/ecotracker). Modus pruefen,")
+            [void]$sb.AppendLine("  Save druecken und den Slot neu starten - die mDNS-Anmeldung")
+            [void]$sb.AppendLine("  passiert nur einmal beim Programmstart.")
+            Write-Log ($sb.ToString() + ("-" * 80) + "`r`n") $colorYellow
+        }
+    }
+    $lblMdnsStatus.Text = "$($recs.Count) Eintraege"
+    $statusLabel.Text = "mDNS: $($recs.Count) Eintraege von $((@($recs | Group-Object From)).Count) Geraet(en)"
+    $btnMdnsScan.Enabled = $true
+}
+
 function Update-ModeUI {
     # Listener stoppen bei Moduswechsel
     if ($chkUdpListener.Checked -and -not $radioUDP.Checked) {
@@ -808,14 +996,27 @@ function Update-ModeUI {
         foreach ($c in $udpHttpControls) { $c.Visible = $false }
         $lblPort.Visible = $false; $txtPort.Visible = $false
         foreach ($c in $pingControls) { $c.Visible = $true }
+        foreach ($c in $mdnsControls) { $c.Visible = $false }
 
         $lblModeIndicator.Text = "[ Ping-Modus ]"
         $lblModeIndicator.ForeColor = $accentPing
         $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  Ping"
     }
+    elseif ($radioMdns.Checked) {
+        # mDNS-Modus: alles andere ausblenden, nur Suchen-Knopf zeigen
+        foreach ($c in $udpHttpControls) { $c.Visible = $false }
+        foreach ($c in $pingControls)    { $c.Visible = $false }
+        $lblPort.Visible = $false; $txtPort.Visible = $false
+        foreach ($c in $mdnsControls) { $c.Visible = $true }
+
+        $lblModeIndicator.Text = "[ mDNS-Modus ]"
+        $lblModeIndicator.ForeColor = $accentMdns
+        $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  mDNS"
+    }
     else {
         # UDP/HTTP: Ping-Controls ausblenden
         foreach ($c in $pingControls) { $c.Visible = $false }
+        foreach ($c in $mdnsControls) { $c.Visible = $false }
         $lblPort.Visible = $true; $txtPort.Visible = $true
 
         # Basis-Controls einblenden
@@ -864,6 +1065,8 @@ function Update-ModeUI {
 $radioUDP.Add_CheckedChanged({ Update-ModeUI })
 $radioHTTP.Add_CheckedChanged({ Update-ModeUI })
 $radioPing.Add_CheckedChanged({ Update-ModeUI })
+$radioMdns.Add_CheckedChanged({ Update-ModeUI })
+$btnMdnsScan.Add_Click({ Invoke-MdnsCheck })
 
 # ===================== Event-Handler =====================
 
