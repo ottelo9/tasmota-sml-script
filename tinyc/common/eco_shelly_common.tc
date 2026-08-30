@@ -22,7 +22,16 @@ persist int es_throttle;    // update rate [s]
 int es_e_mode; int es_e_port; int es_e_offset;
 int es_e_tweak; int es_e_force; int es_e_throttle;
 
+// Save. Mode and port decide what is announced on the network, and both the
+// mDNS registration and the UDP bind run ONCE, guarded by es_once_*. Without
+// clearing those guards a mode switch only took effect after a slot restart -
+// and the half-applied state in between was the confusing part: the UDP port
+// bound (its guard was still 0, never having run in EcoTracker mode) while
+// mDNS kept announcing the old service. A device advertising _shelly._tcp
+// under an ecotracker- hostname is exactly that state seen from outside.
 void esCommit() {
+    int mode_was = es_mode;
+    int port_was = es_port;
     es_mode = es_e_mode;
     es_port = es_e_port;
     es_offset = es_e_offset;
@@ -30,6 +39,16 @@ void esCommit() {
     es_force = es_e_force;
     es_throttle = es_e_throttle;
     if (es_throttle < 1) es_throttle = 1;
+
+    if (es_mode != mode_was) {
+        es_once_mdns = 0;               // announce the new service type
+        es_once_udp  = 0;               // Shelly needs the socket, EcoTracker does not
+        es_last_api  = 0;               // no stale replay from the other mode
+        addLog("eco_shelly: mode changed - re-announcing");
+    } else if (es_port != port_was) {
+        es_once_udp = 0;                // udp(0, port) rebinds, it stops the old socket
+        addLog("eco_shelly: UDP port changed - rebinding");
+    }
 }
 void esEditLoad() {
     es_e_mode = es_mode;
@@ -246,10 +265,10 @@ void esPanel() {
 
     uiHead("&#x1F50C;", "Emulation", "Emulation", "eco_shelly/#mode");
     if (ui_de) {
-        webPulldown(es_e_mode, "Modus (Neustart)", "EcoTracker|Shelly Pro 3EM");
+        webPulldown(es_e_mode, "Modus", "EcoTracker|Shelly Pro 3EM");
         if (es_e_mode == 1) webPulldown(es_e_port, "UDP-Port", "1010|2220 (B2500)");
     } else {
-        webPulldown(es_e_mode, "Mode (restart)", "EcoTracker|Shelly Pro 3EM");
+        webPulldown(es_e_mode, "Mode", "EcoTracker|Shelly Pro 3EM");
         if (es_e_mode == 1) webPulldown(es_e_port, "UDP port", "1010|2220 (B2500)");
     }
 
