@@ -35,6 +35,11 @@
   code { background:#eef; padding:1px 5px; border-radius:4px; font-size:12px; }
   button code { background:transparent; color:inherit; padding:0; font-size:inherit; }
   .hint { font-size:12px; color:var(--mut); margin-top:4px; }
+  a.hlp { display:inline-block; width:20px; height:20px; line-height:20px; text-align:center;
+          border:1px solid var(--accent); border-radius:50%; color:var(--accent);
+          font:italic 600 13px/20px Georgia,serif; text-decoration:none; margin-left:8px;
+          vertical-align:middle; }
+  a.hlp:hover { background:var(--accent); color:#fff; }
   details.card > summary { list-style:none; }
   details.card > summary::-webkit-details-marker { display:none; }
   details.card > summary::before { content:"▸ "; color:var(--mut); }
@@ -44,7 +49,7 @@
 </head>
 <body>
 <header>
-  <h1>Scripter-Diagramme &rarr; TinyC</h1>
+  <h1>Scripter-Diagramme &rarr; TinyC<a class="hlp" href="https://ottelo9.github.io/tasmota-sml-script/converter/" target="_blank" rel="noopener" title="Hilfe zu diesem Werkzeug">i</a></h1>
   <div class="sub">Übernimmt die Balkendiagramme (Tages- und Monatsverbrauch, Einspeisung) aus den
   Scripter-Scripten in die TinyC-Programme. In vier Schritten, ohne Vorkenntnisse. Wer schon auf
   TinyC ist und nur seine Diagramme ansehen will, nimmt

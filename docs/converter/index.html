@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scripter charts &rarr; TinyC</title>
+<style>
+:root{--bg:#f7f7f8;--fg:#1c1c1e;--mut:#5b5b60;--card:#fff;--line:#dcdce0;--accent:#0a6ebd;--warn:#a3350f;--code:#f0f0f2}
+@media (prefers-color-scheme:dark){
+:root{--bg:#17171a;--fg:#e9e9ec;--mut:#a1a1a8;--card:#1f1f23;--line:#33333a;--accent:#5ab0f0;--warn:#f08a62;--code:#26262b}
+}
+*{box-sizing:border-box}
+body{margin:0;padding:0 16px 64px;background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto}
+header{padding:26px 0 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+h1{margin:0 0 4px;font-size:22px;line-height:1.25}
+.sub{color:var(--mut);font-size:14px;margin:0}
+.switch{margin-top:14px;display:flex;gap:8px}
+.switch button{font:inherit;font-size:13px;padding:5px 14px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;cursor:pointer}
+.switch button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+nav{margin:0 0 22px;font-size:14px}
+nav a{color:var(--accent);text-decoration:none;margin-right:14px;white-space:nowrap;display:inline-block}
+nav a:hover{text-decoration:underline}
+section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:0 0 14px;scroll-margin-top:16px}
+h2{margin:0 0 10px;font-size:17px}
+h3{margin:16px 0 6px;font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+p{margin:8px 0}
+ul{margin:8px 0;padding-left:20px}
+li{margin:4px 0}
+code,kbd{background:var(--code);padding:1px 5px;border-radius:4px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code);padding:10px 12px;border-radius:6px;overflow-x:auto;margin:10px 0}
+pre code{background:none;padding:0}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:var(--code);font-weight:600;white-space:nowrap}
+.warn{border-left:3px solid var(--warn);padding-left:12px;color:var(--warn)}
+footer{color:var(--mut);font-size:13px;text-align:center;margin-top:26px}
+footer a{color:var(--accent)}
+footer .dis{font-size:12px;line-height:1.45;max-width:560px;margin:12px auto 0;opacity:.85}
+.sw{display:inline-block;background:var(--code);border:1px solid var(--line);border-radius:4px;padding:0 6px;font:600 .8em/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.06em;vertical-align:baseline}
+body.lang-en .de{display:none}
+body.lang-de .en{display:none}
+</style>
+</head>
+<body class="lang-en">
+<div class="wrap">
+
+<header>
+  <h1><span class="en">Scripter charts &rarr; TinyC</span><span class="de">Scripter-Diagramme &rarr; TinyC</span></h1>
+  <p class="sub"><span class="en">Moving the bar charts from a Tasmota Scripter script to the TinyC programs</span><span class="de">Die Balkendiagramme von einem Tasmota-Scripter-Script in die TinyC-Programme umziehen</span></p>
+  <div class="switch">
+    <button data-set="en">English</button>
+    <button data-set="de">Deutsch</button>
+  </div>
+</header>
+
+<nav>
+  <a href="#start">Start</a>
+  <a href="#steps"><span class="en">The four steps</span><span class="de">Die vier Schritte</span></a>
+  <a href="#scripts"><span class="en">Supported scripts</span><span class="de">Erkannte Scripte</span></a>
+  <a href="#install"><span class="en">Installing</span><span class="de">Einbauen</span></a>
+  <a href="#exact"><span class="en">What carries over</span><span class="de">Was übernommen wird</span></a>
+  <a href="../">&#8962; <span class="en">All pages</span><span class="de">Alle Seiten</span></a>
+</nav>
+
+<section id="start">
+<h2>Start</h2>
+<div class="en">
+<p>The tool is a single HTML file. Open <code>script_charts_to_tinyc_pvs.html</code> from the <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc/utils">tinyc/utils</a> folder in any browser &mdash; no server, no install, and nothing is uploaded anywhere. The conversion happens entirely in your browser.</p>
+<p>Already on TinyC and only want to look at your charts? That is the <a href="../pvs_editor/"><b>chart editor</b></a>.</p>
+</div>
+<div class="de">
+<p>Das Werkzeug ist eine einzelne HTML-Datei. <code>script_charts_to_tinyc_pvs.html</code> aus dem Ordner <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc/utils">tinyc/utils</a> im Browser öffnen &mdash; kein Server, keine Installation, und es wird nichts hochgeladen. Die Umrechnung passiert vollständig im Browser.</p>
+<p>Schon auf TinyC und willst nur deine Diagramme ansehen? Dafür gibt es den <a href="../pvs_editor/"><b>Diagramm-Editor</b></a>.</p>
+</div>
+</section>
+
+<section id="steps">
+<h2><span class="en">The four steps</span><span class="de">Die vier Schritte</span></h2>
+
+<h3><span class="en">1 &middot; Read the data.csv</span><span class="de">1 &middot; data.csv einlesen</span></h3>
+<div class="en">
+<p>Download <code>data.csv</code> from the old device's file manager (<code>http://&lt;device&gt;/ufsd</code>) and pick it here. Easier: enter the IP in step 2, then a ready-made link to the file appears there.</p>
+<p>The layout is detected from the line and column counts, so you do not have to say which script wrote it.</p>
+</div>
+<div class="de">
+<p>Die <code>data.csv</code> im Dateimanager des alten Geräts (<code>http://&lt;geraet&gt;/ufsd</code>) herunterladen und hier auswählen. Bequemer: in Schritt 2 die IP eintragen, dann steht dort ein fertiger Link auf die Datei.</p>
+<p>Das Layout wird an den Zeilen- und Spaltenzahlen erkannt, du musst also nicht angeben, welches Script sie geschrieben hat.</p>
+</div>
+
+<h3><span class="en">2 &middot; Enter the baselines</span><span class="de">2 &middot; Basiswerte eintragen</span></h3>
+<div class="en">
+<p><code>dval</code>, <code>mval</code>, <code>yval</code> and the feed-in twins are the counter zero points. In the Scripter they are <code>p:</code> variables in the Tasmota settings and therefore <b>not</b> in the <code>data.csv</code>. Without them the program computes every running bar as</p>
+<pre><code>sml_dcon[today] = meter reading &minus; sml_dval</code></pre>
+<p>and with <code>sml_dval</code> at 0 that puts the <b>whole meter reading</b> into today's bar &mdash; it shoots up to something like 45,000 kWh and squashes the entire imported history onto the zero line.</p>
+<p>Enter the IP of the old device, click the generated link, copy the answer back into the field. A link you <i>click</i> is a normal navigation, so the same-origin rule that blocks a <code>fetch</code> from a local file does not apply &mdash; no <code>USE_CORS</code> needed.</p>
+<pre><code>http://&lt;ip&gt;/cm?cmnd=script?dval;mval;yval;da
+http://&lt;ip&gt;/cm?cmnd=script?dval2;mval2;yval2</code></pre>
+<p>Leave the fields empty and the file is written without the baseline block. Then press <i>Reset day/month/year consumption</i> once on the device: the history survives, only the running day and month start at 0.</p>
+</div>
+<div class="de">
+<p><code>dval</code>, <code>mval</code>, <code>yval</code> und die Einspeise-Zwillinge sind die Zähler-Nullpunkte. Im Scripter sind das <code>p:</code>-Variablen in den Tasmota-Einstellungen und stehen deshalb <b>nicht</b> in der <code>data.csv</code>. Ohne sie rechnet das Programm jeden laufenden Balken als</p>
+<pre><code>sml_dcon[heute] = Zählerstand &minus; sml_dval</code></pre>
+<p>und bei <code>sml_dval</code> = 0 landet der <b>komplette Zählerstand</b> im heutigen Balken &mdash; der schießt auf z.&nbsp;B. 45.000 kWh hoch und drückt die ganze importierte Historie auf die Nulllinie.</p>
+<p>IP des alten Geräts eintragen, auf den erzeugten Link klicken, die Antwort ins Feld zurückkopieren. Ein <i>angeklickter</i> Link ist eine normale Navigation &mdash; die Same-Origin-Sperre, die ein <code>fetch</code> aus einer lokalen Datei blockiert, greift dort nicht. Es braucht also kein <code>USE_CORS</code>.</p>
+<pre><code>http://&lt;ip&gt;/cm?cmnd=script?dval;mval;yval;da
+http://&lt;ip&gt;/cm?cmnd=script?dval2;mval2;yval2</code></pre>
+<p>Bleiben die Felder leer, wird die Datei ohne Basiswert-Block geschrieben. Dann auf dem Gerät einmal <i>Tages/Monats/Jahres-Verbrauchswerte zurücksetzen</i> drücken: die Historie bleibt, nur der laufende Tag und Monat fangen bei 0 an.</p>
+</div>
+
+<h3><span class="en">3 &middot; Download</span><span class="de">3 &middot; Herunterladen</span></h3>
+<div class="en">
+<p>Only now &mdash; that way the baselines from step 2 are inside.</p>
+<table>
+<tr><th>File</th><th>Contents</th><th>without</th><th>with baselines</th></tr>
+<tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td><b>1969</b></td></tr>
+<tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td><b>46</b></td></tr>
+</table>
+<p>Raw 4-byte little-endian <code>float32</code>, no header &mdash; including the two <code>int16</code> rings, which <code>sml_chart_imp16()</code> converts while reading. A script without feed-in produces only <code>sml_chart.bin</code>: 43 zeros would wipe a feed-in history that is already on the device.</p>
+</div>
+<div class="de">
+<p>Erst hier &mdash; so sind die Basiswerte aus Schritt 2 mit drin.</p>
+<table>
+<tr><th>Datei</th><th>Inhalt</th><th>ohne</th><th>mit Basiswerten</th></tr>
+<tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td><b>1969</b></td></tr>
+<tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td><b>46</b></td></tr>
+</table>
+<p>Rohe 4-Byte-Little-Endian-<code>float32</code>, kein Kopf &mdash; auch für die beiden <code>int16</code>-Ringe, die <code>sml_chart_imp16()</code> beim Lesen umwandelt. Ein Script ohne Einspeisung erzeugt nur <code>sml_chart.bin</code>: 43 Nullen würden eine schon vorhandene Einspeise-Historie löschen.</p>
+</div>
+
+<h3><span class="en">4 &middot; Preview</span><span class="de">4 &middot; Vorschau</span></h3>
+<p><span class="en">Optional. Only to check that the values landed where they should.</span><span class="de">Optional. Nur zum Nachsehen, ob die Werte richtig gelandet sind.</span></p>
+</section>
+
+<section id="scripts">
+<h2><span class="en">Which scripts are recognised</span><span class="de">Welche Scripte erkannt werden</span></h2>
+<table>
+<tr><th>Script</th><th><span class="en">Lines</span><span class="de">Zeilen</span></th><th><span class="en">Columns</span><span class="de">Spalten</span></th><th></th></tr>
+<tr><td><code>1_SML_Chart.tas</code></td><td>4</td><td>481 / 1441 / 31 / 12</td><td><span class="en">no feed-in</span><span class="de">ohne Einspeisung</span></td></tr>
+<tr><td><code>2_SML_Chart_PV.tas</code>, <code>_PV2</code>, <code>_PV_Modbus</code>, <code>3_…_Bezugszaehler</code></td><td>5</td><td>481 / 1441 / 31 / 31 / 24</td><td></td></tr>
+<tr><td><code>2_SML_Chart_PV3.tas</code></td><td>7</td><td>… + 53 / 53</td><td><span class="en">weekly bars dropped</span><span class="de">Wochenbalken entfallen</span></td></tr>
+<tr><td><code>4_SML_Chart_PV_no_4h24h.tas</code></td><td>3</td><td>31 / 31 / 24</td><td><span class="en">4 h/24 h zeroed</span><span class="de">4 h/24 h werden genullt</span></td></tr>
+<tr><td><code>5_SteckdoseLeistungsmesser_1</code>, <code>6_SML_Wasseruhr</code></td><td>4</td><td>481 / 1441 / 31 / 12</td><td><span class="en">same shape, but no TinyC counterpart</span><span class="de">gleiche Form, aber kein TinyC-Gegenstück</span></td></tr>
+</table>
+<p><span class="en">Not covered: <code>0_SML_Simple.tas</code> writes no <code>data.csv</code> at all, and <code>5_SteckdoseLeistungsmesser_2</code> has <code>s4h</code> with 721 instead of 481 values &mdash; that fits no TinyC array and is refused with a message saying so.</span><span class="de">Nicht dabei: <code>0_SML_Simple.tas</code> schreibt gar keine <code>data.csv</code>, und <code>5_SteckdoseLeistungsmesser_2</code> hat <code>s4h</code> mit 721 statt 481 Werten &mdash; das passt in kein TinyC-Array und wird mit einer entsprechenden Meldung abgelehnt.</span></p>
+<p><span class="en">The Scripter's <code>mcon[24]</code> is split: <code>[1..12]</code> consumption &rarr; <code>sml_mcon</code>, <code>[13..24]</code> feed-in &rarr; <code>sml_mprod</code>. That is why two files come out of one.</span><span class="de">Das <code>mcon[24]</code> des Scripters wird aufgeteilt: <code>[1..12]</code> Verbrauch &rarr; <code>sml_mcon</code>, <code>[13..24]</code> Einspeisung &rarr; <code>sml_mprod</code>. Deshalb entstehen aus einer Datei zwei.</span></p>
+</section>
+
+<section id="install">
+<h2><span class="en">Installing &mdash; the order matters</span><span class="de">Einbauen &mdash; die Reihenfolge zählt</span></h2>
+<div class="en">
+<ol>
+<li>Stop the slot: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; the red &#x25A0;</li>
+<li>Upload the file(s): <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload</li>
+<li>Start the slot: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; the green &#x25B6;</li>
+</ol>
+<p>If the slot is still running while you upload, <code>saveVars()</code> rewrites the <code>.pvs</code> before the <code>.bin</code> is read. The program imports the <code>.bin</code> <b>once</b>, writes it into the <code>.pvs</code> and then <b>deletes it</b> &mdash; the file being gone is the "already imported" marker. The log then says:</p>
+<pre><code>sml_chart: .bin carried baselines
+sml_chart: imported .bin into .pvs, /sml_chart.bin deleted</code></pre>
+</div>
+<div class="de">
+<ol>
+<li>Slot stoppen: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das rote &#x25A0;</li>
+<li>Datei(en) hochladen: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload</li>
+<li>Slot starten: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das grüne &#x25B6;</li>
+</ol>
+<p>Läuft der Slot beim Hochladen noch, schreibt <code>saveVars()</code> die <code>.pvs</code> neu, bevor die <code>.bin</code> gelesen wird. Das Programm importiert die <code>.bin</code> <b>einmal</b>, schreibt sie in die <code>.pvs</code> und <b>löscht sie danach</b> &mdash; dass die Datei weg ist, ist die Markierung „schon importiert". Im Log steht dann:</p>
+<pre><code>sml_chart: .bin carried baselines
+sml_chart: imported .bin into .pvs, /sml_chart.bin deleted</code></pre>
+</div>
+</section>
+
+<section id="exact">
+<h2><span class="en">What carries over exactly &mdash; and what does not</span><span class="de">Was exakt übernommen wird &mdash; und was nicht</span></h2>
+<div class="en">
+<p><b>The bars</b> for day and month, consumption and feed-in alike. They are indexed by day and month, so every row is a 1:1 copy (Scripter arrays are 1-based, TinyC puts day 1 at index 0 &mdash; that cancels out).</p>
+<p><b>The 4 h / 24 h curves arrive rotated.</b> Their ring position (<code>sml_s4h_pos</code> / <code>sml_s24h_pos</code>) lives in the <code>.pvs</code> and is not part of the <code>.bin</code>. After four resp. 24 hours that has sorted itself out.</p>
+<p><code>wval</code> / <code>wval2</code> (weekly values from <code>2_SML_Chart_PV3</code>) have no counterpart in <code>sml_chart_common.tc</code> and are dropped.</p>
+</div>
+<div class="de">
+<p><b>Die Balken</b> für Tag und Monat, Verbrauch wie Einspeisung. Sie sind nach Tag bzw. Monat indiziert, deshalb ist jede Zeile eine 1:1-Kopie (Scripter-Arrays sind 1-basiert, TinyC legt Tag 1 auf Index 0 &mdash; das hebt sich auf).</p>
+<p><b>Die 4-h/24-h-Kurven kommen verdreht an.</b> Ihre Ringposition (<code>sml_s4h_pos</code> / <code>sml_s24h_pos</code>) liegt in der <code>.pvs</code> und steht nicht in der <code>.bin</code>. Nach vier bzw. 24 Stunden hat sich das von selbst erledigt.</p>
+<p><code>wval</code> / <code>wval2</code> (Wochenwerte aus <code>2_SML_Chart_PV3</code>) haben in <code>sml_chart_common.tc</code> kein Gegenstück und entfallen.</p>
+</div>
+</section>
+
+<footer>
+<span class="en">Tool and page by <a href="https://ottelo.jimdofree.com/">ottelo</a> with the help of ClaudeAI &middot; TinyC and the SML driver by <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
+<span class="de">Werkzeug und Seite von <a href="https://ottelo.jimdofree.com/">ottelo</a> mit Hilfe von ClaudeAI &middot; TinyC und SML-Treiber von <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
+</footer>
+</div>
+<script>
+(function(){
+  function set(l){
+    document.body.className = 'lang-' + l;
+    document.documentElement.lang = l;
+    var b = document.querySelectorAll('.switch button');
+    for (var i = 0; i < b.length; i++) {
+      if (b[i].getAttribute('data-set') === l) { b[i].classList.add('on'); }
+      else { b[i].classList.remove('on'); }
+    }
+    try { localStorage.setItem('ct002lang', l); } catch (e) {}
+  }
+  var q = location.search.match(/[?&]lang=(de|en)/);
+  var s = null;
+  try { s = localStorage.getItem('ct002lang'); } catch (e) {}
+  var nav = (navigator.language || '').slice(0, 2) === 'de' ? 'de' : 'en';
+  set(q ? q[1] : (s || nav));
+  var b = document.querySelectorAll('.switch button');
+  for (var i = 0; i < b.length; i++) {
+    b[i].addEventListener('click', function(){ set(this.getAttribute('data-set')); });
+  }
+})();
+</script>
+</body>
+</html>

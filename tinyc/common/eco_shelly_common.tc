@@ -271,16 +271,11 @@ void esPanel() {
         webPulldown(es_e_mode, "Mode", "EcoTracker|Shelly Pro 3EM");
         if (es_e_mode == 1) webPulldown(es_e_port, "UDP port", "1010|2220 (B2500)");
     }
-    // Measured, not guessed: after a mode switch the device answered under BOTH
-    // _shelly._tcp and _everhome._tcp at once. mdnsRegister() only ever calls
-    // MDNS.begin() + addService() - nothing removes a service, so the previous
-    // one keeps being announced under the new hostname. A slot restart takes the
-    // same path and does not help; only a device restart clears it. Say so here
-    // instead of letting people hunt for it.
-    webSend("<div style='font-size:12px;color:#888;margin:2px 0 8px'>");
-    if (ui_de) webSend("Modus gewechselt? Wirkt sofort. Die <b>alte</b> mDNS-Anmeldung bleibt aber bis zum Ger&auml;te-Neustart zus&auml;tzlich bestehen.");
-    else       webSend("Changed the mode? Takes effect at once. The <b>previous</b> mDNS announcement stays alongside it until the device restarts.");
-    webSend("</div>");
+    // A mode switch takes effect at once - esCommit() clears the once-flags, and
+    // since firmware 1.6.65 mdnsRegister() removes the old services before it
+    // adds the new ones. Before that the device answered under BOTH
+    // _shelly._tcp and _everhome._tcp until it was restarted; measured with a
+    // PTR query, both TXT sets live. On 1.6.64 that leftover is still there.
 
     uiHead("&#x1F50B;", "Battery", "Akku", "eco_shelly/#battery");
     if (ui_de) {
@@ -297,9 +292,17 @@ void esPanel() {
 }
 
 // From JsonCall(): appended to the SENSOR telemetry.
+// These are NOT the meter's phases - MT175.L1/L2/L3 come straight from the
+// descriptor. es_pa/pb/pc are what the battery is actually told, offset and
+// regulator shaping applied, so the two differ as soon as an offset is set.
+// Only emitted with a three-phase meter: without one esTick() puts the total
+// on es_pa and zeroes the rest, and publishing that would invent two phases.
 void esJson() {
     sprintf(es_body, ",\"PVEmu\":{\"Power\":%.0f", es_cpwr);
     sprintfAppend(es_body, ",\"Avg\":%.0f", es_avg);
+    if (sml_ph3 == 1) {
+        sprintfAppend(es_body, ",\"L1\":%.0f,\"L2\":%.0f,\"L3\":%.0f", es_pa, es_pb, es_pc);
+    }
     sprintfAppend(es_body, ",\"Mode\":%d}", es_mode);
     responseAppend(es_body);
 }

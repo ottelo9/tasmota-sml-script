@@ -32,6 +32,11 @@
   .toolbar button { padding:4px 9px; font-size:12px; }
   code { background:#eef; padding:1px 5px; border-radius:4px; font-size:12px; }
   .hint { font-size:12px; color:var(--mut); margin-top:4px; }
+  a.hlp { display:inline-block; width:20px; height:20px; line-height:20px; text-align:center;
+          border:1px solid var(--accent); border-radius:50%; color:var(--accent);
+          font:italic 600 13px/20px Georgia,serif; text-decoration:none; margin-left:8px;
+          vertical-align:middle; }
+  a.hlp:hover { background:var(--accent); color:#fff; }
   .entry { border:1px solid #e6e6e6; border-radius:6px; padding:10px 12px; margin-top:10px; }
   .entry.dirty { border-color:var(--accent); background:#f7fbff; }
   .scal input { width:170px; }
@@ -39,7 +44,7 @@
 </head>
 <body>
 <header>
-  <h1>TinyC <code>.pvs</code>-Editor</h1>
+  <h1>TinyC <code>.pvs</code>-Editor<a class="hlp" href="https://ottelo9.github.io/tasmota-sml-script/pvs_editor/" target="_blank" rel="noopener" title="Hilfe zu diesem Werkzeug">i</a></h1>
   <div class="sub">Bearbeitet die <code>.pvs</code> eines TinyC-Slots direkt — die Datei, in der das
   laufende Programm seine <code>persist</code>-Variablen hält
   (<code>/sml_chart.tcb</code> &rarr; <code>/sml_chart.pvs</code>). Diagrammverläufe, Zähler-Nullpunkte,
