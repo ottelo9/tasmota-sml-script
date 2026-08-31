@@ -61,6 +61,8 @@ Auch die PIN-Auswahl geschieht nun bequem via DropDown. Je nach erkanntem ESP we
   ESP Tasmota Deepsleep Testscript (nur für ESP32)
 - `2_Script_SML_Simulator`  
   emuliert ein MT175 Stromzähler, einfach auf einen 2. Lesekopf aufspielen (ESP8266 / ESP32)
+- `3_TemperaturLoggerDS18S20`  
+  Temperatur-Logger (10x DS18S20) für eine Solarthermie-/Heizungsanlage. Benötigt `SetOption64 1` (via Console) und `#define DS18X20_MAX_SENSORS 10` (meine ESP32 oder tasmota1m_energy_ottelo_tas Images).
 
 **ESP8266**  
 Alle Scripte (auch pvakku-powermeter-emulator) in der alten Version für den kleinen ESP8266 und ohne Zähler-DropDown Auswahlmenü. Es sind die gleichen wie aus dem Hauptverzeichnis nur werden diese nicht mehr aktualisiert (eingeforener Versionstand). Die Scripte funktionieren natürlich auch auf einem ESP32. Hier findet ihr auch die pvakku-powermeter-emulator Scripte, die auf dem ESP8266 lauffähig sind. Hier gibt es keine Diagramme, da der ESP zu klein ist. Aber die Emulation läuft ebenfalls einwandfrei!  

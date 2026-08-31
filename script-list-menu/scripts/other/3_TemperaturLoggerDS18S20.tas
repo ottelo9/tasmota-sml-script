@@ -1,0 +1,139 @@
+>D 100
+;3_TemperaturLoggerDS18S20.tas
+
+M:tday_s1=0 96
+M:tday_s2=0 96
+M:tday_s3=0 96
+M:tday_s4=0 96
+M:tday_s5=0 96
+M:tday_s6=0 96
+M:tday_s7=0 96
+M:tday_s8=0 96
+M:tday_s9=0 96
+M:tday_s10=0 96
+
+tmp=0
+mtem=0
+lslot=0
+cstr=""
+
+v_s1=0
+v_s2=0
+v_s3=0
+v_s4=0
+v_s5=0
+v_s6=0
+v_s7=0
+v_s8=0
+v_s9=0
+v_s10=0
+
+>B
+=#dreset
+
+#dreset
+for tmp 1 96 1
+tday_s1[tmp]=v_s1
+tday_s2[tmp]=v_s2
+tday_s3[tmp]=v_s3
+tday_s4[tmp]=v_s4
+tday_s5[tmp]=v_s5
+tday_s6[tmp]=v_s6
+tday_s7[tmp]=v_s7
+tday_s8[tmp]=v_s8
+tday_s9[tmp]=v_s9
+tday_s10[tmp]=v_s10
+next
+
+>S
+mtem=int((((hours*60)+mins)/15)+1)
+
+if (mtem!=lslot)
+then
+lslot=mtem
+
+tday_s1[mtem]=v_s1
+tday_s2[mtem]=v_s2
+tday_s3[mtem]=v_s3
+tday_s4[mtem]=v_s4
+tday_s5[mtem]=v_s5
+tday_s6[mtem]=v_s6
+tday_s7[mtem]=v_s7
+tday_s8[mtem]=v_s8
+tday_s9[mtem]=v_s9
+tday_s10[mtem]=v_s10
+
+tday_s1[0]=mtem
+tday_s2[0]=mtem
+tday_s3[0]=mtem
+tday_s4[0]=mtem
+tday_s5[0]=mtem
+tday_s6[0]=mtem
+tday_s7[0]=mtem
+tday_s8[0]=mtem
+tday_s9[0]=mtem
+tday_s10[0]=mtem
+
+tmp=mtem%96
+cstr="cnth"+s(0tmp)+"/4"
+endif
+
+>T
+v_s1=DS18S20_1#Temperature
+v_s2=DS18S20_2#Temperature
+v_s3=DS18S20_3#Temperature
+v_s4=DS18S20_4#Temperature
+v_s5=DS18S20_5#Temperature
+v_s6=DS18B20_6#Temperature
+v_s7=DS18B20_7#Temperature
+v_s8=DS18B20_8#Temperature
+v_s9=DS18B20_9#Temperature
+v_s10=DS18B20_10#Temperature
+
+>W
+Datum:{m}%s(2.0day)%.%s(2.0month)%.%s(2.0year)% - %s(2.0hours)%:%s(2.0mins)%:%s(2.0secs)%
+Uptime{m}%0(int(uptime/1440))% d %0(int((uptime%1440)/60))% h %0(uptime%60)% min
+
+<b>Temperatur Übersicht (10x DS18S20/DS18B20)</b><br>
+T-Ost:%1v_s1% | So-Vor:%1v_s2% | Hz-Vor:%1v_s3% | So-Rü:%1v_s4% °C<br>
+Hz-Rü:%1v_s5% | Sp-1/2Oben:%1v_s6% | T-West:%1v_s7% | Sp-Oben:%1v_s8% °C<br>
+Sp-Mitte:%1v_s9% | Sp-Unt:%1v_s10% °C
+
+<b>Free Heap:</b> %s(0.0heap)% Bytes<br>
+
+$<div style="margin-left:-20px">
+
+$<div id="chart1" style="text-align:center;width:600px;height:280px;padding:0px"></div>
+$gc(lt tday_s1 tday_s2 tday_s3 tday_s4 "wr" "T-Ost" "So-Vor" "Hz-Vor" "So-Rü" cstr)
+$var options = {
+$chartArea:{left:30,right:30},
+$hAxis:{slantedText:true,slantedTextAngle:45,showTextEvery:8},
+$legend:{position:'top', maxLines:2},
+$explorer:{actions:['dragToZoom', 'rightClickToReset']},
+$title:'24h - Sensoren (1-4)'
+$};
+$gc(e)
+
+$<div id="chart2" style="text-align:center;width:600px;height:280px;padding:0px"></div>
+$gc(lt tday_s5 tday_s6 tday_s7 tday_s8 "wr" "Hz-Rü" "Sp-1/2Oben" "T-West" "Sp-Oben" cstr)
+$var options = {
+$chartArea:{left:30,right:30},
+$hAxis:{slantedText:true,slantedTextAngle:45,showTextEvery:8},
+$legend:{position:'top', maxLines:2},
+$explorer:{actions:['dragToZoom', 'rightClickToReset']},
+$title:'24h - Sensoren (5-8)'
+$};
+$gc(e)
+
+$<div id="chart3" style="text-align:center;width:600px;height:280px;padding:0px"></div>
+$gc(lt tday_s9 tday_s10 "wr" "Sp-Mitte" "Sp-Unt" cstr)
+$var options = {
+$chartArea:{left:30,right:30},
+$hAxis:{slantedText:true,slantedTextAngle:45,showTextEvery:8},
+$legend:{position:'top', maxLines:2},
+$explorer:{actions:['dragToZoom', 'rightClickToReset']},
+$title:'24h - Sensoren (9-10)'
+$};
+$gc(e)
+
+$</div>
