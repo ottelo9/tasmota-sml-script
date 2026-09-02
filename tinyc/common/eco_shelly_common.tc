@@ -10,7 +10,7 @@
 #include "ui_common.tc"
 
 // ─── Settings ──────────────────────────────────────────────────────────────
-persist int es_mode;        // 0 = EcoTracker, 1 = Shelly Pro 3EM
+persist int es_mode;        // 0 = EcoTracker, 1 = Shelly Pro 3EM, 2 = Shelly Pro EM50
 persist int es_port;        // 0 = UDP 1010, 1 = UDP 2220 (B2500)
 persist int es_offset;      // zero-feed offset [W]
 persist int es_tweak;       // regulator shaping 0/1
@@ -68,7 +68,7 @@ int   es_once_udp;
 int   es_bound;             // UDP port actually bound
 int   es_last_api;          // 0 none, 1 EM.GetStatus, 2 Shelly.GetStatus
 int   es_last_upd;          // tasm_uptime of the last regulation step
-int   es_w1; int es_w2; int es_w3;   // webOn handler numbers
+int   es_w1; int es_w2; int es_w3; int es_w4;   // webOn handler numbers
 
 byte  es_mac[32];
 char  es_rxb[256];
@@ -89,6 +89,19 @@ float esCtrl(float raw) {
 }
 // ─── Payload builders ──────────────────────────────────────────────────────
 
+// Decimal places copied from a REAL Shelly Pro 3EM's Shelly.GetStatus, not
+// guessed and not taken from AstraMeter's "decimal_point_enforcer" (which nudges
+// integral values by 0.001 - a real device needs no such trick):
+//
+//   a_act_power           126.1        1 place, per phase
+//   total_act_power       188.026      3 places
+//   a_total_act_energy    179376.03    2 places, Wh
+//   c_total_act_ret_energy      0.00   an exact zero is written plainly
+//
+// The total is not the sum of the rounded phases - 126.1 + 41.5 + 20.4 is 188.0
+// while the device says 188.026 - because it adds up the unrounded values. Ours
+// does the same: es_cpwr comes from smlGet(1), not from adding es_pa..es_pc.
+
 void esBuildEco() {
     float ein  = smlGet(2) * 1000.0;      // kWh -> Wh
     float eout = smlGet(3) * 1000.0;
@@ -96,13 +109,29 @@ void esBuildEco() {
 }
 
 void esBuildEm() {
-    sprintf(es_body, "{\"id\":0,\"a_act_power\":%.0f,\"b_act_power\":%.0f,\"c_act_power\":%.0f,\"total_act_power\":%.0f}", es_pa, es_pb, es_pc, es_cpwr);
+    sprintf(es_body, "{\"id\":0,\"a_act_power\":%.1f,\"b_act_power\":%.1f,\"c_act_power\":%.1f,\"total_act_power\":%.3f}", es_pa, es_pb, es_pc, es_cpwr);
+}
+
+// Shelly Pro EM50 is single-channel: one number, no phases. It gets the
+// per-phase precision (1 place) - act_power is a direct measurement there, not
+// a sum, so the 3 places the 3EM uses for its total would be invented.
+void esBuildEm1() {
+    sprintf(es_body, "{\"act_power\":%.1f}", es_cpwr);
+}
+
+// Full status in EM50 mode. A real Pro EM50 reports em1:0 / em1data:0 where the
+// 3EM has em:0 / emdata:0. EXTRAPOLATED from the device shape - EM1.GetStatus
+// above is the call AstraMeter actually implements and the one a battery polls.
+void esBuildFullEm1() {
+    float e1 = smlGet(2) * 1000.0;
+    float e2 = smlGet(3) * 1000.0;
+    sprintf(es_body, "{\"em1:0\":{\"id\":0,\"act_power\":%.1f},\"em1data:0\":{\"id\":0,\"total_act_energy\":%.2f,\"total_act_ret_energy\":%.2f}}", es_cpwr, e1, e2);
 }
 
 void esBuildFull() {
     float ein  = smlGet(2) * 1000.0;
     float eout = smlGet(3) * 1000.0;
-    sprintf(es_body, "{\"em:0\":{\"id\":0,\"a_act_power\":%.0f,\"b_act_power\":%.0f,\"c_act_power\":%.0f,\"total_act_power\":%.0f},\"emdata:0\":{\"id\":0,\"a_total_act_energy\":%.0f,\"a_total_act_ret_energy\":%.0f,\"b_total_act_energy\":0,\"b_total_act_ret_energy\":0,\"c_total_act_energy\":0,\"c_total_act_ret_energy\":0,\"total_act\":%.0f,\"total_act_ret\":%.0f}}", es_pa, es_pb, es_pc, es_cpwr, ein, eout, ein, eout);
+    sprintf(es_body, "{\"em:0\":{\"id\":0,\"a_act_power\":%.1f,\"b_act_power\":%.1f,\"c_act_power\":%.1f,\"total_act_power\":%.3f},\"emdata:0\":{\"id\":0,\"a_total_act_energy\":%.2f,\"a_total_act_ret_energy\":%.2f,\"b_total_act_energy\":0.00,\"b_total_act_ret_energy\":0.00,\"c_total_act_energy\":0.00,\"c_total_act_ret_energy\":0.00,\"total_act\":%.2f,\"total_act_ret\":%.2f}}", es_pa, es_pb, es_pc, es_cpwr, ein, eout, ein, eout);
 }
 
 // NOT one sprintf. A variadic sprintf is split into segments of "literal + one
@@ -114,7 +143,8 @@ void esBuildFull() {
 // up. EM.GetStatus (~80 chars) fit and worked, which is what made it look like
 // a discovery problem. strcat copies element by element with no such buffer.
 void esWrapUdp() {
-    sprintf(es_wrap, "{\"id\":0,\"src\":\"shellypro3em-%s\",\"result\":", es_mac);
+    if (es_mode == 2) sprintf(es_wrap, "{\"id\":0,\"src\":\"shellyproem50-%s\",\"result\":", es_mac);
+    else              sprintf(es_wrap, "{\"id\":0,\"src\":\"shellypro3em-%s\",\"result\":", es_mac);
     strcat(es_wrap, es_body);
     strcat(es_wrap, "}");
 }
@@ -123,7 +153,7 @@ void esWrapUdp() {
 
 // From main(). w1/w2/w3 are the webOn handler numbers for /v1/json,
 // /rpc/EM.GetStatus and /rpc/Shelly.GetStatus.
-void esInit(int w1, int w2, int w3) {
+void esInit(int w1, int w2, int w3, int w4) {
     es_once_mdns = 0;
     es_once_udp  = 0;
     es_last_api  = 0;
@@ -135,27 +165,37 @@ void esInit(int w1, int w2, int w3) {
     esEditLoad();
     tasmInfo(1, es_mac);        // hex without colons - but UPPERCASE, while a
     strToLower(es_mac);         // real Shelly reports its src in lowercase
-    es_w1 = w1; es_w2 = w2; es_w3 = w3;
+    es_w1 = w1; es_w2 = w2; es_w3 = w3; es_w4 = w4;
     webOn(w1, "/v1/json");
     webOn(w2, "/rpc/EM.GetStatus");
     webOn(w3, "/rpc/Shelly.GetStatus");
+    webOn(w4, "/rpc/EM1.GetStatus");
 }
 
 // From Every100ms(). Shelly mode answers RPC over UDP as well.
 void esPoll() {
-    if (es_mode != 1 || es_once_udp == 0) return;
+    if (es_mode == 0 || es_once_udp == 0) return;
 
     int n = udp(1, es_rxb);
     int served = 0;
     if (n > 0) {
-        if (strFind(es_rxb, "EM.GetStatus") >= 0) {
+        // EM1 first for readability - the three method names do not overlap as
+        // substrings, so the order is not load-bearing.
+        if (strFind(es_rxb, "EM1.GetStatus") >= 0) {
+            esBuildEm1();
+            esWrapUdp();
+            udp(2, es_wrap);
+            es_last_api = 3;
+            served = 1;
+        } else if (strFind(es_rxb, "EM.GetStatus") >= 0) {
             esBuildEm();
             esWrapUdp();
             udp(2, es_wrap);
             es_last_api = 1;
             served = 1;
         } else if (strFind(es_rxb, "Shelly.GetStatus") >= 0) {
-            esBuildFull();
+            if (es_mode == 2) esBuildFullEm1();
+            else              esBuildFull();
             esWrapUdp();
             udp(2, es_wrap);
             es_last_api = 2;
@@ -167,6 +207,10 @@ void esPoll() {
     if (served == 0 && es_force > 0 && es_last_api > 0) {
         if (es_last_api == 1) {
             esBuildEm();
+        } else if (es_last_api == 3) {
+            esBuildEm1();
+        } else if (es_mode == 2) {
+            esBuildFullEm1();
         } else {
             esBuildFull();
         }
@@ -186,14 +230,17 @@ void esTick() {
         if (es_once_mdns == 0) {
             if (es_mode == 1) {
                 mdnsRegister("shellypro3em-", "-", "shelly");
+            } else if (es_mode == 2) {
+                mdnsRegister("shellyproem50-", "-", "shelly");
             } else {
                 mdnsRegister("ecotracker-", "-", "everhome");
             }
             es_once_mdns = 1;
         }
-        if (es_mode == 1 && es_once_udp == 0) {
+        if (es_mode != 0 && es_once_udp == 0) {
             es_bound = 1010;
             if (es_port == 1) es_bound = 2220;
+            if (es_mode == 2) es_bound = 2223;   // EM50 has one port, no choice
             if (udp(0, es_bound) == 1) {
                 es_once_udp = 1;
                 addLog("eco_shelly: Shelly UDP on port %d", es_bound);
@@ -239,7 +286,13 @@ int esWebOn(int h) {
         return 1;
     }
     if (h == es_w3) {
-        esBuildFull();
+        if (es_mode == 2) esBuildFullEm1();
+        else              esBuildFull();
+        webSend(es_body);
+        return 1;
+    }
+    if (h == es_w4) {
+        esBuildEm1();
         webSend(es_body);
         return 1;
     }
@@ -249,7 +302,8 @@ int esWebOn(int h) {
 // From WebCall(): rows for the main sensor page.
 void esRows() {
     if (es_mode == 1) {
-        sprintf(es_body, "{s}Emulation{m}Shelly Pro 3EM (UDP %d){e}", es_bound);
+        if (es_mode == 2) sprintf(es_body, "{s}Emulation{m}Shelly Pro EM50 (UDP %d){e}", es_bound);
+        else              sprintf(es_body, "{s}Emulation{m}Shelly Pro 3EM (UDP %d){e}", es_bound);
     } else {
         strcpy(es_body, "{s}Emulation{m}EcoTracker{e}");
     }
@@ -265,10 +319,10 @@ void esPanel() {
 
     uiHead("&#x1F50C;", "Emulation", "Emulation", "eco_shelly/#mode");
     if (ui_de) {
-        webPulldown(es_e_mode, "Modus", "EcoTracker|Shelly Pro 3EM");
+        webPulldown(es_e_mode, "Modus", "EcoTracker|Shelly Pro 3EM|Shelly Pro EM50");
         if (es_e_mode == 1) webPulldown(es_e_port, "UDP-Port", "1010|2220 (B2500)");
     } else {
-        webPulldown(es_e_mode, "Mode", "EcoTracker|Shelly Pro 3EM");
+        webPulldown(es_e_mode, "Mode", "EcoTracker|Shelly Pro 3EM|Shelly Pro EM50");
         if (es_e_mode == 1) webPulldown(es_e_port, "UDP port", "1010|2220 (B2500)");
     }
     // A mode switch takes effect at once - esCommit() clears the once-flags, and
@@ -282,12 +336,12 @@ void esPanel() {
         webNumber(es_e_offset, -200, 200, "Offset [W]");
         webCheckbox(es_e_tweak, "Regleroptimierung");
         webNumber(es_e_throttle, 1, 60, "Update-Rate [s]");
-        if (es_e_mode == 1) webCheckbox(es_e_force, "Senden erzwingen");
+        if (es_e_mode != 0) webCheckbox(es_e_force, "Senden erzwingen");
     } else {
         webNumber(es_e_offset, -200, 200, "Offset [W]");
         webCheckbox(es_e_tweak, "Regulator tweak");
         webNumber(es_e_throttle, 1, 60, "Update rate [s]");
-        if (es_e_mode == 1) webCheckbox(es_e_force, "Force sending");
+        if (es_e_mode != 0) webCheckbox(es_e_force, "Force sending");
     }
 }
 

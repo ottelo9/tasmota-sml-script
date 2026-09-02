@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EcoTracker / Shelly Pro 3EM emulator</title>
+<title>EcoTracker / Shelly Pro 3EM + EM50 emulator</title>
 <style>
 :root{--bg:#f7f7f8;--fg:#1c1c1e;--mut:#5b5b60;--card:#fff;--line:#dcdce0;--accent:#0a6ebd;--warn:#a3350f;--code:#f0f0f2}
 @media (prefers-color-scheme:dark){
@@ -46,7 +46,7 @@ body.lang-de .en{display:none}
 <div class="wrap">
 
 <header>
-  <h1>EcoTracker / Shelly Pro 3EM emulator</h1>
+  <h1>EcoTracker / Shelly Pro 3EM + EM50 emulator</h1>
   <p class="sub"><span class="en">TinyC script for Tasmota &middot; your meter, spoken in the dialect a PV battery understands</span><span class="de">TinyC-Script für Tasmota &middot; dein Zähler, in der Sprache die eine PV-Batterie versteht</span></p>
   <div class="switch">
     <button data-set="en">English</button>
@@ -66,19 +66,21 @@ body.lang-de .en{display:none}
 <section id="overview">
 <h2><span class="en">Overview</span><span class="de">Überblick</span></h2>
 <div class="en">
-<p>A PV battery needs to know the grid power to hit zero feed-in. Most of them cannot read your meter, but nearly all of them speak to one of two popular energy meters. This script makes your Tasmota device answer as either one.</p>
+<p>A PV battery needs to know the grid power to hit zero feed-in. Most of them cannot read your meter, but nearly all of them speak to one of a few popular energy meters. This script makes your Tasmota device answer as one of them.</p>
 <table>
 <tr><th>EcoTracker</th><td>Simple: one HTTP endpoint with a JSON document. Found over mDNS.</td></tr>
 <tr><th>Shelly Pro 3EM</th><td>Shelly's RPC dialect over HTTP <i>and</i> UDP. What most batteries expect.</td></tr>
+<tr><th>Shelly Pro EM50</th><td>The single-channel Shelly. Same dialect, one power value instead of three phases.</td></tr>
 </table>
 <p>Works with Marstek, Jackery, NOAH, Hoymiles and others. For Marstek there is a third option that coordinates several batteries: the <a href="../ct002/">CT002 emulator</a>.</p>
 <p><b>Requirements:</b> ESP32, Tasmota with TinyC and <code>USE_SML</code>, a reading head. Meter setup is described under <a href="../sml/">SML</a>.</p>
 </div>
 <div class="de">
-<p>Eine PV-Batterie muss die Netzleistung kennen, um auf Nulleinspeisung zu regeln. Die wenigsten können deinen Zähler lesen, aber fast alle sprechen mit einem von zwei verbreiteten Energiezählern. Dieses Script lässt dein Tasmota-Gerät als einer von beiden antworten.</p>
+<p>Eine PV-Batterie muss die Netzleistung kennen, um auf Nulleinspeisung zu regeln. Die wenigsten können deinen Zähler lesen, aber fast alle sprechen mit einem von wenigen verbreiteten Energiezählern. Dieses Script lässt dein Tasmota-Gerät als einer davon antworten.</p>
 <table>
 <tr><th>EcoTracker</th><td>Einfach: ein HTTP-Endpunkt mit einem JSON-Dokument. Wird über mDNS gefunden.</td></tr>
 <tr><th>Shelly Pro 3EM</th><td>Shellys RPC-Dialekt über HTTP <i>und</i> UDP. Das, was die meisten Akkus erwarten.</td></tr>
+<tr><th>Shelly Pro EM50</th><td>Der einkanalige Shelly. Gleicher Dialekt, ein Leistungswert statt drei Phasen.</td></tr>
 </table>
 <p>Funktioniert mit Marstek, Jackery, NOAH, Hoymiles und anderen. Für Marstek gibt es eine dritte Möglichkeit, die mehrere Akkus koordiniert: den <a href="../ct002/">CT002-Emulator</a>.</p>
 <p><b>Voraussetzungen:</b> ESP32, Tasmota mit TinyC und <code>USE_SML</code>, ein Lesekopf. Die Zählereinrichtung steht unter <a href="../sml/">SML</a>.</p>
@@ -113,17 +115,19 @@ body.lang-de .en{display:none}
 <h2><span class="en">Mode</span><span class="de">Modus</span></h2>
 <div class="en">
 <table>
-<tr><th>Mode</th><td>EcoTracker or Shelly Pro 3EM. <b>Takes effect after a restart of the script</b> &mdash; the mDNS name and the UDP socket are claimed once at start.</td></tr>
-<tr><th>UDP port</th><td>Shelly mode only. 1010 is Shelly's own port. Marstek B2500 expects 2220 &mdash; if the battery does not find the meter, this is the first thing to try.</td></tr>
+<tr><th>Mode</th><td>EcoTracker, Shelly Pro 3EM or Shelly Pro EM50. <b>Takes effect after a restart of the script</b> &mdash; the mDNS name and the UDP socket are claimed once at start.</td></tr>
+<tr><th>UDP port</th><td>Pro 3EM only. 1010 is Shelly's own port. Marstek B2500 expects 2220 &mdash; if the battery does not find the meter, this is the first thing to try. The Pro EM50 has no setting: it always binds 2223.</td></tr>
 </table>
-<p>Which one does your battery want? If the manual names a supported meter, follow it. Otherwise start with Shelly Pro 3EM; it is the more widely supported of the two.</p>
+<p>Which one does your battery want? If the manual names a supported meter, follow it. Otherwise start with Shelly Pro 3EM; it is the most widely supported of the three.</p>
+<p class="warn">Pro EM50 mode is the newest and the least tested. <code>EM1.GetStatus</code> &mdash; the call a battery actually polls &mdash; is solid; the full <code>Shelly.GetStatus</code> document is derived from the device's structure rather than from a real EM50. If you own one, a comparison would be welcome.</p>
 </div>
 <div class="de">
 <table>
-<tr><th>Modus</th><td>EcoTracker oder Shelly Pro 3EM. <b>Wirkt erst nach einem Neustart des Scripts</b> &mdash; der mDNS-Name und der UDP-Socket werden einmal beim Start belegt.</td></tr>
-<tr><th>UDP-Port</th><td>Nur im Shelly-Modus. 1010 ist Shellys eigener Port. Der Marstek B2500 erwartet 2220 &mdash; wenn der Akku den Zähler nicht findet, ist das das Erste, was man probiert.</td></tr>
+<tr><th>Modus</th><td>EcoTracker, Shelly Pro 3EM oder Shelly Pro EM50. <b>Wirkt erst nach einem Neustart des Scripts</b> &mdash; der mDNS-Name und der UDP-Socket werden einmal beim Start belegt.</td></tr>
+<tr><th>UDP-Port</th><td>Nur beim Pro 3EM. 1010 ist Shellys eigener Port. Der Marstek B2500 erwartet 2220 &mdash; wenn der Akku den Zähler nicht findet, ist das das Erste, was man probiert. Der Pro EM50 hat keine Wahl: er belegt immer 2223.</td></tr>
 </table>
-<p>Was will dein Akku? Wenn im Handbuch ein unterstützter Zähler steht, danach richten. Sonst mit Shelly Pro 3EM anfangen; der wird häufiger unterstützt.</p>
+<p>Was will dein Akku? Wenn im Handbuch ein unterstützter Zähler steht, danach richten. Sonst mit Shelly Pro 3EM anfangen; der wird am häufigsten unterstützt.</p>
+<p class="warn">Der Pro-EM50-Modus ist der neueste und am wenigsten erprobte. <code>EM1.GetStatus</code> &mdash; der Aufruf, den ein Akku tatsächlich pollt &mdash; ist sicher; das vollständige <code>Shelly.GetStatus</code> ist aus der Gerätestruktur abgeleitet, nicht an einem echten EM50 gemessen. Wer einen hat: Vergleich willkommen.</p>
 </div>
 </section>
 
@@ -159,13 +163,14 @@ body.lang-de .en{display:none}
 <tr><th><code>/v1/json</code></th><td>EcoTracker. Power, smoothed power, per-phase power and both energy counters in Wh.</td></tr>
 <tr><th><code>/rpc/EM.GetStatus</code></th><td>Shelly. Power per phase and total.</td></tr>
 <tr><th><code>/rpc/Shelly.GetStatus</code></th><td>Shelly. The same plus the energy counters.</td></tr>
-<tr><th>UDP 1010 / 2220</th><td>Shelly. Same two RPC methods, answer wrapped with the device id.</td></tr>
+<tr><th><code>/rpc/EM1.GetStatus</code></th><td>Pro EM50. The one channel's power.</td></tr>
+<tr><th>UDP 1010 / 2220 / 2223</th><td>Shelly. The same RPC methods, answer wrapped with the device id. 2223 is the Pro EM50.</td></tr>
 </table>
 <pre><code>{"power":-440,"powerAvg":-217,"agePower":1000,
  "powerPhase1":-440,"powerPhase2":0,"powerPhase3":0,
  "energyCounterIn":26714950,"energyCounterOut":659775}</code></pre>
 <p>Power is reported on phase 1 only, all three phases summed. That is what a single-value meter reading gives us, and it is what a battery regulating against the total needs.</p>
-<p>The device announces itself over mDNS as <code>ecotracker-&lt;mac&gt;</code> or <code>shellypro3em-&lt;mac&gt;</code>, using the ESP's own MAC.</p>
+<p>The device announces itself over mDNS as <code>ecotracker-&lt;mac&gt;</code>, <code>shellypro3em-&lt;mac&gt;</code> or <code>shellyproem50-&lt;mac&gt;</code>, using the ESP's own MAC.</p>
 </div>
 <div class="de">
 <p>Alle davon kannst du im Browser aufrufen, um zu sehen, was der Akku sieht.</p>
@@ -173,13 +178,14 @@ body.lang-de .en{display:none}
 <tr><th><code>/v1/json</code></th><td>EcoTracker. Leistung, gemittelte Leistung, Leistung je Phase und beide Energiezähler in Wh.</td></tr>
 <tr><th><code>/rpc/EM.GetStatus</code></th><td>Shelly. Leistung je Phase und Summe.</td></tr>
 <tr><th><code>/rpc/Shelly.GetStatus</code></th><td>Shelly. Dasselbe plus die Energiezähler.</td></tr>
-<tr><th>UDP 1010 / 2220</th><td>Shelly. Dieselben zwei RPC-Methoden, Antwort mit der Geräte-ID umhüllt.</td></tr>
+<tr><th><code>/rpc/EM1.GetStatus</code></th><td>Pro EM50. Die Leistung des einen Kanals.</td></tr>
+<tr><th>UDP 1010 / 2220 / 2223</th><td>Shelly. Dieselben RPC-Methoden, Antwort mit der Geräte-ID umhüllt. 2223 ist der Pro EM50.</td></tr>
 </table>
 <pre><code>{"power":-440,"powerAvg":-217,"agePower":1000,
  "powerPhase1":-440,"powerPhase2":0,"powerPhase3":0,
  "energyCounterIn":26714950,"energyCounterOut":659775}</code></pre>
 <p>Die Leistung steht komplett auf Phase 1, alle drei Phasen summiert. Mehr gibt ein saldierender Zählerwert nicht her, und genau das braucht ein Akku, der gegen die Summe regelt.</p>
-<p>Das Gerät meldet sich über mDNS als <code>ecotracker-&lt;mac&gt;</code> bzw. <code>shellypro3em-&lt;mac&gt;</code>, mit der eigenen MAC des ESP.</p>
+<p>Das Gerät meldet sich über mDNS als <code>ecotracker-&lt;mac&gt;</code>, <code>shellypro3em-&lt;mac&gt;</code> bzw. <code>shellyproem50-&lt;mac&gt;</code>, mit der eigenen MAC des ESP.</p>
 </div>
 </section>
 
@@ -187,7 +193,7 @@ body.lang-de .en{display:none}
 <h2><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></h2>
 <div class="en">
 <table>
-<tr><th>Battery finds nothing</th><td>Wrong mode, or the UDP port. Try 2220 in Shelly mode. Both must be on the same network segment &mdash; mDNS does not cross subnets or most guest networks.</td></tr>
+<tr><th>Battery finds nothing</th><td>Wrong mode, or the UDP port. Try 2220 in Pro 3EM mode; the Pro EM50 only ever answers on 2223. Both must be on the same network segment &mdash; mDNS does not cross subnets or most guest networks.</td></tr>
 <tr><th>Found, but 0&nbsp;W</th><td>No meter readings. Check the meter under <a href="../sml/">SML</a>; the endpoints answer even without them.</td></tr>
 <tr><th>Battery oscillates</th><td>Turn on <b>Regulator tweak</b>, or raise the update rate. An offset of 20&ndash;50&nbsp;W also calms things down.</td></tr>
 <tr><th>Feeds into the grid anyway</th><td>Raise the offset. The battery always lags the meter a little; the offset buys that time back.</td></tr>
@@ -196,7 +202,7 @@ body.lang-de .en{display:none}
 </div>
 <div class="de">
 <table>
-<tr><th>Akku findet nichts</th><td>Falscher Modus oder falscher UDP-Port. Im Shelly-Modus 2220 probieren. Beide müssen im selben Netzsegment sein &mdash; mDNS kommt weder über Subnetze noch durch die meisten Gastnetze.</td></tr>
+<tr><th>Akku findet nichts</th><td>Falscher Modus oder falscher UDP-Port. Im Pro-3EM-Modus 2220 probieren; der Pro EM50 antwortet nur auf 2223. Beide müssen im selben Netzsegment sein &mdash; mDNS kommt weder über Subnetze noch durch die meisten Gastnetze.</td></tr>
 <tr><th>Gefunden, aber 0&nbsp;W</th><td>Keine Zählerwerte. Zähler unter <a href="../sml/">SML</a> prüfen; die Endpunkte antworten auch ohne.</td></tr>
 <tr><th>Akku schwingt</th><td><b>Regleroptimierung</b> einschalten oder die Update-Rate erhöhen. Ein Offset von 20&ndash;50&nbsp;W beruhigt ebenfalls.</td></tr>
 <tr><th>Speist trotzdem ein</th><td>Offset erhöhen. Der Akku hinkt dem Zähler immer etwas hinterher; der Offset kauft diese Zeit zurück.</td></tr>
@@ -208,7 +214,7 @@ body.lang-de .en{display:none}
 <footer>
 <span class="en">Script and page by <a href="https://ottelo.jimdofree.com/">ottelo</a> with the help of ClaudeAI &middot; TinyC and the SML driver by <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
 <span class="de">Script und Seite von <a href="https://ottelo.jimdofree.com/">ottelo</a> mit Hilfe von ClaudeAI &middot; TinyC und SML-Treiber von <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a></span>
-<p class="dis"><span class="en">Not affiliated with, endorsed by or supported by Shelly (Allterco), everHome or Marstek. Shelly, Pro 3EM, EcoTracker and Marstek are trademarks of their respective owners and are used here only to describe compatibility.</span><span class="de">Keine Verbindung zu Shelly (Allterco), everHome oder Marstek, keine Unterstützung oder Billigung durch diese. Shelly, Pro 3EM, EcoTracker und Marstek sind Marken der jeweiligen Inhaber und werden hier ausschließlich zur Beschreibung der Kompatibilität genannt.</span></p>
+<p class="dis"><span class="en">Not affiliated with, endorsed by or supported by Shelly (Allterco), everHome or Marstek. Shelly, Pro 3EM, Pro EM50, EcoTracker and Marstek are trademarks of their respective owners and are used here only to describe compatibility.</span><span class="de">Keine Verbindung zu Shelly (Allterco), everHome oder Marstek, keine Unterstützung oder Billigung durch diese. Shelly, Pro 3EM, Pro EM50, EcoTracker und Marstek sind Marken der jeweiligen Inhaber und werden hier ausschließlich zur Beschreibung der Kompatibilität genannt.</span></p>
 </footer>
 
 </div>

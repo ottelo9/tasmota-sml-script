@@ -11,7 +11,7 @@
 #include "sml_modbus_common.tc"
 #include "eco_shelly_common.tc"
 
-char sml_vers[] = "31.08.2026 08:52";
+char sml_vers[] = "02.09.2026 12:54";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 
@@ -187,7 +187,7 @@ int main() {
     sml_chart_load();
     sml_chart_pv_load();
 
-    esInit(1, 2, 3);             // /v1/json, /rpc/EM, /rpc/Shelly
+    esInit(1, 2, 3, 5);          // /v1/json, /rpc/EM, /rpc/Shelly, /rpc/EM1
     mbInit();
     webPageLabel(0, "&#x2699;&#xFE0F; SML /&#x1F50B;");
     webPageLabel(1, "");

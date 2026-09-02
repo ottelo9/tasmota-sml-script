@@ -136,8 +136,8 @@ EIN = Wirkleistungen der 3 Phasen werden an den Akku übertragen, somit ist der 
 #  
 
 ### Testtools:
-<b>UDP/HTTP/PING Tester</b>  
-Ihr könnt die Emulation mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping):  
+<b>UDP/HTTP/PING/mDNS Tester</b>  
+Ihr könnt die Emulation mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping, mDNS). Die Vorgabe-Knöpfe nennen jeweils das Gerät: EcoTracker, Shelly Pro 3EM oder Pro EM50:  
 <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
 
 <b>SML Simulator</b>  

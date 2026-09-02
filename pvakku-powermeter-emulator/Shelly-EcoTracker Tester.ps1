@@ -2,7 +2,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # --- Hauptfenster ---
-$appVersion = "v2026-03-20 10:55"
+$appVersion = "v2026-09-02 13:13"
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  UDP"
 $form.Size = New-Object System.Drawing.Size(780, 900)
@@ -120,32 +120,41 @@ $btnSend.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.Fo
 $form.Controls.Add($btnSend)
 
 # ===================== Vorgabe-Buttons (UDP) =====================
-$lblPresets = New-StyledLabel "Vorgaben:" 15 120 80 22
+$lblPresets = New-StyledLabel "Vorgaben:" 15 119 80 22
 $form.Controls.Add($lblPresets)
 
-$btnPreset1 = New-StyledButton "Shelly.GetStatus" 130 117 200 28 $bgButton
+$btnPreset1 = New-StyledButton "Shelly.GetStatus`r`nPro 3EM + EM50" 130 111 150 38 $bgButton
 $form.Controls.Add($btnPreset1)
 
-$btnPreset2 = New-StyledButton "EM.GetStatus" 340 117 200 28 $bgButton
+$btnPreset2 = New-StyledButton "EM.GetStatus`r`nPro 3EM" 288 111 125 38 $bgButton
 $form.Controls.Add($btnPreset2)
 
+# Pro EM50 only. Its emulator binds UDP 2223 unconditionally, so the button
+# sets the port as well - otherwise the call just runs into a timeout.
+$btnPreset3 = New-StyledButton "EM1.GetStatus`r`nPro EM50" 421 111 130 38 $bgButton
+$form.Controls.Add($btnPreset3)
+
 # Vorgabe-Buttons (HTTP)
-$btnPresetHTTP = New-StyledButton "json/v1" 130 117 150 28 $bgButton
+$btnPresetHTTP = New-StyledButton "json/v1`r`nEcoTracker" 130 111 95 38 $bgButton
 $btnPresetHTTP.Visible = $false
 $form.Controls.Add($btnPresetHTTP)
 
-$btnPresetHTTP2 = New-StyledButton "Shelly.GetStatus" 290 117 150 28 $bgButton
+$btnPresetHTTP2 = New-StyledButton "Shelly.GetStatus`r`nPro 3EM + EM50" 230 111 135 38 $bgButton
 $btnPresetHTTP2.Visible = $false
 $form.Controls.Add($btnPresetHTTP2)
 
-$btnPresetHTTP3 = New-StyledButton "EM.GetStatus" 450 117 150 28 $bgButton
+$btnPresetHTTP3 = New-StyledButton "EM.GetStatus`r`nPro 3EM" 370 111 110 38 $bgButton
 $btnPresetHTTP3.Visible = $false
 $form.Controls.Add($btnPresetHTTP3)
+
+$btnPresetHTTP4 = New-StyledButton "EM1.GetStatus`r`nPro EM50" 485 111 115 38 $bgButton
+$btnPresetHTTP4.Visible = $false
+$form.Controls.Add($btnPresetHTTP4)
 
 # UDP Listener Checkbox
 $chkUdpListener = New-Object System.Windows.Forms.CheckBox
 $chkUdpListener.Text = "UDP Listener"
-$chkUdpListener.Location = New-Object System.Drawing.Point(585, 119)
+$chkUdpListener.Location = New-Object System.Drawing.Point(585, 120)
 $chkUdpListener.Size = New-Object System.Drawing.Size(140, 22)
 $chkUdpListener.ForeColor = [System.Drawing.Color]::FromArgb(180, 130, 255)
 $chkUdpListener.FlatStyle = "Flat"
@@ -157,7 +166,7 @@ $form.Controls.Add($chkUdpListener)
 #        das den Tasmota-Webserver-Slot dauerhaft belegt (zum Testen des "Haengens").
 $chkHttpKeepAlive = New-Object System.Windows.Forms.CheckBox
 $chkHttpKeepAlive.Text = "Keep-Alive"
-$chkHttpKeepAlive.Location = New-Object System.Drawing.Point(610, 119)
+$chkHttpKeepAlive.Location = New-Object System.Drawing.Point(610, 120)
 $chkHttpKeepAlive.Size = New-Object System.Drawing.Size(125, 22)
 $chkHttpKeepAlive.ForeColor = [System.Drawing.Color]::FromArgb(255, 170, 80)
 $chkHttpKeepAlive.FlatStyle = "Flat"
@@ -787,7 +796,8 @@ function Send-Request {
 # ===================== Modus-Umschaltung =====================
 # Sammlung aller modusabhaengigen Controls
 $udpHttpControls = @($lblCmd, $txtCommand, $btnSend, $lblPresets,
-    $btnPreset1, $btnPreset2, $btnPresetHTTP, $btnPresetHTTP2, $btnPresetHTTP3,
+    $btnPreset1, $btnPreset2, $btnPreset3,
+    $btnPresetHTTP, $btnPresetHTTP2, $btnPresetHTTP3, $btnPresetHTTP4,
     $chkUdpListener, $chkHttpKeepAlive,
     $lblInterval, $txtInterval, $btnStartInterval, $btnStopInterval, $lblIntervalStatus)
 
@@ -967,13 +977,14 @@ function Invoke-MdnsCheck {
             foreach ($r in ($adr | Select-Object -Unique Value)) { [void]$sb.AppendLine("    IP     : $($r.Value)") }
             foreach ($r in ($txt | Select-Object -Unique Value)) { [void]$sb.AppendLine("    TXT    : $($r.Value)") }
         }
-        $emu = @($recs | Where-Object { $_.Value -match 'shellypro3em|ecotracker' -or $_.Name -match 'shellypro3em|ecotracker' })
+        $emu = @($recs | Where-Object { $_.Value -match 'shellypro3em|shellyproem50|ecotracker' -or $_.Name -match 'shellypro3em|shellyproem50|ecotracker' })
         [void]$sb.AppendLine("")
         if ($emu.Count -gt 0) {
             [void]$sb.AppendLine("  Emulator gefunden - die Marstek-App sollte ihn ebenfalls sehen.")
             Write-Log ($sb.ToString() + ("-" * 80) + "`r`n") $colorGreen
         } else {
-            [void]$sb.AppendLine("  KEIN Emulator dabei (kein shellypro3em/ecotracker). Modus pruefen,")
+            [void]$sb.AppendLine("  KEIN Emulator dabei (kein shellypro3em/shellyproem50/ecotracker).")
+            [void]$sb.AppendLine("  Modus pruefen,")
             [void]$sb.AppendLine("  Save druecken und den Slot neu starten - die mDNS-Anmeldung")
             [void]$sb.AppendLine("  passiert nur einmal beim Programmstart.")
             Write-Log ($sb.ToString() + ("-" * 80) + "`r`n") $colorYellow
@@ -1036,9 +1047,11 @@ function Update-ModeUI {
             $txtCommand.Text = ""
             $btnPreset1.Visible = $true
             $btnPreset2.Visible = $true
+            $btnPreset3.Visible = $true
             $btnPresetHTTP.Visible = $false
             $btnPresetHTTP2.Visible = $false
             $btnPresetHTTP3.Visible = $false
+            $btnPresetHTTP4.Visible = $false
             $chkUdpListener.Visible = $true
             $chkHttpKeepAlive.Visible = $false
             $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  UDP"
@@ -1052,9 +1065,11 @@ function Update-ModeUI {
             $txtCommand.Text = ""
             $btnPreset1.Visible = $false
             $btnPreset2.Visible = $false
+            $btnPreset3.Visible = $false
             $btnPresetHTTP.Visible = $true
             $btnPresetHTTP2.Visible = $true
             $btnPresetHTTP3.Visible = $true
+            $btnPresetHTTP4.Visible = $true
             $chkUdpListener.Visible = $false
             $chkHttpKeepAlive.Visible = $true
             $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  HTTP GET"
@@ -1077,11 +1092,17 @@ $txtCommand.Add_KeyDown({
 })
 
 # Vorgabe-Buttons
-$btnPreset1.Add_Click({ $txtCommand.Text = 'Shelly.GetStatus' })
-$btnPreset2.Add_Click({ $txtCommand.Text = 'EM.GetStatus' })
+# Every UDP preset sets its port too. The Pro EM50 binds 2223 unconditionally,
+# the 3EM listens on 1010 - without the reset, one click on EM1.GetStatus left
+# 2223 in the field and every following query ran into a timeout. 2220 (Marstek
+# B2500) still has to be typed in by hand, same as after a mode switch.
+$btnPreset1.Add_Click({ $txtCommand.Text = 'Shelly.GetStatus'; $txtPort.Text = '1010' })
+$btnPreset2.Add_Click({ $txtCommand.Text = 'EM.GetStatus';     $txtPort.Text = '1010' })
+$btnPreset3.Add_Click({ $txtCommand.Text = 'EM1.GetStatus';    $txtPort.Text = '2223' })
 $btnPresetHTTP.Add_Click({ $txtCommand.Text = '/v1/json' })
 $btnPresetHTTP2.Add_Click({ $txtCommand.Text = '/rpc/Shelly.GetStatus' })
 $btnPresetHTTP3.Add_Click({ $txtCommand.Text = '/rpc/EM.GetStatus' })
+$btnPresetHTTP4.Add_Click({ $txtCommand.Text = '/rpc/EM1.GetStatus' })
 
 $btnClearLog.Add_Click({ $txtLog.Text = ""; $statusLabel.Text = "Log geleert." })
 $btnClearJson.Add_Click({ $txtJson.Text = "" })

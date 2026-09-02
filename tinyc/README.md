@@ -21,7 +21,7 @@ Eines aussuchen, in Slot 0 laden. Modbus-TCP ist in jedem als Option enthalten.
 |---|---|
 | `sml_simple.tc` | Nur Zähler. Kleinstes Programm. |
 | `sml_chart.tc` | + Diagramme und Tabellen, Einspeisung schaltbar |
-| `sml_eco_shelly.tc` | + EcoTracker- / Shelly-Pro-3EM-Emulator für PV-Akkus |
+| `sml_eco_shelly.tc` | + EcoTracker- / Shelly-Pro-3EM- / Pro-EM50-Emulator für PV-Akkus |
 | `sml_chart_eco_shelly.tc` | Diagramme + EcoTracker / Shelly |
 | `sml_ct002.tc` | + Marstek-CT002/CT003-Emulator |
 | `sml_chart_ct002.tc` | Diagramme + Marstek CT002/CT003 |
