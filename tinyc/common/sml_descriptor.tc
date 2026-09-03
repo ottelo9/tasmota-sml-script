@@ -58,6 +58,22 @@ int  sml_pub_rc;           // last mqttPublish result, logged when it changes
 int  sml_pub_seen;
 int  sml_drv_init;              // 0 until the display option was applied once
 
+// Sanity check for "3 phases". The option only makes sense if the descriptor
+// really carries the per-phase power in values 4/5/6 - the family's convention.
+// Nothing enforces that convention: the Elster AS1440 descriptor, for one, has
+// Total_NT (kWh) at 4 and the two directional powers at 5/6, so switching the
+// option on would put a meter reading into an "L1" watt row and send it to the
+// battery as a phase value.
+//
+// Checked ONCE when the option is switched on, not continuously: a permanent
+// heuristic would also have to be right about every unusual but legitimate
+// meter, and "sum of phases equals total" is a rule with real exceptions. At
+// the moment of switching on it is a question the user just answered wrongly
+// or rightly, and telling them is better than either guessing or staying mute.
+int  sml_ph3_arm;               // 1 = validate as soon as the meter has data
+int  sml_ph3_bad;               // 1 = last attempt rejected, hint shown
+int  sml_ph3_was;               // previous sml_ph3, to spot the 0 -> 1 edge
+
 // ============================================================================
 // Change-detect + re-apply: descriptor / pins / filter / activ.
 // Idempotent: zero file IO when nothing changed; smlApplyPins itself
@@ -96,13 +112,62 @@ void sml_descriptor_apply() {
         tcOptSet(6, sml_activ);
         tcOptSet(7, sml_drvrows);
         tcOptSet(8, sml_ph3);
+        sml_ph3_was = sml_ph3;      // only a real 0 -> 1 edge arms the check,
+                                    // an option that was already on stays on
         smlDescEditLoad();          // widgets start from what is in effect
         sml_apply_drvrows();
         snapshot(sml_drvrows);
     }
     if (ui_reloading) smlDescEditLoad();   // drop unsaved edits on a fresh page
+
+    // Runs outside the Save gate: the meter may not have delivered anything
+    // yet when the option is switched on, so this waits for the first reading.
+    if (sml_ph3_arm == 1 && smlGet(2) > 0.0) {
+        sml_ph3_arm = 0;
+        float p1 = smlGet(4);
+        float p2 = smlGet(5);
+        float p3 = smlGet(6);
+        float sum = p1 + p2 + p3;
+        float tot = smlGet(1);
+        float dev = sum - tot;
+        if (dev < 0.0) dev = 0.0 - dev;
+        // Generous band: the phases ARE the total, so a real meter agrees
+        // closely. 100 W or 10 % catches a descriptor whose 4/5/6 hold
+        // something else entirely without tripping over rounding, an offset
+        // or two readings taken one telegram apart.
+        float band = 100.0;
+        float mag = tot;
+        if (mag < 0.0) mag = 0.0 - mag;
+        if (mag * 0.1 > band) band = mag * 0.1;
+        int empty = 0;
+        if (p1 == 0.0 && p2 == 0.0 && p3 == 0.0) empty = 1;
+        if (empty == 1 || dev > band) {
+            sml_ph3 = 0;
+            sml_e_ph3 = 0;
+            sml_ph3_bad = 1;
+            sml_ph3_was = 0;
+            tcOptSet(8, sml_ph3);
+            if (empty == 1) {
+                addLog("sml: 3 phases off - values 4/5/6 are all zero, descriptor has no phases");
+            } else {
+                addLog("sml: 3 phases off - L1+L2+L3 = %.0f W does not match total %.0f W", sum, tot);
+            }
+            saveVars();
+        } else {
+            addLog("sml: 3 phases confirmed - L1+L2+L3 = %.0f W, total %.0f W", sum, tot);
+        }
+    }
+
     if (ui_applying == 0) return;   // everything below waits for Save
     smlDescCommit();                // widgets wrote the edit buffer, not these
+
+    // Arm the check on the 0 -> 1 edge. Switching it off clears the hint.
+    if (sml_ph3 == 1 && sml_ph3_was == 0) {
+        sml_ph3_arm = 1;
+        sml_ph3_bad = 0;
+    }
+    if (sml_ph3 == 0) sml_ph3_bad = 0;
+    sml_ph3_was = sml_ph3;
 
     if (changed(sml_drvrows)) {
         sml_apply_drvrows();
@@ -173,6 +238,7 @@ void sml_render_settings_panel() {
     if (ui_de) {
         webCheckbox(sml_e_activ, "Zähler aktiv");
         webCheckbox(sml_e_ph3, "3 Phasen");
+        if (sml_ph3_bad == 1) webSend("<div style='font-size:11px;color:#a00;margin:2px 0'>&#9888; Abgeschaltet: Werte 4/5/6 des Descriptors sind keine Phasenleistungen. Siehe Konsole.</div>");
         webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Descriptor bearbeiten</a>");
         webRepoPulldown(sml_e_meter_sel, "Aus Repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
@@ -183,6 +249,7 @@ void sml_render_settings_panel() {
     } else {
         webCheckbox(sml_e_activ, "Meter active");
         webCheckbox(sml_e_ph3, "3 phases");
+        if (sml_ph3_bad == 1) webSend("<div style='font-size:11px;color:#a00;margin:2px 0'>&#9888; Switched off: descriptor values 4/5/6 are not per-phase power. See console.</div>");
         webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Edit descriptor</a>");
         webRepoPulldown(sml_e_meter_sel, "From repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
