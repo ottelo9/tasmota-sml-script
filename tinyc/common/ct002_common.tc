@@ -49,6 +49,12 @@ void ctCommit() {
     ct_ttl = ct_e_ttl;
     ct_offset = ct_e_offset;
     ct_tweak = ct_e_tweak;
+    tcOptSet(19, ct_kind);
+    tcOptSet(20, ct_offset);
+    tcOptSet(21, ct_port);
+    tcOptSet(22, ct_rssi);
+    tcOptSet(23, ct_ttl);
+    tcOptSet(24, ct_tweak);
 }
 void ctEditLoad() {
     ct_e_kind = ct_kind;
@@ -675,6 +681,21 @@ void ctPoll() {
 
 // From EverySecond().
 void ctTick() {
+    if (tc_opt_first == 1) {
+        ct_kind   = tcOptGet(19, ct_kind);
+        ct_offset = tcOptGet(20, ct_offset);
+        ct_port   = tcOptGet(21, ct_port);
+        ct_rssi   = tcOptGet(22, ct_rssi);
+        ct_ttl    = tcOptGet(23, ct_ttl);
+        ct_tweak  = tcOptGet(24, ct_tweak);
+        tcOptSet(19, ct_kind);
+        tcOptSet(20, ct_offset);
+        tcOptSet(21, ct_port);
+        tcOptSet(22, ct_rssi);
+        tcOptSet(23, ct_ttl);
+        tcOptSet(24, ct_tweak);
+        ctEditLoad();
+    }
     if (ui_reloading) ctEditLoad();
     if (ui_applying) ctCommit();
     if (tasm_wifi == 1 && ct_once == 0) {

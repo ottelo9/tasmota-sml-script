@@ -33,6 +33,13 @@ void smlDescCommit() {
     sml_activ     = sml_e_activ;
     sml_drvrows   = sml_e_drvrows;
     sml_ph3       = sml_e_ph3;
+    tcOptSet(2, sml_meter_sel);
+    tcOptSet(3, sml_rx_pin);
+    tcOptSet(4, sml_tx_pin);
+    tcOptSet(5, sml_filter);
+    tcOptSet(6, sml_activ);
+    tcOptSet(7, sml_drvrows);
+    tcOptSet(8, sml_ph3);
 }
 void smlDescEditLoad() {
     sml_e_meter_sel = sml_meter_sel;
@@ -71,6 +78,24 @@ void sml_descriptor_apply() {
     // Once at startup: the driver's default is to show its own rows.
     if (sml_drv_init == 0) {
         sml_drv_init = 1;
+        // Shared file first, so a program change finds the meter, the pins and
+        // the filter again - the .def keeps working either way (main() loads
+        // it unconditionally), but sml_meter_sel is not recorded in it and
+        // could not be recovered from the descriptor at all.
+        sml_meter_sel = tcOptGet(2, sml_meter_sel);
+        sml_rx_pin    = tcOptGet(3, sml_rx_pin);
+        sml_tx_pin    = tcOptGet(4, sml_tx_pin);
+        sml_filter    = tcOptGet(5, sml_filter);
+        sml_activ     = tcOptGet(6, sml_activ);
+        sml_drvrows   = tcOptGet(7, sml_drvrows);
+        sml_ph3       = tcOptGet(8, sml_ph3);
+        tcOptSet(2, sml_meter_sel);
+        tcOptSet(3, sml_rx_pin);
+        tcOptSet(4, sml_tx_pin);
+        tcOptSet(5, sml_filter);
+        tcOptSet(6, sml_activ);
+        tcOptSet(7, sml_drvrows);
+        tcOptSet(8, sml_ph3);
         smlDescEditLoad();          // widgets start from what is in effect
         sml_apply_drvrows();
         snapshot(sml_drvrows);
@@ -168,19 +193,11 @@ void sml_render_settings_panel() {
     }
     webSend("<div class='hint'>RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>RX=5 TX=4: bitShake</div>");
 
-    uiHead("&#x1F4CA;", "Filter", "Filter", "sml/#filter");
-    if (ui_de) webCheckbox(sml_e_filter, "Median-Filter");
-    else       webCheckbox(sml_e_filter, "Median filter");
+    uiCheckI(sml_e_filter, varIdx(sml_e_filter), "SML Median Filter", "sml/#filter");
 
     uiHead("&#x1F5A5;&#xFE0F;", "Display", "Anzeige", "sml/#display");
     if (ui_de) webCheckbox(sml_e_drvrows, "Treiberzeilen zeigen");
     else       webCheckbox(sml_e_drvrows, "Show driver rows");
-
-    int up_d = tasm_uptime / 86400;
-    int up_h = (tasm_uptime / 3600) % 24;
-    int up_m = (tasm_uptime / 60) % 60;
-    sprintf(sml_buf, "<div class='hint'>Uptime: %d d %d h %d min</div>", up_d, up_h, up_m);
-    webSend(sml_buf);
 }
 
 // Publish at log level 3 - silent until weblog 3. Reports a changed result

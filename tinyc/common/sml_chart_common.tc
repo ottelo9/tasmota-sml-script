@@ -379,30 +379,49 @@ void sml_chart_data_panel(int idx_base, int idx_power, int idx_bars) {
     // Icon plus "Reset": the word reads the same in both languages, the icon
     // says which of the three it is, and the confirm() spells the consequence
     // out in full - that is the text that matters here.
+    //
+    // Each button re-reads the page 1.5 s after the click. The action itself
+    // is immediate - tcbtn writes the flag and EverySecond() acts on it with
+    // no Save involved, confirmed in the log - but the render triggered BY the
+    // click runs before that tick, so it still paints the old figures. If the
+    // 2 s refresh happens to be off (pr(0) leaves it off once a field has had
+    // focus), nothing ever repaints them and it looks as though the reset
+    // needed a Save. rfsh=1 because la() does nothing while it is 0.
+    //
+    // The write goes out a SECOND time through a plain fetch(), and that is
+    // the one that actually lands. A native confirm() BLOCKS the JS thread,
+    // so the 2 s refresh timer piles up behind it; the moment OK is pressed,
+    // tcbtn sends through seva -> la(), and the queued la() runs right after
+    // and kills it with its own `if(x)x.abort()` - one shared XMLHttpRequest
+    // serves every caller. The button still turns green, because tcbtn does
+    // that regardless of whether the request survived. Save has no dialog and
+    // was therefore never affected, which is exactly what made this look like
+    // "the reset only works with a Save". Same abort ui_common's rl() already
+    // documents, sidestepped the same way. Writing the flag twice is harmless.
     webSend("<div style='display:flex;flex-wrap:wrap;gap:6px;margin:6px 0'>");
 
     if (ui_de) {
-        webSend("<button style='flex:1 1 90px' data-a='erledigt' onclick='if(confirm(\"Tages/Monats/Jahres-Verbrauchswerte zurücksetzen?\"))tcbtn(this,1,");
+        webSend("<button style='flex:1 1 90px' data-a='erledigt' onclick='if(confirm(\"Tages/Monats/Jahres-Verbrauchswerte zurücksetzen?\")){tcbtn(this,1,");
     } else {
-        webSend("<button style='flex:1 1 90px' data-a='done' onclick='if(confirm(\"Reset day/month/year consumption values?\"))tcbtn(this,1,");
+        webSend("<button style='flex:1 1 90px' data-a='done' onclick='if(confirm(\"Reset day/month/year consumption values?\")){tcbtn(this,1,");
     }
-    sprintf(sml_buf, "%d)'>&#x1F522; Reset</button>", idx_base);
+    sprintf(sml_buf, "%d);fetch(\"?p=0&m=1&sv=%d_1\");setTimeout(function(){rfsh=1;la()},1500)}'>&#x1F522; Reset</button>", idx_base, idx_base);
     webSend(sml_buf);
 
     if (ui_de) {
-        webSend("<button style='flex:1 1 90px' data-a='erledigt' onclick='if(confirm(\"4h- und 24h-Verlauf leeren?\"))tcbtn(this,1,");
+        webSend("<button style='flex:1 1 90px' data-a='erledigt' onclick='if(confirm(\"4h- und 24h-Verlauf leeren?\")){tcbtn(this,1,");
     } else {
-        webSend("<button style='flex:1 1 90px' data-a='done' onclick='if(confirm(\"Clear the 4h and 24h charts?\"))tcbtn(this,1,");
+        webSend("<button style='flex:1 1 90px' data-a='done' onclick='if(confirm(\"Clear the 4h and 24h charts?\")){tcbtn(this,1,");
     }
-    sprintf(sml_buf, "%d)'>&#x1F4C8; Reset</button>", idx_power);
+    sprintf(sml_buf, "%d);fetch(\"?p=0&m=1&sv=%d_1\");setTimeout(function(){rfsh=1;la()},1500)}'>&#x1F4C8; Reset</button>", idx_power, idx_power);
     webSend(sml_buf);
 
     if (ui_de) {
-        webSend("<button style='flex:1 1 90px' data-a='erledigt' onclick='if(confirm(\"Alle Balkendiagramme zurücksetzen?\"))tcbtn(this,1,");
+        webSend("<button style='flex:1 1 90px' data-a='erledigt' onclick='if(confirm(\"Alle Balkendiagramme zurücksetzen?\")){tcbtn(this,1,");
     } else {
-        webSend("<button style='flex:1 1 90px' data-a='done' onclick='if(confirm(\"Reset all bar charts?\"))tcbtn(this,1,");
+        webSend("<button style='flex:1 1 90px' data-a='done' onclick='if(confirm(\"Reset all bar charts?\")){tcbtn(this,1,");
     }
-    sprintf(sml_buf, "%d)'>&#x1F4CA; Reset</button>", idx_bars);
+    sprintf(sml_buf, "%d);fetch(\"?p=0&m=1&sv=%d_1\");setTimeout(function(){rfsh=1;la()},1500)}'>&#x1F4CA; Reset</button>", idx_bars, idx_bars);
     webSend(sml_buf);
 
     webSend("</div>");

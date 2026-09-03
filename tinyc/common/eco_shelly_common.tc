@@ -39,6 +39,12 @@ void esCommit() {
     es_force = es_e_force;
     es_throttle = es_e_throttle;
     if (es_throttle < 1) es_throttle = 1;
+    tcOptSet(13, es_mode);
+    tcOptSet(14, es_port);
+    tcOptSet(15, es_offset);
+    tcOptSet(16, es_tweak);
+    tcOptSet(17, es_force);
+    tcOptSet(18, es_throttle);
 
     if (es_mode != mode_was) {
         es_once_mdns = 0;               // announce the new service type
@@ -221,6 +227,21 @@ void esPoll() {
 
 // From EverySecond().
 void esTick() {
+    if (tc_opt_first == 1) {
+        es_mode     = tcOptGet(13, es_mode);
+        es_port     = tcOptGet(14, es_port);
+        es_offset   = tcOptGet(15, es_offset);
+        es_tweak    = tcOptGet(16, es_tweak);
+        es_force    = tcOptGet(17, es_force);
+        es_throttle = tcOptGet(18, es_throttle);
+        tcOptSet(13, es_mode);
+        tcOptSet(14, es_port);
+        tcOptSet(15, es_offset);
+        tcOptSet(16, es_tweak);
+        tcOptSet(17, es_force);
+        tcOptSet(18, es_throttle);
+        esEditLoad();
+    }
     if (ui_reloading) esEditLoad();
     if (ui_applying) esCommit();
     if (tasm_wifi == 1) {
@@ -301,7 +322,7 @@ int esWebOn(int h) {
 
 // From WebCall(): rows for the main sensor page.
 void esRows() {
-    if (es_mode == 1) {
+    if (es_mode != 0) {
         if (es_mode == 2) sprintf(es_body, "{s}Emulation{m}Shelly Pro EM50 (UDP %d){e}", es_bound);
         else              sprintf(es_body, "{s}Emulation{m}Shelly Pro 3EM (UDP %d){e}", es_bound);
     } else {
@@ -313,6 +334,15 @@ void esRows() {
     webSend(es_body);
 }
 
+// A port row that cannot be changed: same markup the webPulldown widget emits
+// (<div><label><b>..</b> <select>..</select></label></div>), only with the
+// select disabled, so the browser greys it out and it still lines up with the
+// rows around it.
+void esPortFixed(char label[], char text[]) {
+    sprintf(es_body, "<div><label><b>%s</b> <select disabled><option>%s</option></select></label></div>", label, text);
+    webSend(es_body);
+}
+
 // From WebUI(): emitted inside an already-open settings panel.
 void esPanel() {
     webSend("<style>a.i{text-decoration:none;margin-left:6px}</style>");
@@ -320,11 +350,23 @@ void esPanel() {
     uiHead("&#x1F50C;", "Emulation", "Emulation", "eco_shelly/#mode");
     if (ui_de) {
         webPulldown(es_e_mode, "Modus", "EcoTracker|Shelly Pro 3EM|Shelly Pro EM50");
-        if (es_e_mode == 1) webPulldown(es_e_port, "UDP-Port", "1010|2220 (B2500)");
+        if (es_e_mode == 1)      webPulldown(es_e_port, "UDP-Port", "1010|2220 (B2500)");
+        else if (es_e_mode == 2) esPortFixed("UDP-Port", "2223 (fest)");
+        else                     esPortFixed("UDP-Port", "kein UDP");
     } else {
         webPulldown(es_e_mode, "Mode", "EcoTracker|Shelly Pro 3EM|Shelly Pro EM50");
-        if (es_e_mode == 1) webPulldown(es_e_port, "UDP port", "1010|2220 (B2500)");
+        if (es_e_mode == 1)      webPulldown(es_e_port, "UDP port", "1010|2220 (B2500)");
+        else if (es_e_mode == 2) esPortFixed("UDP port", "2223 (fixed)");
+        else                     esPortFixed("UDP port", "no UDP");
     }
+    // The port row is drawn in EVERY mode, greyed out where there is nothing to
+    // pick. While it was drawn only for the Pro 3EM it had to APPEAR when the
+    // mode pulldown changed, and that never reached the screen: the widget
+    // carries onfocusin='pr(0)', which stops the 2 s refresh while the select
+    // has focus, and the innerHTML swap that would have brought the row in
+    // destroys the focused element before onfocusout can start it again.
+    // A row that is always present cannot fail to show up.
+    //
     // A mode switch takes effect at once - esCommit() clears the once-flags, and
     // since firmware 1.6.65 mdnsRegister() removes the old services before it
     // adds the new ones. Before that the device answered under BOTH

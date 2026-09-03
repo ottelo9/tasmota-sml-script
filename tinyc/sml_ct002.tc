@@ -12,7 +12,7 @@
 #include "sml_modbus_common.tc"
 #include "ct002_common.tc"
 
-byte sml_vers[] = "31.08.2026 08:52";
+byte sml_vers[] = "03.09.2026 12:40";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int  sml_sndpwr;         // 1 = publish power via MQTT and serve /pwr
@@ -35,8 +35,12 @@ void Every100ms() {
 
 void EverySecond() {
     uiApplyBegin();
+    if (tc_opt_first == 1) {
+        sml_sndpwr = tcOptGet(10, sml_sndpwr);
+        tcOptSet(10, sml_sndpwr);
+    }
     if (ui_reloading) sml_e_sndpwr = sml_sndpwr;
-    if (ui_applying)  sml_sndpwr = sml_e_sndpwr;
+    if (ui_applying)  { sml_sndpwr = sml_e_sndpwr; tcOptSet(10, sml_sndpwr); }
     sml_descriptor_apply();
     ctTick();
     mbTick();
@@ -128,7 +132,8 @@ void WebUI() {
     if (ui_de) webButton(do_reset, "SML neu laden|neu geladen");
     else       webButton(do_reset, "Restart SML|restarted");
 
-    sprintf(sml_buf, "<hr><div style='text-align:center;font-size:10px;color:#555;line-height:1.5'>sml_ct002.tc &middot; Version %s<br>", sml_vers);
+    uiUptime();
+    sprintf(sml_buf, "sml_ct002.tc &middot; Version %s<br>", sml_vers);
     webSend(sml_buf);
     webSend("by <a href='https://ottelo.jimdofree.com' target='_blank'>ottelo.jimdofree.com</a> &amp; gemu2015 (TinyC <span id='tcv'>...</span>)</div></div>");
     webSend("<script>if(window.__tcv){document.getElementById('tcv').textContent=window.__tcv;}else{fetch('/tc_api?cmd=status').then(function(r){return r.json();}).then(function(j){window.__tcv=j.release;var e=document.getElementById('tcv');if(e)e.textContent=j.release;}).catch(function(){});}</script>");

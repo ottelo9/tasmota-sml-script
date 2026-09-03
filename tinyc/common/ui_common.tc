@@ -11,6 +11,17 @@
 
 persist watch int ui_de;     // 0 = English (default), 1 = Deutsch
 
+// Tasmota's Sleep. The default of 50 ms lets the radio doze between loop
+// passes, and on a weak link the access point holds packets back until the
+// next wake window - measured on an ESP32-C3 at -87 dBm, the settings page
+// answered in 389 ms median but 2253 ms at the 90th percentile, six of
+// twenty-five requests over a second. With Sleep 0: 141 ms median, 186 ms
+// at p90, nothing over 277 ms - on a link that had meanwhile got WORSE
+// (-90 dBm), so the delay was the dozing, not the radio.
+// Costs current and a warmer chip, hence a switch rather than a default.
+persist watch int ui_nosleep;   // 1 = power saving off (Sleep 0)
+persist int ui_sleep_ack;       // the choice that was last carried out
+
 byte ui_base[] = " <a class='i' target='_blank' href='https://ottelo9.github.io/tasmota-sml-script/";
 byte ui_buf[220];        // uiText() copies whole HTML blocks through here -
                          // longest measured 144 chars, some span source lines
@@ -24,9 +35,203 @@ int ui_applying;             // latched for the current tick
 int ui_reload;               // set once per full page render, see uiSaveButton()
 int ui_reloading;            // latched for the current tick
 
+// ── Shared options file: /tc_options.cfg ───────────────────────────────────
+// The .pvs filename is derived from the .tcb filename (persist_file[] in the
+// firmware), so every program has its OWN settings and switching one out
+// starts from defaults - no meter, no pins, no language. This file sits
+// beside them and is read once at start, written a second after a Save.
+//
+// A program only knows its own keys. Values it has never heard of are carried
+// through untouched in tc_opt[], so running sml_simple for a while does not
+// throw away the emulator's settings; going back finds them again. Only the
+// keys a module actually maintains are marked in tc_opt_own[].
+//
+// Lines are "@name=value". The '@' is what fileGetStr searches for - its
+// delimiter has to be a string LITERAL (constArgs), so there is one call per
+// key, and the marker keeps a short key from matching inside a longer one.
+//
+// -32768 as "not in the file": 0 is a legal value for nearly everything and
+// -1 is a legal pin (None), so neither can serve as the marker.
+//
+// Chart data (dval/mval/yval, the sample rings) is NOT here. It belongs to
+// one program's charts, not to the family, and stays in the .pvs.
+int  tc_opt[26];
+int  tc_opt_own[26];
+int  tc_opt_dirty;
+byte tc_opt_b[48];
+
+// The energy baselines are kWh, so they need their own float table - atoi()
+// would cut 26714.950 to 26714 and lose 950 Wh at every program change.
+// A separate "has" array rather than a sentinel value: any float, 0.0
+// included, is a legal reading.
+float tc_optf[6];
+int   tc_optf_has[6];
+
+float tcOptGetF(int i, float now) {
+    if (tc_optf_has[i] == 0) return now;
+    return tc_optf[i];
+}
+
+void tcOptSetF(int i, float v) {
+    if (tc_optf_has[i] == 0) tc_opt_dirty = 1;
+    if (tc_optf[i] != v) tc_opt_dirty = 1;
+    tc_optf[i] = v;
+    tc_optf_has[i] = 1;
+}
+
+int tcOptGet(int i, int now) {
+    if (tc_opt[i] == -32768) return now;
+    return tc_opt[i];
+}
+
+// Marks the key as ours AND schedules a write. The write itself waits for the
+// next tick so that several modules committing in one Save produce one file.
+void tcOptSet(int i, int v) {
+    if (tc_opt[i] != v) tc_opt_dirty = 1;
+    tc_opt[i] = v;
+    tc_opt_own[i] = 1;
+}
+
+void tcOptLoad() {
+    int i = 0;
+    while (i < 26) {
+        tc_opt[i] = -32768;
+        tc_opt_own[i] = 0;
+        i++;
+    }
+    i = 0;
+    while (i < 6) {
+        tc_optf[i] = 0.0;
+        tc_optf_has[i] = 0;
+        i++;
+    }
+    int h = fileOpen("/tc_options.cfg", "r");
+    if (h < 0) {
+        addLog("tc_options: none yet");
+        return;
+    }
+    if (fileGetStr(tc_opt_b, h, "@ui_de=",         1, 10) > 0) tc_opt[0]  = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ui_nosleep=",    1, 10) > 0) tc_opt[1]  = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_meter_sel=", 1, 10) > 0) tc_opt[2]  = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_rx_pin=",    1, 10) > 0) tc_opt[3]  = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_tx_pin=",    1, 10) > 0) tc_opt[4]  = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_filter=",    1, 10) > 0) tc_opt[5]  = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_activ=",     1, 10) > 0) tc_opt[6]  = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_drvrows=",   1, 10) > 0) tc_opt[7]  = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_ph3=",       1, 10) > 0) tc_opt[8]  = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_pv=",        1, 10) > 0) tc_opt[9]  = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_sndpwr=",    1, 10) > 0) tc_opt[10] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@mb_on=",         1, 10) > 0) tc_opt[11] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@mb_port=",       1, 10) > 0) tc_opt[12] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@es_mode=",       1, 10) > 0) tc_opt[13] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@es_port=",       1, 10) > 0) tc_opt[14] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@es_offset=",     1, 10) > 0) tc_opt[15] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@es_tweak=",      1, 10) > 0) tc_opt[16] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@es_force=",      1, 10) > 0) tc_opt[17] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@es_throttle=",   1, 10) > 0) tc_opt[18] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ct_kind=",       1, 10) > 0) tc_opt[19] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ct_offset=",     1, 10) > 0) tc_opt[20] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ct_port=",       1, 10) > 0) tc_opt[21] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ct_rssi=",       1, 10) > 0) tc_opt[22] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ct_ttl=",        1, 10) > 0) tc_opt[23] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ct_tweak=",      1, 10) > 0) tc_opt[24] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_da=",       1, 10) > 0) tc_opt[25] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@imp_day=",   1, 10) > 0) { tc_optf[0] = atof(tc_opt_b); tc_optf_has[0] = 1; }
+    if (fileGetStr(tc_opt_b, h, "@imp_month=", 1, 10) > 0) { tc_optf[1] = atof(tc_opt_b); tc_optf_has[1] = 1; }
+    if (fileGetStr(tc_opt_b, h, "@imp_year=",  1, 10) > 0) { tc_optf[2] = atof(tc_opt_b); tc_optf_has[2] = 1; }
+    if (fileGetStr(tc_opt_b, h, "@exp_day=",   1, 10) > 0) { tc_optf[3] = atof(tc_opt_b); tc_optf_has[3] = 1; }
+    if (fileGetStr(tc_opt_b, h, "@exp_month=", 1, 10) > 0) { tc_optf[4] = atof(tc_opt_b); tc_optf_has[4] = 1; }
+    if (fileGetStr(tc_opt_b, h, "@exp_year=",  1, 10) > 0) { tc_optf[5] = atof(tc_opt_b); tc_optf_has[5] = 1; }
+    fileClose(h);
+}
+
+void tcOptW(int h, char name[], int i) {
+    if (tc_opt[i] == -32768) return;
+    sprintf(tc_opt_b, "@%s=%d\n", name, tc_opt[i]);
+    fileWrite(h, tc_opt_b, strlen(tc_opt_b));
+}
+
+void tcOptWF(int h, char name[], int i) {
+    if (tc_optf_has[i] == 0) return;
+    sprintf(tc_opt_b, "@%s=%.3f\n", name, tc_optf[i]);
+    fileWrite(h, tc_opt_b, strlen(tc_opt_b));
+}
+
+void tcOptSave() {
+    int h = fileOpen("/tc_options.cfg", "w");
+    if (h < 0) {
+        addLog("tc_options: cannot write");
+        return;
+    }
+    strcpy(tc_opt_b, "# tc_options - shared by all programs\n");
+    fileWrite(h, tc_opt_b, strlen(tc_opt_b));
+    tcOptW(h, "ui_de",         0);
+    tcOptW(h, "ui_nosleep",    1);
+    tcOptW(h, "sml_meter_sel", 2);
+    tcOptW(h, "sml_rx_pin",    3);
+    tcOptW(h, "sml_tx_pin",    4);
+    tcOptW(h, "sml_filter",    5);
+    tcOptW(h, "sml_activ",     6);
+    tcOptW(h, "sml_drvrows",   7);
+    tcOptW(h, "sml_ph3",       8);
+    tcOptW(h, "sml_pv",        9);
+    tcOptW(h, "sml_sndpwr",   10);
+    tcOptW(h, "mb_on",        11);
+    tcOptW(h, "mb_port",      12);
+    tcOptW(h, "es_mode",      13);
+    tcOptW(h, "es_port",      14);
+    tcOptW(h, "es_offset",    15);
+    tcOptW(h, "es_tweak",     16);
+    tcOptW(h, "es_force",     17);
+    tcOptW(h, "es_throttle",  18);
+    tcOptW(h, "ct_kind",      19);
+    tcOptW(h, "ct_offset",    20);
+    tcOptW(h, "ct_port",      21);
+    tcOptW(h, "ct_rssi",      22);
+    tcOptW(h, "ct_ttl",       23);
+    tcOptW(h, "ct_tweak",     24);
+    // Energy baselines in kWh. These are the zero points the day/month/year
+    // totals are measured from, so carrying them over is what keeps the
+    // consumption figures alive across a program change - and they are the
+    // one thing here worth correcting by hand. Edit, then restart the slot:
+    // a running program holds them in memory and would write them back.
+    tcOptW(h,  "sml_da",      25);
+    tcOptWF(h, "imp_day",      0);
+    tcOptWF(h, "imp_month",    1);
+    tcOptWF(h, "imp_year",     2);
+    tcOptWF(h, "exp_day",      3);
+    tcOptWF(h, "exp_month",    4);
+    tcOptWF(h, "exp_year",     5);
+    fileClose(h);
+    addLog("tc_options: written");
+}
+
+int tc_opt_init;
+int tc_opt_first;      // 1 during the tick in which the file was read, so
+                       // every module can pull its own keys in that same tick
+                       // - uiApplyBegin() runs before all of them.
+
 // From EverySecond, BEFORE the other tick functions: latches the press so
 // every module sees it in the same tick, whatever order they run in.
 void uiApplyBegin() {
+    // First tick: the shared file wins over the .pvs. Runs here because
+    // uiApplyBegin() is called before every other module's tick, so they all
+    // see the loaded values in the same second.
+    if (tc_opt_init == 0) {
+        tc_opt_init = 1;
+        tc_opt_first = 1;
+        tcOptLoad();
+        ui_de      = tcOptGet(0, ui_de);
+        ui_nosleep = tcOptGet(1, ui_nosleep);
+        tcOptSet(0, ui_de);
+        tcOptSet(1, ui_nosleep);
+    } else {
+        tc_opt_first = 0;
+        if (tc_opt_dirty == 1) {
+            tc_opt_dirty = 0;
+            tcOptSave();
+        }
+    }
     ui_applying = ui_apply;
     ui_apply = 0;
     // A fresh page render discards whatever was typed but not saved: every
@@ -34,6 +239,43 @@ void uiApplyBegin() {
     // effect. Without this the widgets kept showing values that do nothing.
     ui_reloading = ui_reload;
     ui_reload = 0;
+
+    // Act ONLY on a change made here, never at boot: both variables are
+    // persist, so after a restart they agree and nothing is sent. A Sleep set
+    // from the console is therefore left alone - which is the whole point, and
+    // was NOT true of the first build carrying this switch: it found a fresh
+    // ui_nosleep of 0, dutifully sent "Sleep 50" and undid a console Sleep 0.
+    //
+    // The second attempt asked the device instead - tasmCmd("Sleep", ui_buf),
+    // then strFind for the "Active":"0" in the reply. It never matched: the
+    // console showed RSL: RESULT = {"Sleep":{"0":{"Active":"0"}}} and, in the
+    // same second, this script logging nosleep=0.
+    //
+    // CAUSE NOT ESTABLISHED. The obvious suspect was byte packing - ui_buf is
+    // a byte[220] - but both SYS_STR_FIND and SYS_STR_FIND_CONST resolve it
+    // through tc_ref_is_bytes()/tc_chr_get() and handle it correctly, and the
+    // byteAbi flag in the compiler's builtin table only stamps the ABI
+    // revision; it does not carry the packing bit. So that explanation is
+    // wrong and no report has been filed. To pin it down, weblog 3 shows
+    // "TCC: tasmCmd -> N bytes" and says whether the buffer was filled at all.
+    //
+    // Moot either way: the query is gone, and with it the dependency.
+    //
+    // Unchecking restores Tasmota's default of 50, NOT whatever stood there
+    // before; the old value is kept nowhere.
+    tcOptSet(0, ui_de);
+    tcOptSet(1, ui_nosleep);
+
+    if (ui_nosleep != ui_sleep_ack) {
+        if (ui_nosleep == 1) {
+            tasmCmd("Sleep 0", ui_buf);
+            addLog("ui: power saving off - Sleep 0");
+        } else {
+            tasmCmd("Sleep 50", ui_buf);
+            addLog("ui: power saving on - Sleep 50");
+        }
+        ui_sleep_ack = ui_nosleep;
+    }
 }
 
 // Save button + the "unsaved changes" guard. Goes green with OK for 2.5 s
@@ -85,19 +327,41 @@ void uiSaveButton() {
     webSend("if(confirm(m)){d=0}else{e.preventDefault();e.stopPropagation()}},true)})();</script>");
 }
 
-// Language picker. Belongs at the top of the settings page.
-void uiLang() {
-    if (ui_de) {
-        webPulldown(ui_de, "Sprache", "English|Deutsch");
-    } else {
-        webPulldown(ui_de, "Language", "English|Deutsch");
-    }
-}
-
 // (i) link for a section heading, e.g. uiI("ct002/#battery")
 void uiI(char page[]) {
     sprintf(ui_buf, "%s%s'>&#x2139;&#xFE0F;</a>", ui_base, page);
     webSend(ui_buf);
+}
+
+// Checkbox with the (i) INSIDE the row, next to the label. webCheckbox closes
+// its own <div>, so a uiI() after it drops the link onto the next line - this
+// is the way to have both without a section heading to hang the link on.
+// Markup copied from SYS_WEB_CHECKBOX, including the inverted value seva()
+// gets: a click sends what the box will BE, not what it is.
+//
+// Value and widget id are separate arguments because varIdx() has to be
+// evaluated at the CALL SITE - the variable itself is not in scope here, and
+// TinyC has no way to pass one by reference.
+void uiCheckI(int val, int idx, char label[], char page[]) {
+    if (val == 1) {
+        sprintf(ui_buf, "<div><label><b>%s</b> <input type='checkbox' checked onchange='seva(0,%d)'></label>", label, idx);
+    } else {
+        sprintf(ui_buf, "<div><label><b>%s</b> <input type='checkbox' onchange='seva(1,%d)'></label>", label, idx);
+    }
+    webSend(ui_buf);
+    uiI(page);
+    webSend("</div>");
+}
+
+// Language picker. Belongs at the top of the settings page.
+void uiLang() {
+    if (ui_de) {
+        webPulldown(ui_de, "Sprache", "English|Deutsch");
+        uiCheckI(ui_nosleep, varIdx(ui_nosleep), "Energiesparmodus ausschalten", "sml/#sleep");
+    } else {
+        webPulldown(ui_de, "Language", "English|Deutsch");
+        uiCheckI(ui_nosleep, varIdx(ui_nosleep), "Turn power saving off", "sml/#sleep");
+    }
 }
 
 // Section heading with a help link: uiHead("&#x26A1;", "Meter", "Zähler", "sml/#meter")
@@ -123,6 +387,20 @@ void uiText(char en[], char de[]) {
 
 // Separator row for the Tasmota main page. WebCall output lands inside
 // Tasmota's sensor table, so a full-width rule needs its own row.
+// Opens the foot of a settings page: the separator, the small grey block, and
+// the uptime as its first line. The caller adds its own program name/version
+// line and closes the div - so the uptime shares that block's size and colour
+// instead of standing above it in a different one. It used to sit at the end
+// of the descriptor panel, right under the Display checkbox, where it read as
+// part of that section rather than as a property of the device.
+void uiUptime() {
+    int up_d = tasm_uptime / 86400;
+    int up_h = (tasm_uptime / 3600) % 24;
+    int up_m = (tasm_uptime / 60) % 60;
+    sprintf(ui_buf, "<hr><div style='text-align:center;font-size:10px;color:#555;line-height:1.5'>Uptime: %d d %d h %d min<br>", up_d, up_h, up_m);
+    webSend(ui_buf);
+}
+
 void uiSep() {
     webSend("<tr><td colspan='2'><hr style='border:0;border-top:1px solid #666;margin:5px 0'></td></tr>");
 }

@@ -116,7 +116,7 @@ body.lang-de .en{display:none}
 <div class="en">
 <table>
 <tr><th>Mode</th><td>EcoTracker, Shelly Pro 3EM or Shelly Pro EM50. <b>Takes effect after a restart of the script</b> &mdash; the mDNS name and the UDP socket are claimed once at start.</td></tr>
-<tr><th>UDP port</th><td>Pro 3EM only. 1010 is Shelly's own port. Marstek B2500 expects 2220 &mdash; if the battery does not find the meter, this is the first thing to try. The Pro EM50 has no setting: it always binds 2223.</td></tr>
+<tr><th>UDP port</th><td>Pro 3EM only. 1010 is Shelly's own port. Marstek B2500 expects 2220 &mdash; if the battery does not find the meter, this is the first thing to try. The row is shown in every mode; where the port is not yours to pick it is greyed out &mdash; 2223 for the Pro EM50, which always binds that, and nothing for EcoTracker, which uses no UDP at all.</td></tr>
 </table>
 <p>Which one does your battery want? If the manual names a supported meter, follow it. Otherwise start with Shelly Pro 3EM; it is the most widely supported of the three.</p>
 <p class="warn">Pro EM50 mode is the newest and the least tested. <code>EM1.GetStatus</code> &mdash; the call a battery actually polls &mdash; is solid; the full <code>Shelly.GetStatus</code> document is derived from the device's structure rather than from a real EM50. If you own one, a comparison would be welcome.</p>
@@ -124,7 +124,7 @@ body.lang-de .en{display:none}
 <div class="de">
 <table>
 <tr><th>Modus</th><td>EcoTracker, Shelly Pro 3EM oder Shelly Pro EM50. <b>Wirkt erst nach einem Neustart des Scripts</b> &mdash; der mDNS-Name und der UDP-Socket werden einmal beim Start belegt.</td></tr>
-<tr><th>UDP-Port</th><td>Nur beim Pro 3EM. 1010 ist Shellys eigener Port. Der Marstek B2500 erwartet 2220 &mdash; wenn der Akku den Zähler nicht findet, ist das das Erste, was man probiert. Der Pro EM50 hat keine Wahl: er belegt immer 2223.</td></tr>
+<tr><th>UDP-Port</th><td>Nur beim Pro 3EM. 1010 ist Shellys eigener Port. Der Marstek B2500 erwartet 2220 &mdash; wenn der Akku den Zähler nicht findet, ist das das Erste, was man probiert. Die Zeile steht in jedem Modus da; wo der Port nicht zur Wahl steht, ist sie ausgegraut &mdash; 2223 beim Pro EM50, der immer den belegt, und leer beim EcoTracker, der gar kein UDP nutzt.</td></tr>
 </table>
 <p>Was will dein Akku? Wenn im Handbuch ein unterstützter Zähler steht, danach richten. Sonst mit Shelly Pro 3EM anfangen; der wird am häufigsten unterstützt.</p>
 <p class="warn">Der Pro-EM50-Modus ist der neueste und am wenigsten erprobte. <code>EM1.GetStatus</code> &mdash; der Aufruf, den ein Akku tatsächlich pollt &mdash; ist sicher; das vollständige <code>Shelly.GetStatus</code> ist aus der Gerätestruktur abgeleitet, nicht an einem echten EM50 gemessen. Wer einen hat: Vergleich willkommen.</p>

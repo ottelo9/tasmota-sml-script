@@ -10,7 +10,7 @@
 #include "sml_chart_common.tc"
 #include "sml_modbus_common.tc"
 
-char sml_vers[] = "31.08.2026 08:52";
+char sml_vers[] = "03.09.2026 12:40";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 
@@ -31,8 +31,37 @@ void Every100ms() {
 
 void EverySecond() {
     uiApplyBegin();
+    if (tc_opt_first == 1) {
+        sml_pv     = tcOptGet(9,  sml_pv);
+        sml_sndpwr = tcOptGet(10, sml_sndpwr);
+        tcOptSet(9,  sml_pv);
+        tcOptSet(10, sml_sndpwr);
+        // Baselines from the shared file, so the day/month/year totals survive
+        // a program change. sml_da comes along: it is the last-seen day, and
+        // without it the month-wrap would zero the wrong span of days.
+        sml_dval  = tcOptGetF(0, sml_dval);
+        sml_mval  = tcOptGetF(1, sml_mval);
+        sml_yval  = tcOptGetF(2, sml_yval);
+        sml_dval2 = tcOptGetF(3, sml_dval2);
+        sml_mval2 = tcOptGetF(4, sml_mval2);
+        sml_yval2 = tcOptGetF(5, sml_yval2);
+        sml_da    = tcOptGet(25, sml_da);
+    }
+    // Pushed every second rather than at the rollover: the baselines are
+    // written in several places (midnight, month wrap, new year, the manual
+    // reset button, the .bin import) and a missed one would silently keep an
+    // old figure in the file. tcOptSetF only marks the file dirty on a real
+    // change, so this costs six comparisons.
+    tcOptSetF(0, sml_dval);
+    tcOptSetF(1, sml_mval);
+    tcOptSetF(2, sml_yval);
+    tcOptSetF(3, sml_dval2);
+    tcOptSetF(4, sml_mval2);
+    tcOptSetF(5, sml_yval2);
+    tcOptSet(25, sml_da);
     if (ui_reloading) { sml_e_pv = sml_pv; sml_e_sndpwr = sml_sndpwr; }
-    if (ui_applying)  { sml_pv = sml_e_pv; sml_sndpwr = sml_e_sndpwr; }
+    if (ui_applying)  { sml_pv = sml_e_pv; sml_sndpwr = sml_e_sndpwr;
+                        tcOptSet(9, sml_pv); tcOptSet(10, sml_sndpwr); }
     sml_descriptor_apply();
     mbTick();
 
@@ -153,7 +182,8 @@ void WebUI() {
     else       webButton(do_reset, "Restart SML|restarted");
     sml_chart_csv_button(varIdx(do_csv));
 
-    sprintf(sml_buf, "<hr><div style='text-align:center;font-size:10px;color:#555;line-height:1.5'>sml_chart.tc &middot; Version %s<br>", sml_vers);
+    uiUptime();
+    sprintf(sml_buf, "sml_chart.tc &middot; Version %s<br>", sml_vers);
     webSend(sml_buf);
     webSend("by <a href='https://ottelo.jimdofree.com' target='_blank'>ottelo.jimdofree.com</a> &amp; gemu2015 (TinyC <span id='tcv'>...</span>)</div></div>");
     webSend("<script>if(window.__tcv){document.getElementById('tcv').textContent=window.__tcv;}else{fetch('/tc_api?cmd=status').then(function(r){return r.json();}).then(function(j){window.__tcv=j.release;var e=document.getElementById('tcv');if(e)e.textContent=j.release;}).catch(function(){});}</script>");

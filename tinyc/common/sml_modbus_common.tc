@@ -21,6 +21,8 @@ int mb_e_on; int mb_e_port;
 void mbCommit() {
     mb_on = mb_e_on;
     mb_port = mb_e_port;
+    tcOptSet(11, mb_on);
+    tcOptSet(12, mb_port);
 }
 void mbEditLoad() {
     mb_e_on = mb_on;
@@ -121,6 +123,13 @@ void mbPoll() {
 
 // From EverySecond(). Applies port / on-off changes without a reboot.
 void mbTick() {
+    if (tc_opt_first == 1) {
+        mb_on   = tcOptGet(11, mb_on);
+        mb_port = tcOptGet(12, mb_port);
+        tcOptSet(11, mb_on);
+        tcOptSet(12, mb_port);
+        mbEditLoad();
+    }
     if (ui_reloading) mbEditLoad();
     if (ui_applying == 0) return;     // a half-typed port would rebind at once
     mbCommit();

@@ -57,6 +57,7 @@ body.lang-de .en{display:none}
 <nav>
   <a href="#overview"><span class="en">Overview</span><span class="de">Überblick</span></a>
   <a href="#programs"><span class="en">Programs</span><span class="de">Programme</span></a>
+  <a href="#sleep"><span class="en">Power saving</span><span class="de">Energiesparmodus</span></a>
   <a href="#meter"><span class="en">Meter settings</span><span class="de">Zähler-Einstellungen</span></a>
   <a href="#filter">Filter</a>
   <a href="#display"><span class="en">Display</span><span class="de">Anzeige</span></a>
@@ -64,6 +65,7 @@ body.lang-de .en{display:none}
   <a href="#data"><span class="en">Chart data</span><span class="de">Diagrammdaten</span></a>
   <a href="#telemetry"><span class="en">Telemetry</span><span class="de">Telemetrie</span></a>
   <a href="#modbus">Modbus</a>
+  <a href="#options"><span class="en">Settings file</span><span class="de">Einstellungsdatei</span></a>
   <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
 </nav>
 
@@ -136,6 +138,90 @@ body.lang-de .en{display:none}
 </ol>
 <p class="warn">Nur Slot&nbsp;0 bei den Emulator-Varianten: deren HTTP-Endpunkte sind <code>webOn</code>-Handler, und die reicht Tasmota an Slot&nbsp;0 weiter.</p>
 <p>Jedes Programm hat seine eigene Einstellungsdatei. Beim Wechsel muss der Zähler neu eingerichtet werden.</p>
+</div>
+</section>
+
+<section id="sleep">
+<h2><span class="en">Power saving</span><span class="de">Energiesparmodus</span></h2>
+<div class="en">
+<p>Tasmota lets the chip doze between loop passes &mdash; <code>Sleep 50</code>, fifty milliseconds, is the default. It saves current, and it costs response time: while the radio sleeps the access point holds packets back until the next wake window.</p>
+<table>
+<tr><th><span class="sw">OFF</span> (default)</th><td><code>Sleep 50</code>. Lower power draw, a cooler chip.</td></tr>
+<tr><th><span class="sw">ON</span></th><td><code>Sleep 0</code>. The loop runs without pause. The web UI, the emulator's UDP replies and the charts all answer sooner.</td></tr>
+</table>
+<p>Measured on an ESP32-C3 at &minus;87&nbsp;dBm, twenty-five renders of the settings page:</p>
+<table>
+<tr><th></th><td><b>Sleep 50</b></td><td><b>Sleep 0</b></td></tr>
+<tr><th>median</th><td>389 ms</td><td>141 ms</td></tr>
+<tr><th>90th percentile</th><td>2253 ms</td><td>186 ms</td></tr>
+<tr><th>slowest</th><td>3315 ms</td><td>277 ms</td></tr>
+<tr><th>over one second</th><td>6 of 25</td><td>none</td></tr>
+</table>
+<p>The second run was made on a link that had meanwhile got <i>worse</i> (&minus;90&nbsp;dBm), so the seconds-long outliers came from the dozing, not from the radio. The weaker your signal, the more this switch is worth: a sleeping station misses beacons, and the access point buffers for it.</p>
+<h3>What the switch actually does</h3>
+<p>It is not a dial with a sweet spot in between. Tasmota ties the Wi-Fi radio's power saving to the value being zero:</p>
+<pre><code>if (0 == TasmotaGlobal.sleep || wifi_no_sleep) {
+    setSleepMode(WIFI_NONE_SLEEP);    // radio stays on
+} else {
+    setSleepMode(WIFI_MODEM_SLEEP);   // radio dozes between beacons
+}</code></pre>
+<p><code>Sleep 10</code> therefore behaves on the air exactly like <code>Sleep 50</code> &mdash; only the processor's pause per loop gets shorter. There is nothing to tune between the two states, which is why this is a checkbox and not a number field.</p>
+<table>
+<tr><th></th><td><b>Sleep 50</b></td><td><b>Sleep 0</b></td></tr>
+<tr><th>Power draw</th><td>50&ndash;400 mW, fluctuating</td><td>400 mW, constant</td></tr>
+<tr><th>Wi-Fi radio</th><td>dozes, wakes for beacons</td><td>receiving continuously</td></tr>
+</table>
+<p>Measured on an ESP32-C3 reading head. Almost all of it is the radio: the core draws roughly 70&ndash;100 mW when busy, a continuously receiving Wi-Fi 260&ndash;330 mW. The low values are the dozing module, the peaks its wake windows. <code>SetOption127</code> (<code>wifi_no_sleep</code>) does not help here either &mdash; it keeps the radio on without lifting the processor's pause, so you end up at the same 400 mW.</p>
+<p>The difference of about 250 mW is some 2.2 kWh a year &mdash; well under a euro. For a device a battery polls once a second that is the right trade.</p>
+<h3>Which one for you</h3>
+<table>
+<tr><th>Emulator in use</th><td><span class="sw">ON</span>. The battery polls every second and a late answer costs regulation quality.</td></tr>
+<tr><th>Weak Wi-Fi</th><td><span class="sw">ON</span>. Below about &minus;80&nbsp;dBm power saving and a poor link make each other worse: the station misses beacons, the access point buffers, and what should be 100&ndash;300 ms of waiting became outliers of over three seconds here.</td></tr>
+<tr><th>Meter reading only</th><td><span class="sw">OFF</span>. MQTT every 60 s does not care about two seconds of delay, and the device runs cooler.</td></tr>
+</table>
+<p>The bigger lever is the aerial, not this switch. At &minus;65&nbsp;dBm <code>Sleep 50</code> would most likely be unremarkable, and an access point near the meter fixes response time and power draw at once.</p>
+<p class="warn">Turning it back off sets <code>Sleep 50</code>, Tasmota's default &mdash; not whatever value stood there before. If you run a custom value, set it again with the <code>Sleep</code> command. The switch acts only on a change you make here &mdash; nothing is sent at start-up, so a <code>Sleep</code> set from the console is left alone. It is also not read back: after setting one from the console, tick the box once so the two agree.</p>
+<p>The cost is real: more current and a warmer chip. On a mains-powered reading head that is usually the right trade; on anything battery-fed it is not.</p>
+</div>
+<div class="de">
+<p>Tasmota lässt den Chip zwischen den Schleifendurchläufen dösen &mdash; <code>Sleep 50</code>, fünfzig Millisekunden, ist der Standard. Das spart Strom und kostet Reaktionszeit: während das Funkmodul schläft, hält der Access Point Pakete bis zum nächsten Aufwachfenster zurück.</p>
+<table>
+<tr><th><span class="sw">AUS</span> (Standard)</th><td><code>Sleep 50</code>. Weniger Stromaufnahme, kühlerer Chip.</td></tr>
+<tr><th><span class="sw">EIN</span></th><td><code>Sleep 0</code>. Die Schleife läuft ohne Pause. Oberfläche, UDP-Antworten des Emulators und Diagramme kommen schneller.</td></tr>
+</table>
+<p>Gemessen an einem ESP32-C3 bei &minus;87&nbsp;dBm, fünfundzwanzig Aufrufe der Einstellungsseite:</p>
+<table>
+<tr><th></th><td><b>Sleep 50</b></td><td><b>Sleep 0</b></td></tr>
+<tr><th>Median</th><td>389 ms</td><td>141 ms</td></tr>
+<tr><th>90. Perzentil</th><td>2253 ms</td><td>186 ms</td></tr>
+<tr><th>langsamste</th><td>3315 ms</td><td>277 ms</td></tr>
+<tr><th>über eine Sekunde</th><td>6 von 25</td><td>keine</td></tr>
+</table>
+<p>Der zweite Durchlauf entstand auf einer Verbindung, die inzwischen <i>schlechter</i> war (&minus;90&nbsp;dBm) &mdash; die Sekundenausreißer kamen also vom Dösen, nicht vom Funk. Je schwächer dein Signal, desto mehr bringt der Schalter: eine schlafende Station verpasst Beacons, und der Access Point puffert für sie.</p>
+<h3>Was der Schalter wirklich tut</h3>
+<p>Er ist kein Regler mit einem Optimum dazwischen. Tasmota koppelt den Energiesparmodus des Funkmoduls daran, dass der Wert null ist:</p>
+<pre><code>if (0 == TasmotaGlobal.sleep || wifi_no_sleep) {
+    setSleepMode(WIFI_NONE_SLEEP);    // Funk bleibt an
+} else {
+    setSleepMode(WIFI_MODEM_SLEEP);   // Funk döst zwischen Beacons
+}</code></pre>
+<p><code>Sleep 10</code> verhält sich funktechnisch also exakt wie <code>Sleep 50</code> &mdash; nur die Pause des Prozessors je Schleifendurchlauf wird kürzer. Zwischen den beiden Zuständen gibt es nichts zu justieren, deshalb ist das hier ein Häkchen und kein Zahlenfeld.</p>
+<table>
+<tr><th></th><td><b>Sleep 50</b></td><td><b>Sleep 0</b></td></tr>
+<tr><th>Leistungsaufnahme</th><td>50&ndash;400 mW, schwankend</td><td>400 mW, konstant</td></tr>
+<tr><th>WLAN-Modul</th><td>döst, wacht zu Beacons auf</td><td>empfängt durchgehend</td></tr>
+</table>
+<p>Gemessen an einem ESP32-C3-Lesekopf. Fast alles davon ist das Funkmodul: der Kern zieht aktiv grob 70&ndash;100 mW, ein dauerhaft empfangendes WLAN 260&ndash;330 mW. Die niedrigen Werte sind das dösende Modul, die Spitzen seine Aufwachfenster. <code>SetOption127</code> (<code>wifi_no_sleep</code>) hilft hier ebenfalls nicht &mdash; es hält den Funk an, ohne die Prozessorpause aufzuheben, du landest also bei denselben 400 mW.</p>
+<p>Die Differenz von rund 250 mW sind etwa 2,2 kWh im Jahr &mdash; deutlich unter einem Euro. Für ein Gerät, das ein Akku im Sekundentakt abfragt, ist das der richtige Tausch.</p>
+<h3>Was für dich passt</h3>
+<table>
+<tr><th>Emulator im Einsatz</th><td><span class="sw">EIN</span>. Der Akku fragt im Sekundentakt, und eine späte Antwort kostet Regelgüte.</td></tr>
+<tr><th>Schwaches WLAN</th><td><span class="sw">EIN</span>. Unterhalb von etwa &minus;80&nbsp;dBm verstärken sich Energiesparmodus und schlechte Verbindung gegenseitig: das Modul verpasst Beacons, der Access Point puffert, und aus 100&ndash;300 ms Wartezeit wurden hier Ausreißer von über drei Sekunden.</td></tr>
+<tr><th>Nur Zähler auslesen</th><td><span class="sw">AUS</span>. MQTT alle 60 s stören zwei Sekunden Verzögerung nicht, und das Gerät bleibt kühler.</td></tr>
+</table>
+<p>Der größere Hebel ist die Antenne, nicht dieser Schalter. Bei &minus;65&nbsp;dBm wäre <code>Sleep 50</code> sehr wahrscheinlich unauffällig, und ein Access Point in Zählernähe behebt Reaktionszeit und Verbrauch auf einen Schlag.</p>
+<p class="warn">Wieder ausschalten setzt <code>Sleep 50</code>, den Tasmota-Standard &mdash; nicht den Wert, der vorher dort stand. Wer einen eigenen Wert fährt, setzt ihn mit dem Befehl <code>Sleep</code> erneut. Der Schalter wirkt nur auf eine Änderung, die du hier machst &mdash; beim Start wird nichts gesendet, ein von der Konsole gesetzter <code>Sleep</code> bleibt also unangetastet. Gelesen wird er auch nicht: nach einem Konsolenbefehl das Häkchen einmal setzen, damit beide übereinstimmen.</p>
+<p>Der Preis ist real: mehr Strom und ein wärmerer Chip. Bei einem netzgespeisten Lesekopf ist das meist der richtige Tausch, bei allem Batteriebetriebenen nicht.</p>
 </div>
 </section>
 
@@ -331,6 +417,60 @@ body.lang-de .en{display:none}
 <p>Alles außerhalb der Tabelle wird sauber beantwortet: falscher Funktionscode gibt Exception&nbsp;<code>01</code>, falsche Adresse Exception&nbsp;<code>02</code>, eine ungerade oder zu große Anzahl Exception&nbsp;<code>03</code>. Quantity&nbsp;1 wird deshalb abgelehnt &mdash; ein halber Float ist kein Wert.</p>
 </div>
 </section>
+<section id="options">
+<h2><span class="en">Settings file</span><span class="de">Einstellungsdatei</span></h2>
+<div class="en">
+<p>Each program keeps its settings in its own <code>.pvs</code> &mdash; the name is derived from the <code>.tcb</code>, so switching programs used to start from scratch: no meter, no pins, no language, and the day/month/year totals back at zero. <code>/tc_options.cfg</code> sits beside them and is shared by all of them.</p>
+<pre><code># tc_options - shared by all programs
+@ui_de=1
+@sml_meter_sel=89
+@sml_rx_pin=3
+@sml_tx_pin=1
+@sml_ph3=1
+@es_mode=2
+@sml_da=3
+@imp_day=26714.950
+@exp_day=659.775</code></pre>
+<p>One <code>@name=value</code> per line. A program reads the keys it knows and <b>carries the rest through untouched</b>, so running <code>sml_simple</code> for a while does not throw away the emulator's settings &mdash; go back and they are still there.</p>
+<table>
+<tr><th><code>ui_*</code></th><td>Language, power saving.</td></tr>
+<tr><th><code>sml_*</code></th><td>Meter, RX/TX pin, filter, phases, driver rows.</td></tr>
+<tr><th><code>es_*</code> / <code>ct_*</code> / <code>mb_*</code></th><td>Emulators and Modbus.</td></tr>
+<tr><th><code>imp_*</code> / <code>exp_*</code></th><td>The energy baselines in kWh: the zero points day, month and year totals are counted from. <code>sml_da</code> is the last-seen day of the month and belongs with them.</td></tr>
+</table>
+<h3>Editing by hand</h3>
+<p>Download the file, change it, upload it, <b>then restart the script</b> &mdash; in that order. It is read once at start; a running program holds the values in memory and would write yours back over at the next rollover.</p>
+<p>The baselines are what you would correct: set <code>imp_day</code> to the meter reading at midnight and today's consumption is right again.</p>
+<p class="warn">Do not delete the file to "reset" things &mdash; it is rebuilt from whatever the current program has in its own <code>.pvs</code>, which after a program change may be zeros.</p>
+<p>The file is written when something actually changes: once when it is created, on a Save that changed a value, and when a baseline rolls over at midnight. Not on a timer &mdash; roughly one write a day.</p>
+</div>
+<div class="de">
+<p>Jedes Programm hält seine Einstellungen in einer eigenen <code>.pvs</code> &mdash; der Name wird aus der <code>.tcb</code> abgeleitet. Ein Programmwechsel fing deshalb bei null an: kein Zähler, keine Pins, keine Sprache, und die Tages-, Monats- und Jahreswerte zurück auf Anfang. <code>/tc_options.cfg</code> liegt daneben und gehört allen gemeinsam.</p>
+<pre><code># tc_options - shared by all programs
+@ui_de=1
+@sml_meter_sel=89
+@sml_rx_pin=3
+@sml_tx_pin=1
+@sml_ph3=1
+@es_mode=2
+@sml_da=3
+@imp_day=26714.950
+@exp_day=659.775</code></pre>
+<p>Eine Zeile <code>@name=wert</code> je Eintrag. Ein Programm liest die Schlüssel, die es kennt, und <b>trägt alle anderen unverändert mit</b> &mdash; läuft eine Weile <code>sml_simple</code>, überleben die Emulator-Einstellungen trotzdem und sind beim Zurückwechseln wieder da.</p>
+<table>
+<tr><th><code>ui_*</code></th><td>Sprache, Energiesparmodus.</td></tr>
+<tr><th><code>sml_*</code></th><td>Zähler, RX-/TX-Pin, Filter, Phasen, Treiberzeilen.</td></tr>
+<tr><th><code>es_*</code> / <code>ct_*</code> / <code>mb_*</code></th><td>Emulatoren und Modbus.</td></tr>
+<tr><th><code>imp_*</code> / <code>exp_*</code></th><td>Die Basiswerte in kWh: die Nullpunkte, von denen Tages-, Monats- und Jahressumme aus gezählt werden. <code>sml_da</code> ist der zuletzt gesehene Monatstag und gehört dazu.</td></tr>
+</table>
+<h3>Von Hand editieren</h3>
+<p>Datei herunterladen, ändern, hochladen, <b>dann das Script neu starten</b> &mdash; in dieser Reihenfolge. Gelesen wird sie einmal beim Start; ein laufendes Programm hält die Werte im Speicher und schriebe deine Korrektur beim nächsten Umbruch wieder weg.</p>
+<p>Zu korrigieren sind vor allem die Basiswerte: <code>imp_day</code> auf den Zählerstand um Mitternacht gesetzt, und der Tagesverbrauch stimmt wieder.</p>
+<p class="warn">Die Datei nicht löschen, um etwas &bdquo;zurückzusetzen&ldquo; &mdash; sie wird aus dem neu aufgebaut, was das gerade laufende Programm in seiner eigenen <code>.pvs</code> stehen hat, und das können nach einem Programmwechsel Nullen sein.</p>
+<p>Geschrieben wird nur, wenn sich wirklich etwas ändert: einmal beim Anlegen, bei einem Speichern mit geändertem Wert, und wenn um Mitternacht ein Basiswert umspringt. Nicht im Takt &mdash; also etwa einmal am Tag.</p>
+</div>
+</section>
+
 <section id="trouble">
 <h2><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></h2>
 <div class="en">
