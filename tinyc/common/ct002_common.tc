@@ -32,7 +32,10 @@ persist int  ct_port;          // UDP listen port (12345)
 persist int  ct_rssi;          // Wi-Fi RSSI reported to the batteries [dBm]
 persist int  ct_ttl;           // consumer timeout [s], 0 = adaptive (~2 polls)
 persist int  ct_offset;        // zero-feed offset [W]
-persist int  ct_tweak;          // regulator shaping 0/1
+persist int  ct_tweak;          // 1 = active control (was: regulator shaping)
+persist int  ct_trim;           // steady-import trim [W], 0 = off
+persist int  ct_pace;           // ramp step per cycle [W], 0 = off
+persist int  ct_mindc;          // minimum reported import [W], 0 = off
 persist byte ct_mac[16];       // CT MAC, 12 hex lowercase. Empty = answer all
 persist byte ct_mail[64];      // Marstek account mail (registration only)
 
@@ -41,6 +44,7 @@ persist byte ct_mail[64];      // Marstek account mail (registration only)
 // ct_mail are not in here - those are handled on /ctreg.
 int ct_e_kind; int ct_e_port; int ct_e_rssi; int ct_e_ttl;
 int ct_e_offset; int ct_e_tweak;
+int ct_e_trim; int ct_e_pace; int ct_e_mindc;
 
 void ctCommit() {
     ct_kind = ct_e_kind;
@@ -49,12 +53,18 @@ void ctCommit() {
     ct_ttl = ct_e_ttl;
     ct_offset = ct_e_offset;
     ct_tweak = ct_e_tweak;
+    ct_trim = ct_e_trim;
+    ct_pace = ct_e_pace;
+    ct_mindc = ct_e_mindc;
     tcOptSet(19, ct_kind);
     tcOptSet(20, ct_offset);
     tcOptSet(21, ct_port);
     tcOptSet(22, ct_rssi);
     tcOptSet(23, ct_ttl);
     tcOptSet(24, ct_tweak);
+    tcOptSet(26, ct_trim);
+    tcOptSet(27, ct_pace);
+    tcOptSet(28, ct_mindc);
 }
 void ctEditLoad() {
     ct_e_kind = ct_kind;
@@ -63,6 +73,9 @@ void ctEditLoad() {
     ct_e_ttl = ct_ttl;
     ct_e_offset = ct_offset;
     ct_e_tweak = ct_tweak;
+    ct_e_trim = ct_trim;
+    ct_e_pace = ct_pace;
+    ct_e_mindc = ct_mindc;
 }
 
 // ─── Consumer table (one row per battery, keyed by its MAC) ────────────────
@@ -353,34 +366,112 @@ void ctHandle(int n) {
 
 // ─── Meter ─────────────────────────────────────────────────────────────────
 
-// Offset + optional regulator shaping, applied per phase because each
-// battery regulates its own phase.
-int ctCtrl(float raw) {
+// ─── Regulator ─────────────────────────────────────────────────────────────
+// One control loop per phase - each battery nulls the phase it sits on - plus
+// a fourth for the combined total that phase D reads. Slot 0..2 = A/B/C, 3 = D.
+//
+// The previous version bent the reported VALUE (a quarter above the target,
+// 1.25x below). That is stateless: it knows neither what was sent a second ago
+// nor whether the battery reacted. The three parts below are modelled on
+// AstraMeter's CT002 control loop (docs/ct002.md) and keep state instead.
+float ct_eprev[4];      // previous error, for step detection and pacing
+int   ct_calm[4];       // consecutive calm cycles
+float ct_trimacc[4];    // trim currently applied [W]
+float ct_out[4];        // previously reported value, the pacing anchor
+int   ct_step[4];       // current pacing step [W]
+
+int ctCtrl(float raw, int ph) {
     float off = (float)ct_offset;
-    float v = raw - off;
-    if (ct_tweak > 0) {
-        if (raw > off) {
-            v = v / 4.0;
+    float err = raw - off;              // this is what the battery nulls
+
+    if (ct_tweak == 0) {                // active control off: relay as before
+        ct_out[ph] = err;
+        ct_eprev[ph] = err;
+        return (int)err;
+    }
+
+    float prev = ct_eprev[ph];
+    float d = err - prev;
+    if (d < 0.0) d = 0.0 - d;
+    if (d < 30.0) {
+        if (ct_calm[ph] < 100) ct_calm[ph] = ct_calm[ph] + 1;
+    } else {
+        ct_calm[ph] = 0;                // a load step - not the moment to trim
+    }
+    ct_eprev[ph] = err;
+
+    // ── Steady-import trim ────────────────────────────────────────────────
+    // Every Marstek firmware stops a few watts short on the IMPORT side: its
+    // own input deadband. Household load the battery could cover keeps being
+    // bought. Nudging past that deadband is only safe once the grid has been
+    // quiet for a few cycles - during a load step it would add overshoot,
+    // which is exactly why a static offset cannot do this job. Grows slowly,
+    // lets go quickly.
+    float lim = (float)ct_trim;
+    if (lim > 0.0 && ct_calm[ph] >= 5 && err > 0.0) {
+        if (ct_trimacc[ph] < lim) ct_trimacc[ph] = ct_trimacc[ph] + 2.0;
+    } else {
+        ct_trimacc[ph] = ct_trimacc[ph] - 5.0;
+        if (ct_trimacc[ph] < 0.0) ct_trimacc[ph] = 0.0;
+    }
+    float v = err + ct_trimacc[ph];
+
+    // ── Ramp pacing ───────────────────────────────────────────────────────
+    // Cap the CHANGE per cycle instead of bending the value. The battery's own
+    // ramp accelerates while it runs; with meter latency on top that overshoots
+    // and then hunts. The step starts at ct_pace and grows toward three times
+    // that, but only while the command is demonstrably working.
+    //
+    // "Working" is measured on the grid error itself, not on the batteries'
+    // reported power as AstraMeter does. We have that telemetry (ct_spwr[]),
+    // but tying it in would need the battery-to-phase mapping in this loop;
+    // a shrinking error says the same thing and holds for any number of
+    // batteries on the phase.
+    if (ct_pace > 0) {
+        int cap = ct_step[ph];
+        if (cap < ct_pace) cap = ct_pace;
+        float dv = v - ct_out[ph];
+        float adv = dv;
+        if (adv < 0.0) adv = 0.0 - adv;
+        if (adv > (float)cap) {
+            if (dv > 0.0) v = ct_out[ph] + (float)cap;
+            else          v = ct_out[ph] - (float)cap;
+        }
+        float ae = err;   if (ae < 0.0) ae = 0.0 - ae;
+        float ap = prev;  if (ap < 0.0) ap = 0.0 - ap;
+        if (ae < ap) {
+            ct_step[ph] = ct_step[ph] + 10;
+            if (ct_step[ph] > ct_pace * 3) ct_step[ph] = ct_pace * 3;
         } else {
-            v = v / 0.8;
+            ct_step[ph] = ct_pace;      // not converging - back to small steps
         }
     }
+    ct_out[ph] = v;                     // the pacing anchor, before the floor
+
+    // ── Keep a DC battery's inverter awake ────────────────────────────────
+    // A Marstek B2500 switches its inverter off at 0 W and falls asleep under
+    // high PV surplus. We cannot command a battery's output the way AstraMeter
+    // does - we only report grid power - so the equivalent is to never report
+    // less than this much import. That costs exactly this many watts of export
+    // while the sun is out; it is the price of keeping the inverter awake.
+    if (ct_mindc > 0 && v < (float)ct_mindc) v = (float)ct_mindc;
+
     return (int)v;
 }
 
 void ctPower() {
     if (sml_ph3 == 1) {
-        ct_pa = ctCtrl(smlGet(4));
-        ct_pb = ctCtrl(smlGet(5));
-        ct_pc = ctCtrl(smlGet(6));
+        ct_pa = ctCtrl(smlGet(4), 0);
+        ct_pb = ctCtrl(smlGet(5), 1);
+        ct_pc = ctCtrl(smlGet(6), 2);
     } else {
         // Single-value meter: everything on L1, like the Shelly emulation.
         // Set every battery to phase A (or all to D, which reads the total).
-        ct_pa = ctCtrl(smlGet(1));
+        ct_pa = ctCtrl(smlGet(1), 0);
         ct_pb = 0;
         ct_pc = 0;
     }
-    ct_ptot = ctCtrl(smlGet(1));       // the saldierend total — phase D reads this
+    ct_ptot = ctCtrl(smlGet(1), 3);    // the saldierend total — phase D reads this
 }
 
 // ─── Marstek cloud registration (HTTPS via httpGet + md5) ──────────────────
@@ -688,12 +779,18 @@ void ctTick() {
         ct_rssi   = tcOptGet(22, ct_rssi);
         ct_ttl    = tcOptGet(23, ct_ttl);
         ct_tweak  = tcOptGet(24, ct_tweak);
+        ct_trim   = tcOptGet(26, ct_trim);
+        ct_pace   = tcOptGet(27, ct_pace);
+        ct_mindc  = tcOptGet(28, ct_mindc);
         tcOptSet(19, ct_kind);
         tcOptSet(20, ct_offset);
         tcOptSet(21, ct_port);
         tcOptSet(22, ct_rssi);
         tcOptSet(23, ct_ttl);
         tcOptSet(24, ct_tweak);
+        tcOptSet(26, ct_trim);
+        tcOptSet(27, ct_pace);
+        tcOptSet(28, ct_mindc);
         ctEditLoad();
     }
     if (ui_reloading) ctEditLoad();
@@ -812,10 +909,16 @@ void ctPanel() {
     uiHead("&#x1F50B;", "Battery", "Akku", "ct002/#battery");
     if (ui_de) {
         webNumber(ct_e_offset, -200, 200, "Offset [W]");
-        webCheckbox(ct_e_tweak, "Regleroptimierung");
+        webCheckbox(ct_e_tweak, "Aktive Regelung");
+        webNumber(ct_e_trim, 0, 100, "Import-Trim [W]");
+        webNumber(ct_e_pace, 0, 300, "Schrittweite [W]");
+        webNumber(ct_e_mindc, 0, 200, "Mindestabgabe DC [W]");
     } else {
         webNumber(ct_e_offset, -200, 200, "Offset [W]");
-        webCheckbox(ct_e_tweak, "Regulator tweak");
+        webCheckbox(ct_e_tweak, "Active control");
+        webNumber(ct_e_trim, 0, 100, "Import trim [W]");
+        webNumber(ct_e_pace, 0, 300, "Ramp step [W]");
+        webNumber(ct_e_mindc, 0, 200, "Min DC output [W]");
     }
 
     // No Marstek block here - the account lives on /ctreg, reachable from the

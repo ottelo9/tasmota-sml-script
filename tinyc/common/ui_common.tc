@@ -55,8 +55,8 @@ int ui_reloading;            // latched for the current tick
 //
 // Chart data (dval/mval/yval, the sample rings) is NOT here. It belongs to
 // one program's charts, not to the family, and stays in the .pvs.
-int  tc_opt[26];
-int  tc_opt_own[26];
+int  tc_opt[29];
+int  tc_opt_own[29];
 int  tc_opt_dirty;
 byte tc_opt_b[48];
 
@@ -94,7 +94,7 @@ void tcOptSet(int i, int v) {
 
 void tcOptLoad() {
     int i = 0;
-    while (i < 26) {
+    while (i < 29) {
         tc_opt[i] = -32768;
         tc_opt_own[i] = 0;
         i++;
@@ -136,6 +136,9 @@ void tcOptLoad() {
     if (fileGetStr(tc_opt_b, h, "@ct_ttl=",        1, 10) > 0) tc_opt[23] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@ct_tweak=",      1, 10) > 0) tc_opt[24] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@sml_da=",       1, 10) > 0) tc_opt[25] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ct_trim=",       1, 10) > 0) tc_opt[26] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ct_pace=",       1, 10) > 0) tc_opt[27] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ct_mindc=",      1, 10) > 0) tc_opt[28] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@imp_day=",   1, 10) > 0) { tc_optf[0] = atof(tc_opt_b); tc_optf_has[0] = 1; }
     if (fileGetStr(tc_opt_b, h, "@imp_month=", 1, 10) > 0) { tc_optf[1] = atof(tc_opt_b); tc_optf_has[1] = 1; }
     if (fileGetStr(tc_opt_b, h, "@imp_year=",  1, 10) > 0) { tc_optf[2] = atof(tc_opt_b); tc_optf_has[2] = 1; }
@@ -196,6 +199,9 @@ void tcOptSave() {
     // one thing here worth correcting by hand. Edit, then restart the slot:
     // a running program holds them in memory and would write them back.
     tcOptW(h,  "sml_da",      25);
+    tcOptW(h,  "ct_trim",     26);
+    tcOptW(h,  "ct_pace",     27);
+    tcOptW(h,  "ct_mindc",    28);
     tcOptWF(h, "imp_day",      0);
     tcOptWF(h, "imp_month",    1);
     tcOptWF(h, "imp_year",     2);
