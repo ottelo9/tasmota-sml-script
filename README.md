@@ -260,3 +260,10 @@ DANKE !
 
 
 [Offizielle Tasmota Github Seite](https://github.com/arendst/Tasmota)
+
+------------------
+## Lizenz
+
+Alles in dieser Repo steht unter der [GPL-3.0](LICENSE) — dieselbe Lizenz wie Tasmota selbst, auf dem die Scripte und TinyC-Programme laufen.
+
+Die Regelung des CT002/CT003-Emulators ist der [CT002-Regelung von AstraMeter](https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md) nachempfunden (ebenfalls GPL-3.0). Danke an tomquist.

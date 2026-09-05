@@ -10,7 +10,7 @@
 #include "sml_chart_common.tc"
 #include "sml_modbus_common.tc"
 
-char sml_vers[] = "03.09.2026 18:10";
+char sml_vers[] = "05.09.2026 08:42";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 
@@ -156,7 +156,7 @@ void WebCall() {
 
 void WebUI() {
     if (webPage() == 2) { sml_chart_page_render(); return; }
-    if (webPage() == 3) { webSend("<script>location.replace('/tc')</script>"); return; }
+    if (webPage() == 5) { webSend("<script>location.replace('/tc')</script>"); return; }
     if (webPage() != 0) return;
     sml_render_settings_panel();
 
@@ -206,7 +206,8 @@ int main() {
     webPageLabel(0, "&#x2699;&#xFE0F; SML");
     webPageLabel(1, "");
     webPageLabel(2, "");                // charts page, reached by link
-    webPageLabel(3, "&#x1F4BB; TinyC");   // hands over to /tc
+    webPageLabel(5, "&#x1F4BB; TinyC");   // hands over to /tc - kept last so it stays
+                                          // last when a program adds a page
     webOn(1, "/pwr");
     smlScripterLoad("/sml_meter.def");
 

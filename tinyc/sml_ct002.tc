@@ -12,7 +12,7 @@
 #include "sml_modbus_common.tc"
 #include "ct002_common.tc"
 
-byte sml_vers[] = "03.09.2026 18:10";
+char sml_vers[] = "05.09.2026 08:42";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int  sml_sndpwr;         // 1 = publish power via MQTT and serve /pwr
@@ -110,10 +110,13 @@ void WebUI() {
     // Page 1 exists only for its button in Tasmota's main menu: webPageLabel is
     // the only way to get one, and it always points at /tc_ui - so hand over.
     if (webPage() == 1) { webSend("<script>location.replace('/ctreg')</script>"); return; }
-    if (webPage() == 3) { webSend("<script>location.replace('/tc')</script>"); return; }
+    if (webPage() == 5) { webSend("<script>location.replace('/tc')</script>"); return; }
+    // Page 4 carries everything the CT emulator owns - it outgrew the main
+    // page when the control settings arrived. Rendered in ct002_common.tc.
+    if (webPage() == 4) { ctPage4("sml_ct002.tc", sml_vers); return; }
     if (webPage() != 0) return;
     sml_render_settings_panel();     // opens the panel div
-    ctPanel();
+    ctPageLink();
 
     uiHead("&#x1F4E1;", "Telemetry", "Telemetrie", "sml/#telemetry");
     if (ui_de) webCheckbox(sml_e_sndpwr, "Leistung senden");
@@ -167,7 +170,9 @@ int main() {
     addCommand("CT");
     webPageLabel(0, "&#x2699;&#xFE0F; SML /&#x1F50B;");
     webPageLabel(1, "&#x2601;&#xFE0F; Marstek");
-    webPageLabel(3, "&#x1F4BB; TinyC");   // hands over to /tc
+    webPageLabel(4, "&#x1F50B; CT");
+    webPageLabel(5, "&#x1F4BB; TinyC");   // hands over to /tc - kept last so it stays
+                                          // last when a program adds a page
     webOn(1, "/pwr");
     smlScripterLoad("/sml_meter.def");
 

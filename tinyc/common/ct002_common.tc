@@ -36,6 +36,17 @@ persist int  ct_tweak;          // 1 = active control (was: regulator shaping)
 persist int  ct_trim;           // steady-import trim [W], 0 = off
 persist int  ct_pace;           // ramp step per cycle [W], 0 = off
 persist int  ct_mindc;          // minimum reported import [W], 0 = off
+persist int  ct_fair;           // 1 = split the load across batteries
+// Balance gain, rotation interval and the efficiency threshold used to be
+// three more settings. They are constants now, at AstraMeter's field-tested
+// values - on tomquist's own advice: "ich bereue mittlerweile ein bisschen,
+// dass es so viele Einstellmoeglichkeiten gibt, da das den Support-Aufwand
+// doch um einiges erschwert". The efficiency threshold went entirely: for a
+// B2500 the physical 80 W start floor now applies by itself, and for an AC
+// battery it was polish.
+#define CT_BGAIN     0.2      // balance gain
+#define CT_ROT_S     900      // seconds between rotations
+persist int  ct_sat;            // 1 = saturation detection
 persist byte ct_mac[16];       // CT MAC, 12 hex lowercase. Empty = answer all
 persist byte ct_mail[64];      // Marstek account mail (registration only)
 
@@ -45,6 +56,7 @@ persist byte ct_mail[64];      // Marstek account mail (registration only)
 int ct_e_kind; int ct_e_port; int ct_e_rssi; int ct_e_ttl;
 int ct_e_offset; int ct_e_tweak;
 int ct_e_trim; int ct_e_pace; int ct_e_mindc;
+int ct_e_fair; int ct_e_sat;
 
 void ctCommit() {
     ct_kind = ct_e_kind;
@@ -56,6 +68,8 @@ void ctCommit() {
     ct_trim = ct_e_trim;
     ct_pace = ct_e_pace;
     ct_mindc = ct_e_mindc;
+    ct_fair = ct_e_fair;
+    ct_sat = ct_e_sat;
     tcOptSet(19, ct_kind);
     tcOptSet(20, ct_offset);
     tcOptSet(21, ct_port);
@@ -65,6 +79,8 @@ void ctCommit() {
     tcOptSet(26, ct_trim);
     tcOptSet(27, ct_pace);
     tcOptSet(28, ct_mindc);
+    tcOptSet(29, ct_fair);
+    tcOptSet(33, ct_sat);
 }
 void ctEditLoad() {
     ct_e_kind = ct_kind;
@@ -76,6 +92,8 @@ void ctEditLoad() {
     ct_e_trim = ct_trim;
     ct_e_pace = ct_pace;
     ct_e_mindc = ct_mindc;
+    ct_e_fair = ct_fair;
+    ct_e_sat = ct_sat;
 }
 
 // ─── Consumer table (one row per battery, keyed by its MAC) ────────────────
@@ -86,6 +104,18 @@ int  ct_spwr[CT_NSLOT];             // last reported power [W], + = discharge
 int  ct_spart[CT_NSLOT];            // participate flag (field 7, default 1)
 int  ct_slast[CT_NSLOT];            // millis() of the last request
 int  ct_siv[CT_NSLOT];              // measured poll interval [ms]
+
+// ─── Per-battery control state (fair share, balancing, saturation) ─────────
+// Only touched while the corresponding option is on; with everything off the
+// emulator behaves exactly as before, which is why the defaults are 0.
+float ct_ssat[CT_NSLOT];            // saturation score 0..1, EMA
+int   ct_sprev[CT_NSLOT];           // previous reported power, to spot movement
+int   ct_starg[CT_NSLOT];           // last target handed to this battery
+float ct_sfade[CT_NSLOT];           // 1..0 while fading out after a handoff
+int   ct_sdc[CT_NSLOT];             // 1 = B2500 family: DC only, 80 W start floor
+int   ct_rotms;                     // millis() of the last rotation
+int   ct_rotoff;                    // rotation offset into the slot table
+float ct_dem;                       // smoothed demand, for the battery count
 
 // ─── Runtime ───────────────────────────────────────────────────────────────
 int  ct_pa; int ct_pb; int ct_pc; int ct_ptot;   // grid power reported to the batteries [W]
@@ -281,6 +311,197 @@ void ctAgg() {
     }
 }
 
+// ─── Distribution across several batteries ─────────────────────────────────
+// Everything below follows AstraMeter's CT002 loop (docs/ct002.md); the
+// constants are its field-tested defaults and are deliberately not exposed:
+//   deadband 25 W, max correction 80 W/step, boost above 150 W (x1.5),
+//   gentler below 20 W, saturation EMA 0.15, min target 20 W, decay 0.995,
+//   count hysteresis 1.2, fade 0.15 per cycle.
+//
+// The crucial part is the fair share, and it fixes a real fault rather than
+// tuning one: today every battery is told the WHOLE phase error, so two of
+// them each pull the full amount and the pair overshoots by a factor of two.
+
+// How many participating batteries sit on this phase bucket.
+int ctCount(int f) {
+    if (f == 1) return ct_nbA;
+    if (f == 2) return ct_nbB;
+    if (f == 3) return ct_nbC;
+    if (f == 4) return ct_nbD;
+    return 1;
+}
+
+// Sum of the power the batteries on this bucket report.
+int ctSum(int f) {
+    int s = 0;
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        if (ct_sused[i] == 1 && ct_sph[i] == f && ct_spart[i] == 1) s = s + ct_spwr[i];
+    }
+    return s;
+}
+
+// Rotation: which slots are allowed to run when the load is concentrated.
+// Called once per second from ctTick().
+void ctRotate() {
+    int iv = CT_ROT_S;
+    int now = millis();
+    if (now - ct_rotms < iv * 1000) return;
+    ct_rotms = now;
+    ct_rotoff = ct_rotoff + 1;
+    if (ct_rotoff >= CT_NSLOT) ct_rotoff = 0;
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) ct_sfade[i] = 1.0;   // hand over gently
+    addLog("CT002: efficiency rotation, offset %d", ct_rotoff);
+}
+
+// Rank of this slot within its bucket, counted from the rotation offset.
+// Gives every battery its turn at being first without keeping a sorted list.
+int ctRank(int idx, int f) {
+    int r = 0;
+    int k = 0;
+    int i = 0;
+    for (k = 0; k < CT_NSLOT; k = k + 1) {
+        i = (k + ct_rotoff) % CT_NSLOT;
+        if (ct_sused[i] == 1 && ct_sph[i] == f && ct_spart[i] == 1) {
+            if (i == idx) return r;
+            r = r + 1;
+        }
+    }
+    return r;
+}
+
+// Keep a DC battery's inverter awake. A Marstek B2500 switches it off at 0 W
+// and falls asleep under high PV surplus. We cannot command a battery\'s output
+// the way AstraMeter does - we only report grid power - so the equivalent is to
+// never tell it less than this much import. That costs exactly this many watts
+// of export while the sun is out; it is the price of keeping it awake.
+//
+// Skipped for a saturated battery: one that is empty cannot discharge anyway,
+// so holding the floor there only feeds the grid for nothing. That is the
+// complaint in AstraMeter issue #634.
+int ctFloor(int idx, int v) {
+    if (ct_mindc <= 0) return v;
+    // Only a battery whose inverter is external can fall asleep at 0 W. A
+    // Venus or a Jupiter carries its own and does not need to be held awake -
+    // pushing it there would just export for nothing.
+    if (ct_sdc[idx] == 0) return v;
+    if (ct_sat == 1 && ct_ssat[idx] > 0.4) return v;
+    if (v < ct_mindc) return ct_mindc;
+    return v;
+}
+
+// The value this one battery is told, derived from its bucket total.
+int ctShare(int idx, int f, int base) {
+    int n = ctCount(f);
+    if (n < 1) n = 1;
+
+    // ── Saturation ────────────────────────────────────────────────────────
+    // Did it move in the direction it was asked to? A battery that is full or
+    // empty stops following; its score rises and its share shrinks, which the
+    // others pick up through the balance term below.
+    if (ct_sat == 1) {
+        // Below what the battery can physically act on, "it did not move" says
+        // nothing - scoring it there is self-reinforcing and eventually pushes
+        // a healthy B2500 out of the pool (AstraMeter issue #624).
+        int floorw = 20;
+        if (ct_sdc[idx] == 1) floorw = 80;
+        int want = ct_starg[idx];
+        if (want > floorw || want < 0 - floorw) {
+            int d = ct_spwr[idx] - ct_sprev[idx];
+            int moved = 0;
+            if (d * want > 0) moved = 1;
+            if (d > 5 || d < -5) moved = 1;
+            if (moved == 1) ct_ssat[idx] = ct_ssat[idx] + 0.15 * (0.0 - ct_ssat[idx]);
+            else            ct_ssat[idx] = ct_ssat[idx] + 0.15 * (1.0 - ct_ssat[idx]);
+        } else {
+            ct_ssat[idx] = ct_ssat[idx] * 0.995;
+        }
+    }
+    ct_sprev[idx] = ct_spwr[idx];
+
+    if (ct_fair == 0 || n <= 1) {
+        int one = ctFloor(idx, base);
+        ct_starg[idx] = one;
+        return one;
+    }
+
+    float fair = (float)base / (float)n;
+
+    // ── Efficiency: concentrate a small load on fewer batteries ───────────
+    // Below the efficient minimum a DC-DC converter wastes the difference as
+    // heat, so it is better to run one battery properly than three badly.
+    // The threshold is the LARGER of what the user asked for and what the
+    // hardware can do at all. A B2500 that is handed 50 W does nothing, so
+    // splitting 100 W across two of them leaves both asleep - the pair has to
+    // be concentrated on one whether or not the efficiency option is set.
+    float minw = 0.0;
+    if (ct_sdc[idx] == 1) minw = 80.0;
+    if (minw > 0.0) {
+        float dem = (float)base;
+        if (dem < 0.0) dem = 0.0 - dem;
+        ct_dem = ct_dem + 0.1 * (dem - ct_dem);         // EMA, meter noise out
+        int need = (int)(ct_dem / (minw * 1.2)) + 1;    // 1.2 = hysteresis
+        if (need < 1) need = 1;
+        if (need > n) need = n;
+        int rank = ctRank(idx, f);
+        if (rank >= need) {
+            // Deprioritised. Fade instead of dropping to zero at once, so a
+            // handoff does not leave a hole while the promoted one ramps.
+            ct_sfade[idx] = ct_sfade[idx] * 0.85;
+            if (ct_sfade[idx] < 0.02) ct_sfade[idx] = 0.0;
+            int outv = (int)(fair * ct_sfade[idx]);
+            outv = ctFloor(idx, outv);
+            ct_starg[idx] = outv;
+            return outv;
+        }
+        ct_sfade[idx] = 1.0;
+        fair = (float)base / (float)need;               // the active ones share it
+    }
+
+    // ── Balancing ─────────────────────────────────────────────────────────
+    // Push the battery that is doing less than its peers, hold back the one
+    // doing more. The gain is boosted while the imbalance is large and eased
+    // as they converge, so the pair settles instead of ringing.
+    int    sum = ctSum(f);
+    float  avg = (float)sum / (float)n;
+    float  e   = avg - (float)ct_spwr[idx];
+    float  corr = 0.0;
+    float  ae = e;
+    if (ae < 0.0) ae = 0.0 - ae;
+    if (ae >= 25.0) {
+        float g = CT_BGAIN;
+        if (ae > 150.0) g = g * 1.5;
+        corr = g * e;
+        if (corr > 80.0) corr = 80.0;
+        if (corr < -80.0) corr = -80.0;
+        // A correction has to be FELT. An HMJ-2 ignores less than about 10 W
+        // per channel, so a 8 W nudge changes nothing while the balancer
+        // believes it acted - AstraMeter issue #600, where a battery sat at
+        // 4 W for hours while "receiving positive corrections". Below the
+        // imbalance threshold we send nothing at all; above it we send at
+        // least enough to clear the deadband.
+        if (corr > 0.0 && corr < 20.0) corr = 20.0;
+        if (corr < 0.0 && corr > -20.0) corr = -20.0;
+    }
+    // Deliberately NO gentler correction below the threshold. That is
+    // AstraMeter\'s ERROR_REDUCE_THRESHOLD, and it is what produces the
+    // sub-deadband nudges above: they cost a round trip and achieve nothing.
+
+    float v = fair + corr;
+    if (ct_sat == 1 && ct_ssat[idx] > 0.4) v = v * (1.0 - ct_ssat[idx]);
+
+    int out = (int)v;
+    out = ctFloor(idx, out);
+    ct_starg[idx] = out;
+    return out;
+}
+
+// Slot of the battery currently being answered, -1 = unknown. Set by the
+// request handler right before ctBuild(); the frame builder needs it to hand
+// out a per-battery share.
+int ct_slot;
+
 // Build the response for one requesting battery into ct_txb.
 void ctBuild(byte btype[], byte bmac[], byte reqctmac[]) {
     ctAgg();
@@ -292,7 +513,17 @@ void ctBuild(byte btype[], byte bmac[], byte reqctmac[]) {
         sprintf(ct_innb, "|%s|%s", ct_type, reqctmac);
     }
     sprintfAppend(ct_innb, "|%s|%s", btype, bmac);
-    sprintfAppend(ct_innb, "|%d|%d|%d|%d", ct_pa, ct_pb, ct_pc, ct_ptot);                  // 5..8
+    // Per battery, not global: the response is unicast, so each one can be
+    // told its own share. With every option off ctShare() returns the bucket
+    // value unchanged and the frame is byte-identical to before.
+    int va = ct_pa; int vb = ct_pb; int vc = ct_pc; int vd = ct_ptot;
+    if (ct_slot >= 0) {
+        if (ct_sph[ct_slot] == 1) va = ctShare(ct_slot, 1, ct_pa);
+        if (ct_sph[ct_slot] == 2) vb = ctShare(ct_slot, 2, ct_pb);
+        if (ct_sph[ct_slot] == 3) vc = ctShare(ct_slot, 3, ct_pc);
+        if (ct_sph[ct_slot] == 4) vd = ctShare(ct_slot, 4, ct_ptot);
+    }
+    sprintfAppend(ct_innb, "|%d|%d|%d|%d", va, vb, vc, vd);                  // 5..8
     sprintfAppend(ct_innb, "|%d|%d|%d|%d", ct_nbA, ct_nbB, ct_nbC, ct_nbD);        // 9..12
     sprintfAppend(ct_innb, "|%d|%d", ct_rssi, ct_idx);                       // 13..14
     sprintfAppend(ct_innb, "|%d|%d|%d|%d|%d", ct_cx, ct_cA, ct_cB, ct_cC, ct_cD);   // 15..19
@@ -352,6 +583,16 @@ void ctHandle(int n) {
     ct_slast[idx] = now;
     ct_sph[idx]   = f;
     ct_spwr[idx]  = strToInt(ct_qpwr);
+    // Device family, from the type the battery sends with every request.
+    // HMA/HMJ/HMK is the B2500 line: DC into a SEPARATE inverter, each channel
+    // a hard on/off below ~40 W - so the unit cannot answer a command under
+    // about 80 W at all. HMG/VNS (Venus) and HMN/HMM/JPLS (Jupiter) carry their
+    // own inverter and have no such floor. Classification and the 80 W figure
+    // are AstraMeter's (balancer.py, DC_MIN_ACTIONABLE_OUTPUT_W).
+    ct_sdc[idx] = 0;
+    if (strFind(ct_qbtype, "HMA") == 0) ct_sdc[idx] = 1;
+    if (strFind(ct_qbtype, "HMJ") == 0) ct_sdc[idx] = 1;
+    if (strFind(ct_qbtype, "HMK") == 0) ct_sdc[idx] = 1;
     if (havepart > 0) {
         ct_spart[idx] = strToInt(ct_qpart);
     } else {
@@ -359,6 +600,7 @@ void ctHandle(int n) {
     }
 
     ct_idx = (ct_idx + 1) & 255;
+    ct_slot = idx;
     ctBuild(ct_qbtype, ct_qbmac, ct_qmac);
     udp(2, ct_txb);                                // unicast back to the sender
     ct_txc = ct_txc + 1;
@@ -448,14 +690,10 @@ int ctCtrl(float raw, int ph) {
     }
     ct_out[ph] = v;                     // the pacing anchor, before the floor
 
-    // ── Keep a DC battery's inverter awake ────────────────────────────────
-    // A Marstek B2500 switches its inverter off at 0 W and falls asleep under
-    // high PV surplus. We cannot command a battery's output the way AstraMeter
-    // does - we only report grid power - so the equivalent is to never report
-    // less than this much import. That costs exactly this many watts of export
-    // while the sun is out; it is the price of keeping the inverter awake.
-    if (ct_mindc > 0 && v < (float)ct_mindc) v = (float)ct_mindc;
-
+    // The minimum-output floor used to sit here. It moved into ctShare(),
+    // which is per battery: at this level the fair split would halve it, and
+    // half of 20 W lands inside the HMJ's own +/-10 W per-channel deadband -
+    // the lock-in described in AstraMeter issue #600.
     return (int)v;
 }
 
@@ -782,6 +1020,8 @@ void ctTick() {
         ct_trim   = tcOptGet(26, ct_trim);
         ct_pace   = tcOptGet(27, ct_pace);
         ct_mindc  = tcOptGet(28, ct_mindc);
+        ct_fair   = tcOptGet(29, ct_fair);
+        ct_sat    = tcOptGet(33, ct_sat);
         tcOptSet(19, ct_kind);
         tcOptSet(20, ct_offset);
         tcOptSet(21, ct_port);
@@ -791,6 +1031,8 @@ void ctTick() {
         tcOptSet(26, ct_trim);
         tcOptSet(27, ct_pace);
         tcOptSet(28, ct_mindc);
+        tcOptSet(29, ct_fair);
+        tcOptSet(33, ct_sat);
         ctEditLoad();
     }
     if (ui_reloading) ctEditLoad();
@@ -807,6 +1049,7 @@ void ctTick() {
     }
 
     ctPower();
+    ctRotate();
     ctAge();
     strToLower(ct_mac);          // the web field may have been typed upper case
 
@@ -913,12 +1156,20 @@ void ctPanel() {
         webNumber(ct_e_trim, 0, 100, "Import-Trim [W]");
         webNumber(ct_e_pace, 0, 300, "Schrittweite [W]");
         webNumber(ct_e_mindc, 0, 200, "Mindestabgabe DC [W]");
+
+        uiHead("&#x2696;&#xFE0F;", "Several batteries", "Mehrere Akkus", "ct002/#multi");
+        webCheckbox(ct_e_fair, "Last verteilen");
+        webCheckbox(ct_e_sat, "Sättigung erkennen");
     } else {
         webNumber(ct_e_offset, -200, 200, "Offset [W]");
         webCheckbox(ct_e_tweak, "Active control");
         webNumber(ct_e_trim, 0, 100, "Import trim [W]");
         webNumber(ct_e_pace, 0, 300, "Ramp step [W]");
         webNumber(ct_e_mindc, 0, 200, "Min DC output [W]");
+
+        uiHead("&#x2696;&#xFE0F;", "Several batteries", "Mehrere Akkus", "ct002/#multi");
+        webCheckbox(ct_e_fair, "Share the load");
+        webCheckbox(ct_e_sat, "Saturation detection");
     }
 
     // No Marstek block here - the account lives on /ctreg, reachable from the
@@ -926,6 +1177,34 @@ void ctPanel() {
 }
 
 // From JsonCall(): appended to the SENSOR telemetry.
+// ─── The emulator's own settings page ──────────────────────────────────────
+// Page 4 and the link that leads to it. Both belong here rather than in the
+// two programs: only the program's own name and version differ, and those come
+// in as arguments because ct002_common.tc is included before the programs
+// declare them.
+//
+// The version parameter is char[] and BOTH programs must declare sml_vers as
+// char[] too. TinyC decides the packing from the declared PARAMETER type, so a
+// byte[] handed to this would be read four bytes per character - silently.
+void ctPageLink() {
+    if (ui_de) webSend("<div style='margin:8px 0'>&#x1F50B; <a href='/tc_ui?p=4'>CT &amp; Akku &ndash; Emulator und Regelung</a></div>");
+    else       webSend("<div style='margin:8px 0'>&#x1F50B; <a href='/tc_ui?p=4'>CT &amp; battery &ndash; emulator and control</a></div>");
+}
+
+void ctPage4(char prog[], char vers[]) {
+    sml_panel_open("&#x1F50B;", "CT &amp; battery", "CT &amp; Akku");
+    ctPanel();
+    // Credit, deliberately English in both languages - it names a project and
+    // a person. Same size and colour as the version footer below.
+    webSend("<div style='text-align:center;font-size:10px;color:#555;line-height:1.5;margin-top:10px'>CT/battery control optimisations/options taken from the AstraMeter project. Thanks to tomquist.</div>");
+    webSend("<hr>");
+    uiSaveButton();
+    uiUptime();
+    sprintf(sml_buf, "%s &middot; Version %s<br>", prog, vers);
+    webSend(sml_buf);
+    webSend("by <a href='https://ottelo.jimdofree.com' target='_blank'>ottelo.jimdofree.com</a> &amp; gemu2015 (TinyC <span id='tcv'>...</span>)</div></div>");
+}
+
 void ctJson() {
     int live = 0;
     int i = 0;

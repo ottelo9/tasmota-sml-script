@@ -59,6 +59,7 @@ body.lang-de .en{display:none}
   <a href="#setup"><span class="en">Setup</span><span class="de">Einrichtung</span></a>
   <a href="#ct">CT</a>
   <a href="#battery"><span class="en">Battery</span><span class="de">Akku</span></a>
+  <a href="#multi"><span class="en">Several batteries</span><span class="de">Mehrere Akkus</span></a>
   <a href="#meter"><span class="en">Meter</span><span class="de">Zähler</span></a>
   <a href="#telemetry"><span class="en">Telemetry</span><span class="de">Telemetrie</span></a>
   <a href="#marstek"><span class="en">Marstek account</span><span class="de">Marstek-Konto</span></a>
@@ -144,6 +145,8 @@ body.lang-de .en{display:none}
 <p>Offset and import trim pull in opposite directions on purpose. The offset is the margin <i>you</i> choose and holds at all times; the trim closes the gap the battery firmware leaves once things are calm, and it aims at the offset, not at zero. Setting an offset of 50&nbsp;W and a trim of 15 therefore means: hold 50&nbsp;W of import, and let the trim make sure those 50 are actually reached rather than 65.</p>
 <p>The three settings follow <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">AstraMeter's CT002 control loop</a>. What is missing here is its multi-battery side &mdash; load balancing, efficiency rotation, saturation detection. This emulator reports the same value to every battery; AstraMeter steers each one individually. If you run several batteries and want them balanced, that is the tool for it.</p>
 
+<p>All the settings on this page sit on their own page in the device: the <b>&#x1F50B; CT</b> button in Tasmota's main menu, or the link at the top of the settings page. They outgrew the main page when the control settings arrived.</p>
+
 <h3>Phase selection</h3>
 <p>The phase is set on the battery, in the Marstek app &mdash; not here:</p>
 <ul>
@@ -164,6 +167,8 @@ body.lang-de .en{display:none}
 <p>Offset und Import-Trim ziehen absichtlich in verschiedene Richtungen. Der Offset ist der Abstand, den <i>du</i> willst, und gilt immer; der Trim schließt die Lücke, die die Akku-Firmware lässt, sobald Ruhe herrscht &mdash; und er zielt auf den Offset, nicht auf null. Offset 50&nbsp;W und Trim 15 heißt also: 50&nbsp;W Bezug halten, und der Trim sorgt dafür, dass es wirklich 50 werden und nicht 65.</p>
 <p>Die drei Einstellungen sind der <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">CT002-Regelung von AstraMeter</a> nachempfunden. Was hier fehlt, ist deren Mehrbatterie-Teil &mdash; Lastverteilung, Effizienzrotation, Sättigungserkennung. Dieser Emulator meldet allen Akkus denselben Wert, AstraMeter steuert jeden einzeln. Wer mehrere Akkus ausbalanciert haben will, ist dort richtig.</p>
 
+<p>Alle Einstellungen dieser Seite liegen im Gerät auf einer eigenen Seite: der Knopf <b>&#x1F50B; CT</b> in Tasmotas Hauptmenü, oder der Link oben auf der Einstellungsseite. Sie sind der Hauptseite entwachsen, als die Regelungsoptionen dazukamen.</p>
+
 <h3>Phasenwahl</h3>
 <p>Die Phase wird am Akku eingestellt, in der Marstek-App &mdash; nicht hier:</p>
 <ul>
@@ -171,6 +176,78 @@ body.lang-de .en{display:none}
 <li><code>D</code>: kombiniert. Der Akku liest die <b>Summe</b> aller drei Phasen. Bei saldierendem Zähler normalerweise die richtige Wahl.</li>
 <li><code>x</code> in der Weboberfläche heißt: der Akku hat sich noch nicht entschieden und sucht. Er ändert dazu seine eigene Leistung und schaut, welche Phase sich mitbewegt. Bei einem Simulator mit konstanten Werten kommt er nie zu einem Schluss &mdash; also echten Zähler anschließen oder die Phase in der App fest vorgeben.</li>
 </ul>
+</div>
+</section>
+
+<section id="multi">
+<h2><span class="en">Several batteries</span><span class="de">Mehrere Akkus</span></h2>
+<div class="en">
+<p>All of this only matters with two or more batteries on the same phase. With one battery every setting here can stay off.</p>
+<p class="warn">Fair distribution is a correction, not a refinement. Without it <b>every</b> battery is told the whole deviation of its phase, so two of them each pull the full amount and the pair overshoots by a factor of two. If you run more than one battery, switch it on.</p>
+<table>
+<tr><th>Share the load</th><td>Divides the phase deviation by the number of participating batteries and adds the balance term below. Off = the old behaviour, every battery hears the full value.</td></tr>
+<tr><th>Saturation detection</th><td>Tracks whether a battery follows what it is told. One that is full or empty stops moving; its share shrinks and the others pick it up automatically. Also suspends the minimum output below, which an empty battery cannot deliver anyway.</td></tr>
+</table>
+<p>A deprioritised battery fades out by 15&nbsp;% per cycle instead of dropping to zero at once, so the promoted one has time to ramp and no gap opens at the handover.</p>
+
+<h3>The B2500 start floor</h3>
+<p>A B2500 (device types <code>HMA</code>, <code>HMJ</code>, <code>HMK</code>) feeds a <i>separate</i> inverter and each of its DC channels is a hard on/off below about 40&nbsp;W &mdash; so the unit cannot answer a command under roughly <b>80&nbsp;W</b> at all. Two of them sharing a 100&nbsp;W deviation would each be told 50&nbsp;W and both stay asleep.</p>
+<p>The emulator therefore reads the device type every battery sends with its request and, for that family, does three things by itself &mdash; nothing to set:</p>
+<ul>
+<li>Concentrates the load so each active battery gets at least 80&nbsp;W, rather than splitting it below the floor.</li>
+<li>Does not score saturation below that figure. "It did not move" says nothing about a command the hardware cannot execute, and scoring it there is self-reinforcing &mdash; it eventually pushes a healthy battery out of the pool (<a href="https://github.com/tomquist/AstraMeter/issues/624" target="_blank" rel="noopener">AstraMeter issue&nbsp;624</a>).</li>
+<li>Applies the minimum output only here. A Venus or a Jupiter carries its own inverter and cannot fall asleep, so holding it awake would export for nothing.</li>
+</ul>
+
+<h3>Fixed values</h3>
+<p>Three things were settings and are now constants, at AstraMeter's field-tested values. tomquist advised it himself &mdash; too many knobs make support harder, and these are ones nobody could tune without measurements:</p>
+<table>
+<tr><th>Balance gain</th><td><b>0.2</b>. How hard a battery doing less than its peers is pushed.</td></tr>
+<tr><th>Rotation</th><td><b>900 s</b> between turns at being the active battery, so wear is shared.</td></tr>
+<tr><th>Efficiency threshold</th><td>Gone entirely. For a B2500 the 80&nbsp;W floor above now applies by itself; for an AC battery it was polish.</td></tr>
+</table>
+<h3>Where this comes from, and where it differs</h3>
+<p>The loop follows <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">AstraMeter's CT002 control loop</a>, whose constants are field-tested by many users: deadband 25&nbsp;W, at most 80&nbsp;W of correction per cycle, gain boosted above 150&nbsp;W of imbalance. Those are fixed here rather than exposed.</p>
+<p>Two things are deliberately done differently, both because of open reports there:</p>
+<ul>
+<li><b>No gentle nudges.</b> AstraMeter softens corrections when the imbalance is small. A Marstek HMJ ignores anything under about 10&nbsp;W per channel, so those corrections change nothing while the balancer believes it acted &mdash; in <a href="https://github.com/tomquist/AstraMeter/issues/600" target="_blank" rel="noopener">issue&nbsp;600</a> a battery sat at 4&nbsp;W for hours receiving them. Here: below 25&nbsp;W of imbalance nothing is sent at all, above it at least 20&nbsp;W so the correction clears the battery's own deadband.</li>
+<li><b>Minimum output is per battery.</b> Applied to the phase total it would be halved by the fair split, and half of 20&nbsp;W lands back inside that deadband &mdash; the lock-in described in the same report.</li>
+</ul>
+<p>What is not implemented is AstraMeter's probe handover with a fallback battery and a timeout. The fade above serves the same purpose with a fraction of the state.</p>
+</div>
+<div class="de">
+<p>Das alles betrifft nur zwei oder mehr Akkus auf derselben Phase. Bei einem einzelnen kann hier alles aus bleiben.</p>
+<p class="warn">Die faire Verteilung ist eine Korrektur, keine Feinabstimmung. Ohne sie bekommt <b>jeder</b> Akku die volle Abweichung seiner Phase gemeldet &mdash; zwei Akkus ziehen also beide den ganzen Betrag und schießen gemeinsam um das Doppelte über. Wer mehr als einen Akku hat, sollte sie einschalten.</p>
+<table>
+<tr><th>Last verteilen</th><td>Teilt die Phasenabweichung durch die Zahl der teilnehmenden Akkus und rechnet den Ausgleich unten dazu. Aus = das bisherige Verhalten, jeder Akku hört den vollen Wert.</td></tr>
+<tr><th>Sättigung erkennen</th><td>Verfolgt, ob ein Akku dem folgt, was ihm gesagt wird. Ein voller oder leerer bewegt sich nicht mehr; sein Anteil sinkt, die anderen übernehmen ihn von selbst. Setzt außerdem die Mindestabgabe aus, die ein leerer Akku ohnehin nicht liefern kann.</td></tr>
+</table>
+<p>Ein zurückgestellter Akku blendet mit 15&nbsp;% je Zyklus aus statt sofort auf null zu fallen &mdash; so hat der übernehmende Zeit hochzufahren und es entsteht keine Lücke.</p>
+
+<h3>Die Anlaufschwelle des B2500</h3>
+<p>Ein B2500 (Gerätetypen <code>HMA</code>, <code>HMJ</code>, <code>HMK</code>) speist einen <i>separaten</i> Wechselrichter, und jeder seiner DC-Kanäle ist unterhalb von etwa 40&nbsp;W ein hartes Ein/Aus &mdash; das Gerät kann einen Befehl unter rund <b>80&nbsp;W</b> also gar nicht ausführen. Teilen sich zwei davon eine Abweichung von 100&nbsp;W, bekommt jeder 50&nbsp;W gesagt und beide bleiben schlafen.</p>
+<p>Der Emulator liest deshalb den Gerätetyp aus, den jeder Akku mit jeder Anfrage mitschickt, und macht für diese Familie drei Dinge von allein &mdash; nichts davon ist einzustellen:</p>
+<ul>
+<li>Er bündelt die Last, sodass jeder aktive Akku mindestens 80&nbsp;W bekommt, statt sie unter die Schwelle zu teilen.</li>
+<li>Er bewertet Sättigung unterhalb dieses Werts nicht. „Hat sich nicht bewegt" sagt nichts über einen Befehl, den die Hardware nicht ausführen kann, und ihn dort zu bewerten ist selbstverstärkend &mdash; am Ende fliegt ein gesunder Akku aus dem Pool (<a href="https://github.com/tomquist/AstraMeter/issues/624" target="_blank" rel="noopener">AstraMeter-Meldung&nbsp;624</a>).</li>
+<li>Er wendet die Mindestabgabe nur hier an. Eine Venus oder ein Jupiter hat einen eigenen Wechselrichter und kann nicht einschlafen &mdash; sie wach zu halten hieße, umsonst einzuspeisen.</li>
+</ul>
+
+<h3>Feste Werte</h3>
+<p>Drei Dinge waren einmal Einstellungen und sind jetzt Konstanten, auf AstraMeters erprobten Werten. Tomquist hat selbst dazu geraten &mdash; zu viele Stellschrauben erschweren den Support, und diese hier kann ohne Messungen ohnehin niemand sinnvoll drehen:</p>
+<table>
+<tr><th>Ausgleich</th><td><b>0,2</b>. Wie kräftig ein Akku angeschoben wird, der weniger tut als die anderen.</td></tr>
+<tr><th>Rotation</th><td><b>900 s</b> zwischen den Wechseln, damit der Verschleiß wandert.</td></tr>
+<tr><th>Effizienzschwelle</th><td>Ganz entfallen. Beim B2500 greift die 80-W-Schwelle oben jetzt von selbst, bei AC-Akkus war es Feinschliff.</td></tr>
+</table>
+<h3>Woher das kommt und wo es abweicht</h3>
+<p>Die Regelung ist der <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">CT002-Regelung von AstraMeter</a> nachempfunden, deren Konstanten von vielen Nutzern erprobt sind: Totband 25&nbsp;W, höchstens 80&nbsp;W Korrektur je Zyklus, verstärkt oberhalb von 150&nbsp;W Ungleichgewicht. Die stehen hier fest und sind nicht einstellbar.</p>
+<p>Zwei Dinge sind bewusst anders gelöst, beide wegen dortiger offener Meldungen:</p>
+<ul>
+<li><b>Keine sanften Stupser.</b> AstraMeter mildert Korrekturen bei kleinem Ungleichgewicht ab. Ein Marstek HMJ ignoriert aber alles unter etwa 10&nbsp;W je Kanal, solche Korrekturen bewirken also nichts, während der Regler glaubt, gehandelt zu haben &mdash; in <a href="https://github.com/tomquist/AstraMeter/issues/600" target="_blank" rel="noopener">Meldung&nbsp;600</a> saß ein Akku deshalb stundenlang bei 4&nbsp;W. Hier gilt: unterhalb von 25&nbsp;W Ungleichgewicht gar nichts, darüber mindestens 20&nbsp;W, damit die Korrektur das geräteeigene Totband verlässt.</li>
+<li><b>Die Mindestabgabe wirkt je Akku.</b> Auf die Phasensumme angewandt würde die faire Teilung sie halbieren, und die Hälfte von 20&nbsp;W liegt wieder im Totband &mdash; genau der Verklemmungs-Kreislauf aus derselben Meldung.</li>
+</ul>
+<p>Nicht übernommen ist AstraMeters Probe-Übergabe mit Rückfall-Akku und Zeitgrenze. Das Ausblenden oben erfüllt denselben Zweck mit einem Bruchteil des Zustands.</p>
 </div>
 </section>
 
