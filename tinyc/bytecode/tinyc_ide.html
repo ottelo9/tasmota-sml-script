@@ -879,22 +879,41 @@ async function _resolveIncludesAsync(source, getFile, included, depth) {
 function preprocess(source, predefined = []) {
     const lines = source.split('\n');
     const output = [];
-    // Auto-extract defines from @defines pragma: // @defines: -DBOARD_DFROBOT -DFOO
+    // ── @defines-Pragma: // @defines: -DBOARD_DFROBOT -DFOO ───────────────
+    //
+    // ⚠️⚠️ ES IST EINE VORGABE, KEIN ZUSATZ. Vorher wurde es IMMER zu den
+    // uebergebenen Defines dazugelegt. `webcam_tinyc.tc` traegt
+    // `@defines: -DBOARD_DFROBOT`; wer mit `-DBOARD_GOOUUU` uebersetzte,
+    // bekam BEIDE Boards definiert — der DFRobot-Block lief mit, `HAS_NIGHT`
+    // entstand, und `campins` wurde zweimal angelegt (gemu 06.09.2026:
+    // „mit BOARD_GOOUUU sollte HAS_NIGHT nicht definiert sein, ist es aber").
+    //
+    // Der Fehler war besonders unangenehm, weil das Skript selbst richtig ist:
+    // `#define HAS_NIGHT` steht sauber in `#ifdef BOARD_DFROBOT`. Wer den
+    // Fehler dort sucht, sucht lange.
+    //
+    // Neue Regel: wer auf der Befehlszeile ETWAS angibt, bestimmt allein. Das
+    // Pragma greift nur, wenn nichts angegeben wurde — dann ist es die
+    // bequeme Vorgabe fuer den Ein-Klick-Bau in der IDE.
+    const ausPragma = [];
     for (const ln of lines) {
         const m = ln.match(/^\/\/\s*@defines:\s*(.+)/);
         if (m) {
             for (const tok of m[1].trim().split(/\s+/)) {
-                if (tok.startsWith('-D')) predefined.push(tok.slice(2));
+                if (tok.startsWith('-D')) ausPragma.push(tok.slice(2));
             }
         }
     }
+    // ⚠️ Und NICHT in `predefined` hineinschreiben: das ist der Vektor des
+    // Aufrufers. Wer zweimal uebersetzt, haette beim zweiten Mal alles doppelt.
+    const wirksam = (predefined && predefined.length) ? predefined.slice() : ausPragma;
     // Track defined names AND their replacement text. The values matter for #if:
     // `#define S 0` followed by `#if S` must be FALSE, exactly as in C. Before the
     // values were kept, an identifier in a #if only counted as "is it defined", so a
     // feature switch turned OFF still compiled its block in.
     const defines = new Set();       // defined names (seed with predefined below)
     const defineValues = new Map();  // name -> replacement text ('' = valueless flag)
-    for (const p of predefined) {
+    for (const p of wirksam) {
         const eq = p.indexOf('=');   // accept -DNAME and -DNAME=VALUE
         const name = eq < 0 ? p : p.slice(0, eq);
         defines.add(name);
@@ -22941,20 +22960,29 @@ void EverySecond() {
 #define PIXFORMAT_RGB888    5
 
 // ─── Frame sizes ───
+// ⚠️ DIESE LISTE WAR UM ZWEI VERSCHOBEN. Sie stammte aus der klassischen
+// framesize_t; der esp32-camera-Zweig in diesem Baum hat zwei Einträge mehr
+// (128X128 an 2, 320X320 an 7) -- siehe
+// lib/lib_div/esp32-camera/driver/include/sensor.h. \`FRAMESIZE_VGA 8\` lieferte
+// deshalb CIF 400x296, und der Hi-Res-Schuss mit \`FRAMESIZE_UXGA 13\` bekam in
+// Wahrheit HD 1280x720. Am echten Bild nachgemessen (SOF-Marker von
+// http://<ip>:81/cam.jpg), nicht aus einer Tabelle abgeschrieben.
 #define FRAMESIZE_96X96     0
 #define FRAMESIZE_QQVGA     1
-#define FRAMESIZE_QCIF      2
-#define FRAMESIZE_HQVGA     3
-#define FRAMESIZE_240X240   4
-#define FRAMESIZE_QVGA      5
-#define FRAMESIZE_CIF       6
-#define FRAMESIZE_HVGA      7
-#define FRAMESIZE_VGA       8
-#define FRAMESIZE_SVGA      9
-#define FRAMESIZE_XGA       10
-#define FRAMESIZE_HD        11
-#define FRAMESIZE_SXGA      12
-#define FRAMESIZE_UXGA      13
+#define FRAMESIZE_128X128   2
+#define FRAMESIZE_QCIF      3
+#define FRAMESIZE_HQVGA     4
+#define FRAMESIZE_240X240   5
+#define FRAMESIZE_QVGA      6
+#define FRAMESIZE_320X320   7
+#define FRAMESIZE_CIF       8
+#define FRAMESIZE_HVGA      9
+#define FRAMESIZE_VGA       10
+#define FRAMESIZE_SVGA      11
+#define FRAMESIZE_XGA       12
+#define FRAMESIZE_HD        13
+#define FRAMESIZE_SXGA      14
+#define FRAMESIZE_UXGA      15
 
 // ─── Sensor parameter IDs (for camControl sel=9) ───
 #define CAM_VFLIP           0
@@ -23193,6 +23221,13 @@ void OnExit() {
 // MAIN
 // ═══════════════════════════════════════════════════════════════════
 int main() {
+    // ⚠️ Ohne webPageLabel() erscheint kein Knopf zu diesen Einstellungen:
+    // ein blosses WebUI() bekam frueher automatisch einen generischen
+    // "TinyC UI"-Knopf, den gibt es nicht mehr (er loeste auf den falschen
+    // Slot auf und antwortete 503). Geprueft von
+    // scripts/webui_knopf_pruefen.py.
+    webPageLabel(0, "Camera Setup");
+
     pic_count = 0;
     frame_count = 0;
     doCapture = 0;
