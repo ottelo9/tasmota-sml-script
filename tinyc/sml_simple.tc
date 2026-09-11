@@ -10,7 +10,7 @@
 #include "sml_descriptor.tc"
 #include "sml_modbus_common.tc"
 
-char sml_vers[] = "05.09.2026 08:42";
+char sml_vers[] = "11.09.2026 14:05";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int  sml_sndpwr;         // 1 = publish power via MQTT and serve /pwr
@@ -60,7 +60,7 @@ void EverySecond() {
 
 // /pwr — JSON for a second battery polling over HTTP (opendtu-onbattery DPL)
 void WebOn() {
-    if (webHandler() != 1) return;
+    if (webHandler() != 7) return;  // /pwr
     if (sml_sndpwr > 0) {
         sprintf(sml_buf, "{\"power2\":%.0f", sml_power2);
         sprintfAppend(sml_buf, ",\"power\":%.0f", smlGet(1));
@@ -141,7 +141,7 @@ int main() {
     webPageLabel(0, "&#x2699;&#xFE0F; SML");
     webPageLabel(5, "&#x1F4BB; TinyC");   // hands over to /tc - kept last so it stays
                                           // last when a program adds a page
-    webOn(1, "/pwr");
+    webOn(7, "/pwr");
     smlScripterLoad("/sml_meter.def");
 
     addLog("sml_simple: %s started rx=%d tx=%d meter=%d modbus=%d",

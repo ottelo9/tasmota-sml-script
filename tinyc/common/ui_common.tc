@@ -9,6 +9,16 @@
 // not straight into webSend (a literal handed to a char[] param and then
 // streamed renders empty on firmware older than 2026-07-28).
 
+// webOn handler numbers are FAMILY-WIDE, not per program. Tasmota registers
+// a webOn URL with the web server and never unregisters it, so after loading
+// a different .tcb without a reboot the old binding is still in the table and
+// wins - the new program then serves that URL from whatever its own handler
+// number means. Loading sml_chart_ct002.tcb over sml_chart_eco_shelly.tcb
+// made /pwr answer with the Marstek registration page for exactly that
+// reason. So one URL keeps one number everywhere:
+//   1,2,3,5,6  eco_shelly  /v1/json, EM, Shelly, EM1, EMData
+//   4          ct002       /ctreg
+//   7          all         /pwr
 persist watch int ui_de;     // 0 = English (default), 1 = Deutsch
 
 // Tasmota's Sleep. The default of 50 ms lets the radio doze between loop

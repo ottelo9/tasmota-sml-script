@@ -119,6 +119,7 @@ float ct_dem;                       // smoothed demand, for the battery count
 
 // ─── Runtime ───────────────────────────────────────────────────────────────
 int  ct_pa; int ct_pb; int ct_pc; int ct_ptot;   // grid power reported to the batteries [W]
+int  ct_ra; int ct_rb; int ct_rc; int ct_rtot;   // the same, raw - for inspection mode
 int  ct_idx;                       // response index 0..255, wraps
 
 // Filled by ctAgg(), read by the response builder.
@@ -518,10 +519,22 @@ void ctBuild(byte btype[], byte bmac[], byte reqctmac[]) {
     // value unchanged and the frame is byte-identical to before.
     int va = ct_pa; int vb = ct_pb; int vc = ct_pc; int vd = ct_ptot;
     if (ct_slot >= 0) {
-        if (ct_sph[ct_slot] == 1) va = ctShare(ct_slot, 1, ct_pa);
-        if (ct_sph[ct_slot] == 2) vb = ctShare(ct_slot, 2, ct_pb);
-        if (ct_sph[ct_slot] == 3) vc = ctShare(ct_slot, 3, ct_pc);
-        if (ct_sph[ct_slot] == 4) vd = ctShare(ct_slot, 4, ct_ptot);
+        if (ct_sph[ct_slot] == 0) {
+            // Inspection mode: the battery has no phase yet and is finding it
+            // by swinging its own output and watching which phase moves. The
+            // regulator is built to HIDE exactly that - the predictor credits
+            // the swing before the meter shows it, the clamp caps what is left
+            // - so the battery could open up to 800 W, still read 0 W and never
+            // conclude. Send the raw meter until it has decided. AstraMeter does
+            // the same (ct002.py _resolve_target: the balancer runs only when
+            // "not request.in_inspection_mode").
+            va = ct_ra; vb = ct_rb; vc = ct_rc; vd = ct_rtot;
+        } else {
+            if (ct_sph[ct_slot] == 1) va = ctShare(ct_slot, 1, ct_pa);
+            if (ct_sph[ct_slot] == 2) vb = ctShare(ct_slot, 2, ct_pb);
+            if (ct_sph[ct_slot] == 3) vc = ctShare(ct_slot, 3, ct_pc);
+            if (ct_sph[ct_slot] == 4) vd = ctShare(ct_slot, 4, ct_ptot);
+        }
     }
     sprintfAppend(ct_innb, "|%d|%d|%d|%d", va, vb, vc, vd);                  // 5..8
     sprintfAppend(ct_innb, "|%d|%d|%d|%d", ct_nbA, ct_nbB, ct_nbC, ct_nbD);        // 9..12
@@ -581,6 +594,12 @@ void ctHandle(int n) {
     int dt  = now - ct_slast[idx];
     if (dt > 100 && dt < 30000) ct_siv[idx] = dt;
     ct_slast[idx] = now;
+    // Phase changes are worth a line: a battery reporting '0' is still
+    // diagnosing which phase it sits on and gets the raw meter (ctBuild).
+    if (ct_sph[idx] != f) {
+        if (f == 0) addLog("CT002: %s in inspection mode, raw meter sent", ct_qbmac);
+        else        addLog("CT002: %s settled on phase %s", ct_qbmac, ct_qph);
+    }
     ct_sph[idx]   = f;
     ct_spwr[idx]  = strToInt(ct_qpwr);
     // Device family, from the type the battery sends with every request.
@@ -612,83 +631,180 @@ void ctHandle(int n) {
 // One control loop per phase - each battery nulls the phase it sits on - plus
 // a fourth for the combined total that phase D reads. Slot 0..2 = A/B/C, 3 = D.
 //
-// The previous version bent the reported VALUE (a quarter above the target,
-// 1.25x below). That is stateless: it knows neither what was sent a second ago
-// nor whether the battery reacted. The three parts below are modelled on
-// AstraMeter's CT002 control loop (docs/ct002.md) and keep state instead.
-float ct_eprev[4];      // previous error, for step detection and pacing
-int   ct_calm[4];       // consecutive calm cycles
-float ct_trimacc[4];    // trim currently applied [W]
-float ct_out[4];        // previously reported value, the pacing anchor
-int   ct_step[4];       // current pacing step [W]
+// The previous version paced the reported VALUE against an anchor: the change
+// per cycle was capped, so the anchor lagged the error by many seconds. That
+// puts a rate limiter in SERIES with the battery's own integrator - the grid
+// could already be exporting while we still reported import, and the battery
+// kept adding to it. AstraMeter clamps the command absolutely instead
+// (balancer.py _pace_reading: out = clamp(reading, +/-limit)), and the parts
+// below now follow it: predictor, trim, damper, clamp.
+float ct_pg[4];         // predicted grid error [W], latency compensated
+int   ct_pgi[4];        // 1 = predictor seeded
+float ct_ppool[4];      // pool output at the last call [W]
+float ct_ptrust[4];     // meter trust 0.15..0.9, self-adapting
+int   ct_pinv[4];       // sign of the last innovation
+float ct_rawprev[4];    // last meter value, to spot a repeated sample
+int   ct_dwell[4];      // consecutive fresh samples inside the trim gate
+float ct_osc[4];        // oscillation score 0..1
+int   ct_osign[4];      // sign of the last residual
+int   ct_step[4];       // current pacing cap [W]
+int   ct_psign[4];      // sign of the last paced command
+
+// Predictor / pacing constants, at AstraMeter's field-tested values.
+#define CT_TRUST_MIN  0.15
+#define CT_TRUST_MAX  0.9
+#define CT_TRUST_UP   0.2
+#define CT_TRUST_DN   0.5
+#define CT_INNOV_W    40.0    // innovation below this does not adapt the trust
+#define CT_TRIM_GATE  120.0   // trim only inside (0, this) - excludes an empty pack
+#define CT_TRIM_DWELL 6       // fresh samples the gate must hold
+#define CT_OSC_MAX    0.95    // maximum damping
+#define CT_OSC_ALPHA  0.3     // score per sign reversal
+#define CT_OSC_DECAY  0.05    // bled off otherwise
+#define CT_OSC_STEP   300.0   // above this it is a load step, not hunting
+#define CT_PACE_MOVE  5.0     // pool movement that counts as "it followed"
+
+// Output the batteries of this loop have already delivered. Phase A/B/C see
+// only their own bucket; the saldierend total sees every battery.
+int ctPool(int ph) {
+    if (ph < 3) return ctSum(ph + 1);
+    int s = 0;
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        if (ct_sused[i] == 1 && ct_spart[i] == 1) s = s + ct_spwr[i];
+    }
+    return s;
+}
 
 int ctCtrl(float raw, int ph) {
     float off = (float)ct_offset;
     float err = raw - off;              // this is what the battery nulls
 
     if (ct_tweak == 0) {                // active control off: relay as before
-        ct_out[ph] = err;
-        ct_eprev[ph] = err;
+        ct_pgi[ph] = 0;                 // re-seed when it is switched back on
+        ct_rawprev[ph] = raw;
         return (int)err;
     }
 
-    float prev = ct_eprev[ph];
-    float d = err - prev;
-    if (d < 0.0) d = 0.0 - d;
-    if (d < 30.0) {
-        if (ct_calm[ph] < 100) ct_calm[ph] = ct_calm[ph] + 1;
-    } else {
-        ct_calm[ph] = 0;                // a load step - not the moment to trim
-    }
-    ct_eprev[ph] = err;
+    // A repeated meter value carries no new information. Everything that
+    // integrates - the trust update and the trim dwell - is gated on this, or
+    // a slow meter would be counted several times over.
+    int fresh = 1;
+    if (raw == ct_rawprev[ph]) fresh = 0;
+    ct_rawprev[ph] = raw;
 
-    // ── Steady-import trim ────────────────────────────────────────────────
-    // Every Marstek firmware stops a few watts short on the IMPORT side: its
-    // own input deadband. Household load the battery could cover keeps being
-    // bought. Nudging past that deadband is only safe once the grid has been
-    // quiet for a few cycles - during a load step it would add overshoot,
-    // which is exactly why a static offset cannot do this job. Grows slowly,
-    // lets go quickly.
-    float lim = (float)ct_trim;
-    if (lim > 0.0 && ct_calm[ph] >= 5 && err > 0.0) {
-        if (ct_trimacc[ph] < lim) ct_trimacc[ph] = ct_trimacc[ph] + 2.0;
+    // --- Grid predictor ---------------------------------------------------
+    // The meter shows a correction only seconds after the battery delivered
+    // it. Until then the raw error still asks for it, and the loop issues it
+    // a second time - that is the hunt. So advance the estimate by what the
+    // batteries report having changed, and let only a fresh meter sample pull
+    // it back, weighted by a trust that learns: a run of same-sign
+    // innovations is a real load step and raises it, a sign flip is latency
+    // and halves it. AstraMeter balancer.py _predict_control_grid.
+    int   pool  = ctPool(ph);
+    float dpool = 0.0;
+    if (ct_pgi[ph] == 0) {
+        ct_pg[ph] = err;
+        ct_ptrust[ph] = 0.5;
+        ct_pinv[ph] = 0;
+        ct_pgi[ph] = 1;
     } else {
-        ct_trimacc[ph] = ct_trimacc[ph] - 5.0;
-        if (ct_trimacc[ph] < 0.0) ct_trimacc[ph] = 0.0;
+        dpool = (float)pool - ct_ppool[ph];
+        ct_pg[ph] = ct_pg[ph] - dpool;
+        if (fresh == 1) {
+            float innov = err - ct_pg[ph];
+            float ai = innov;
+            if (ai < 0.0) ai = 0.0 - ai;
+            int sg = 0;
+            if (innov > 0.0) sg = 1;
+            if (innov < 0.0) sg = 0 - 1;
+            if (ai >= CT_INNOV_W && sg != 0) {
+                if (ct_pinv[ph] == 0 || sg == ct_pinv[ph]) {
+                    ct_ptrust[ph] = ct_ptrust[ph] + CT_TRUST_UP;
+                    if (ct_ptrust[ph] > CT_TRUST_MAX) ct_ptrust[ph] = CT_TRUST_MAX;
+                } else {
+                    ct_ptrust[ph] = ct_ptrust[ph] * CT_TRUST_DN;
+                    if (ct_ptrust[ph] < CT_TRUST_MIN) ct_ptrust[ph] = CT_TRUST_MIN;
+                }
+                ct_pinv[ph] = sg;
+            }
+            ct_pg[ph] = ct_pg[ph] + ct_ptrust[ph] * innov;
+        }
     }
-    float v = err + ct_trimacc[ph];
+    ct_ppool[ph] = (float)pool;
+    float v = ct_pg[ph];
 
-    // ── Ramp pacing ───────────────────────────────────────────────────────
-    // Cap the CHANGE per cycle instead of bending the value. The battery's own
-    // ramp accelerates while it runs; with meter latency on top that overshoots
-    // and then hunts. The step starts at ct_pace and grows toward three times
-    // that, but only while the command is demonstrably working.
+    // --- Steady-import trim -----------------------------------------------
+    // Every Marstek firmware parks the grid a few watts to the import side of
+    // zero - its own input deadband. A FIXED nudge once the grid has held in a
+    // small import band for a few fresh samples; not an integrator, which
+    // would be a second one behind the battery's and only add phase lag. The
+    // upper gate keeps it away from the large steady import an empty or
+    // saturated pack leaves.
+    if (ct_trim > 0 && fresh == 1) {
+        if (v > 0.0 && v < CT_TRIM_GATE) {
+            if (ct_dwell[ph] < 1000) ct_dwell[ph] = ct_dwell[ph] + 1;
+        } else {
+            ct_dwell[ph] = 0;
+        }
+        if (ct_dwell[ph] >= CT_TRIM_DWELL) v = v + (float)ct_trim;
+    }
+
+    // --- Oscillation damping ----------------------------------------------
+    // A real load step keeps its sign; a latency-driven limit cycle flips it
+    // nearly every cycle. Count the flips and bleed the gain that sustains
+    // them - without slowing a genuine step, which passes at full gain above
+    // CT_OSC_STEP. AstraMeter balancer.py _damp_oscillation (issue #473).
+    int vs = 0;
+    if (v > 0.0) vs = 1;
+    if (v < 0.0) vs = 0 - 1;
+    float av = v;
+    if (av < 0.0) av = 0.0 - av;
+    if (av > CT_OSC_STEP) {
+        ct_osc[ph] = ct_osc[ph] * (1.0 - CT_OSC_DECAY);
+    } else {
+        if (vs != 0 && ct_osign[ph] != 0 && vs != ct_osign[ph]) {
+            ct_osc[ph] = ct_osc[ph] + CT_OSC_ALPHA;
+            if (ct_osc[ph] > 1.0) ct_osc[ph] = 1.0;
+        } else {
+            ct_osc[ph] = ct_osc[ph] * (1.0 - CT_OSC_DECAY);
+        }
+    }
+    if (vs != 0) ct_osign[ph] = vs;
+    v = v * (1.0 - CT_OSC_MAX * ct_osc[ph]);
+
+    // --- Ramp pacing ------------------------------------------------------
+    // An absolute clamp around zero, never a step away from the last value.
+    // The cap starts at ct_pace, doubles toward three times that only while
+    // the batteries demonstrably follow, falls back with the error and resets
+    // on a direction reversal.
     //
-    // "Working" is measured on the grid error itself, not on the batteries'
-    // reported power as AstraMeter does. We have that telemetry (ct_spwr[]),
-    // but tying it in would need the battery-to-phase mapping in this loop;
-    // a shrinking error says the same thing and holds for any number of
-    // batteries on the phase.
+    // AstraMeter's stall escape for a B2500 that cannot execute a small
+    // command is not here: this loop serves a whole phase and does not know
+    // which family sits on it. The 80 W start floor for those is handled per
+    // battery in ctShare().
     if (ct_pace > 0) {
         int cap = ct_step[ph];
         if (cap < ct_pace) cap = ct_pace;
-        float dv = v - ct_out[ph];
-        float adv = dv;
-        if (adv < 0.0) adv = 0.0 - adv;
-        if (adv > (float)cap) {
-            if (dv > 0.0) v = ct_out[ph] + (float)cap;
-            else          v = ct_out[ph] - (float)cap;
-        }
-        float ae = err;   if (ae < 0.0) ae = 0.0 - ae;
-        float ap = prev;  if (ap < 0.0) ap = 0.0 - ap;
-        if (ae < ap) {
-            ct_step[ph] = ct_step[ph] + 10;
-            if (ct_step[ph] > ct_pace * 3) ct_step[ph] = ct_pace * 3;
+        int sg = 0;
+        if (v > 0.0) sg = 1;
+        if (v < 0.0) sg = 0 - 1;
+        float ap = v;
+        if (ap < 0.0) ap = 0.0 - ap;
+        if (sg == 0 || sg != ct_psign[ph]) {
+            cap = ct_pace;              // reversal - nothing learned carries over
+        } else if (ap > (float)cap) {
+            if (dpool * (float)sg >= CT_PACE_MOVE) cap = cap * 2;
         } else {
-            ct_step[ph] = ct_pace;      // not converging - back to small steps
+            cap = (int)ap;              // follow the error back down
+            if (cap < ct_pace) cap = ct_pace;
         }
+        if (cap > ct_pace * 3) cap = ct_pace * 3;
+        ct_step[ph] = cap;
+        ct_psign[ph] = sg;
+        if (v > (float)cap) v = (float)cap;
+        if (v < (float)(0 - cap)) v = (float)(0 - cap);
     }
-    ct_out[ph] = v;                     // the pacing anchor, before the floor
 
     // The minimum-output floor used to sit here. It moved into ctShare(),
     // which is per battery: at this level the fair split would halve it, and
@@ -699,16 +815,23 @@ int ctCtrl(float raw, int ph) {
 
 void ctPower() {
     if (sml_ph3 == 1) {
+        ct_ra = (int)smlGet(4);
+        ct_rb = (int)smlGet(5);
+        ct_rc = (int)smlGet(6);
         ct_pa = ctCtrl(smlGet(4), 0);
         ct_pb = ctCtrl(smlGet(5), 1);
         ct_pc = ctCtrl(smlGet(6), 2);
     } else {
         // Single-value meter: everything on L1, like the Shelly emulation.
         // Set every battery to phase A (or all to D, which reads the total).
+        ct_ra = (int)smlGet(1);
+        ct_rb = 0;
+        ct_rc = 0;
         ct_pa = ctCtrl(smlGet(1), 0);
         ct_pb = 0;
         ct_pc = 0;
     }
+    ct_rtot = (int)smlGet(1);
     ct_ptot = ctCtrl(smlGet(1), 3);    // the saldierend total — phase D reads this
 }
 

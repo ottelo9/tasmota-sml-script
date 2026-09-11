@@ -12,7 +12,7 @@
 #include "sml_modbus_common.tc"
 #include "ct002_common.tc"
 
-char sml_vers[] = "05.09.2026 08:42";
+char sml_vers[] = "11.09.2026 14:05";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int  sml_sndpwr;         // 1 = publish power via MQTT and serve /pwr
@@ -72,7 +72,7 @@ void TaskLoop() {
 void WebOn() {
     int h = webHandler();
     if (ctWebOn(h)) return;          // /ctreg
-    if (h != 1) return;
+    if (h != 7) return;              // /pwr
     if (sml_sndpwr > 0) {
         sprintf(sml_buf, "{\"power2\":%.0f", sml_power2);
         sprintfAppend(sml_buf, ",\"cpwr\":%d", ct_ptot);
@@ -165,7 +165,7 @@ int main() {
     sml_power2 = smlGet(1);
     sml_pwr_last = 0;
 
-    ctInit(4);                       // /ctreg on handler 4, /pwr keeps 1
+    ctInit(4);                       // /ctreg on handler 4
     mbInit();
     addCommand("CT");
     webPageLabel(0, "&#x2699;&#xFE0F; SML /&#x1F50B;");
@@ -173,7 +173,7 @@ int main() {
     webPageLabel(4, "&#x1F50B; CT");
     webPageLabel(5, "&#x1F4BB; TinyC");   // hands over to /tc - kept last so it stays
                                           // last when a program adds a page
-    webOn(1, "/pwr");
+    webOn(7, "/pwr");
     smlScripterLoad("/sml_meter.def");
 
     addLog("sml_ct002: %s started, %s, port %d, CT MAC '%s'",
