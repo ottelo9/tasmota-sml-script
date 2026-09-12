@@ -30,7 +30,7 @@ persist int   sml_da;           // last seen day-of-month (month-wrap detector)
 // item, claimed as ONE contiguous block at load time.
 //
 // Whole watts, and nothing is lost by that: both charts render with
-// decimals=0 (see sml_chart_render_4h/_24h), so the fractional part of the
+// decimals=0 (see sml_chart_render_st/_24h), so the fractional part of the
 // moving average was never drawn. int16 covers +-32767 W, which is why byte[]
 // was NOT the answer here — at +-20 kW a byte quantises to 160 W steps and a
 // fridge draws 100.
@@ -43,15 +43,62 @@ persist int16 sml_s24h[1441];   // 24 h chart, 1 min per slot
 persist int   sml_s4h_pos;
 persist int   sml_s24h_pos;
 
+// ── Short-term chart: selectable time range ─────────────────────────────────
+// Stored in MINUTES, not as a pulldown index: the value ends up in
+// tc_options.cfg, which is meant to be edited by hand, and 240 says what it
+// means where a 4 would not. 0 = never set, which main() turns into 4 h.
+persist int sml_stmin;          // 15 | 30 | 60 | 120 | 240
+persist int sml_chmain;         // 1 = charts on the settings page, not page 2
+
+int sml_e_stmin;                // edit buffer, pulldown INDEX 0..4
+int sml_e_chmain;
+int sml_st_acc;                 // sum of the 5 s samples in the current slot
+int sml_st_n;                   // how many are in it
+
+// Seconds per slot. The 5 s tick is the finest source there is, so the
+// shortest range stores every tick with no averaging at all.
+int sml_st_step() {
+    if (sml_stmin == 15)  return 5;
+    if (sml_stmin == 30)  return 10;
+    if (sml_stmin == 60)  return 15;
+    if (sml_stmin == 120) return 30;
+    return 60;
+}
+
+// Slots = minutes * 60 / step: 180, 180, 240, 240, 240 - every one of them
+// inside the 481 the ring already has, so the range costs no extra RAM.
+int sml_st_count() {
+    if (sml_stmin == 15) return 180;
+    if (sml_stmin == 30) return 180;
+    return 240;
+}
+
+int sml_st_idx() {
+    if (sml_stmin == 15)  return 0;
+    if (sml_stmin == 30)  return 1;
+    if (sml_stmin == 60)  return 2;
+    if (sml_stmin == 120) return 3;
+    return 4;
+}
+
+int sml_st_mins(int idx) {
+    if (idx == 0) return 15;
+    if (idx == 1) return 30;
+    if (idx == 2) return 60;
+    if (idx == 3) return 120;
+    return 240;
+}
+
 // ── Daily / monthly columnar totals — 0-based indexing matching WebChart's
 // ring-buffer walk (pos-count+i, mod count). Day 1 = index 0, Month 1 = 0.
 persist float sml_dcon[31];
 persist float sml_mcon[12];
 
 // ── Runtime state — moving filter rings + tick counters ─────────────────────
-int sml_s4hf[6];                // 6×5s = 30s average window for 4 h chart
+// The 4 h chart had its own 30 s filter ring here. The short-term chart
+// averages over the WHOLE slot instead (the box filter in sml_chart_5s_tick),
+// which is simpler and more honest - the old one threw half of every minute away.
 int sml_s24hf[12];              // 12×5s = 60s average window for 24 h chart
-int sml_f4_pos;
 int sml_f24_pos;
 int sml_t1;                     // 5s downcounter
 int sml_t2;                     // 60s downcounter
@@ -212,6 +259,17 @@ void sml_chart_clear_power() {
     addLog("sml_chart: 4h/24h power charts cleared");
 }
 
+// Only the short-term ring: a changed time range makes its stored slots mean
+// a different span, but leaves the 24 h ring alone.
+void sml_chart_clear_st() {
+    int i = 0;
+    while (i < 481) { sml_s4h[i] = 0; i = i + 1; }
+    sml_s4h_pos = 0;
+    sml_st_acc  = 0;
+    sml_st_n    = 0;
+    sml_chart_save();
+}
+
 void sml_chart_init_columns() {
     int i = 0;
     while (i < 31) { sml_dcon[i] = 0.0; i = i + 1; }
@@ -236,37 +294,43 @@ int sml_chart_w16(float w) {
 }
 
 // 5-s tick: feed the moving-average filters, push to the rolling arrays.
+// 5-s tick: feed the 24 h filter, accumulate and push the short-term ring.
 void sml_chart_5s_tick() {
     int p = (int)smlGet(1);             // current power in W (int filter ring)
-    sml_s4hf[sml_f4_pos] = p;
-    sml_f4_pos = (sml_f4_pos + 1) % 6;
     sml_s24hf[sml_f24_pos] = p;
     sml_f24_pos = (sml_f24_pos + 1) % 12;
 
     int sum = 0;
     int i = 0;
-    while (i < 6) { sum = sum + sml_s4hf[i]; i = i + 1; }
-    float s4h_avg = (float)sum / 6.0;
-
-    sum = 0;
-    i = 0;
     while (i < 12) { sum = sum + sml_s24hf[i]; i = i + 1; }
     float s24h_avg = (float)sum / 12.0;
 
-    // 240-slot ring at 1 min/slot = the last 4 h, sliding. Two fixes vs the old
-    // ((hour-4)%24)*120 mapping: (1) that only produced idx4 < 480 for hours
-    // 4..7, so outside 04:00-08:00 nothing was stored and the chart was empty;
-    // (2) 1-min slots match the WebChart x-axis interval=1, so 240 points span a
-    // real 4 h axis — the previous 480 30-s points were drawn over an 8 h axis.
-    int idx4  = (tasm_hour * 60 + tasm_minute) % 240;
-    int idx24 = tasm_hour * 60 + tasm_minute;
-    if (idx4 >= 0 && idx4 < 240) {
-        sml_s4h[idx4] = sml_chart_w16(s4h_avg);
-        sml_s4h_pos = idx4;
+    // ── Short-term ring ───────────────────────────────────────────────────
+    // A box filter over the WHOLE slot, then one push. The slot index is a
+    // free-running cursor and no longer derived from the wall clock: at 5 s
+    // per slot there is nothing in the clock to derive it from. The chart
+    // therefore reads "the last N minutes from now", which is what its x-axis
+    // said all along.
+    sml_st_acc = sml_st_acc + p;
+    sml_st_n   = sml_st_n + 1;
+    if (sml_st_n >= sml_st_step() / 5) {
+        int cnt = sml_st_count();
+        if (sml_s4h_pos < 0 || sml_s4h_pos >= cnt) sml_s4h_pos = 0;
+        sml_s4h[sml_s4h_pos] = sml_chart_w16((float)sml_st_acc / (float)sml_st_n);
+        // WebChart wants the NEXT write position, not the slot just written:
+        // it draws arr[(pos+i) % count] and puts arr[(pos-1) % count] at
+        // "now". Passing the written slot rotated the whole chart one slot to
+        // the left and parked the newest sample at the left edge.
+        sml_s4h_pos = (sml_s4h_pos + 1) % cnt;
+        sml_st_acc = 0;
+        sml_st_n   = 0;
     }
+
+    // 24 h keeps its wall-clock slot - there the ring IS the time of day.
+    int idx24 = tasm_hour * 60 + tasm_minute;
     if (idx24 >= 0 && idx24 < 1440) {
         sml_s24h[idx24] = sml_chart_w16(s24h_avg);
-        sml_s24h_pos = idx24;
+        sml_s24h_pos = (idx24 + 1) % 1440;      // next write position, see above
     }
 }
 
@@ -335,7 +399,7 @@ void sml_chart_render_totals() {
 // readability) + DE date in the tooltip (dd.MM.yyyy), independent of the
 // browser locale. WebChartJS runs in the chart's draw scope (dt/o/el) and
 // o.done=1 takes over the draw so it renders as an AreaChart.
-byte sml_chart_js[240];   // snippet incl. chartArea override and o.done=1
+byte sml_chart_js[560];   // snippet incl. x-axis rebuild, format and o.done=1
 
 void sml_chart_area_de() {
     strcpy(sml_chart_js,
@@ -343,13 +407,50 @@ void sml_chart_area_de() {
     WebChartJS(sml_chart_js);
 }
 
-void sml_chart_render_4h() {
+// The x axis is rebuilt here because WebChart's `interval` is in whole
+// MINUTES ("Minutes between data points", TinyC_Reference) and four of the
+// five ranges step faster than that. WebChartJS hands over the finished
+// DataTable before the draw, which is the documented place for exactly this.
+void sml_chart_area_st() {
+    int stp = sml_st_step();
+    int pad = stp * 1000;
+    if (pad < 5000) pad = 5000;
+    sprintf(sml_chart_js, "var N=new Date(),n=dt.getNumberOfRows(),i=0,S=%d", stp * 1000);
+    sprintfAppend(sml_chart_js, ",P=%d;", pad);
+    strcat(sml_chart_js, "for(;i<n;i++)dt.setValue(i,0,new Date(N.getTime()-(n-1-i)*S));");
+    // The window has to be overwritten as well, not just the data: the
+    // firmware pins o.hAxis.viewWindow from the ORIGINAL minute-spaced x
+    // values, so rewriting dt alone left a 179-minute axis with 15 minutes of
+    // data squeezed against its right edge.
+    strcat(sml_chart_js, "o.hAxis={format:'HH:mm',viewWindow:{min:new Date(N.getTime()-(n-1)*S-P),max:new Date(N.getTime()+P)}};");
+    // Seconds in the TOOLTIP where a slot is shorter than a minute; the axis
+    // ticks stay at HH:mm, which is all they have room for.
+    strcat(sml_chart_js, "new google.visualization.DateFormat({pattern:'");
+    if (stp < 60) strcat(sml_chart_js, "HH:mm:ss");
+    else          strcat(sml_chart_js, "dd.MM.yyyy HH:mm");
+    strcat(sml_chart_js, "'}).format(dt,0);o.chartArea={left:58,right:16,top:30,height:'65%'};o.areaOpacity=0.3;new google.visualization.AreaChart(el).draw(dt,o);o.done=1");
+    WebChartJS(sml_chart_js);
+}
+
+// Short-term chart. The title must be a string LITERAL - WebChart takes a
+// const-pool index, so sprintf cannot build one; hence the ladder.
+void sml_chart_render_st() {
+    int cnt = sml_st_count();
     WebChartSize(0, 280);   // 0 = card width (see #111)
-    // 240 points at interval=1 min = a 4 h x-axis (matches the 240-slot 1-min
-    // ring). Filled area + DE date via the hook.
-    if (ui_de) WebChart(0, "Verbrauch 4 Stunden [Watt]", "W", 0x3498db, sml_s4h_pos, 240, sml_s4h, 0, 1, 0.0, 0.0);
-    else       WebChart(0, "Power 4 hours [Watt]", "W", 0x3498db, sml_s4h_pos, 240, sml_s4h, 0, 1, 0.0, 0.0);
-    sml_chart_area_de();
+    if (ui_de) {
+        if (sml_stmin == 15)       WebChart(0, "Verbrauch 15 Minuten [Watt]", "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
+        else if (sml_stmin == 30)  WebChart(0, "Verbrauch 30 Minuten [Watt]", "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
+        else if (sml_stmin == 60)  WebChart(0, "Verbrauch 1 Stunde [Watt]",   "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
+        else if (sml_stmin == 120) WebChart(0, "Verbrauch 2 Stunden [Watt]",  "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
+        else                       WebChart(0, "Verbrauch 4 Stunden [Watt]",  "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
+    } else {
+        if (sml_stmin == 15)       WebChart(0, "Power 15 minutes [Watt]", "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
+        else if (sml_stmin == 30)  WebChart(0, "Power 30 minutes [Watt]", "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
+        else if (sml_stmin == 60)  WebChart(0, "Power 1 hour [Watt]",     "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
+        else if (sml_stmin == 120) WebChart(0, "Power 2 hours [Watt]",    "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
+        else                       WebChart(0, "Power 4 hours [Watt]",    "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
+    }
+    sml_chart_area_st();
 }
 
 void sml_chart_render_24h() {
@@ -722,16 +823,35 @@ void sml_chart_pv_render_months_dual() {
 // so the window.onload call to la() already sees rfsh=0 and returns.
 // WebChart works here because tc_chart_lib_sent is reset before every /tc_ui
 // render - on a webOn endpoint it is not, and the loader would be sent once.
-void sml_chart_page_render() {
-    // No width rule here: since 1.6.55 the firmware pins the page container
-    // itself (body>div{width:min(96vw,960px)}) next to the chart library, and a
-    // second rule would fight it. The charts are width:100% of that container.
-    webSend("<script>pr(0)</script>");
+// Auto-reload button for whichever page shows the charts. Google Charts draws
+// once when the page is built; Tasmota's la() only swaps the sensor block and
+// never touches the chart divs, so a 15-minute chart goes stale on screen
+// while the numbers above it keep moving.
+//
+// The state lives in the BROWSER (localStorage), because the thing it switches
+// on reloads the page - a device-side flag would have to survive the reload it
+// causes, and would then also apply to every other browser looking at the
+// device. It skips a reload while a field has focus, so it cannot throw away
+// something half-typed when the charts sit on the settings page.
+void sml_chart_refresh_button() {
+    webSend("<div style='margin:8px 0'><button id='smlar' style='padding:4px 10px' onclick='_arT()'>&#x21BB;</button></div>");
+    webSend("<script>var _arOn=0;try{_arOn=localStorage.getItem('smlar')=='1'?1:0}catch(e){}");
+    if (ui_de) webSend("var _arL=['↻ Auto-Update aus','↻ Auto-Update an (10 s)'];");
+    else       webSend("var _arL=['↻ Auto update off','↻ Auto update on (10 s)'];");
+    webSend("function _arU(){var b=document.getElementById('smlar');if(b)b.textContent=_arL[_arOn];}");
+    webSend("function _arT(){_arOn=_arOn?0:1;try{localStorage.setItem('smlar',_arOn?'1':'0')}catch(e){}_arU();if(_arOn)_arS();}");
+    webSend("function _arS(){setTimeout(function(){if(!_arOn)return;var a=document.activeElement;if(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName))return _arS();location.reload();},10000);}");
+    webSend("_arU();if(_arOn)_arS();</script>");
+}
+
+// Every chart, in order. Shared by the dedicated page and the settings page.
+void sml_chart_render_all() {
     // Plain wrapper. The old margin-left:-30px compensated Tasmota's 5 px div
     // padding stacking up inside Google's nested chart divs; the firmware now
     // switches that off with `.tcc div{padding:0}` (gemu, 1.6.55).
     webSend("<div>");
-    sml_chart_render_4h();
+    sml_chart_refresh_button();
+    sml_chart_render_st();
     sml_chart_render_24h();
     sml_chart_render_days();
     if (sml_pv > 0) {
@@ -741,6 +861,58 @@ void sml_chart_page_render() {
         sml_chart_render_months();
     }
     webSend("</div>");
+}
+
+void sml_chart_page_render() {
+    // No width rule here: since 1.6.55 the firmware pins the page container
+    // itself (body>div{width:min(96vw,960px)}) next to the chart library, and a
+    // second rule would fight it. The charts are width:100% of that container.
+    //
+    // pr(0) belongs to THIS page only. On the settings page it would stop the
+    // live values, so sml_chart_render_all() is called there without it.
+    webSend("<script>pr(0)</script>");
+    sml_chart_render_all();
+}
+
+// ── Chart options ──────────────────────────────────────────────────────────
+void sml_chart_opt_load() {
+    sml_e_stmin  = sml_st_idx();
+    sml_e_chmain = sml_chmain;
+}
+
+void sml_chart_opt_apply() {
+    int m = sml_st_mins(sml_e_stmin);
+    if (m != sml_stmin) {
+        sml_stmin = m;
+        sml_chart_clear_st();
+        addLog("sml_chart: short-term range %d min = %d slots at %d s, chart cleared",
+               sml_stmin, sml_st_count(), sml_st_step());
+    }
+    sml_chmain = sml_e_chmain;
+    tcOptSet(30, sml_stmin);
+    tcOptSet(31, sml_chmain);
+}
+
+// The range is an ordinary edit-buffer field: it takes effect on Save, and the
+// warning stands next to it rather than in a confirm(). A native dialog blocks
+// the JS thread and the queued refresh then aborts the request behind it -
+// that is the bug the three reset buttons below had to be rewritten around,
+// and this page has exactly the same refresh loop.
+void sml_chart_options_panel() {
+    uiHead("&#x1F4C8;", "Charts", "Diagramme", "sml/#charts");
+    if (ui_de) {
+        webPulldown(sml_e_stmin, "Kurzzeit-Diagramm", "15 Minuten|30 Minuten|1 Stunde|2 Stunden|4 Stunden");
+    } else {
+        webPulldown(sml_e_stmin, "Short-term chart", "15 minutes|30 minutes|1 hour|2 hours|4 hours");
+    }
+    // Always visible, not tied to the change and deliberately not a confirm():
+    // a native dialog blocks the JS thread, and the queued refresh then aborts
+    // the request behind it - the bug the three reset buttons below had to be
+    // rewritten around, and this page carries the same refresh loop.
+    uiText("<div style='font-size:11px;color:#a00;margin:4px 0'>&#9888; Saving a different range clears this chart.</div>",
+           "<div style='font-size:11px;color:#a00;margin:4px 0'>&#9888; Beim Speichern einer anderen Zeitspanne wird dieses Diagramm geleert.</div>");
+    if (ui_de) webCheckbox(sml_e_chmain, "Diagramme auf der Hauptseite");
+    else       webCheckbox(sml_e_chmain, "Charts on the main page");
 }
 
 // One row on the main page, from WebCall().

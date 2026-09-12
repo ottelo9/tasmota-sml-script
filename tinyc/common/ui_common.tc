@@ -151,6 +151,8 @@ void tcOptLoad() {
     if (fileGetStr(tc_opt_b, h, "@ct_mindc=",      1, 10) > 0) tc_opt[28] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@ct_fair=",       1, 10) > 0) tc_opt[29] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@ct_sat=",        1, 10) > 0) tc_opt[33] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@chart_short=",  1, 10) > 0) tc_opt[30] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@chart_onmain=", 1, 10) > 0) tc_opt[31] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@imp_day=",   1, 10) > 0) { tc_optf[0] = atof(tc_opt_b); tc_optf_has[0] = 1; }
     if (fileGetStr(tc_opt_b, h, "@imp_month=", 1, 10) > 0) { tc_optf[1] = atof(tc_opt_b); tc_optf_has[1] = 1; }
     if (fileGetStr(tc_opt_b, h, "@imp_year=",  1, 10) > 0) { tc_optf[2] = atof(tc_opt_b); tc_optf_has[2] = 1; }
@@ -216,6 +218,10 @@ void tcOptSave() {
     tcOptW(h,  "ct_mindc",    28);
     tcOptW(h,  "ct_fair",     29);
     tcOptW(h,  "ct_sat",      33);
+    // Short-term chart: the time range in MINUTES (15/30/60/120/240) and
+    // whether the charts sit on the settings page instead of their own.
+    tcOptW(h,  "chart_short",  30);
+    tcOptW(h,  "chart_onmain", 31);
     tcOptWF(h, "imp_day",      0);
     tcOptWF(h, "imp_month",    1);
     tcOptWF(h, "imp_year",     2);

@@ -60,8 +60,9 @@ body.lang-de .en{display:none}
   <a href="#sleep"><span class="en">Power saving</span><span class="de">Energiesparmodus</span></a>
   <a href="#meter"><span class="en">Meter settings</span><span class="de">Zähler-Einstellungen</span></a>
   <a href="#filter">Filter</a>
-  <a href="#display"><span class="en">Display</span><span class="de">Anzeige</span></a>
+  <a href="#display"><span class="en">Driver rows</span><span class="de">Treiberzeilen</span></a>
   <a href="#pv">PV</a>
+  <a href="#charts"><span class="en">Charts</span><span class="de">Diagramme</span></a>
   <a href="#data"><span class="en">Chart data</span><span class="de">Diagrammdaten</span></a>
   <a href="#telemetry"><span class="en">Telemetry</span><span class="de">Telemetrie</span></a>
   <a href="#modbus">Modbus</a>
@@ -283,7 +284,7 @@ body.lang-de .en{display:none}
 </section>
 
 <section id="display">
-<h2><span class="en">Display</span><span class="de">Anzeige</span></h2>
+<h2><span class="en">Additional display (via SML driver)</span><span class="de">Zusätzliche Anzeige (via SML-Treiber)</span></h2>
 <div class="en">
 <p>The SML driver can print its own rows on the main page, with the meter name in front of every value. The script prints the same values itself, in your language and without the prefix.</p>
 <table>
@@ -314,16 +315,54 @@ body.lang-de .en{display:none}
 </div>
 </section>
 
+<section id="charts">
+<h2><span class="en">Charts</span><span class="de">Diagramme</span></h2>
+<div class="en">
+<table>
+<tr><th>Short-term chart</th><td>Time range of the first chart: <b>15 minutes</b>, <b>30 minutes</b>, <b>1 hour</b>, <b>2 hours</b> or <b>4 hours</b> (the default). The shorter the range, the finer the resolution &mdash; the chart always holds 180 to 240 points, so 15 minutes stores one every 5 seconds where 4 hours stores one a minute.</td></tr>
+<tr><th>Charts on the main page</th><td>Off: the charts live on their own page, reached by the &#x1F4C8; link in the value list. On: they are drawn on Tasmota&rsquo;s own main page instead &mdash; under the values and buttons, the way they used to be &mdash; and the link disappears. The separate page stays reachable at <code>/tc_ui?p=2</code> either way.</td></tr>
+</table>
+<table>
+<tr><th>Range</th><th>One point every</th><th>Points</th></tr>
+<tr><td>15 minutes</td><td>5 s</td><td>180</td></tr>
+<tr><td>30 minutes</td><td>10 s</td><td>180</td></tr>
+<tr><td>1 hour</td><td>15 s</td><td>240</td></tr>
+<tr><td>2 hours</td><td>30 s</td><td>240</td></tr>
+<tr><td>4 hours</td><td>60 s</td><td>240</td></tr>
+</table>
+<p class="warn">Changing the range and saving <b>clears this chart</b>. It has to: the stored slots would otherwise be read as a span they were never recorded for. The 24&nbsp;h chart and the bar charts are untouched.</p>
+<p>Each point is the average over its whole slot, so a shorter range is not noisier &mdash; it is genuinely finer. Nothing else changes: the ring is the same one, and a 15-minute chart costs no more memory than a 4-hour one.</p>
+<p>The <b>&#x21BB; Auto update</b> button above the charts reloads the page every 10 seconds. Google Charts draws once when the page is built and Tasmota&rsquo;s own refresh only touches the value list, so without it a 15-minute chart freezes on screen while the numbers above it keep moving. The setting is remembered by the browser, not by the device, and a reload is skipped while you have a field selected.</p>
+</div>
+<div class="de">
+<table>
+<tr><th>Kurzzeit-Diagramm</th><td>Zeitspanne des ersten Diagramms: <b>15 Minuten</b>, <b>30 Minuten</b>, <b>1 Stunde</b>, <b>2 Stunden</b> oder <b>4 Stunden</b> (Standard). Je kürzer die Spanne, desto feiner die Auflösung &mdash; das Diagramm fasst immer 180 bis 240 Punkte, bei 15 Minuten also alle 5 Sekunden einen, bei 4 Stunden einen je Minute.</td></tr>
+<tr><th>Diagramme auf der Hauptseite</th><td>Aus: die Diagramme liegen auf einer eigenen Seite, erreichbar über den &#x1F4C8;-Link in der Werteliste. Ein: sie werden auf Tasmotas eigener Hauptseite gezeichnet &mdash; unter den Werten und Knöpfen, so wie früher &mdash; und der Link entfällt. Die eigene Seite bleibt in beiden Fällen unter <code>/tc_ui?p=2</code> erreichbar.</td></tr>
+</table>
+<table>
+<tr><th>Spanne</th><th>Ein Punkt alle</th><th>Punkte</th></tr>
+<tr><td>15 Minuten</td><td>5 s</td><td>180</td></tr>
+<tr><td>30 Minuten</td><td>10 s</td><td>180</td></tr>
+<tr><td>1 Stunde</td><td>15 s</td><td>240</td></tr>
+<tr><td>2 Stunden</td><td>30 s</td><td>240</td></tr>
+<tr><td>4 Stunden</td><td>60 s</td><td>240</td></tr>
+</table>
+<p class="warn">Eine andere Spanne zu wählen und zu speichern <b>leert dieses Diagramm</b>. Das muss so sein: die gespeicherten Slots würden sonst als eine Zeitspanne gelesen, für die sie nie aufgezeichnet wurden. Das 24-h-Diagramm und die Balkendiagramme bleiben unberührt.</p>
+<p>Jeder Punkt ist der Mittelwert über seinen ganzen Slot &mdash; eine kürzere Spanne ist also nicht unruhiger, sondern wirklich feiner. Sonst ändert sich nichts: es ist derselbe Ring, und ein 15-Minuten-Diagramm braucht keinen Speicher mehr als ein 4-Stunden-Diagramm.</p>
+<p>Der Knopf <b>&#x21BB; Auto-Update</b> über den Diagrammen lädt die Seite alle 10 Sekunden neu. Google Charts zeichnet einmal beim Seitenaufbau, und Tasmotas eigene Aktualisierung fasst nur die Werteliste an &mdash; ohne den Knopf steht ein 15-Minuten-Diagramm also fest, während die Zahlen darüber weiterlaufen. Die Einstellung merkt sich der Browser, nicht das Gerät, und solange ein Feld ausgewählt ist, wird nicht neu geladen.</p>
+</div>
+</section>
+
 <section id="data">
 <h2><span class="en">Chart data</span><span class="de">Diagrammdaten</span></h2>
 <div class="en">
 <table>
 <tr><th>&#x1F522; Reset</th><td>Restarts the day, month and year values from the current meter reading. Do this once after installing, and whenever the counters show nonsense &mdash; a full meter reading instead of a daily figure means the baselines are missing. The charts keep their history.</td></tr>
-<tr><th>&#x1F4C8; Reset</th><td>Empties the 4&nbsp;h and 24&nbsp;h power charts. The values above and the bar charts stay as they are.</td></tr>
+<tr><th>&#x1F4C8; Reset</th><td>Empties the short-term and 24&nbsp;h power charts. The values above and the bar charts stay as they are.</td></tr>
 <tr><th>&#x1F4CA; Reset</th><td>Clears the day and month columns. The counters keep running. Asks first.</td></tr>
 </table>
 <p>The <b>&#x1F4BE; CSV</b> button at the bottom of the settings page writes <code>/sml_chart.csv</code>, and <code>/sml_chart_pv.csv</code> as well when the feed-in side is on. It reads only, so it fires without asking. Download the files in Tasmota's <a href="/ufsd">file manager</a>.</p>
-<p>The CSV holds the baselines in line&nbsp;1, then the 4&nbsp;h, 24&nbsp;h, daily and monthly arrays &mdash; tab separated, one array per line. That is the format to keep a backup in or to open in a spreadsheet.</p>
+<p>The CSV holds the baselines in line&nbsp;1, then the short-term, 24&nbsp;h, daily and monthly arrays &mdash; tab separated, one array per line. That is the format to keep a backup in or to open in a spreadsheet.</p>
 <p>The live data lives in the slot's <code>.pvs</code> file, saved by name. A backup is that one file: copy it away, copy it back, restart the slot. <code>/sml_chart.bin</code> is only read once at startup, for importing data from an older version.</p>
 <p>The export also works while the meter is silent &mdash; that is deliberate, since a meter that stopped is exactly when the stored data matters.</p>
 <p class="warn">Charts need the clock. Before the device has NTP time (<code>2020</code>) nothing is recorded.</p>
@@ -331,11 +370,11 @@ body.lang-de .en{display:none}
 <div class="de">
 <table>
 <tr><th>&#x1F522; Reset</th><td>Lässt Tages-, Monats- und Jahreswert neu beim aktuellen Zählerstand beginnen. Einmal nach der Installation, und immer dann, wenn die Zähler Unsinn zeigen &mdash; ein voller Zählerstand statt eines Tageswerts heißt, die Nullpunkte fehlen. Die Diagramme behalten ihren Verlauf.</td></tr>
-<tr><th>&#x1F4C8; Reset</th><td>Leert die 4-h- und 24-h-Verlaufsdiagramme. Die Werte darüber und die Balkendiagramme bleiben unberührt.</td></tr>
+<tr><th>&#x1F4C8; Reset</th><td>Leert das Kurzzeit- und das 24-h-Verlaufsdiagramm. Die Werte darüber und die Balkendiagramme bleiben unberührt.</td></tr>
 <tr><th>&#x1F4CA; Reset</th><td>Löscht die Tages- und Monatsspalten. Die Zähler laufen weiter. Fragt vorher nach.</td></tr>
 </table>
 <p>Der Knopf <b>&#x1F4BE; CSV</b> ganz unten auf der Einstellungsseite schreibt <code>/sml_chart.csv</code>, bei eingeschalteter Einspeiseseite zusätzlich <code>/sml_chart_pv.csv</code>. Er liest nur und fragt deshalb nicht nach. Heruntergeladen werden die Dateien im <a href="/ufsd">Dateimanager</a> von Tasmota.</p>
-<p>Die CSV enthält in Zeile&nbsp;1 die Nullpunkte, danach die Arrays für 4&nbsp;h, 24&nbsp;h, Tage und Monate &mdash; tabgetrennt, ein Array je Zeile. Das ist das Format für eine Sicherung oder zum Öffnen in der Tabellenkalkulation.</p>
+<p>Die CSV enthält in Zeile&nbsp;1 die Nullpunkte, danach die Arrays für das Kurzzeit-Diagramm, 24&nbsp;h, Tage und Monate &mdash; tabgetrennt, ein Array je Zeile. Das ist das Format für eine Sicherung oder zum Öffnen in der Tabellenkalkulation.</p>
 <p>Die laufenden Daten liegen in der <code>.pvs</code>-Datei des Slots, namensbasiert gespeichert. Eine Sicherung ist genau diese eine Datei: wegkopieren, zurückkopieren, Slot neu starten. <code>/sml_chart.bin</code> wird nur einmal beim Start gelesen, zum Übernehmen von Daten aus einer älteren Version.</p>
 <p>Der Export funktioniert auch, während der Zähler schweigt &mdash; das ist Absicht, denn ein ausgefallener Zähler ist genau der Moment, in dem die gespeicherten Daten zählen.</p>
 <p class="warn">Diagramme brauchen die Uhr. Bevor das Gerät NTP-Zeit hat (<code>2020</code>), wird nichts aufgezeichnet.</p>
@@ -429,6 +468,7 @@ body.lang-de .en{display:none}
 @sml_ph3=1
 @es_mode=2
 @sml_da=3
+@chart_short=240
 @imp_day=26714.950
 @exp_day=659.775</code></pre>
 <p>One <code>@name=value</code> per line. A program reads the keys it knows and <b>carries the rest through untouched</b>, so running <code>sml_simple</code> for a while does not throw away the emulator's settings &mdash; go back and they are still there.</p>
@@ -436,6 +476,7 @@ body.lang-de .en{display:none}
 <tr><th><code>ui_*</code></th><td>Language, power saving.</td></tr>
 <tr><th><code>sml_*</code></th><td>Meter, RX/TX pin, filter, phases, driver rows.</td></tr>
 <tr><th><code>es_*</code> / <code>ct_*</code> / <code>mb_*</code></th><td>Emulators and Modbus.</td></tr>
+<tr><th><code>chart_*</code></th><td><code>chart_short</code> is the short-term chart's range in <b>minutes</b> (15, 30, 60, 120, 240) &mdash; minutes rather than a menu position, so the number says what it means. <code>chart_onmain</code> puts the charts on Tasmota's main page.</td></tr>
 <tr><th><code>imp_*</code> / <code>exp_*</code></th><td>The energy baselines in kWh: the zero points day, month and year totals are counted from. <code>sml_da</code> is the last-seen day of the month and belongs with them.</td></tr>
 </table>
 <h3>Editing by hand</h3>
@@ -454,6 +495,7 @@ body.lang-de .en{display:none}
 @sml_ph3=1
 @es_mode=2
 @sml_da=3
+@chart_short=240
 @imp_day=26714.950
 @exp_day=659.775</code></pre>
 <p>Eine Zeile <code>@name=wert</code> je Eintrag. Ein Programm liest die Schlüssel, die es kennt, und <b>trägt alle anderen unverändert mit</b> &mdash; läuft eine Weile <code>sml_simple</code>, überleben die Emulator-Einstellungen trotzdem und sind beim Zurückwechseln wieder da.</p>
@@ -461,6 +503,7 @@ body.lang-de .en{display:none}
 <tr><th><code>ui_*</code></th><td>Sprache, Energiesparmodus.</td></tr>
 <tr><th><code>sml_*</code></th><td>Zähler, RX-/TX-Pin, Filter, Phasen, Treiberzeilen.</td></tr>
 <tr><th><code>es_*</code> / <code>ct_*</code> / <code>mb_*</code></th><td>Emulatoren und Modbus.</td></tr>
+<tr><th><code>chart_*</code></th><td><code>chart_short</code> ist die Zeitspanne des Kurzzeit-Diagramms in <b>Minuten</b> (15, 30, 60, 120, 240) &mdash; Minuten statt einer Menüposition, damit die Zahl sagt, was sie bedeutet. <code>chart_onmain</code> legt die Diagramme auf Tasmotas Hauptseite.</td></tr>
 <tr><th><code>imp_*</code> / <code>exp_*</code></th><td>Die Basiswerte in kWh: die Nullpunkte, von denen Tages-, Monats- und Jahressumme aus gezählt werden. <code>sml_da</code> ist der zuletzt gesehene Monatstag und gehört dazu.</td></tr>
 </table>
 <h3>Von Hand editieren</h3>

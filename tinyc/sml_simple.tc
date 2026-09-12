@@ -10,7 +10,7 @@
 #include "sml_descriptor.tc"
 #include "sml_modbus_common.tc"
 
-char sml_vers[] = "11.09.2026 14:05";
+char sml_vers[] = "12.09.2026 12:05";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int  sml_sndpwr;         // 1 = publish power via MQTT and serve /pwr

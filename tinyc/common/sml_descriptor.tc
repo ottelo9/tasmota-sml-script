@@ -249,6 +249,8 @@ void sml_render_settings_panel() {
         webCheckbox(sml_e_activ, "Zähler aktiv");
         webCheckbox(sml_e_ph3, "3 Phasen");
         if (sml_ph3_bad == 1) webSend("<div style='font-size:11px;color:#a00;margin:2px 0'>&#9888; Abgeschaltet: Werte 4/5/6 des Descriptors sind keine Phasenleistungen. Siehe Konsole.</div>");
+        uiCheckI(sml_e_drvrows, varIdx(sml_e_drvrows), "Zusätzliche Anzeige (via SML-Treiber)", "sml/#display");
+        uiCheckI(sml_e_filter, varIdx(sml_e_filter), "SML Median Filter", "sml/#filter");
         webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Descriptor bearbeiten</a>");
         webRepoPulldown(sml_e_meter_sel, "Aus Repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
@@ -260,6 +262,8 @@ void sml_render_settings_panel() {
         webCheckbox(sml_e_activ, "Meter active");
         webCheckbox(sml_e_ph3, "3 phases");
         if (sml_ph3_bad == 1) webSend("<div style='font-size:11px;color:#a00;margin:2px 0'>&#9888; Switched off: descriptor values 4/5/6 are not per-phase power. See console.</div>");
+        uiCheckI(sml_e_drvrows, varIdx(sml_e_drvrows), "Additional display (via SML driver)", "sml/#display");
+        uiCheckI(sml_e_filter, varIdx(sml_e_filter), "SML Median Filter", "sml/#filter");
         webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Edit descriptor</a>");
         webRepoPulldown(sml_e_meter_sel, "From repo",
                         "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
@@ -269,12 +273,6 @@ void sml_render_settings_panel() {
         webPulldown(sml_e_tx_pin, "TX pin", "@getfreepins");
     }
     webSend("<div class='hint'>RX=3 TX=1: Hichi, Stromleser, LesekopfV32, Wattwächter<br>RX=5 TX=4: bitShake</div>");
-
-    uiCheckI(sml_e_filter, varIdx(sml_e_filter), "SML Median Filter", "sml/#filter");
-
-    uiHead("&#x1F5A5;&#xFE0F;", "Display", "Anzeige", "sml/#display");
-    if (ui_de) webCheckbox(sml_e_drvrows, "Treiberzeilen zeigen");
-    else       webCheckbox(sml_e_drvrows, "Show driver rows");
 }
 
 // Publish at log level 3 - silent until weblog 3. Reports a changed result

@@ -12,7 +12,7 @@
 #include "sml_modbus_common.tc"
 #include "ct002_common.tc"
 
-char sml_vers[] = "11.09.2026 14:05";
+char sml_vers[] = "12.09.2026 12:05";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 
@@ -49,6 +49,12 @@ void EverySecond() {
         sml_mval2 = tcOptGetF(4, sml_mval2);
         sml_yval2 = tcOptGetF(5, sml_yval2);
         sml_da    = tcOptGet(25, sml_da);
+        sml_stmin  = tcOptGet(30, sml_stmin);
+        sml_chmain = tcOptGet(31, sml_chmain);
+        if (sml_stmin == 0) sml_stmin = 240;
+        tcOptSet(30, sml_stmin);
+        tcOptSet(31, sml_chmain);
+        sml_chart_opt_load();
     }
     // Pushed every second rather than at the rollover: the baselines are
     // written in several places (midnight, month wrap, new year, the manual
@@ -62,9 +68,10 @@ void EverySecond() {
     tcOptSetF(4, sml_mval2);
     tcOptSetF(5, sml_yval2);
     tcOptSet(25, sml_da);
-    if (ui_reloading) { sml_e_pv = sml_pv; sml_e_sndpwr = sml_sndpwr; }
+    if (ui_reloading) { sml_e_pv = sml_pv; sml_e_sndpwr = sml_sndpwr; sml_chart_opt_load(); }
     if (ui_applying)  { sml_pv = sml_e_pv; sml_sndpwr = sml_e_sndpwr;
-                        tcOptSet(9, sml_pv); tcOptSet(10, sml_sndpwr); }
+                        tcOptSet(9, sml_pv); tcOptSet(10, sml_sndpwr);
+                        sml_chart_opt_apply(); }
     sml_descriptor_apply();
     ctTick();
     mbTick();
@@ -141,6 +148,13 @@ void WebOn() {
     webSend(sml_buf);
 }
 
+// Tasmota's own root page, rendered once per load (FUNC_WEB_ADD_MAIN_BUTTON).
+// The charts go here rather than into WebCall(), which is re-rendered on every
+// refresh - five Google charts on that path would be re-sent every two seconds.
+void WebPage() {
+    if (sml_chmain > 0) sml_chart_render_all();
+}
+
 void WebCall() {
     if (!sml_activ) {
         uiText("{s}SML{m}off (Rule1){e}", "{s}SML{m}aus (Rule1){e}");
@@ -166,7 +180,7 @@ void WebCall() {
     ctRows();
     mbRows();
     uiSep();
-    sml_chart_link();
+    if (sml_chmain == 0) sml_chart_link();   // no link when they are on the page itself
     sml_chart_datetime_rows();
 }
 
@@ -198,6 +212,7 @@ void WebUI() {
     }
     mbPanel();
 
+    sml_chart_options_panel();
     sml_chart_data_panel(varIdx(do_base), varIdx(do_power), varIdx(do_bars));
     webSend("<hr>");
     uiSaveButton();
@@ -232,6 +247,8 @@ int main() {
     sml_e_pv = sml_pv;
     sml_e_sndpwr = sml_sndpwr;
     sml_chart_load();
+    if (sml_stmin == 0) sml_stmin = 240;   // never set -> 4 h, as before
+    sml_chart_opt_load();
     sml_chart_pv_load();
 
     ctInit(4);                        // /ctreg on handler 4
