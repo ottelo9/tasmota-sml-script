@@ -1,14 +1,22 @@
-## Tasmota Scripte für Stromzähler Leseköpfe / smarte Steckdosen / Zähler [by ottelo]
-### Werte grafisch darstellen, Verbraucher steuern, Nulleinspeisung für smarte Akkus realisieren
-Tasmota Script with SML and Google Charts for Energy / Grid meter or energy measuring plugs.  
-Tasmota Skripte mit SML und Google Charts für smarte Stromzähler / Energiezähler oder smarte Steckdosen.  
+## Tasmota TinyC-Programme oder Scripte für Stromzähler Leseköpfe / smarte Steckdosen / Zähler [by ottelo]
+### > Werte grafisch darstellen, Verbraucher steuern, Nulleinspeisung für smarte Akkus realisieren
+Tasmota TinyC Programs or Scripts for Smart Meter Readers / Smart Powerplugs / Meters [by ottelo]  
+Display values graphically, implement zero-feed-in for smart batteries  
 
-Für eine Anleitung, Beschreibung sowie passende Tasmota Images siehe mein Blog:
-[https://ottelo.jimdo.de](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/)  
-Eine kleine Anleitung befindet sich auch im Script selbst.
+Ein Sammlung von Infos/Anleitungen/Hardwareauswahl findet ihr auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/), eine Schnellanleitung (nur TinyC) [hier](https://ottelo.jimdofree.com/tasmota-tinyc/). Eine Infoseite in Deutsch/English findet ihr [hier](https://ottelo9.github.io/tasmota-sml-script/) (wenn ihr im TinyC-Programm auf ein ℹ️ drückt gelangt ihr auch dahin).
 
 **WICHTIG:  
-Damit die Scripte funktionieren müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!**
+Damit die TinyC-Programme / Scripte funktionieren müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!**
+
+### TinyC-Programme (löst Script ab!)
+Eine Liste von Programmen findet ihr direkt in Tasmota auf eurem ESP. Ich habe meine bekannten Scripte zu TinyC konvertiert und teilweise auch mehrere Scripte kombiniert. Das alles ist mit TinyC problemlos möglich gewesen. Z.b. ist nun ModbusTCP Slave als Option immer mit drin.  
+1. Die TinyC Programme wählt ihr bequem direkt auf eurem ESP aus via Tools > TinyC Console > Repository Drop Down Menü:
+   <img width="300" alt="image" src="https://github.com/user-attachments/assets/822d2298-d81e-44c9-b4f8-45df25e92ccc" />
+3. Oder ladet euch die Programme herunter. Fertige tcb Programme [hier](https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc/bytecode). Sourcecode der Programme [hier](https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc). Die fertigen Programme könnt ihr auf der TinyC Seite manuell hochladen. Den Sourcecode (tc) müsst ihr über die TinyC IDE kompilieren oder via [build.html](https://github.com/ottelo9/tasmota-sml-script/blob/main/tinyc/bytecode/build.html) lokal auf eurem PC.
+4. Dann starten und den Autostart aktivieren  
+   <img width="300" alt="image" src="https://github.com/user-attachments/assets/5ef219fa-0b6b-4bea-bfab-8c40c4f1d073" />
+5. Auf der Hauptseite in den Optionen ⚙️ könnt ihr euren Stromzähler wählen und verschiedene andere Sachen einstellen.
+
 
 ### Scriptauswahl
 Scripte für den ESP8266 findet ihr nun in einem extra Ordner, da ich diese nicht mehr weiterentwickeln werde. Alle anderen Scripte aktualisiere ich nun (ab 01.12.2025) nur noch für den ESP32, der einfach mehr Power hat und Tasmota mehr Features dafür bietet.  
