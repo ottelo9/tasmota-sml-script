@@ -5,13 +5,16 @@ Display values graphically, implement zero-feed-in for smart batteries
 
 - [Infos/Anleitungen/Hardwareauswahl/News](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/) (mein Blog)
 - [Schnellanleitung (nur TinyC)](https://ottelo.jimdofree.com/tasmota-tinyc/) (auf meinem Blog)
-- [Infos/Hilfe in Deutsch/English](https://ottelo9.github.io/tasmota-sml-script/) (wenn ihr im TinyC-Programm auf ein ℹ️ drückt gelangt ihr auch dahin).
+- [Infos/Hilfe/Editor/Konverter in Deutsch/English](https://ottelo9.github.io/tasmota-sml-script/) (wenn ihr im TinyC-Programm auf ein ℹ️ drückt gelangt ihr auch dahin).
 
 **WICHTIG:  
 Damit die TinyC-Programme / Scripte funktionieren müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!**
 
 ### TinyC-Programme (löst Script ab!)
 Eine Liste von Programmen findet ihr direkt in Tasmota auf eurem ESP. Ich habe meine bekannten Scripte zu TinyC konvertiert und teilweise auch mehrere Scripte kombiniert. Das alles ist mit TinyC problemlos möglich gewesen. Z.b. ist nun ModbusTCP Slave als Option immer mit drin.  
+  
+Wenn noch eins meiner Scripte auf eurem ESP/Lesekopf läuft und ihr wechseln wollt, dann könnt ihr die Diagrammdaten/Verbräuche exportieren und dann wieder importieren. [Anleitung und Online-Converter Tool](https://ottelo9.github.io/tasmota-sml-script/converter/).  
+
 1. Die TinyC Programme wählt ihr bequem direkt auf eurem ESP aus via Tools > TinyC Console > Repository Drop Down Menü:
    <img width="300" alt="image" src="https://github.com/user-attachments/assets/822d2298-d81e-44c9-b4f8-45df25e92ccc" />
 3. Oder ladet euch die Programme herunter. Fertige tcb Programme [hier](https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc/bytecode). Sourcecode der Programme [hier](https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc). Die fertigen Programme könnt ihr auf der TinyC Seite manuell hochladen. Den Sourcecode (tc) müsst ihr über die TinyC IDE kompilieren oder via [build.html](https://github.com/ottelo9/tasmota-sml-script/blob/main/tinyc/bytecode/build.html) lokal auf eurem PC.
