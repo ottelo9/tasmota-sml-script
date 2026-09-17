@@ -3,7 +3,7 @@
 Bearbeitet die `.pvs` eines TinyC-Slots direkt — die Datei, in der das laufende
 Programm seine `persist`-Variablen hält (`/sml_chart.tcb` → `/sml_chart.pvs`).
 
-**▶ Werkzeug online öffnen:
+**▶ Online-Editor öffnen:
 [ottelo9.github.io/tasmota-sml-script/pvs_editor/tinyc_chart_editor.html](https://ottelo9.github.io/tasmota-sml-script/pvs_editor/tinyc_chart_editor.html)**
 
 **📖 Anleitung:

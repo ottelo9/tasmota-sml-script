@@ -3,7 +3,7 @@
 Führt in vier Schritten durch den Umzug der Balkendiagramme von einem
 Tasmota-Scripter-Script zu den TinyC-Programmen.
 
-**▶ Werkzeug online öffnen:
+**▶ Online-Konverter öffnen:
 [ottelo9.github.io/tasmota-sml-script/converter/script_charts_to_tinyc_pvs.html](https://ottelo9.github.io/tasmota-sml-script/converter/script_charts_to_tinyc_pvs.html)**
 
 **📖 Anleitung:
