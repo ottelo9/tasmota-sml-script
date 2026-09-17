@@ -3,7 +3,9 @@
 Tasmota TinyC Programs or Scripts for Smart Meter Readers / Smart Powerplugs / Meters [by ottelo]  
 Display values graphically, implement zero-feed-in for smart batteries  
 
-Ein Sammlung von Infos/Anleitungen/Hardwareauswahl findet ihr auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/), eine Schnellanleitung (nur TinyC) [hier](https://ottelo.jimdofree.com/tasmota-tinyc/). Eine Infoseite in Deutsch/English findet ihr [hier](https://ottelo9.github.io/tasmota-sml-script/) (wenn ihr im TinyC-Programm auf ein ℹ️ drückt gelangt ihr auch dahin).
+- [Infos/Anleitungen/Hardwareauswahl/News](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/) (mein Blog)
+- [Schnellanleitung (nur TinyC)](https://ottelo.jimdofree.com/tasmota-tinyc/) (auf meinem Blog)
+- [Infos/Hilfe in Deutsch/English](https://ottelo9.github.io/tasmota-sml-script/) (wenn ihr im TinyC-Programm auf ein ℹ️ drückt gelangt ihr auch dahin).
 
 **WICHTIG:  
 Damit die TinyC-Programme / Scripte funktionieren müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!**

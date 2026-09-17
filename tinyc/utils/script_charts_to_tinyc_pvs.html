@@ -45,6 +45,8 @@
   details.card > summary::before { content:"▸ "; color:var(--mut); }
   details.card[open] > summary::before { content:"▾ "; }
   #segments .card { border:1px solid #eee; box-shadow:none; }
+  .lnk { font-size:13px; color:var(--mut); margin:8px 0 0; }
+  .lnk a { display:block; margin:3px 0; font-weight:600; color:var(--accent); }
 </style>
 </head>
 <body>
@@ -63,14 +65,31 @@
 
 <main>
   <div class="card">
-    <div class="seg-head"><span class="seg-title">1. Scripter-<code>data.csv</code> einlesen</span>
+    <div class="seg-head"><span class="seg-title">1. Diagrammdaten vom alten Gerät holen</span>
       <span class="stats" id="step1Status">noch nichts geladen</span></div>
-    <div class="hint">Die <code>data.csv</code> im Dateimanager des alten Geräts herunterladen
-      (<code>http://&lt;geraet&gt;/ufsd</code>) und hier auswählen. Es wird nichts hochgeladen — die
-      Umrechnung passiert vollständig im Browser.
-      <br><b>Bequemer: in Schritt 2 die IP eintragen, dann steht dort ein fertiger Link zur
-      <code>data.csv</code> — anklicken, herunterladen, hier auswählen.</b></div>
-    <div class="toolbar" style="margin-top:10px">
+    <div class="hint"><b>Empfohlen:</b> IP des alten Geräts eintragen. Dann werden die Links zum Holen der
+      Daten (z.B. <code>data.csv</code>) automatisch hier auf der Seite generiert. Dafür muss
+      <b>Configuration &rsaquo; Other &rsaquo; HTTP API enable</b> aktiviert sein. Die <code>data.csv</code>
+      kann aber auch manuell vom alten Gerät geladen werden via <b>Tools &rsaquo; Manage File System</b>
+      (nicht beim ESP8266 1M verfügbar, da gehts nur via Console oder HTTP API).</div>
+    <div class="row" style="margin-top:8px">
+      <label>Altes Gerät (IP) <input id="devIp" type="text" placeholder="192.168.178.31" style="width:150px"></label>
+    </div>
+
+    <div class="hint" style="margin-top:12px"><b>a) Import via HTTP/IP vom alten Gerät</b> — Link anklicken,
+      im neuen Browser-Tab alles auf der Seite markieren und kopieren (inkl. den <code>{ }</code>) und hier
+      einfügen. Der 24-h-Verlauf lässt sich mit dieser Methode allerdings nicht importieren (zu viel Daten).</div>
+    <div class="lnk" id="barLink">IP eintragen</div>
+    <textarea id="barPaste" style="min-height:52px;margin-top:8px" spellcheck="false"
+      placeholder='Antwort hier einfügen, z. B. {"script":{"dcon":[11.96,8.74,...],"dprod":[...],"mcon":[...]}}'></textarea>
+    <div class="toolbar">
+      <button class="sec" id="barParse">Balken übernehmen</button>
+    </div>
+
+    <div class="hint" style="margin-top:12px"><b>b) Import via <code>data.csv</code></b> — Herunterladen
+      (über den Link oder via <b>Manage File System</b>) und hier auswählen. Enthält auch den 24-h-Verlauf.</div>
+    <div class="lnk" id="csvLink">IP eintragen</div>
+    <div class="toolbar">
       <button id="impTas">Scripter-<code>data.csv</code> auswählen…</button>
       <input id="impTasFile" type="file" accept=".csv,.txt,*/*" style="display:none">
     </div>
@@ -79,15 +98,20 @@
       <summary class="hint" style="cursor:pointer">Welche Scripte erkannt werden</summary>
       <div class="hint">Das Layout wird an den Zeilen- und Spaltenzahlen erkannt:
         <table class="schema" style="margin:6px 0"><tbody>
+          <tr><td colspan="4">Bei allen gilt: der <b>4-h-Verlauf wird nicht übernommen</b> (genullt). Das
+            Kurzzeit-Diagramm der TinyC-Programme hat einen einstellbaren Zeitraum (15 min bis 4 h) und
+            einen frei laufenden Zeiger — die 480 Werte à 30 s des Scripters lassen sich darin nicht
+            zeitrichtig einordnen und wären nur ein falsches Bild. Der 24-h-Verlauf passt 1:1.</td></tr>
           <tr><td><code>1_SML_Chart.tas</code></td><td>4 Zeilen</td><td>481 / 1441 / 31 / 12</td><td>ohne Einspeisung</td></tr>
-          <tr><td><code>2_SML_Chart_PV[2].tas</code>, <code>_Modbus</code>, <code>3_…_Bezugszaehler</code></td><td>5 Zeilen</td><td>481 / 1441 / 31 / 31 / 24</td><td></td></tr>
-          <tr><td><code>2_SML_Chart_PV3.tas</code></td><td>7 Zeilen</td><td>… + 53 / 53</td><td>Wochenbalken entfallen</td></tr>
+          <tr><td><code>2_SML_Chart_PV.tas</code>, <code>_Modbus</code>, <code>3_…_Bezugszaehler</code></td><td>5 Zeilen</td><td>481 / 1441 / 31 / 31 / 24</td><td></td></tr>
+          <tr><td><code>2_SML_Chart_PV2.tas</code></td><td>5 Zeilen</td><td>721 / 1441 / 31 / 31 / 24</td><td>1-h-Verlauf à 5 s, wird genullt</td></tr>
+          <tr><td><code>2_SML_Chart_PV3.tas</code></td><td>7 Zeilen</td><td>… + 53 / 53</td><td>Wochenbalken entfallen — TinyC hat keine</td></tr>
           <tr><td><code>4_SML_Chart_PV_no_4h24h.tas</code></td><td>3 Zeilen</td><td>31 / 31 / 24</td><td>4 h/24 h werden genullt</td></tr>
-          <tr><td><code>5_SteckdoseLeistungsmesser_1</code>, <code>6_SML_Wasseruhr</code></td><td>4 Zeilen</td><td>481 / 1441 / 31 / 12</td><td>gleiche Form, aber kein TinyC-Gegenstück</td></tr>
+          <tr><td><code>5_SteckdoseLeistungsmesser_1</code> / <code>_2</code>, <code>6_SML_Wasseruhr</code></td><td>4 Zeilen</td><td>481 (bzw. 721) / 1441 / 31 / 12</td><td>gleiche Form, aber kein TinyC-Gegenstück</td></tr>
         </tbody></table>
-        Nicht dabei: <code>0_SML_Simple.tas</code> schreibt gar keine <code>data.csv</code>, und
-        <code>5_SteckdoseLeistungsmesser_2</code> hat <code>s4h</code> mit 721 statt 481 Werten — das
-        passt in kein TinyC-Array.
+        Nicht dabei: <code>0_SML_Simple.tas</code> hat keine Diagramme.
+        Beim Weg <b>a)</b> wird am Vorhandensein von <code>dprod</code> und an der Länge von
+        <code>mcon</code> (12 oder 24) erkannt, ob es Einspeisung gibt.
         Das <code>mcon[24]</code> des Scripters wird aufgeteilt in <code>sml_mcon[12]</code>
         (Verbrauch) und <code>sml_mprod[12]</code> (Einspeisung) — deshalb entstehen zwei Dateien.</div>
     </details>
@@ -96,18 +120,18 @@
   <div class="card" id="baseCard">
     <div class="seg-head"><span class="seg-title">2. Basiswerte auslesen und eintragen</span>
       <span class="stats" id="baseStatus"></span></div>
-    <div class="hint"><b>Die Basiswerte stehen nicht in der data.csv</b> — im Scripter sind es
-      <code>p:</code>-Variablen in den Tasmota-Einstellungen. Ohne sie rechnet das Programm
-      <code>Zählerstand − dval</code> und schreibt den <b>ganzen Zählerstand</b> in den heutigen
-      Balken. Sie werden an die <code>.bin</code> angehängt (1969 statt 1965 bzw. 46 statt 43).
-      Bleiben die Felder leer, musst du auf dem Gerät einmal
-      <i>Tages/Monats/Jahres-Verbrauchswerte zurücksetzen</i> drücken.</div>
-    <div class="hint" style="margin-top:8px">IP des alten Geräts eintragen, auf den Link klicken, die
-      Antwort aus dem Browser-Tab hierher kopieren:</div>
-    <div class="row" style="margin-top:8px">
-      <label>Altes Gerät (IP) <input id="devIp" type="text" placeholder="192.168.178.31" style="width:150px"></label>
-      <span id="baseLinks" class="stats"></span>
-    </div>
+    <div class="hint">Die Basiswerte (Zählerstände z.B. am Anfang des Monats/Jahres …) werden zur Berechnung
+      der Verbräuche benötigt und <b>stehen nicht in der <code>data.csv</code></b> (sie sind nur in den
+      <code>p:</code>-Variablen des Scriptes). Ohne den Import dieser Basiswerte werden alle Verbräuche auf
+      dem neuen Gerät falsch angezeigt (z. B. negativ oder der ganze Zählerstand). Erst durch ein Reset (<b>&#x2699;&#xFE0F; Optionen &rsaquo;
+      &#x1F522; Reset</b>) können die Werte auf dem neuen Gerät genullt werden. Im TinyC Programm werden
+      diese Basiswerte fortan in der <code>tc_options.cfg</code> gespeichert (siehe auch Import Schritt 3).
+      Bleiben die Felder leer, musst du auf dem Gerät, wie gesagt, einmal
+      <i>Tages/Monats/Jahres-Verbrauchswerte zurücksetzen</i>.</div>
+    <div class="hint" style="margin-top:8px">Auf den Link klicken (IP in Schritt 1), im neuen Browser-Tab
+      alles auf der Seite markieren und kopieren (inkl. den <code>{ }</code>) und hier einfügen — bei den
+      PV-Scripten für beide Links nacheinander.</div>
+    <div class="lnk" id="baseLinks"></div>
     <textarea id="basePaste" style="min-height:52px;margin-top:8px" spellcheck="false"
       placeholder='Antwort hier einfügen, z. B. {"script":{"dval":45231.5,"mval":44980.2,...}}'></textarea>
     <div class="toolbar">
@@ -116,29 +140,51 @@
       <span class="stats" id="baseMsg"></span>
     </div>
     <table class="schema" style="margin-top:10px"><tbody id="baseFields"></tbody></table>
+
+    <div class="hint" style="margin-top:14px"><b>Basiswerte in vorhandene <code>tc_options.cfg</code>
+      integrieren (optional):</b><br>
+      Falls bereits ein TinyC-Programm auf dem neuen Gerät läuft und ihr in den
+      <b>[&#x2699;&#xFE0F; SML]</b> Optionen was eingestellt habt (z.B. Stromzähler gewählt), dann könnt ihr
+      hier die Optionsdatei (<code>tc_options.cfg</code>) herunterladen und die Basiswerte in diese Datei
+      integrieren lassen. Habt ihr noch nix gemacht, dann überspringt den Schritt. (Hinweis: Tasmota eigene
+      Einstellungen wie z.B. WLAN werden woanders gespeichert!)</div>
+    <div class="row" style="margin-top:8px">
+      <label>Neues Gerät (IP) <input id="newIp" type="text" placeholder="192.168.178.40" style="width:150px"></label>
+      <span id="cfgLink" class="stats"></span>
+    </div>
+    <div class="toolbar">
+      <button class="sec" id="cfgPick"><code>tc_options.cfg</code> auswählen…</button>
+      <input id="cfgFile" type="file" accept=".cfg,.txt,*/*" style="display:none">
+      <button class="sec" id="cfgDrop">verwerfen</button>
+      <span class="stats" id="cfgInfo"></span>
+    </div>
   </div>
 
   <div class="card" id="dlCard">
     <div class="seg-head"><span class="seg-title">3. Import-Dateien herunterladen</span>
       <span class="stats" id="dlStatus"></span></div>
-    <div class="hint">Erst jetzt herunterladen — so sind die Basiswerte aus Schritt 2 mit drin.</div>
-    <div class="toolbar" style="margin-top:10px">
+    <div class="hint">Die heruntergeladenen Import-Dateien (<code>.bin</code>/<code>.cfg</code>) können nun
+      auf dem neuen Gerät (das mit TinyC) via <b>Manage File System</b> hochgeladen werden (vorher das
+      TinyC Programm stoppen).</div>
+
+    <div class="toolbar" style="margin-top:12px">
       <button id="dlCons">sml_chart.bin</button>
       <button id="dlProd">sml_chart_pv.bin</button>
+      <button id="dlCfg">tc_options.cfg</button>
       <span class="stats" id="dlMsg"></span>
     </div>
-    <div class="hint" style="margin-top:10px"><b>Einbauen — die Reihenfolge zählt:</b>
+    <div class="hint" style="margin-top:10px"><b>Import Anleitung:</b>
       <ol style="margin:4px 0 0 18px;padding:0">
-        <li>Slot stoppen: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das rote &#x25A0;</li>
-        <li>Datei(en) hochladen: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload</li>
-        <li>Slot starten: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das grüne &#x25B6;</li>
+        <li><b>TC-Programm (Slot) stoppen</b> (falls was läuft): Tools &rsaquo; TinyC Console &rsaquo; das rote &#x25A0;</li>
+        <li><b>Dateien hochladen:</b> Tools &rsaquo; Manage File system &rsaquo; Upload (alle Dateien einzeln hintereinander hochladen).</li>
+        <li><b>TC-Programm (Slot) starten:</b> Tools &rsaquo; TinyC Console &rsaquo; das grüne &#x25B6;</li>
 
       </ol>
-      Läuft der Slot beim Hochladen noch, schreibt <code>saveVars()</code> die <code>.pvs</code> neu,
-      bevor die <code>.bin</code> gelesen wird. Das Programm importiert die <code>.bin</code> einmal und
-      <b>löscht sie danach</b> — ab dann ist die <code>.pvs</code> der Speicher. Im Log steht
-      <code>sml_chart: .bin carried baselines</code> und
-      <code>sml_chart: imported .bin into .pvs, /sml_chart.bin deleted</code>.</div>
+      Läuft das TinyC-Programm beim Hochladen noch, werden alle importierten Einstellungen nach einem
+      Neustart wieder überschrieben. Das Programm importiert die <code>.bin</code> Datei(en) einmal und
+      <b>löscht sie danach</b> — ab dann ist die <code>.pvs</code> der Laufzeit-Speicher. In der Console
+      kann geprüft werden, ob der Import geklappt hat (<code>sml_chart: .bin carried baselines</code> und
+      <code>sml_chart: imported .bin into .pvs, /sml_chart.bin deleted</code>).</div>
   </div>
 
   <details class="card" id="advCard">
@@ -605,6 +651,7 @@ function updateDlStatus() {
   setTxt("dlStatus", parts.join(" · "));
   if ($("dlCons")) $("dlCons").disabled = !BUF.standard;
   if ($("dlProd")) $("dlProd").disabled = !BUF.pv;
+  updateCfgStatus();
 }
 
 function dlFile(preset) {
@@ -686,16 +733,30 @@ $("presetSel").addEventListener("change", e => {
 //   /sml_chart_pv.bin = dprod | mprod              (43)
 //
 // The weekly bars (PV3) are dropped: sml_chart_common.tc has no weekly array.
-// The 4 h / 24 h curves are carried over where present, but their ring position
-// is not — sml_s4h_pos/sml_s24h_pos live in the .pvs and are not part of the
-// .bin, so those two curves come out rotated. Only the bar charts, which are
-// indexed by day and month rather than by ring position, migrate exactly.
+//
+// The 24 h curve migrates exactly: the Scripter sets s24h[0]=hours*60+mins and
+// fwa() writes the raw buffer, so column j is minute j of the day - and
+// sml_chart_5s_tick() writes sml_s24h[hour*60+minute] and recomputes the
+// position from the clock on every tick.
+//
+// The 4 h curve does NOT and is zeroed. The Scripter ring is 480 x 30 s tied to
+// the wall clock; sml_s4h is now a short-term ring with a selectable range
+// (sml_stmin 15..240 min -> 180 or 240 slots of 5..60 s) and a free-running
+// cursor. The old values would be drawn as 15 minutes of a 4 h day at an
+// arbitrary rotation - a plausible-looking wrong chart. It refills in minutes.
+//
+// The short-term ring is 481 in most scripts but 721 in 2_SML_Chart_PV2 and
+// 5_SteckdoseLeistungsmesser_2 (1 h at 5 s). It is zeroed anyway, so both
+// lengths are accepted - PV2's data.csv used to be refused as unknown.
+const S4H = [481, 721];
 const TAS_LAYOUTS = [
-  { cols: [481, 1441, 31, 12],             map: "chart",  src: "1_SML_Chart.tas / 5_SteckdoseLeistungsmesser_1 / 6_SML_Wasseruhr" },
-  { cols: [481, 1441, 31, 31, 24],         map: "pv",     src: "2_SML_Chart_PV / _PV2 / _PV_Modbus / 3_…_Bezugszaehler" },
-  { cols: [481, 1441, 31, 31, 24, 53, 53], map: "pv",     src: "2_SML_Chart_PV3.tas (weekly bars dropped)" },
+  { cols: [S4H, 1441, 31, 12],             map: "chart",  src: "1_SML_Chart.tas / 5_SteckdoseLeistungsmesser_1/_2 / 6_SML_Wasseruhr" },
+  { cols: [S4H, 1441, 31, 31, 24],         map: "pv",     src: "2_SML_Chart_PV / _PV2 / _PV_Modbus / 3_…_Bezugszaehler" },
+  { cols: [S4H, 1441, 31, 31, 24, 53, 53], map: "pv",     src: "2_SML_Chart_PV3.tas (Wochenbalken entfallen — TinyC hat keine)" },
   { cols: [31, 31, 24],                    map: "bars",   src: "4_SML_Chart_PV_no_4h24h.tas" },
 ];
+const colFits = (c, n) => Array.isArray(c) ? c.includes(n) : c === n;
+const colText = c => Array.isArray(c) ? c.join("|") : String(c);
 
 function zeros(n) { return new Array(n).fill(0); }
 
@@ -712,17 +773,18 @@ function parseTabFloats(line) {
 function detectTasLayout(rows) {
   const shape = rows.map(r => r.length);
   const hit = TAS_LAYOUTS.find(l =>
-    l.cols.length === shape.length && l.cols.every((c, i) => c === shape[i]));
+    l.cols.length === shape.length && l.cols.every((c, i) => colFits(c, shape[i])));
   if (!hit) return null;
-  const out = { layout: hit, hasPv: hit.map !== "chart" };
+  // s4h is zeroed for every layout - see the comment above TAS_LAYOUTS.
+  const out = { layout: hit, hasPv: hit.map !== "chart", s4h: zeros(481) };
   if (hit.map === "chart") {
-    out.s4h = rows[0]; out.s24h = rows[1]; out.dcon = rows[2]; out.mcon = rows[3];
+    out.s24h = rows[1]; out.dcon = rows[2]; out.mcon = rows[3];
     out.dprod = zeros(31); out.mprod = zeros(12);
   } else if (hit.map === "pv") {
-    out.s4h = rows[0]; out.s24h = rows[1]; out.dcon = rows[2]; out.dprod = rows[3];
+    out.s24h = rows[1]; out.dcon = rows[2]; out.dprod = rows[3];
     out.mcon = rows[4].slice(0, 12); out.mprod = rows[4].slice(12, 24);
   } else {                                  // "bars" — no 4h/24h curves at all
-    out.s4h = zeros(481); out.s24h = zeros(1441);
+    out.s24h = zeros(1441);
     out.dcon = rows[0]; out.dprod = rows[1];
     out.mcon = rows[2].slice(0, 12); out.mprod = rows[2].slice(12, 24);
   }
@@ -734,12 +796,18 @@ function importScripterCsv(text, fname) {
   const rows = lines.map(parseTabFloats);
   const m = detectTasLayout(rows);
   if (!m) {
-    const known = TAS_LAYOUTS.map(l => l.cols.join("/")).join("  |  ");
+    const known = TAS_LAYOUTS.map(l => l.cols.map(colText).join("/")).join("  |  ");
     setMsg($("impTasMsg"),
       `Unbekanntes Layout: ${rows.length} Zeile(n) mit ${rows.map(r => r.length).join("/")} Spalten. ` +
       `Erwartet wird eines von: ${known}. Ist das wirklich die data.csv eines Diagramm-Scripts?`, "warn");
     return false;
   }
+  return useMigration(m, `"${fname}" erkannt als ${m.layout.src}.`,
+    "Der 4-h-Verlauf ist genullt — er passt nicht in das Kurzzeit-Diagramm der TinyC-Programme.");
+}
+
+// Common tail of both import paths: fill the two buffers and report.
+function useMigration(m, head, note) {
   const cons = [].concat(m.s4h, m.s24h, m.dcon, m.mcon);   // s4h|s24h|dcon|mcon = 1965
   const prod = [].concat(m.dprod, m.mprod);                // dprod|mprod        = 43
   if (cons.length !== 1965 || prod.length !== 43) {
@@ -762,12 +830,55 @@ function importScripterCsv(text, fname) {
     ? "sml_chart.bin (1965) und sml_chart_pv.bin (43)"
     : "sml_chart.bin (1965) — dieses Script hat keine Einspeisung, also keine sml_chart_pv.bin";
   setMsg($("impTasMsg"),
-    `"${fname}" erkannt als ${m.layout.src}. Bereit sind ${files}. ` +
+    `${head} Bereit sind ${files}. ${note} ` +
     `Weiter mit Schritt 2: ohne die Basiswerte rechnet das Programm den ganzen Zählerstand in den ` +
     `heutigen Balken. Danach in Schritt 3 herunterladen.`,
     "ok");
   return true;
 }
+
+// ── Path a): the bars straight from the Scripter's variables ─────────────────
+// For a device without a file system (ESP8266 1 MB): there is no data.csv, but
+// /cm?cmnd=script?dcon;dprod;mcon answers with the arrays as JSON - 528 chars
+// on a PV script, measured on 15.5.0. The 24 h ring does NOT come through that
+// way: 1441 values overflow the response and the device answers "???", so it is
+// zeroed here. A variable the running script does not have answers "???" too,
+// which is how the script type is told apart:
+//   dcon 31 + mcon 12              1_SML_Chart, Steckdose, Wasseruhr
+//   dcon 31 + dprod 31 + mcon 24   every PV script (PV3's weekly bars are not
+//                                  asked for - TinyC has no weekly array)
+// Values come with the Scripter's print precision (2 decimals), which is what
+// the bars display anyway.
+function importScripterJson(text) {
+  const arr = {};
+  // A regex sweep rather than JSON.parse: it also takes two answers pasted one
+  // after the other, and a copy that caught some of the surrounding page.
+  const re = /"(dcon|dprod|mcon)"\s*:\s*\[([^\]]*)\]/g;
+  let hit;
+  while ((hit = re.exec(text))) arr[hit[1]] = parseTabFloats(hit[2]);
+  const d = arr.dcon, p = arr.dprod, mc = arr.mcon;
+  if (!d || d.length !== 31 || !mc || (mc.length !== 12 && mc.length !== 24) || (p && p.length !== 31)) {
+    const got = Object.keys(arr).map(k => `${k}[${arr[k].length}]`).join(", ") || "keine";
+    setMsg($("impTasMsg"),
+      `Nicht erkannt — gefunden: ${got}. Erwartet wird die Antwort von script?dcon;dprod;mcon: ` +
+      `dcon mit 31 Werten und mcon mit 12 oder 24, dazu bei den PV-Scripten dprod mit 31.`, "warn");
+    return false;
+  }
+  const pv = mc.length === 24 || !!p;
+  const m = {
+    layout: { src: pv ? "PV-Script (per Link)" : "Script ohne Einspeisung (per Link)" },
+    hasPv: pv,
+    s4h: zeros(481), s24h: zeros(1441),
+    dcon: d, dprod: p || zeros(31),
+    mcon: mc.slice(0, 12), mprod: mc.length === 24 ? mc.slice(12, 24) : zeros(12),
+  };
+  return useMigration(m, `Balken übernommen: dcon[31]${p ? ", dprod[31]" : ""}, mcon[${mc.length}].`,
+    "Der 4-h- und der 24-h-Verlauf sind leer — über den Link nicht abrufbar.");
+}
+
+$("barParse").onclick = () => {
+  if (importScripterJson($("barPaste").value)) $("barPaste").value = "";
+};
 
 if ($("impTas")) $("impTas").addEventListener("click", () => $("impTasFile").click());
 if ($("impTasFile")) $("impTasFile").addEventListener("change", e => {
@@ -875,13 +986,26 @@ $("baseClear").onclick = () => {
 function renderBaseLinks() {
   const ip = $("devIp").value.trim();
   const host = ip.replace(/^https?:\/\//, "").replace(/\/+$/, "");
-  if (!host) { $("baseLinks").textContent = "IP eintragen, dann erscheinen hier die Links."; return; }
+  if (!host) {
+    $("baseLinks").textContent = "IP in Schritt 1 eintragen, dann erscheinen hier die Links.";
+    $("csvLink").textContent = "IP eintragen";
+    $("barLink").textContent = "IP eintragen";
+    return;
+  }
   const a = (path, text, title) =>
     `<a href="http://${host}${path}" target="_blank" rel="noopener" title="${title}">${text}</a>`;
+  // The command MUST be percent-encoded. A literal ';' in the query cuts the
+  // Scripter's list after the first name - measured on 15.5.0:
+  //   /cm?cmnd=script?dval;mval;yval;da        -> {"script":{"dval":26714.37}}
+  //   /cm?cmnd=script%3Fdval%3Bmval%3Byval%3Bda -> all four
+  // and the half-filled card then silently left the baselines out of the .bin.
+  const cm = cmd => "/cm?cmnd=" + encodeURIComponent(cmd);
+  // One link per line (.lnk a is display:block).
   $("baseLinks").innerHTML =
-    a("/cm?cmnd=script?dval;mval;yval;da", "Basiswerte Bezug", "Scripter-Variablen auslesen") + " · " +
-    a("/cm?cmnd=script?dval2;mval2;yval2", "Basiswerte Einspeisung", "nur bei den PV-Scripten") + " · " +
-    a("/ufsd?download=/data.csv", "data.csv", "Diagrammdaten herunterladen, dann oben einlesen");
+    a(cm("script?dval;mval;yval;da"), "Basiswerte Bezug abrufen", "Scripter-Variablen auslesen") +
+    a(cm("script?dval2;mval2;yval2"), "Basiswerte Einspeisung abrufen", "nur bei den PV-Scripten");
+  $("csvLink").innerHTML = a("/ufsd?download=/data.csv", "data.csv herunterladen", "Diagrammdaten herunterladen, dann unten auswählen");
+  $("barLink").innerHTML = a(cm("script?dcon;dprod;mcon"), "Balkendiagramm-Daten abrufen", "Tages- und Monatsbalken als JSON");
 }
 $("devIp").addEventListener("input", renderBaseLinks);
 
@@ -899,7 +1023,9 @@ $("baseParse").onclick = () => {
   } catch (e) { /* not JSON - fall through to the sweep */ }
   BASE_FIELDS.forEach(f => {
     if (found[f.k] === undefined) {
-      const m = txt.match(new RegExp('"' + f.k + '"\s*:\s*"?(-?[0-9]+(?:[.,][0-9]+)?)', "i"));
+      // Double backslashes: in a plain string literal "\s" is just "s", which
+      // turned the pattern into `"dval"s*:s*` and missed `"dval": 45231.5`.
+      const m = txt.match(new RegExp('"' + f.k + '"\\s*:\\s*"?(-?[0-9]+(?:[.,][0-9]+)?)', "i"));
       if (m) found[f.k] = m[1];
     }
   });
@@ -917,9 +1043,120 @@ $("baseParse").onclick = () => {
     : "Keine bekannten Variablen gefunden. Erwartet wird die Antwort von cm?cmnd=script?dval;mval;yval;da";
 };
 
+// ─── tc_options.cfg ───────────────────────────────────────────────────────────
+// Since ui_common.tc keeps the energy baselines in /tc_options.cfg, every chart
+// program pulls them from that file on its FIRST tick:
+//   sml_dval = tcOptGetF(0, sml_dval);    // "the shared file wins over the .pvs"
+// main() has imported the .bin by then, so a baseline that travels only in the
+// .bin is replaced one second later by whatever the device's cfg still holds -
+// and the next 60 s tick writes today's and this month's bar from the wrong
+// zero point. The baselines therefore go into the cfg as well.
+//
+// The device's own file is the base, not a fresh one: it also holds the settings
+// of every OTHER program (emulator ports, CT options). A program re-writes only
+// the keys it owns, so a cfg with nothing but the baselines would drop those for
+// good. Only the keys below are replaced; every other line passes through.
+//
+// Format as tcOptSave() writes it: "@name=value" per line, '#' comments, floats
+// with three decimals. tcOptLoad() finds each key with fileGetStr(), which
+// searches from the start of the file, so the order of the lines is irrelevant.
+const CFG_MAP = [
+  { k: "dval",  c: "imp_day",   f: true },
+  { k: "mval",  c: "imp_month", f: true },
+  { k: "yval",  c: "imp_year",  f: true },
+  { k: "dval2", c: "exp_day",   f: true },
+  { k: "mval2", c: "exp_month", f: true },
+  { k: "yval2", c: "exp_year",  f: true },
+  { k: "da",    c: "sml_da",    f: false },
+];
+const CFG_HEAD = "# tc_options - shared by all programs";
+let cfgDev = null;          // text of the device's cfg, null = none loaded
+
+function cfgParse(text) {
+  const o = {};
+  text.split(/\r?\n/).forEach(l => { const m = /^@([A-Za-z0-9_]+)=(.*)$/.exec(l.trim()); if (m) o[m[1]] = m[2].trim(); });
+  return o;
+}
+
+// Replace the given keys in place, append the ones that are missing.
+function cfgMerge(text, set) {
+  const lines = (text || CFG_HEAD + "\n").split(/\r?\n/);
+  const done = new Set();
+  const out = lines.map(l => {
+    const m = /^@([A-Za-z0-9_]+)=/.exec(l.trim());
+    if (m && set[m[1]] !== undefined) { done.add(m[1]); return "@" + m[1] + "=" + set[m[1]]; }
+    return l;
+  });
+  while (out.length && out[out.length - 1].trim() === "") out.pop();
+  Object.keys(set).forEach(k => { if (!done.has(k)) out.push("@" + k + "=" + set[k]); });
+  return out.join("\n") + "\n";
+}
+
+// The keys this converter will write: every baseline field that is filled.
+function cfgValues() {
+  const set = {};
+  CFG_MAP.forEach(m => {
+    const v = parseNum($("b_" + m.k).value);
+    if (v !== null) set[m.c] = m.f ? v.toFixed(3) : String(Math.round(v));
+  });
+  return set;
+}
+
+function updateCfgStatus() {
+  if (!$("dlCfg")) return;
+  const set = cfgValues(), n = Object.keys(set).length;
+  $("dlCfg").disabled = n === 0;
+  let info;
+  if (cfgDev === null) {
+    info = "keine geladen — die heruntergeladene Datei enthält dann nur die Basiswerte";
+  } else {
+    const old = cfgParse(cfgDev);
+    const diff = Object.keys(set).filter(k => old[k] !== undefined && parseFloat(old[k]) !== parseFloat(set[k]));
+    info = `geladen: ${Object.keys(old).length} Einträge` +
+      (old.imp_day !== undefined ? ` · auf dem Gerät imp_day=${old.imp_day}` : "") +
+      (diff.length ? ` · wird ersetzt: ${diff.join(", ")}` : "");
+  }
+  setTxt("cfgInfo", info);
+}
+
+function renderCfgLink() {
+  const host = $("newIp").value.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  $("cfgLink").innerHTML = host
+    ? `<a href="http://${host}/ufsd?download=/tc_options.cfg" target="_blank" rel="noopener">tc_options.cfg vom neuen Gerät herunterladen</a>`
+    : "IP eintragen, dann erscheint hier der Link.";
+}
+
+$("newIp").addEventListener("input", renderCfgLink);
+$("cfgPick").onclick = () => $("cfgFile").click();
+$("cfgFile").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    const t = String(ev.target.result);
+    if (!/^@[A-Za-z0-9_]+=/m.test(t)) {
+      setTxt("cfgInfo", `"${f.name}" enthält keine @name=wert-Zeilen — ist das wirklich eine tc_options.cfg?`);
+      return;
+    }
+    cfgDev = t;
+    updateCfgStatus();
+  };
+  r.readAsText(f);
+  e.target.value = "";
+});
+$("cfgDrop").onclick = () => { cfgDev = null; updateCfgStatus(); };
+$("dlCfg").onclick = () => {
+  const set = cfgValues();
+  const out = cfgMerge(cfgDev, set);
+  dlBlob(new Blob([out], { type: "text/plain" }), "tc_options.cfg");
+  setTxt("dlMsg", `tc_options.cfg: ${Object.keys(set).join(", ")} gesetzt` +
+    (cfgDev === null ? " — ohne die cfg des Geräts, andere Einstellungen sind nicht enthalten." : ", alles andere unverändert."));
+};
+
 renderBaseFields();
 updateDlStatus();
 renderBaseLinks();
+renderCfgLink();
 renderSchema();
 </script>
 </body>

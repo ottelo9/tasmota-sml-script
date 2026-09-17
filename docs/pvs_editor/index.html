@@ -58,6 +58,7 @@ body.lang-de .en{display:none}
   <a href="#start">Start</a>
   <a href="#pvs"><span class="en">The .pvs file</span><span class="de">Die .pvs-Datei</span></a>
   <a href="#steps"><span class="en">Editing</span><span class="de">Bearbeiten</span></a>
+  <a href="#cfg">tc_options.cfg</a>
   <a href="#types"><span class="en">Types</span><span class="de">Typen</span></a>
   <a href="#bin">.bin</a>
   <a href="../">&#8962; <span class="en">All pages</span><span class="de">Alle Seiten</span></a>
@@ -112,6 +113,7 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 </li>
 </ol>
 <p class="warn">The order matters: if the slot is still running while you upload, <code>saveVars()</code> writes its own values over yours when it stops.</p>
+<p class="warn">Changed a counter zero point, the month day or a setting? Those are taken from <code>tc_options.cfg</code> at start-up, not from the <code>.pvs</code> &mdash; upload the <code>tc_options.cfg</code> as well, see <a href="#cfg">below</a>. The editor says so under <i>Save</i>.</p>
 <p>The <code>.pvs</code> is read at start-up and <b>not</b> renamed &mdash; it is the storage, not an import file. The CSV export is for reading only; the device never imports it.</p>
 </div>
 <div class="de">
@@ -127,7 +129,38 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 </li>
 </ol>
 <p class="warn">Die Reihenfolge zählt: läuft der Slot beim Hochladen noch, schreibt <code>saveVars()</code> beim Stoppen seine eigenen Werte über deine.</p>
+<p class="warn">Einen Zähler-Nullpunkt, den Monatstag oder eine Einstellung geändert? Die holt sich das Programm beim Start aus der <code>tc_options.cfg</code>, nicht aus der <code>.pvs</code> &mdash; also die <code>tc_options.cfg</code> mit hochladen, siehe <a href="#cfg">unten</a>. Der Editor weist unter <i>Speichern</i> darauf hin.</p>
 <p>Die <code>.pvs</code> wird beim Start gelesen und <b>nicht</b> umbenannt &mdash; sie ist der Speicher, keine Import-Datei. Die CSV-Ausgabe ist nur zum Nachlesen; das Gerät liest sie nie ein.</p>
+</div>
+</section>
+
+<section id="cfg">
+<h2><code>tc_options.cfg</code></h2>
+<div class="en">
+<p>All TinyC programs share <code>/tc_options.cfg</code>: language, meter, pins, the emulator and CT options &mdash; and the counter zero points. It carries them across a program change, and on the first tick it <b>wins over the <code>.pvs</code></b>:</p>
+<pre><code>sml_dval = tcOptGetF(0, sml_dval);   // sml_chart.tc, first tick</code></pre>
+<p>A value changed only in the <code>.pvs</code> is therefore back to the cfg's one second after the start. That applies to every variable with a key in the file:</p>
+<table>
+<tr><th><code>.pvs</code></th><th><code>tc_options.cfg</code></th></tr>
+<tr><td><code>sml_dval</code> &middot; <code>sml_mval</code> &middot; <code>sml_yval</code></td><td><code>imp_day</code> &middot; <code>imp_month</code> &middot; <code>imp_year</code></td></tr>
+<tr><td><code>sml_dval2</code> &middot; <code>sml_mval2</code> &middot; <code>sml_yval2</code></td><td><code>exp_day</code> &middot; <code>exp_month</code> &middot; <code>exp_year</code></td></tr>
+<tr><td><code>sml_stmin</code> &middot; <code>sml_chmain</code></td><td><code>chart_short</code> &middot; <code>chart_onmain</code></td></tr>
+<tr><td><code>sml_da</code>, <code>ui_*</code>, <code>sml_*</code> settings, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td>same name</td></tr>
+</table>
+<p>The editor has its own card for it. Load the device's <code>tc_options.cfg</code> there (or drop it into the load field); the table shows <code>.pvs</code> value and cfg value side by side and marks where they differ. Changing such a variable in the <code>.pvs</code> copies it into the card automatically, or type a new value straight into the card. <b>Download</b> replaces only the changed lines and keeps everything else &mdash; the file also holds the settings of programs that are not running right now. Upload it together with the <code>.pvs</code>, with the slot stopped.</p>
+</div>
+<div class="de">
+<p>Alle TinyC-Programme teilen sich <code>/tc_options.cfg</code>: Sprache, Zähler, Pins, die Emulator- und CT-Optionen &mdash; und die Zähler-Nullpunkte. Sie trägt sie über einen Programmwechsel, und beim ersten Tick <b>gewinnt sie gegen die <code>.pvs</code></b>:</p>
+<pre><code>sml_dval = tcOptGetF(0, sml_dval);   // sml_chart.tc, erster Tick</code></pre>
+<p>Ein Wert, der nur in der <code>.pvs</code> geändert wurde, steht deshalb eine Sekunde nach dem Start wieder auf dem aus der cfg. Das gilt für jede Variable mit einem Schlüssel in der Datei:</p>
+<table>
+<tr><th><code>.pvs</code></th><th><code>tc_options.cfg</code></th></tr>
+<tr><td><code>sml_dval</code> &middot; <code>sml_mval</code> &middot; <code>sml_yval</code></td><td><code>imp_day</code> &middot; <code>imp_month</code> &middot; <code>imp_year</code></td></tr>
+<tr><td><code>sml_dval2</code> &middot; <code>sml_mval2</code> &middot; <code>sml_yval2</code></td><td><code>exp_day</code> &middot; <code>exp_month</code> &middot; <code>exp_year</code></td></tr>
+<tr><td><code>sml_stmin</code> &middot; <code>sml_chmain</code></td><td><code>chart_short</code> &middot; <code>chart_onmain</code></td></tr>
+<tr><td><code>sml_da</code>, <code>ui_*</code>, <code>sml_*</code>-Einstellungen, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td>gleicher Name</td></tr>
+</table>
+<p>Der Editor hat dafür eine eigene Karte. Dort die <code>tc_options.cfg</code> des Geräts laden (oder ins Ladefeld ziehen); die Tabelle zeigt <code>.pvs</code>-Wert und cfg-Wert nebeneinander und markiert, wo sie abweichen. Wer so eine Variable in der <code>.pvs</code> ändert, bekommt sie automatisch in die Karte übernommen, oder trägt den neuen Wert direkt dort ein. <b>Herunterladen</b> ersetzt nur die geänderten Zeilen und lässt alles andere stehen &mdash; die Datei enthält auch die Einstellungen von Programmen, die gerade nicht laufen. Zusammen mit der <code>.pvs</code> bei gestopptem Slot hochladen.</p>
 </div>
 </section>
 
@@ -142,9 +175,11 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 <tr><td><code>sml_mcon</code>, <code>sml_mprod</code></td><td><code>float</code></td><td>12 each</td></tr>
 <tr><td><code>sml_s4h_pos</code>, <code>sml_s24h_pos</code>, <code>sml_da</code></td><td><code>int32</code></td><td>1</td></tr>
 <tr><td><code>sml_dval</code>, <code>sml_mval</code>, <code>sml_yval</code> and the <code>2</code> twins</td><td><code>float</code></td><td>1</td></tr>
+<tr><td><code>sml_stmin</code>, <code>sml_chmain</code>, <code>sml_pv</code>, <code>sml_sndpwr</code>, <code>sml_meter_sel</code> &hellip; <code>ui_*</code>, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td><code>int32</code></td><td>1</td></tr>
+<tr><td><code>ct_mac</code>, <code>ct_mail</code></td><td><code>byte</code></td><td>16 / 64</td></tr>
 </table>
-<p><code>int16</code> is packed: <code>(n+1)/2</code> slots, element <i>i</i> at byte offset <i>i</i>&middot;2.</p>
-<p>Everything else is shown as <code>float</code> and can be switched to <code>int32</code> or <code>int16</code> per entry &mdash; which makes the editor usable for other TinyC programs too.</p>
+<p><code>int16</code> is packed: <code>(n+1)/2</code> slots, element <i>i</i> at byte offset <i>i</i>&middot;2. <code>byte</code> packs four: <code>(n+3)/4</code> slots, element <i>i</i> at byte offset <i>i</i>.</p>
+<p>Unknown entries are shown as <code>float</code> &mdash; unless every value would come out as a denormal number (an <code>int</code> 240 read as <code>float32</code> is 3.4e-43), then as <code>int32</code>. The type can be switched per entry, which makes the editor usable for other TinyC programs too.</p>
 </div>
 <div class="de">
 <p>Ein Slot sind immer 4 Bytes. <b>Wie</b> sie zu lesen sind, steht nicht in der Datei &mdash; das weiß nur das Programm. Der Editor kennt die Variablen der SML-Programme:</p>
@@ -155,9 +190,11 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 <tr><td><code>sml_mcon</code>, <code>sml_mprod</code></td><td><code>float</code></td><td>je 12</td></tr>
 <tr><td><code>sml_s4h_pos</code>, <code>sml_s24h_pos</code>, <code>sml_da</code></td><td><code>int32</code></td><td>1</td></tr>
 <tr><td><code>sml_dval</code>, <code>sml_mval</code>, <code>sml_yval</code> und die <code>2</code>-Zwillinge</td><td><code>float</code></td><td>1</td></tr>
+<tr><td><code>sml_stmin</code>, <code>sml_chmain</code>, <code>sml_pv</code>, <code>sml_sndpwr</code>, <code>sml_meter_sel</code> &hellip; <code>ui_*</code>, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td><code>int32</code></td><td>1</td></tr>
+<tr><td><code>ct_mac</code>, <code>ct_mail</code></td><td><code>byte</code></td><td>16 / 64</td></tr>
 </table>
-<p><code>int16</code> liegt gepackt: <code>(n+1)/2</code> Slots, Element <i>i</i> an Byte-Offset <i>i</i>&middot;2.</p>
-<p>Alles andere wird als <code>float</code> gezeigt und kann je Eintrag auf <code>int32</code> oder <code>int16</code> umgeschaltet werden &mdash; damit ist der Editor auch für andere TinyC-Programme brauchbar.</p>
+<p><code>int16</code> liegt gepackt: <code>(n+1)/2</code> Slots, Element <i>i</i> an Byte-Offset <i>i</i>&middot;2. <code>byte</code> packt vier: <code>(n+3)/4</code> Slots, Element <i>i</i> an Byte-Offset <i>i</i>.</p>
+<p>Unbekannte Einträge werden als <code>float</code> gezeigt &mdash; außer alle Werte kämen als denormale Zahl heraus (ein <code>int</code> 240 als <code>float32</code> gelesen ist 3.4e-43), dann als <code>int32</code>. Der Typ lässt sich je Eintrag umschalten, damit ist der Editor auch für andere TinyC-Programme brauchbar.</p>
 </div>
 </section>
 
@@ -171,7 +208,7 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 <tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td>46</td></tr>
 </table>
 <p>The program reads it <b>once</b> at start-up, writes it into the <code>.pvs</code> and deletes it afterwards. The baseline block is only appended when all of its values are present &mdash; the program reads it whole or not at all.</p>
-<p>For the normal case the <code>.pvs</code> is the better route: it holds <i>all</i> variables, the <code>.bin</code> only these.</p>
+<p>For the normal case the <code>.pvs</code> is the better route: it holds <i>all</i> variables, the <code>.bin</code> only these. Either way the baselines also have to go into the <a href="#cfg"><code>tc_options.cfg</code></a> &mdash; loading a <code>.bin</code> with baselines puts them into that card automatically.</p>
 </div>
 <div class="de">
 <p>Eine <code>.bin</code> wird ebenfalls gelesen und geschrieben. Sie ist die <i>Import</i>-Datei: rohe <code>float32</code> in der Reihenfolge aus <code>sml_chart_common.tc</code>, kein Kopf.</p>
@@ -181,7 +218,7 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 <tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td>46</td></tr>
 </table>
 <p>Das Programm liest sie beim Start <b>einmal</b>, schreibt sie in die <code>.pvs</code> und löscht sie danach. Der Basiswert-Block wird nur angehängt, wenn alle seine Werte da sind &mdash; das Programm liest ihn ganz oder gar nicht.</p>
-<p>Für den normalen Fall ist die <code>.pvs</code> der bessere Weg: sie enthält <i>alle</i> Variablen, die <code>.bin</code> nur diese.</p>
+<p>Für den normalen Fall ist die <code>.pvs</code> der bessere Weg: sie enthält <i>alle</i> Variablen, die <code>.bin</code> nur diese. In beiden Fällen müssen die Basiswerte zusätzlich in die <a href="#cfg"><code>tc_options.cfg</code></a> &mdash; wer eine <code>.bin</code> mit Basiswerten lädt, bekommt sie automatisch in diese Karte übernommen.</p>
 </div>
 </section>
 

@@ -58,7 +58,7 @@
   <div class="card">
     <div class="seg-head"><span class="seg-title">1. Datei laden</span>
       <span class="stats" id="fileInfo">noch nichts geladen</span></div>
-    <div id="drop" class="drop" style="margin-top:10px"><b>.pvs</b> hierher ziehen, oder klicken zum Auswählen…
+    <div id="drop" class="drop" style="margin-top:10px"><b>.pvs</b> (oder <b>tc_options.cfg</b>) hierher ziehen, oder klicken zum Auswählen…
       <input id="file" type="file" accept=".pvs,.bin,*/*" style="display:none">
     </div>
     <div id="loadmsg" class="msg"></div>
@@ -77,16 +77,36 @@
       <button class="sec" id="dlCsv">.csv (Tab)</button>
       <span class="stats" id="saveMsg"></span>
     </div>
+    <div id="cfgWarn" class="msg"></div>
     <div class="hint" style="margin-top:10px"><b>Zurückspielen — die Reihenfolge zählt:</b>
       <ol style="margin:4px 0 0 18px;padding:0">
         <li>Slot stoppen: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das rote &#x25A0;</li>
-        <li>Datei(en) hochladen: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload</li>
+        <li>Datei(en) hochladen: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload — die
+          <code>.pvs</code> und, wenn in der Karte unten etwas geändert ist, die <code>tc_options.cfg</code></li>
         <li>Slot starten: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das grüne &#x25B6;</li>
 
       </ol>
       Läuft der Slot beim Hochladen noch, schreibt <code>saveVars()</code> beim Stoppen seine eigenen
       Werte darüber. Die <code>.pvs</code> wird beim Start gelesen und <b>nicht</b> umbenannt — sie ist
       der Speicher, keine Import-Datei.</div>
+  </div>
+
+  <div class="card" id="cfgCard">
+    <div class="seg-head"><span class="seg-title"><code>tc_options.cfg</code> — Nullpunkte und Einstellungen</span>
+      <span class="stats" id="cfgInfo"></span></div>
+    <div class="hint">Diese Datei teilen sich alle TinyC-Programme. Beim Start <b>gewinnt sie gegen die
+      <code>.pvs</code></b>: die Zähler-Nullpunkte, der Monatstag und alle Einstellungen werden eine Sekunde
+      nach dem Laden aus ihr überschrieben. Wer dort etwas ändern will, muss es <b>hier</b> ändern.
+      Änderungen an solchen Variablen oben werden automatisch hierher übernommen.
+      Holen: <code>http://&lt;geraet&gt;/ufsd?download=/tc_options.cfg</code> — oder oben in das Ladefeld
+      ziehen. Nur geänderte Zeilen werden ersetzt, alles andere bleibt, wie es ist.</div>
+    <div class="toolbar">
+      <button class="sec" id="cfgPick"><code>tc_options.cfg</code> auswählen…</button>
+      <input id="cfgFile" type="file" accept=".cfg,.txt,*/*" style="display:none">
+      <button id="dlCfg">tc_options.cfg herunterladen</button>
+      <span class="stats" id="cfgMsg"></span>
+    </div>
+    <div style="overflow-x:auto"><table style="margin-top:10px;border-collapse:collapse;font-size:13px"><tbody id="cfgRows"></tbody></table></div>
   </div>
 </main>
 
@@ -112,22 +132,68 @@
 // A slot is always 4 bytes. HOW to read them is not in the file — only the
 // program knows. Hence the table below; anything unknown gets a type switch and
 // is otherwise passed through untouched.
+//
+// Types: f float32 · i int32 · i16 int16, two per slot · u8 byte, four per slot.
+// `c` names the key in /tc_options.cfg (see CFG below): those variables are
+// overwritten from that file on the program's first tick, so an edit here alone
+// does not survive the start.
 const PV_TYPES = {
-  sml_s4h:      { t: "i16", n: 481,  u: "W",   label: "Leistung 4 h" },
-  sml_s24h:     { t: "i16", n: 1441, u: "W",   label: "Leistung 24 h" },
+  // ── charts: sml_chart_common.tc ──
+  sml_s4h:      { t: "i16", n: 481,  u: "W",   label: "Kurzzeit-Verlauf (Zeitraum: sml_stmin; genutzt 180 bzw. 240 Werte)" },
+  sml_s24h:     { t: "i16", n: 1441, u: "W",   label: "Leistung 24 h, Index = Minute des Tages" },
   sml_dcon:     { t: "f",   n: 31,   u: "kWh", label: "Verbrauch je Tag" },
   sml_mcon:     { t: "f",   n: 12,   u: "kWh", label: "Verbrauch je Monat" },
   sml_dprod:    { t: "f",   n: 31,   u: "kWh", label: "Einspeisung je Tag" },
   sml_mprod:    { t: "f",   n: 12,   u: "kWh", label: "Einspeisung je Monat" },
-  sml_s4h_pos:  { t: "i",   n: 1,    label: "Ringposition 4 h" },
-  sml_s24h_pos: { t: "i",   n: 1,    label: "Ringposition 24 h" },
-  sml_dval:     { t: "f",   n: 1,    u: "kWh", label: "Tages-Nullpunkt Bezug" },
-  sml_mval:     { t: "f",   n: 1,    u: "kWh", label: "Monats-Nullpunkt Bezug" },
-  sml_yval:     { t: "f",   n: 1,    u: "kWh", label: "Jahres-Nullpunkt Bezug" },
-  sml_da:       { t: "i",   n: 1,    label: "zuletzt gesehener Monatstag" },
-  sml_dval2:    { t: "f",   n: 1,    u: "kWh", label: "Tages-Nullpunkt Einspeisung" },
-  sml_mval2:    { t: "f",   n: 1,    u: "kWh", label: "Monats-Nullpunkt Einspeisung" },
-  sml_yval2:    { t: "f",   n: 1,    u: "kWh", label: "Jahres-Nullpunkt Einspeisung" },
+  sml_s4h_pos:  { t: "i",   n: 1,    label: "nächste Schreibposition Kurzzeit-Verlauf" },
+  sml_s24h_pos: { t: "i",   n: 1,    label: "nächste Schreibposition 24 h (wird aus der Uhrzeit neu gesetzt)" },
+  sml_dval:     { t: "f",   n: 1,    u: "kWh", c: "imp_day",   label: "Tages-Nullpunkt Bezug" },
+  sml_mval:     { t: "f",   n: 1,    u: "kWh", c: "imp_month", label: "Monats-Nullpunkt Bezug" },
+  sml_yval:     { t: "f",   n: 1,    u: "kWh", c: "imp_year",  label: "Jahres-Nullpunkt Bezug" },
+  sml_da:       { t: "i",   n: 1,    c: "sml_da",    label: "zuletzt gesehener Monatstag" },
+  sml_dval2:    { t: "f",   n: 1,    u: "kWh", c: "exp_day",   label: "Tages-Nullpunkt Einspeisung" },
+  sml_mval2:    { t: "f",   n: 1,    u: "kWh", c: "exp_month", label: "Monats-Nullpunkt Einspeisung" },
+  sml_yval2:    { t: "f",   n: 1,    u: "kWh", c: "exp_year",  label: "Jahres-Nullpunkt Einspeisung" },
+  sml_stmin:    { t: "i",   n: 1,    u: "min", c: "chart_short",  label: "Zeitraum Kurzzeit-Diagramm (15/30/60/120/240)" },
+  sml_chmain:   { t: "i",   n: 1,    c: "chart_onmain", label: "Diagramme auf der Hauptseite (1)" },
+  sml_pv:       { t: "i",   n: 1,    c: "sml_pv",     label: "Einspeisung anzeigen (1)" },
+  sml_sndpwr:   { t: "i",   n: 1,    c: "sml_sndpwr", label: "gemittelte Leistung senden (1)" },
+  // ── meter: sml_descriptor.tc ──
+  sml_meter_sel: { t: "i",  n: 1,    c: "sml_meter_sel", label: "gewählter Zähler" },
+  sml_rx_pin:   { t: "i",   n: 1,    c: "sml_rx_pin",  label: "RX-Pin" },
+  sml_tx_pin:   { t: "i",   n: 1,    c: "sml_tx_pin",  label: "TX-Pin" },
+  sml_filter:   { t: "i",   n: 1,    c: "sml_filter",  label: "Filter" },
+  sml_activ:    { t: "i",   n: 1,    c: "sml_activ",   label: "SML aktiv (Rule1)" },
+  sml_drvrows:  { t: "i",   n: 1,    c: "sml_drvrows", label: "Treiber-Zeilen anzeigen" },
+  sml_ph3:      { t: "i",   n: 1,    c: "sml_ph3",     label: "3 Phasen" },
+  // ── UI: ui_common.tc ──
+  ui_de:        { t: "i",   n: 1,    c: "ui_de",       label: "Sprache Deutsch (1)" },
+  ui_nosleep:   { t: "i",   n: 1,    c: "ui_nosleep",  label: "Energiesparmodus aus (1)" },
+  ui_sleep_ack: { t: "i",   n: 1,    label: "intern" },
+  // ── Modbus TCP: sml_modbus_common.tc ──
+  mb_on:        { t: "i",   n: 1,    c: "mb_on",   label: "Modbus TCP an (1)" },
+  mb_port:      { t: "i",   n: 1,    c: "mb_port", label: "Modbus-Port" },
+  // ── EcoTracker / Shelly: eco_shelly_common.tc ──
+  es_mode:      { t: "i",   n: 1,    c: "es_mode",     label: "Emulator-Modus" },
+  es_port:      { t: "i",   n: 1,    c: "es_port",     label: "Port" },
+  es_offset:    { t: "i",   n: 1,    u: "W", c: "es_offset", label: "Offset" },
+  es_tweak:     { t: "i",   n: 1,    c: "es_tweak",    label: "Tweak" },
+  es_force:     { t: "i",   n: 1,    c: "es_force",    label: "Force" },
+  es_throttle:  { t: "i",   n: 1,    c: "es_throttle", label: "Throttle" },
+  // ── CT002 / CT003: ct002_common.tc ──
+  ct_kind:      { t: "i",   n: 1,    c: "ct_kind",   label: "CT-Typ" },
+  ct_port:      { t: "i",   n: 1,    c: "ct_port",   label: "Port" },
+  ct_rssi:      { t: "i",   n: 1,    c: "ct_rssi",   label: "RSSI" },
+  ct_ttl:       { t: "i",   n: 1,    c: "ct_ttl",    label: "TTL" },
+  ct_offset:    { t: "i",   n: 1,    u: "W", c: "ct_offset", label: "Offset" },
+  ct_tweak:     { t: "i",   n: 1,    c: "ct_tweak",  label: "Tweak" },
+  ct_trim:      { t: "i",   n: 1,    c: "ct_trim",   label: "Trim" },
+  ct_pace:      { t: "i",   n: 1,    c: "ct_pace",   label: "Pace" },
+  ct_mindc:     { t: "i",   n: 1,    c: "ct_mindc",  label: "MinDC" },
+  ct_fair:      { t: "i",   n: 1,    c: "ct_fair",   label: "Fair" },
+  ct_sat:       { t: "i",   n: 1,    c: "ct_sat",    label: "Sat" },
+  ct_mac:       { t: "u8",  n: 16,   label: "MAC (Text)" },
+  ct_mail:      { t: "u8",  n: 64,   label: "E-Mail (Text)" },
 };
 
 // The .bin order from sml_chart_common.tc. All float32, the two int16 rings
@@ -200,27 +266,35 @@ function buildPvs(p) {
 
 // ═══ Slots <-> values ════════════════════════════════════════════════════════
 // One entry is a block of slotCount*4 bytes. float and int take one slot each,
-// int16 packs two per slot: (n+1)/2 slots, element i at byte offset i*2.
+// int16 packs two per slot: (n+1)/2 slots, element i at byte offset i*2;
+// byte packs four: (n+3)/4 slots, element i at byte offset i.
+const PER_SLOT = { f: 1, i: 1, i16: 2, u8: 4 };
+function view(e, t) {
+  const b = e.data.buffer, o = e.data.byteOffset, n = e.slots * PER_SLOT[t];
+  return (t === "i16") ? new Int16Array(b, o, n)
+       : (t === "u8")  ? new Uint8Array(b, o, n)
+       : (t === "f")   ? new Float32Array(b, o, n)
+                       : new Int32Array(b, o, n);
+}
 function decode(e, t, n) {
-  const b = e.data.buffer, o = e.data.byteOffset;
-  if (t === "i16") return Array.from(new Int16Array(b, o, Math.min(n, (e.slots * 4) >> 1)));
-  const A = (t === "f") ? Float32Array : Int32Array;
-  return Array.from(new A(b, o, Math.min(n, e.slots)));
+  return Array.from(view(e, t).subarray(0, n));
 }
 function encode(e, t, vals) {
-  const b = e.data.buffer, o = e.data.byteOffset;
-  const a = (t === "i16") ? new Int16Array(b, o, (e.slots * 4) >> 1)
-          : (t === "f")   ? new Float32Array(b, o, e.slots)
-                          : new Int32Array(b, o, e.slots);
+  const a = view(e, t);
   for (let i = 0; i < a.length; i++) a[i] = (i < vals.length) ? vals[i] : 0;
 }
 
-// Type and element count. Known names from the table, everything else float over
-// the whole block; the per-entry switch corrects both.
+// Type and element count. Known names from the table. Unknown entries used to be
+// shown as float, which turns every int into a denormal: 240 read as float32 is
+// 3.4e-43. A value that small is never a real float in these programs, so a
+// block whose floats are all denormal (or zero) is shown as int32 instead.
 function typeOf(e) {
   const k = PV_TYPES[e.name];
-  const fits = k && ((k.t === "i16") ? (e.slots * 2) >= k.n : e.slots >= k.n);
-  return fits ? { t: k.t, n: k.n, label: k.label } : { t: "f", n: e.slots, label: "" };
+  const fits = k && e.slots * PER_SLOT[k.t] >= k.n;
+  if (fits) return { t: k.t, n: k.n, label: k.label };
+  const fl = view(e, "f");
+  const intLike = fl.every(v => v === 0 || Math.abs(v) < 1.2e-38);
+  return { t: intLike ? "i" : "f", n: e.slots, label: "" };
 }
 
 // ═══ Display ═════════════════════════════════════════════════════════════════
@@ -247,6 +321,7 @@ function render() {
   host.appendChild(card);
   $("saveCard").style.display = "";
   updateSaveInfo();
+  renderCfg();
 }
 
 function entryCard(e) {
@@ -263,7 +338,7 @@ function entryCard(e) {
       (label ? ` <span class="stats">${label}${unit ? " [" + unit + "]" : ""}</span>` : "") + `</span>` +
       `<span class="stats" data-stats></span></div>` +
     `<div class="toolbar"><label>Typ <select data-type>` +
-      `<option value="f">float</option><option value="i">int32</option><option value="i16">int16</option>` +
+      `<option value="f">float</option><option value="i">int32</option><option value="i16">int16</option><option value="u8">byte</option>` +
       `</select></label>` +
       `<span class="stats">${e.slots} Slot(s) · ${e.slots * 4} Bytes · ${e._n} Wert(e)</span></div>` +
     (scalar
@@ -277,12 +352,18 @@ function entryCard(e) {
   sel.value = e._t;
   sel.onchange = ev => {
     e._t = ev.target.value;
-    e._n = (e._t === "i16") ? (e.slots * 4) >> 1 : e.slots;   // whole block
+    e._n = e.slots * PER_SLOT[e._t];   // whole block
     render();
   };
 
   const stats = d.querySelector("[data-stats]");
-  const commit = list => { encode(e, e._t, list); e._dirty = true; d.classList.add("dirty"); updateSaveInfo(); };
+  const commit = list => {
+    encode(e, e._t, list); e._dirty = true; d.classList.add("dirty");
+    // Mirror into the cfg: the program takes this key from tc_options.cfg on
+    // its first tick, so the .pvs value alone would be replaced at start.
+    if (meta.c && e._n === 1) { cfgEdit[meta.c] = cfgFmt(meta, decode(e, e._t, 1)[0]); renderCfg(); }
+    updateSaveInfo();
+  };
 
   if (scalar) {
     const inp = d.querySelector("[data-val]");
@@ -438,6 +519,11 @@ function binKind() {
 function updateSaveInfo() {
   const dirty = pvs.entries.filter(e => e._dirty).map(e => e.name);
   $("saveInfo").textContent = dirty.length ? "geändert: " + dirty.join(", ") : "nichts geändert";
+  const viaCfg = dirty.filter(n => PV_TYPES[n] && PV_TYPES[n].c);
+  setMsg($("cfgWarn"), viaCfg.length
+    ? `Achtung: ${viaCfg.join(", ")} ${viaCfg.length > 1 ? "stehen" : "steht"} auch in der tc_options.cfg — und die gewinnt beim Start. ` +
+      `Nur die .pvs hochzuladen reicht dafür nicht: die tc_options.cfg (Karte unten) mit herunterladen und ebenfalls hochladen.`
+    : "", viaCfg.length ? "warn" : "");
   const k = binKind();
   $("dlBin").disabled = !k;
   $("dlBin").textContent = k ? k + ".bin" : ".bin nicht möglich";
@@ -446,6 +532,10 @@ function updateSaveInfo() {
 // ═══ Loading ═════════════════════════════════════════════════════════════════
 function load(buf, fname) {
   const bytes = new Uint8Array(buf);
+  if (bytes[0] !== 80 || bytes[1] !== 86) {                       // no 'PV' head: a cfg?
+    const text = new TextDecoder().decode(bytes);
+    if (/^@[A-Za-z0-9_]+=/m.test(text)) { cfgLoad(text, fname); return; }
+  }
   srcName = fname.replace(/\.(pvs|bin|csv)$/i, "") || "sml_chart";
   const p = parsePvs(bytes);
   if (!p) { loadBin(bytes, fname); return; }
@@ -484,6 +574,7 @@ function loadBin(bytes, fname) {
       }
       e._t = k.t; e._n = k.n;
       encode(e, k.t, vals); e._dirty = true;
+      if (k.c && k.n === 1) cfgEdit[k.c] = cfgFmt(k, vals[0]);   // the cfg wins at start
     };
     let off = 0;
     arrs.forEach(n => { const k = PV_TYPES[n]; put(n, Array.from(f.slice(off, off + k.n))); off += k.n; });
@@ -555,6 +646,112 @@ fileInput.onchange = e => { const f = e.target.files[0]; if (f) read(f); };
 ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("hover"); }));
 drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) read(f); });
 function read(f) { const r = new FileReader(); r.onload = () => load(r.result, f.name); r.readAsArrayBuffer(f); }
+
+// ═══ tc_options.cfg ══════════════════════════════════════════════════════════
+// ui_common.tc keeps the settings of the whole program family and the energy
+// baselines in /tc_options.cfg, and on the first tick "the shared file wins over
+// the .pvs" - e.g. sml_dval = tcOptGetF(0, sml_dval). A value changed only in the
+// .pvs is therefore back to the cfg's one second after the start. Every variable
+// with a `c` key in PV_TYPES is affected.
+//
+// Format as tcOptSave() writes it: "@name=value" per line, '#' comments, floats
+// with three decimals. tcOptLoad() looks each key up with fileGetStr(), which
+// searches from the start of the file, so line order does not matter. The
+// device's file is kept as the base and only edited keys are replaced: it also
+// holds the settings of programs that are not running right now, and a program
+// only writes back the keys it owns.
+const CFG_HEAD = "# tc_options - shared by all programs";
+let cfgDev = null;         // text of the loaded cfg, null = none
+let cfgName = "";
+const cfgEdit = {};        // cfg key -> new value (string)
+
+function cfgFmt(meta, v) { return meta.t === "f" ? Number(v).toFixed(3) : String(Math.round(v)); }
+
+function cfgParse(text) {
+  const o = {};
+  (text || "").split(/\r?\n/).forEach(l => { const m = /^@([A-Za-z0-9_]+)=(.*)$/.exec(l.trim()); if (m) o[m[1]] = m[2].trim(); });
+  return o;
+}
+
+function cfgMerge(text, set) {
+  const lines = (text || CFG_HEAD + "\n").split(/\r?\n/);
+  const done = new Set();
+  const out = lines.map(l => {
+    const m = /^@([A-Za-z0-9_]+)=/.exec(l.trim());
+    if (m && set[m[1]] !== undefined) { done.add(m[1]); return "@" + m[1] + "=" + set[m[1]]; }
+    return l;
+  });
+  while (out.length && out[out.length - 1].trim() === "") out.pop();
+  Object.keys(set).forEach(k => { if (!done.has(k)) out.push("@" + k + "=" + set[k]); });
+  return out.join("\n") + "\n";
+}
+
+function cfgLoad(text, fname) {
+  cfgDev = text; cfgName = fname;
+  const n = Object.keys(cfgParse(text)).length;
+  setMsg($("loadmsg"), `"${fname}" als tc_options.cfg gelesen (${n} Einträge) — siehe Karte „tc_options.cfg" unten.`, "ok");
+  renderCfg();
+}
+
+function renderCfg() {
+  const dev = cfgParse(cfgDev);
+  const tb = $("cfgRows"); tb.innerHTML = "";
+  const th = s => `<th style="text-align:left;padding:3px 8px;color:#666;font-weight:600">${s}</th>`;
+  tb.insertAdjacentHTML("beforeend", `<tr>${th("Variable")}${th("Schlüssel")}${th(".pvs")}${th("cfg geladen")}${th("neu")}</tr>`);
+  let rows = 0;
+  Object.entries(PV_TYPES).filter(([, k]) => k.c).forEach(([name, k]) => {
+    const e = pvs && pvs.entries.find(x => x.name === name);
+    const inDev = dev[k.c] !== undefined;
+    if (!e && !inDev && cfgEdit[k.c] === undefined) return;   // nothing to show
+    rows++;
+    const pv = e ? fmt(decode(e, e._t || typeOf(e).t, 1)[0]) : "—";
+    const differs = e && inDev && parseFloat(dev[k.c]) !== parseFloat(cfgFmt(k, decode(e, e._t || typeOf(e).t, 1)[0]));
+    const edited = cfgEdit[k.c] !== undefined;
+    const tr = document.createElement("tr");
+    if (edited) tr.style.background = "#f7fbff";
+    const td = s => `<td style="padding:3px 8px">${s}</td>`;
+    tr.innerHTML = td(`<b>${esc(name)}</b> <span class="stats">${esc(k.label)}</span>`) + td(`<code>${k.c}</code>`) +
+      td(pv) + td((inDev ? esc(dev[k.c]) : "—") + (differs ? ` <span style="color:var(--warn)" title="Beim Start gilt der cfg-Wert">≠ .pvs</span>` : "")) +
+      td(`<input type="text" style="width:120px" value="${edited ? esc(cfgEdit[k.c]) : ""}" placeholder="${inDev ? esc(dev[k.c]) : ""}">`);
+    tr.querySelector("input").onchange = ev => {
+      const s = ev.target.value.trim();
+      if (s === "") { delete cfgEdit[k.c]; }
+      else {
+        const v = parseFloat(s.replace(",", "."));
+        if (Number.isNaN(v)) { ev.target.value = ""; delete cfgEdit[k.c]; }
+        else cfgEdit[k.c] = cfgFmt(k, v);
+      }
+      renderCfg();
+    };
+    tb.appendChild(tr);
+  });
+  if (!rows) tb.innerHTML = `<tr><td class="hint">Noch nichts geladen — .pvs oder tc_options.cfg laden.</td></tr>`;
+  const n = Object.keys(cfgEdit).length;
+  $("dlCfg").disabled = n === 0;
+  $("cfgInfo").textContent = (cfgDev === null ? "keine cfg geladen" : `${cfgName} · ${Object.keys(dev).length} Einträge`) +
+    (n ? ` · geändert: ${Object.keys(cfgEdit).join(", ")}` : "");
+}
+
+$("cfgPick").onclick = () => $("cfgFile").click();
+$("cfgFile").onchange = e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const t = String(r.result);
+    if (!/^@[A-Za-z0-9_]+=/m.test(t)) { $("cfgMsg").textContent = `"${f.name}" enthält keine @name=wert-Zeilen.`; return; }
+    cfgLoad(t, f.name);
+  };
+  r.readAsText(f);
+  e.target.value = "";
+};
+$("dlCfg").onclick = () => {
+  const out = cfgMerge(cfgDev, cfgEdit);
+  dl(new Blob([out], { type: "text/plain" }), "tc_options.cfg");
+  $("cfgMsg").textContent = `tc_options.cfg: ${Object.keys(cfgEdit).join(", ")} gesetzt` +
+    (cfgDev === null ? " — ohne geladene cfg des Geräts sind die übrigen Einstellungen NICHT enthalten; beim Hochladen gehen die anderer Programme verloren." : ", alles andere unverändert.");
+};
+renderCfg();
 </script>
 </body>
 </html>
