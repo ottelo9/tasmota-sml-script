@@ -113,19 +113,19 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>Type</th><td>CT002 sends <code>HME-4</code>, CT003 sends <code>HME-3</code> and four extra energy registers. Takes effect after a restart of the script.</td></tr>
 <tr><th>CT MAC</th><td>12 hex characters, the MAC of the CT in your Marstek account. When set, the emulator only answers requests for that MAC (or the wildcard <code>000000000000</code>). Leave empty and it answers everything &mdash; handy while testing, wrong once several CTs exist.</td></tr>
-<tr><th>UDP port</th><td>12345 in every known firmware. Only change it if you know why.</td></tr>
+<tr><th>Port</th><td>UDP. 12345 in every known firmware. Only change it if you know why.</td></tr>
 <tr><th>RSSI</th><td>Wi-Fi signal strength reported to the battery.</td></tr>
-<tr><th>Battery timeout</th><td>Seconds after which a offline battery is dropped from the table. <code>0</code> = automatic: about two of its own poll cycles, at least 5&nbsp;s. That mirrors a real CT.</td></tr>
+<tr><th>Timeout [s]</th><td>Seconds after which a offline battery is dropped from the table. <code>0</code> = automatic: about two of its own poll cycles, at least 5&nbsp;s. That mirrors a real CT.</td></tr>
 <tr><th>UDP rx/tx/bad</th><td>Counters below the settings, not a setting: received, answered, and frames rejected by the checksum. <code>bad</code> should stay at 0 &mdash; a rising value means the request did not arrive intact. They used to sit on the main page.</td></tr>
 </table>
 </div>
 <div class="de">
 <table>
-<tr><th>Type</th><td>CT002 sendet <code>HME-4</code>, CT003 sendet <code>HME-3</code> und vier zusätzliche Energieregister. Wirkt erst nach einem Neustart des Scripts.</td></tr>
+<tr><th>Typ</th><td>CT002 sendet <code>HME-4</code>, CT003 sendet <code>HME-3</code> und vier zusätzliche Energieregister. Wirkt erst nach einem Neustart des Scripts.</td></tr>
 <tr><th>CT MAC</th><td>12 Hex-Zeichen, die MAC des CT im Marstek-Konto. Ist sie gesetzt, antwortet der Emulator nur auf Anfragen für diese MAC (oder die Wildcard <code>000000000000</code>). Leer bedeutet: antwortet auf alles &mdash; praktisch zum Testen, falsch sobald es mehrere CTs gibt.</td></tr>
-<tr><th>UDP port</th><td>12345 in jeder bekannten Firmware. Nur ändern, wenn du weißt warum.</td></tr>
+<tr><th>Port</th><td>UDP. 12345 in jeder bekannten Firmware. Nur ändern, wenn du weißt warum.</td></tr>
 <tr><th>RSSI</th><td>WLAN-Signalstärke, die dem Akku gemeldet wird.</td></tr>
-<tr><th>Akku-Timeout</th><td>Sekunden, nach denen ein Akku, der nicht mehr antwortet, aus der Tabelle fällt. <code>0</code> = automatisch: etwa zwei Abfragezyklen, mindestens 5&nbsp;s. So macht es ein echter CT auch.</td></tr>
+<tr><th>Timeout [s]</th><td>Sekunden, nach denen ein Akku, der nicht mehr antwortet, aus der Tabelle fällt. <code>0</code> = automatisch: etwa zwei Abfragezyklen, mindestens 5&nbsp;s. So macht es ein echter CT auch.</td></tr>
 <tr><th>UDP rx/tx/bad</th><td>Zähler unter den Einstellungen, keine Einstellung: empfangen, beantwortet, und wegen Prüfsumme verworfen. <code>bad</code> sollte 0 bleiben &mdash; ein steigender Wert heißt, die Anfrage kam nicht heil an. Früher standen sie auf der Hauptseite.</td></tr>
 </table>
 </div>
@@ -137,9 +137,9 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>Offset [W]</th><td>Target grid power instead of zero. A small positive value keeps you slightly on the import side so nothing is fed back. Applied <b>per phase</b>, because each battery regulates its own phase &mdash; with three batteries on three phases the household total ends up at three times the value.</td></tr>
 <tr><th>Active control</th><td><span class="sw">OFF</span> relays the meter reading as it is and lets the battery decide. <span class="sw">ON</span> runs the control loop described below. Predictor, damper and freshness check start straight away; the three settings underneath add to them and are off at 0.</td></tr>
-<tr><th>Import trim [W]</th><td>Recommended <b>15</b>. Every Marstek firmware stops a few watts short on the <i>import</i> side: its own input deadband. Household load the battery could cover keeps being bought at the retail tariff. This adds a fixed nudge past that deadband, but only once the grid has held between 0 and 120&nbsp;W of import for six fresh meter readings. The dwell keeps it out of a load step; the upper limit keeps it away from an empty or full battery, where the import is not the firmware's doing.</td></tr>
-<tr><th>Ramp step [W]</th><td>Recommended <b>30</b>. Caps the size of the correction sent per second, measured from zero &mdash; not the step away from the last reported value, which would trail the battery instead of bounding it. The cap doubles towards three times this value while the batteries demonstrably follow, falls back with the deviation, and returns to the base step the moment the direction reverses.</td></tr>
-<tr><th>Min DC output [W]</th><td>Default 0 = off, otherwise <b>20</b> or more. A Marstek B2500 switches its inverter off at 0&nbsp;W and falls asleep under high PV surplus. This never reports less than that much import, so the battery keeps discharging and stays awake. <b>It costs exactly that many watts of export while the sun is out</b> &mdash; only worth it for a DC battery that actually falls asleep. AC batteries (Venus) do not need it.</td></tr>
+<tr><th>Trim [W]</th><td>Recommended <b>15</b>. Every Marstek firmware stops a few watts short on the <i>import</i> side: its own input deadband. Household load the battery could cover keeps being bought at the retail tariff. This adds a fixed nudge past that deadband, but only once the grid has held between 0 and 120&nbsp;W of import for six fresh meter readings. The dwell keeps it out of a load step; the upper limit keeps it away from an empty or full battery, where the import is not the firmware's doing.</td></tr>
+<tr><th>Step [W]</th><td>Recommended <b>30</b>. Caps the size of the correction sent per second, measured from zero &mdash; not the step away from the last reported value, which would trail the battery instead of bounding it. The cap doubles towards three times this value while the batteries demonstrably follow, falls back with the deviation, and returns to the base step the moment the direction reverses.</td></tr>
+<tr><th>Min DC [W]</th><td>Default 0 = off, otherwise <b>20</b> or more. A Marstek B2500 switches its inverter off at 0&nbsp;W and falls asleep under high PV surplus. This never reports less than that much import, so the battery keeps discharging and stays awake. <b>It costs exactly that many watts of export while the sun is out</b> &mdash; only worth it for a DC battery that actually falls asleep. AC batteries (Venus) do not need it.</td></tr>
 <tr><th>3 phases</th><td><span class="sw">ON</span>: L1/L2/L3 come from the meter individually (not all meter supports this). <span class="sw">OFF</span>: the total goes onto L1 and B/C stay at 0 &mdash; then set every battery to phase A or D, otherwise a battery on B or C would read 0&nbsp;W forever.</td></tr>
 </table>
 <p>Offset and import trim pull in opposite directions on purpose. The offset is the margin <i>you</i> choose and holds at all times; the trim closes the gap the battery firmware leaves once things are calm, and it aims at the offset, not at zero. Setting an offset of 50&nbsp;W and a trim of 15 therefore means: hold 50&nbsp;W of import, and let the trim make sure those 50 are actually reached rather than 65.</p>
@@ -165,12 +165,12 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>Offset [W]</th><td>Zielwert am Netz statt null. Ein kleiner positiver Wert hält dich knapp über der Bezugsseite, damit nichts eingespeist wird. Wirkt <b>pro Phase</b>, weil jeder Akku seine eigene Phase regelt &mdash; bei drei Akkus auf drei Phasen liegt der Hausanschluss am Ende beim Dreifachen.</td></tr>
 <tr><th>Aktive Regelung</th><td><span class="sw">AUS</span> reicht den Zählerwert unverändert weiter, der Akku entscheidet selbst. <span class="sw">EIN</span> schaltet die unten beschriebene Regelung ein. Prädiktor, Dämpfung und Frischeprüfung laufen sofort mit; die drei Einstellungen darunter kommen obendrauf und sind bei 0 aus.</td></tr>
-<tr><th>Import-Trim [W]</th><td>Empfohlen <b>15</b>. Jede Marstek-Firmware bleibt ein paar Watt auf der <i>Bezugsseite</i> stehen &mdash; ihr eigenes Totband am Eingang. Haushaltslast, die der Akku decken könnte, wird also weiter zum Arbeitspreis gekauft. Das schiebt mit einem festen Wert über dieses Totband hinweg, aber erst wenn das Netz sechs frische Zählerwerte lang zwischen 0 und 120&nbsp;W Bezug lag. Die Wartezeit hält es aus Lastsprüngen heraus, die Obergrenze von einem leeren oder vollen Akku fern &mdash; dort liegt der Bezug nicht an der Firmware.</td></tr>
-<tr><th>Schrittweite [W]</th><td>Empfohlen <b>30</b>. Begrenzt die Größe der Korrektur je Sekunde, gemessen ab null &mdash; nicht den Schritt weg vom zuletzt gemeldeten Wert, denn der würde dem Akku hinterherlaufen statt ihn zu begrenzen. Die Grenze verdoppelt sich auf bis zum Dreifachen, solange die Akkus nachweislich folgen, fällt mit der Abweichung zurück und springt bei jedem Richtungswechsel sofort auf den Grundwert.</td></tr>
-<tr><th>Mindestabgabe DC [W]</th><td>Standard 0 = aus, sonst <b>20</b> oder mehr. Ein Marstek B2500 schaltet bei 0&nbsp;W seinen Wechselrichter ab und schläft bei viel PV-Überschuss ein. Hier wird nie weniger als dieser Bezug gemeldet, der Akku entlädt also weiter und bleibt wach. <b>Das kostet bei Sonne genau diese Watt an Einspeisung</b> &mdash; lohnt sich nur bei einem DC-Akku, der wirklich einschläft. AC-Akkus (Venus) brauchen es nicht.</td></tr>
+<tr><th>Trim [W]</th><td>Empfohlen <b>15</b>. Jede Marstek-Firmware bleibt ein paar Watt auf der <i>Bezugsseite</i> stehen &mdash; ihr eigenes Totband am Eingang. Haushaltslast, die der Akku decken könnte, wird also weiter zum Arbeitspreis gekauft. Das schiebt mit einem festen Wert über dieses Totband hinweg, aber erst wenn das Netz sechs frische Zählerwerte lang zwischen 0 und 120&nbsp;W Bezug lag. Die Wartezeit hält es aus Lastsprüngen heraus, die Obergrenze von einem leeren oder vollen Akku fern &mdash; dort liegt der Bezug nicht an der Firmware.</td></tr>
+<tr><th>Schritt [W]</th><td>Empfohlen <b>30</b>. Begrenzt die Größe der Korrektur je Sekunde, gemessen ab null &mdash; nicht den Schritt weg vom zuletzt gemeldeten Wert, denn der würde dem Akku hinterherlaufen statt ihn zu begrenzen. Die Grenze verdoppelt sich auf bis zum Dreifachen, solange die Akkus nachweislich folgen, fällt mit der Abweichung zurück und springt bei jedem Richtungswechsel sofort auf den Grundwert.</td></tr>
+<tr><th>Min DC [W]</th><td>Standard 0 = aus, sonst <b>20</b> oder mehr. Ein Marstek B2500 schaltet bei 0&nbsp;W seinen Wechselrichter ab und schläft bei viel PV-Überschuss ein. Hier wird nie weniger als dieser Bezug gemeldet, der Akku entlädt also weiter und bleibt wach. <b>Das kostet bei Sonne genau diese Watt an Einspeisung</b> &mdash; lohnt sich nur bei einem DC-Akku, der wirklich einschläft. AC-Akkus (Venus) brauchen es nicht.</td></tr>
 <tr><th>3 phases</th><td><span class="sw">EIN</span>: L1/L2/L3 kommen einzeln vom Zähler (nicht alle Stromzähler unterstützten das). <span class="sw">AUS</span>: die Gesamtleistung liegt auf L1, B und C bleiben 0 &mdash; dann alle Akkus auf Phase A oder D stellen, sonst liest ein Akku auf B oder C dauerhaft 0&nbsp;W.</td></tr>
 </table>
-<p>Offset und Import-Trim ziehen absichtlich in verschiedene Richtungen. Der Offset ist der Abstand, den <i>du</i> willst, und gilt immer; der Trim schließt die Lücke, die die Akku-Firmware lässt, sobald Ruhe herrscht &mdash; und er zielt auf den Offset, nicht auf null. Offset 50&nbsp;W und Trim 15 heißt also: 50&nbsp;W Bezug halten, und der Trim sorgt dafür, dass es wirklich 50 werden und nicht 65.</p>
+<p>Offset und Trim ziehen absichtlich in verschiedene Richtungen. Der Offset ist der Abstand, den <i>du</i> willst, und gilt immer; der Trim schließt die Lücke, die die Akku-Firmware lässt, sobald Ruhe herrscht &mdash; und er zielt auf den Offset, nicht auf null. Offset 50&nbsp;W und Trim 15 heißt also: 50&nbsp;W Bezug halten, und der Trim sorgt dafür, dass es wirklich 50 werden und nicht 65.</p>
 <p>Drei weitere Teile laufen bei aktiver Regelung immer mit und haben keine eigene Einstellung. Sie sind der <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">CT002-Regelung von AstraMeter</a> nachempfunden und stehen auf deren erprobten Werten:</p>
 <ul>
 <li>Ein <b>Netz-Prädiktor</b> zieht ab, was die Akkus bereits geliefert melden. Eine Korrektur, die noch auf dem Weg zum Zähler ist, wird so kein zweites Mal ausgegeben &mdash; genau diese Doppelausgabe ist die übliche Ursache fürs Pendeln.</li>
@@ -198,7 +198,7 @@ body.lang-de .en{display:none}
 <p class="warn">Fair distribution is a correction, not a refinement. Without it <b>every</b> battery is told the whole deviation of its phase, so two of them each pull the full amount and the pair overshoots by a factor of two. If you run more than one battery, switch it on.</p>
 <table>
 <tr><th>Share the load</th><td>Divides the phase deviation by the number of participating batteries and adds the balance term below. Off = the old behaviour, every battery hears the full value.</td></tr>
-<tr><th>Saturation detection</th><td>Tracks whether a battery follows what it is told. One that is full or empty stops moving; its share shrinks and the others pick it up automatically. Also suspends the minimum output below, which an empty battery cannot deliver anyway.</td></tr>
+<tr><th>Saturation</th><td>Tracks whether a battery follows what it is told. One that is full or empty stops moving; its share shrinks and the others pick it up automatically. Also suspends the minimum output below, which an empty battery cannot deliver anyway.</td></tr>
 </table>
 <p>A deprioritised battery fades out by 15&nbsp;% per cycle instead of dropping to zero at once, so the promoted one has time to ramp and no gap opens at the handover.</p>
 
@@ -232,7 +232,7 @@ body.lang-de .en{display:none}
 <p class="warn">Die faire Verteilung ist eine Korrektur, keine Feinabstimmung. Ohne sie bekommt <b>jeder</b> Akku die volle Abweichung seiner Phase gemeldet &mdash; zwei Akkus ziehen also beide den ganzen Betrag und schießen gemeinsam um das Doppelte über. Wer mehr als einen Akku hat, sollte sie einschalten.</p>
 <table>
 <tr><th>Last verteilen</th><td>Teilt die Phasenabweichung durch die Zahl der teilnehmenden Akkus und rechnet den Ausgleich unten dazu. Aus = das bisherige Verhalten, jeder Akku hört den vollen Wert.</td></tr>
-<tr><th>Sättigung erkennen</th><td>Verfolgt, ob ein Akku dem folgt, was ihm gesagt wird. Ein voller oder leerer bewegt sich nicht mehr; sein Anteil sinkt, die anderen übernehmen ihn von selbst. Setzt außerdem die Mindestabgabe aus, die ein leerer Akku ohnehin nicht liefern kann.</td></tr>
+<tr><th>Sättigung</th><td>Verfolgt, ob ein Akku dem folgt, was ihm gesagt wird. Ein voller oder leerer bewegt sich nicht mehr; sein Anteil sinkt, die anderen übernehmen ihn von selbst. Setzt außerdem die Mindestabgabe aus, die ein leerer Akku ohnehin nicht liefern kann.</td></tr>
 </table>
 <p>Ein zurückgestellter Akku blendet mit 15&nbsp;% je Zyklus aus statt sofort auf null zu fallen &mdash; so hat der übernehmende Zeit hochzufahren und es entsteht keine Lücke.</p>
 
@@ -268,7 +268,7 @@ body.lang-de .en{display:none}
 <div class="en">
 <table>
 <tr><th>SML active</th><td>Switches the SML driver on. Without it there are no readings and the emulator answers 0&nbsp;W.</td></tr>
-<tr><th>Descriptor</th><td>Picks a meter definition from the script repository and writes it to <code>/sml_meter.def</code>. Use <b>Edit descriptor</b> for manual changes.</td></tr>
+<tr><th>Descriptor</th><td>Picks a meter definition from the script repository and writes it to <code>/sml_meter.def</code>. Use the <b>Descriptor</b> link for manual changes.</td></tr>
 <tr><th>RX / TX pin</th><td>GPIOs of the reading head. Common: RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattwächter), RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
 <tr><th>Median filter</th><td>Smooths single outliers. Costs reaction time &mdash; leave it off for zero feed-in, the batteries filter on their own.</td></tr>
 </table>
@@ -277,7 +277,7 @@ body.lang-de .en{display:none}
 <div class="de">
 <table>
 <tr><th>SML active</th><td>Schaltet den SML-Treiber ein. Ohne ihn gibt es keine Messwerte und der Emulator antwortet mit 0&nbsp;W.</td></tr>
-<tr><th>Descriptor</th><td>Wählt eine Zählerdefinition aus dem Script-Repository und schreibt sie nach <code>/sml_meter.def</code>. Für Handarbeit <b>Edit descriptor</b>.</td></tr>
+<tr><th>Descriptor</th><td>Wählt eine Zählerdefinition aus dem Script-Repository und schreibt sie nach <code>/sml_meter.def</code>. Für Handarbeit den Link <b>Descriptor</b>.</td></tr>
 <tr><th>RX / TX pin</th><td>GPIOs des Lesekopfs (wo ist die Sende- und Empfangsdiode angeschlossen). Häufig: RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattwächter), RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
 <tr><th>Median filter</th><td>Glättet einzelne Ausreißer, kostet aber Reaktionszeit &mdash; für Nulleinspeisung besser aus lassen, die Akkus filtern selbst.</td></tr>
 </table>
@@ -288,7 +288,7 @@ body.lang-de .en{display:none}
 <section id="telemetry">
 <h2><span class="en">Telemetry</span><span class="de">Telemetrie</span></h2>
 <div class="en">
-<p><b>Publish power</b> hands two values to the outside: <code>power2</code>, the heavily smoothed grid power, and <code>cpwr</code>, what this CT reports to the batteries. Both go out over MQTT every 5&nbsp;s and are served as JSON.</p>
+<p><b>Send power</b> hands two values to the outside: <code>power2</code>, the heavily smoothed grid power, and <code>cpwr</code>, what this CT reports to the batteries. Both go out over MQTT every 5&nbsp;s and are served as JSON.</p>
 <h3>MQTT</h3>
 <pre><code>stat/&lt;topic&gt;/script/power2
 stat/&lt;topic&gt;/script/cpwr</code></pre>
@@ -300,7 +300,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 <p><code>power2</code> is an exponential average, <code>0.9&nbsp;&times;&nbsp;old + 0.1&nbsp;&times;&nbsp;reading</code> every 5&nbsp;s &mdash; about a 50&nbsp;s time constant. It is meant for a slow consumer that must not chase every spike; use <code>cpwr</code> or <code>L1..L3</code> if you want the live value.</p>
 </div>
 <div class="de">
-<p><b>Publish power</b> gibt zwei Werte nach au&szlig;en: <code>power2</code>, die stark gegl&auml;ttete Netzleistung, und <code>cpwr</code>, das was dieses CT den Akkus meldet. Beide gehen alle 5&nbsp;s per MQTT raus und stehen als JSON bereit.</p>
+<p><b>Leistung senden</b> gibt zwei Werte nach au&szlig;en: <code>power2</code>, die stark gegl&auml;ttete Netzleistung, und <code>cpwr</code>, das was dieses CT den Akkus meldet. Beide gehen alle 5&nbsp;s per MQTT raus und stehen als JSON bereit.</p>
 <h3>MQTT</h3>
 <pre><code>stat/&lt;topic&gt;/script/power2
 stat/&lt;topic&gt;/script/cpwr</code></pre>

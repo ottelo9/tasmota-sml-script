@@ -50,10 +50,10 @@ void esCommit() {
         es_once_mdns = 0;               // announce the new service type
         es_once_udp  = 0;               // Shelly needs the socket, EcoTracker does not
         es_last_api  = 0;               // no stale replay from the other mode
-        addLog("eco_shelly: mode changed - re-announcing");
+        addLog("eco: mode");
     } else if (es_port != port_was) {
         es_once_udp = 0;                // udp(0, port) rebinds, it stops the old socket
-        addLog("eco_shelly: UDP port changed - rebinding");
+        addLog("eco: port");
     }
 }
 void esEditLoad() {
@@ -111,7 +111,7 @@ float esCtrl(float raw) {
 
 void esBuildEco() {
     float ein  = smlGet(2) * 1000.0;      // kWh -> Wh
-    float eout = smlGet(3) * 1000.0;
+    float eout = sml_export() * 1000.0;
     sprintf(es_body, "{\"power\":%.0f,\"powerAvg\":%.0f,\"agePower\":1000,\"powerPhase1\":%.0f,\"powerPhase2\":%.0f,\"powerPhase3\":%.0f,\"energyCounterIn\":%.0f,\"energyCounterOut\":%.0f}", es_cpwr, es_avg, es_pa, es_pb, es_pc, ein, eout);
 }
 
@@ -131,13 +131,13 @@ void esBuildEm1() {
 // above is the call AstraMeter actually implements and the one a battery polls.
 void esBuildFullEm1() {
     float e1 = smlGet(2) * 1000.0;
-    float e2 = smlGet(3) * 1000.0;
+    float e2 = sml_export() * 1000.0;
     sprintf(es_body, "{\"em1:0\":{\"id\":0,\"act_power\":%.1f},\"em1data:0\":{\"id\":0,\"total_act_energy\":%.2f,\"total_act_ret_energy\":%.2f}}", es_cpwr, e1, e2);
 }
 
 void esBuildFull() {
     float ein  = smlGet(2) * 1000.0;
-    float eout = smlGet(3) * 1000.0;
+    float eout = sml_export() * 1000.0;
     sprintf(es_body, "{\"em:0\":{\"id\":0,\"a_act_power\":%.1f,\"b_act_power\":%.1f,\"c_act_power\":%.1f,\"total_act_power\":%.3f},\"emdata:0\":{\"id\":0,\"a_total_act_energy\":%.2f,\"a_total_act_ret_energy\":%.2f,\"b_total_act_energy\":0.00,\"b_total_act_ret_energy\":0.00,\"c_total_act_energy\":0.00,\"c_total_act_ret_energy\":0.00,\"total_act\":%.2f,\"total_act_ret\":%.2f}}", es_pa, es_pb, es_pc, es_cpwr, ein, eout, ein, eout);
 }
 
@@ -164,7 +164,7 @@ void esBuildEmG3() {
 // EMData.GetStatus - the energy counters on their own. Wh, like the 3EM path.
 void esBuildEmData() {
     float ein  = smlGet(2) * 1000.0;
-    float eout = smlGet(3) * 1000.0;
+    float eout = sml_export() * 1000.0;
     sprintf(es_body, "{\"id\":0,\"a_total_act_energy\":%.2f,\"a_total_act_ret_energy\":%.2f}", ein, eout);
 }
 
@@ -312,7 +312,7 @@ void esTick() {
             if (es_mode == 3) es_bound = 2222;   // EM Gen3 likewise
             if (udp(0, es_bound) == 1) {
                 es_once_udp = 1;
-                addLog("eco_shelly: Shelly UDP on port %d", es_bound);
+                addLog("eco: UDP %d", es_bound);
             }
         }
     }

@@ -18,7 +18,7 @@
 // reason. So one URL keeps one number everywhere:
 //   1,2,3,5,6  eco_shelly  /v1/json, EM, Shelly, EM1, EMData
 //   4          ct002       /ctreg
-//   7          all         /pwr
+//   7          all         /pwr (chart programs: also ?v= for single values)
 persist watch int ui_de;     // 0 = English (default), 1 = Deutsch
 
 // Tasmota's Sleep. The default of 50 ms lets the radio doze between loop
@@ -74,8 +74,10 @@ byte tc_opt_b[48];
 // would cut 26714.950 to 26714 and lose 950 Wh at every program change.
 // A separate "has" array rather than a sentinel value: any float, 0.0
 // included, is a legal reading.
-float tc_optf[6];
-int   tc_optf_has[6];
+//   0..5  imp/exp day, month, year     6..7  imp/exp week
+//   8     exp_virt - the integrated export total of a Bezugszaehler
+float tc_optf[9];
+int   tc_optf_has[9];
 
 float tcOptGetF(int i, float now) {
     if (tc_optf_has[i] == 0) return now;
@@ -110,7 +112,7 @@ void tcOptLoad() {
         i++;
     }
     i = 0;
-    while (i < 6) {
+    while (i < 9) {
         tc_optf[i] = 0.0;
         tc_optf_has[i] = 0;
         i++;
@@ -153,12 +155,16 @@ void tcOptLoad() {
     if (fileGetStr(tc_opt_b, h, "@ct_sat=",        1, 10) > 0) tc_opt[33] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@chart_short=",  1, 10) > 0) tc_opt[30] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@chart_onmain=", 1, 10) > 0) tc_opt[31] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sml_bezug=",    1, 10) > 0) tc_opt[32] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@imp_day=",   1, 10) > 0) { tc_optf[0] = atof(tc_opt_b); tc_optf_has[0] = 1; }
     if (fileGetStr(tc_opt_b, h, "@imp_month=", 1, 10) > 0) { tc_optf[1] = atof(tc_opt_b); tc_optf_has[1] = 1; }
     if (fileGetStr(tc_opt_b, h, "@imp_year=",  1, 10) > 0) { tc_optf[2] = atof(tc_opt_b); tc_optf_has[2] = 1; }
     if (fileGetStr(tc_opt_b, h, "@exp_day=",   1, 10) > 0) { tc_optf[3] = atof(tc_opt_b); tc_optf_has[3] = 1; }
     if (fileGetStr(tc_opt_b, h, "@exp_month=", 1, 10) > 0) { tc_optf[4] = atof(tc_opt_b); tc_optf_has[4] = 1; }
     if (fileGetStr(tc_opt_b, h, "@exp_year=",  1, 10) > 0) { tc_optf[5] = atof(tc_opt_b); tc_optf_has[5] = 1; }
+    if (fileGetStr(tc_opt_b, h, "@imp_week=",  1, 10) > 0) { tc_optf[6] = atof(tc_opt_b); tc_optf_has[6] = 1; }
+    if (fileGetStr(tc_opt_b, h, "@exp_week=",  1, 10) > 0) { tc_optf[7] = atof(tc_opt_b); tc_optf_has[7] = 1; }
+    if (fileGetStr(tc_opt_b, h, "@exp_virt=",  1, 10) > 0) { tc_optf[8] = atof(tc_opt_b); tc_optf_has[8] = 1; }
     fileClose(h);
 }
 
@@ -222,12 +228,22 @@ void tcOptSave() {
     // whether the charts sit on the settings page instead of their own.
     tcOptW(h,  "chart_short",  30);
     tcOptW(h,  "chart_onmain", 31);
+    // 1 = the meter has no export register; the export total is integrated
+    // from negative power instead and kept as exp_virt below.
+    tcOptW(h,  "sml_bezug",    32);
     tcOptWF(h, "imp_day",      0);
     tcOptWF(h, "imp_month",    1);
     tcOptWF(h, "imp_year",     2);
     tcOptWF(h, "exp_day",      3);
     tcOptWF(h, "exp_month",    4);
     tcOptWF(h, "exp_year",     5);
+    tcOptWF(h, "imp_week",     6);
+    tcOptWF(h, "exp_week",     7);
+    // The Bezugszaehler's integrated export total [kWh], updated at midnight
+    // only. It only grows, so at start the higher of this and the .pvs wins -
+    // see sml_virt_tick(). Raise it by hand to carry over a reading, with the
+    // program stopped.
+    tcOptWF(h, "exp_virt",     8);
     fileClose(h);
     addLog("tc_options: written");
 }
@@ -295,10 +311,10 @@ void uiApplyBegin() {
     if (ui_nosleep != ui_sleep_ack) {
         if (ui_nosleep == 1) {
             tasmCmd("Sleep 0", ui_buf);
-            addLog("ui: power saving off - Sleep 0");
+            addLog("ui: Sleep 0");
         } else {
             tasmCmd("Sleep 50", ui_buf);
-            addLog("ui: power saving on - Sleep 50");
+            addLog("ui: Sleep 50");
         }
         ui_sleep_ack = ui_nosleep;
     }
@@ -346,8 +362,8 @@ void uiSaveButton() {
     // ignore any text we pass, so this is only the backstop.
     webSend("addEventListener('beforeunload',function(e){if(d){e.preventDefault();e.returnValue=''}});");
     // In-page navigation is ours to handle, so here the short text shows.
-    if (ui_de) webSend("var m='Nicht gespeichert. Trotzdem verlassen?';");
-    else       webSend("var m='Unsaved changes. Leave anyway?';");
+    if (ui_de) webSend("var m='Ungespeichert verlassen?';");
+    else       webSend("var m='Leave unsaved?';");
     webSend("addEventListener('click',function(e){if(!d)return;var t=e.target.closest('a[href],button');if(!t)return;");
     webSend("var h=t.getAttribute('onclick')||'';if(/seva|tcbtn|siva|sivat|pr\\(/.test(h))return;");
     webSend("if(confirm(m)){d=0}else{e.preventDefault();e.stopPropagation()}},true)})();</script>");
@@ -383,10 +399,10 @@ void uiCheckI(int val, int idx, char label[], char page[]) {
 void uiLang() {
     if (ui_de) {
         webPulldown(ui_de, "Sprache", "English|Deutsch");
-        uiCheckI(ui_nosleep, varIdx(ui_nosleep), "Energiesparmodus ausschalten", "sml/#sleep");
+        uiCheckI(ui_nosleep, varIdx(ui_nosleep), "Energiesparmodus aus", "sml/#sleep");
     } else {
         webPulldown(ui_de, "Language", "English|Deutsch");
-        uiCheckI(ui_nosleep, varIdx(ui_nosleep), "Turn power saving off", "sml/#sleep");
+        uiCheckI(ui_nosleep, varIdx(ui_nosleep), "Power saving off", "sml/#sleep");
     }
 }
 

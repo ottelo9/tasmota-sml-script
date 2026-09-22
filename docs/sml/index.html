@@ -58,13 +58,15 @@ body.lang-de .en{display:none}
   <a href="#overview"><span class="en">Overview</span><span class="de">Überblick</span></a>
   <a href="#programs"><span class="en">Programs</span><span class="de">Programme</span></a>
   <a href="#sleep"><span class="en">Power saving</span><span class="de">Energiesparmodus</span></a>
-  <a href="#meter"><span class="en">Meter settings</span><span class="de">Zähler-Einstellungen</span></a>
+  <a href="#meter"><span class="en">Meter</span><span class="de">Zähler</span></a>
+  <a href="#bezug"><span class="en">Import meter</span><span class="de">Bezugszähler</span></a>
   <a href="#filter">Filter</a>
   <a href="#display"><span class="en">Driver rows</span><span class="de">Treiberzeilen</span></a>
   <a href="#pv">PV</a>
   <a href="#charts"><span class="en">Charts</span><span class="de">Diagramme</span></a>
   <a href="#data"><span class="en">Chart data</span><span class="de">Diagrammdaten</span></a>
   <a href="#telemetry"><span class="en">Telemetry</span><span class="de">Telemetrie</span></a>
+  <a href="#vars">/pwr?v=</a>
   <a href="#modbus">Modbus</a>
   <a href="#options"><span class="en">Settings file</span><span class="de">Einstellungsdatei</span></a>
   <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
@@ -88,7 +90,7 @@ body.lang-de .en{display:none}
 <p>Ein ESP32 mit Lesekopf sitzt am Stromzähler und liest ihn über SML aus. Alle Programme dieser Familie teilen sich die gleiche Zählereinrichtung; sie unterscheiden sich nur in dem, was oben drauf kommt: Diagramme, ein Zähler-Emulator für eine PV-Batterie, ein Modbus-Slave.</p>
 <p><b>Voraussetzungen:</b> ESP32 (kein ESP8266), Tasmota mit TinyC und <code>USE_SML</code> und ein Lesekopf (Beispiele auf meinem <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">Blog</a>).</p>
 <p>Alles wird auf der Weboberfläche eingestellt, nichts im Code. Sprache, Zähler, Pins und Optionen liegen auf dem Gerät.</p>
-<p>The current smoothed value is shown in this section on the settings page. It used to sit on the main page as <i>Power (smoothed)</i> and moved here, next to the switch that publishes it.</p>
+<p>The current smoothed value is shown in this section on the settings page. It used to sit on the main page and moved here, next to the switch that publishes it.</p>
 <p>The publishes carry log level&nbsp;3: the console stays quiet at <code>weblog&nbsp;2</code> and shows them from <code>weblog&nbsp;3</code>, without recompiling. A failed publish is logged once with its return code &mdash; <code>-2</code> means MQTT is switched off on the device (<code>SetOption3</code>).</p>
 <p><b>Buttons in Tasmotas Hauptmenü.</b> Ein laufendes Programm ergänzt eigene Einträge:</p>
 <table>
@@ -227,15 +229,15 @@ body.lang-de .en{display:none}
 </section>
 
 <section id="meter">
-<h2><span class="en">Meter settings</span><span class="de">Zähler-Einstellungen</span></h2>
+<h2><span class="en">Meter</span><span class="de">Zähler</span></h2>
 <h3>Descriptor</h3>
 <div class="en">
 <p>The descriptor tells the SML driver how to read your meter: baud rate, protocol and which OBIS codes go into which value. It lives in <code>/sml_meter.def</code>.</p>
 <table>
 <tr><th>Meter active</th><td>Switches the SML driver on and off (Rule1). Off means no readings at all.</td></tr>
 <tr><th>3 phases</th><td>Default <span class="sw">OFF</span>. Switch it on only if two things are true: your meter really sends power per phase, and the three phases are entered in the descriptor (<code>sml_meter.def</code>). The main page then shows an <b>L1 / L2 / L3</b> row and the emulators report real per-phase values instead of putting everything on L1. Publishing over MQTT does not depend on this option: if the phases are in the descriptor they are published either way &mdash; as zeros if the meter cannot supply them. If they are not in the descriptor, nothing is published, whatever this option says.</td></tr>
-<tr><th>From repo</th><td>Pulldown with ready-made descriptors from my repository. Picking one downloads it and restarts the driver.</td></tr>
-<tr><th>Edit descriptor</th><td>Opens the file editor for hand-tuning. Your meter not in the list? Start from the closest one.</td></tr>
+<tr><th>Repo</th><td>Pulldown with ready-made descriptors from my repository. Picking one downloads it and restarts the driver.</td></tr>
+<tr><th>Descriptor</th><td>The link opens the file editor for hand-tuning. Your meter not in the list? Start from the closest one.</td></tr>
 </table>
 <p>The first three values are fixed by convention and everything else builds on them: <code>1</code> power&nbsp;[W], <code>2</code> import&nbsp;[kWh], <code>3</code> export&nbsp;[kWh].</p>
 </div>
@@ -244,8 +246,8 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>Zähler aktiv</th><td>Schaltet den SML-Treiber ein und aus (Rule1). Aus heißt: gar keine Messwerte.</td></tr>
 <tr><th>3 Phasen</th><td>Standard <span class="sw">AUS</span>. Nur einschalten, wenn beides zutrifft: der Zähler sendet die Leistung je Phase wirklich, und die drei Phasen sind im Descriptor (<code>sml_meter.def</code>) eingetragen. Dann erscheint auf der Hauptseite eine Zeile <b>L1 / L2 / L3</b>, und die Emulatoren melden echte Phasenwerte statt alles auf L1. Vom Zustand dieser Option unabhängig ist die Veröffentlichung per MQTT: Stehen die Phasen im Descriptor, werden sie so oder so gesendet &mdash; kann der Zähler sie nicht liefern, als Nullen. Fehlen sie im Descriptor, wird gar nichts veröffentlicht, egal wie diese Option steht.</td></tr>
-<tr><th>Aus Repo</th><td>Auswahlliste mit fertigen Descriptoren aus meinem Repository. Eine Auswahl lädt ihn herunter und startet den Treiber neu.</td></tr>
-<tr><th>Descriptor bearbeiten</th><td>Öffnet den Dateieditor zum Anpassen. Zähler nicht in der Liste? Mit dem ähnlichsten anfangen.</td></tr>
+<tr><th>Repo</th><td>Auswahlliste mit fertigen Descriptoren aus meinem Repository. Eine Auswahl lädt ihn herunter und startet den Treiber neu.</td></tr>
+<tr><th>Descriptor</th><td>Der Link öffnet den Dateieditor zum Anpassen. Zähler nicht in der Liste? Mit dem ähnlichsten anfangen.</td></tr>
 </table>
 <p>Die ersten drei Werte sind per Konvention festgelegt, alles andere baut darauf auf: <code>1</code> Leistung&nbsp;[W], <code>2</code> Bezug&nbsp;[kWh], <code>3</code> Einspeisung&nbsp;[kWh].</p>
 </div>
@@ -271,6 +273,30 @@ body.lang-de .en{display:none}
 </div>
 </section>
 
+<section id="bezug">
+<h2><span class="en">Import meter</span><span class="de">Bezugszähler</span></h2>
+<div class="en">
+<p>Default <span class="sw">OFF</span>. For a meter that has no export register &mdash; no <code>2.8.0</code>, so nothing at value&nbsp;3 &mdash; but whose power goes <b>negative</b> while you feed in. Switched <span class="sw">ON</span>, the script adds up the negative power itself and uses that as the export total. The rows, the charts, <code>/pwr</code>, Modbus and the emulators all read it where they would read value&nbsp;3. Switch <a href="#pv">PV</a> on as well to see the feed-in rows and charts.</p>
+<ul>
+<li>The total starts at 0 and only grows while the program runs. Whatever happens while the device is off or the meter is silent is not counted.</li>
+<li>It is summed every second over the real time between two readings, and is only as accurate as the power value &mdash; good for day and month totals, not a calibrated meter.</li>
+<li>Switching the option on or off restarts today's, this week's, month's and year's feed-in from the new source. Bars already drawn keep their values.</li>
+<li>The total is kept in the program's <code>.pvs</code> and as <code>exp_virt</code> in the <a href="#options">settings file</a>, updated once at midnight, so it survives a program change. At start the higher of the two wins. To carry over the reading of the old Scripter (<code>sml3</code>): stop the program, enter it as <code>@exp_virt=</code>, start again.</li>
+</ul>
+<p>Replaces the Scripter script <code>3_SML_Chart_PV_Bezugszaehler.tas</code>. Leave it off if your meter does have an export register &mdash; value&nbsp;3 would then be ignored.</p>
+</div>
+<div class="de">
+<p>Standard <span class="sw">AUS</span>. Für einen Zähler ohne Einspeiseregister &mdash; kein <code>2.8.0</code>, also nichts auf Wert&nbsp;3 &mdash;, dessen Leistung beim Einspeisen aber <b>negativ</b> wird. Auf <span class="sw">EIN</span> summiert das Script die negative Leistung selbst auf und nimmt das als Einspeise-Zählerstand. Die Zeilen, die Diagramme, <code>/pwr</code>, Modbus und die Emulatoren lesen ihn dort, wo sie sonst Wert&nbsp;3 lesen. Damit die Einspeise-Zeilen und -Diagramme erscheinen, zusätzlich <a href="#pv">PV</a> einschalten.</p>
+<ul>
+<li>Der Zählerstand beginnt bei 0 und wächst nur, solange das Programm läuft. Was passiert, während das Gerät aus ist oder der Zähler schweigt, wird nicht gezählt.</li>
+<li>Aufsummiert wird jede Sekunde über die echte Zeit zwischen zwei Messwerten. Genau ist das nur so weit wie der Leistungswert &mdash; gut für Tages- und Monatssummen, kein geeichter Zähler.</li>
+<li>Die Option ein- oder auszuschalten lässt Tages-, Wochen-, Monats- und Jahreseinspeisung neu bei der neuen Quelle beginnen. Bereits gezeichnete Balken behalten ihre Werte.</li>
+<li>Der Zählerstand liegt in der <code>.pvs</code> des Programms und als <code>exp_virt</code> in der <a href="#options">Einstellungsdatei</a>, einmal um Mitternacht aktualisiert &mdash; er übersteht also einen Programmwechsel. Beim Start gilt der höhere der beiden. Den Stand aus dem alten Scripter (<code>sml3</code>) übernehmen: Programm stoppen, als <code>@exp_virt=</code> eintragen, wieder starten.</li>
+</ul>
+<p>Ersetzt das Scripter-Script <code>3_SML_Chart_PV_Bezugszaehler.tas</code>. Hat dein Zähler ein Einspeiseregister, bleibt die Option aus &mdash; Wert&nbsp;3 würde sonst ignoriert.</p>
+</div>
+</section>
+
 <section id="filter">
 <h2>Filter</h2>
 <div class="en">
@@ -284,7 +310,7 @@ body.lang-de .en{display:none}
 </section>
 
 <section id="display">
-<h2><span class="en">Additional display (via SML driver)</span><span class="de">Zusätzliche Anzeige (via SML-Treiber)</span></h2>
+<h2><span class="en">SML display</span><span class="de">SML Anzeige</span></h2>
 <div class="en">
 <p>The SML driver can print its own rows on the main page, with the meter name in front of every value. The script prints the same values itself, in your language and without the prefix.</p>
 <table>
@@ -306,12 +332,12 @@ body.lang-de .en{display:none}
 <section id="pv">
 <h2>PV</h2>
 <div class="en">
-<p>Only in the chart variants. <span class="sw">OFF</span> shows consumption alone, <span class="sw">ON</span> adds feed-in: day, month and year rows, a daily production chart and a month chart with both directions.</p>
-<p>Switch it on if your meter has a feed-in register (<code>1.8.0</code> and <code>2.8.0</code>). Without solar the extra charts stay at zero.</p>
+<p>Only in the chart variants. <span class="sw">OFF</span> shows consumption alone, <span class="sw">ON</span> adds feed-in: day, week, month and year rows, a daily production chart, and both directions in the week and month charts.</p>
+<p>Switch it on if your meter has a feed-in register (<code>1.8.0</code> and <code>2.8.0</code>) &mdash; or no register but negative power, then together with <a href="#bezug">import-only meter</a>. Without solar the extra charts stay at zero.</p>
 </div>
 <div class="de">
-<p>Nur in den Diagramm-Varianten. <span class="sw">AUS</span> zeigt nur den Verbrauch, <span class="sw">EIN</span> nimmt die Einspeisung dazu: Tages-, Monats- und Jahreszeile, ein Tagesertragsdiagramm und ein Monatsdiagramm mit beiden Richtungen.</p>
-<p>Einschalten, wenn dein Zähler ein Einspeiseregister hat (<code>1.8.0</code> und <code>2.8.0</code>). Ohne PV bleiben die zusätzlichen Diagramme auf null.</p>
+<p>Nur in den Diagramm-Varianten. <span class="sw">AUS</span> zeigt nur den Verbrauch, <span class="sw">EIN</span> nimmt die Einspeisung dazu: Tages-, Wochen-, Monats- und Jahreszeile, ein Tagesertragsdiagramm und beide Richtungen im Wochen- und Monatsdiagramm.</p>
+<p>Einschalten, wenn dein Zähler ein Einspeiseregister hat (<code>1.8.0</code> und <code>2.8.0</code>) &mdash; oder kein Register, aber negative Leistung, dann zusammen mit <a href="#bezug">Bezugszähler</a>. Ohne PV bleiben die zusätzlichen Diagramme auf null.</p>
 </div>
 </section>
 
@@ -319,8 +345,8 @@ body.lang-de .en{display:none}
 <h2><span class="en">Charts</span><span class="de">Diagramme</span></h2>
 <div class="en">
 <table>
-<tr><th>Short-term chart</th><td>Time range of the first chart: <b>15 minutes</b>, <b>30 minutes</b>, <b>1 hour</b>, <b>2 hours</b> or <b>4 hours</b> (the default). The shorter the range, the finer the resolution &mdash; the chart always holds 180 to 240 points, so 15 minutes stores one every 5 seconds where 4 hours stores one a minute.</td></tr>
-<tr><th>Charts on the main page</th><td>Off: the charts live on their own page, reached by the &#x1F4C8; link in the value list. On: they are drawn on Tasmota&rsquo;s own main page instead &mdash; under the values and buttons, the way they used to be &mdash; and the link disappears. The separate page stays reachable at <code>/tc_ui?p=2</code> either way.</td></tr>
+<tr><th>Short-term</th><td>Time range of the first chart: <b>15 min</b>, <b>30 min</b>, <b>1 h</b>, <b>2 h</b> or <b>4 h</b> (the default). The shorter the range, the finer the resolution &mdash; the chart always holds 180 to 240 points, so 15 minutes stores one every 5 seconds where 4 hours stores one a minute.</td></tr>
+<tr><th>Main Charts</th><td>Off: the charts live on their own page, reached by the &#x1F4C8; link in the value list. On: they are drawn on Tasmota&rsquo;s own main page instead &mdash; under the values and buttons, the way they used to be &mdash; and the link disappears. The separate page stays reachable at <code>/tc_ui?p=2</code> either way.</td></tr>
 </table>
 <table>
 <tr><th>Range</th><th>One point every</th><th>Points</th></tr>
@@ -332,12 +358,13 @@ body.lang-de .en{display:none}
 </table>
 <p class="warn">Changing the range and saving <b>clears this chart</b>. It has to: the stored slots would otherwise be read as a span they were never recorded for. The 24&nbsp;h chart and the bar charts are untouched.</p>
 <p>Each point is the average over its whole slot, so a shorter range is not noisier &mdash; it is genuinely finer. Nothing else changes: the ring is the same one, and a 15-minute chart costs no more memory than a 4-hour one.</p>
-<p>The <b>&#x21BB; Auto update</b> button above the charts reloads the page every 10 seconds. Google Charts draws once when the page is built and Tasmota&rsquo;s own refresh only touches the value list, so without it a 15-minute chart freezes on screen while the numbers above it keep moving. The setting is remembered by the browser, not by the device, and a reload is skipped while you have a field selected.</p>
+<p><b>Week chart.</b> Calendar weeks 1&ndash;53 (ISO, a week starts Monday 00:00). The current week has a red outline. The weeks still ahead this year are drawn faded: they hold <i>last</i> year's figures until their week comes round again, so the chart always shows the last twelve months.</p>
+<p>The <b>&#x21BB; Auto</b> button above the charts reloads the page every 10 seconds. Google Charts draws once when the page is built and Tasmota&rsquo;s own refresh only touches the value list, so without it a 15-minute chart freezes on screen while the numbers above it keep moving. The setting is remembered by the browser, not by the device, and a reload is skipped while you have a field selected.</p>
 </div>
 <div class="de">
 <table>
-<tr><th>Kurzzeit-Diagramm</th><td>Zeitspanne des ersten Diagramms: <b>15 Minuten</b>, <b>30 Minuten</b>, <b>1 Stunde</b>, <b>2 Stunden</b> oder <b>4 Stunden</b> (Standard). Je kürzer die Spanne, desto feiner die Auflösung &mdash; das Diagramm fasst immer 180 bis 240 Punkte, bei 15 Minuten also alle 5 Sekunden einen, bei 4 Stunden einen je Minute.</td></tr>
-<tr><th>Diagramme auf der Hauptseite</th><td>Aus: die Diagramme liegen auf einer eigenen Seite, erreichbar über den &#x1F4C8;-Link in der Werteliste. Ein: sie werden auf Tasmotas eigener Hauptseite gezeichnet &mdash; unter den Werten und Knöpfen, so wie früher &mdash; und der Link entfällt. Die eigene Seite bleibt in beiden Fällen unter <code>/tc_ui?p=2</code> erreichbar.</td></tr>
+<tr><th>Kurzzeit</th><td>Zeitspanne des ersten Diagramms: <b>15 min</b>, <b>30 min</b>, <b>1 h</b>, <b>2 h</b> oder <b>4 h</b> (Standard). Je kürzer die Spanne, desto feiner die Auflösung &mdash; das Diagramm fasst immer 180 bis 240 Punkte, bei 15 Minuten also alle 5 Sekunden einen, bei 4 Stunden einen je Minute.</td></tr>
+<tr><th>Charts Hauptseite</th><td>Aus: die Diagramme liegen auf einer eigenen Seite, erreichbar über den &#x1F4C8;-Link in der Werteliste. Ein: sie werden auf Tasmotas eigener Hauptseite gezeichnet &mdash; unter den Werten und Knöpfen, so wie früher &mdash; und der Link entfällt. Die eigene Seite bleibt in beiden Fällen unter <code>/tc_ui?p=2</code> erreichbar.</td></tr>
 </table>
 <table>
 <tr><th>Spanne</th><th>Ein Punkt alle</th><th>Punkte</th></tr>
@@ -349,7 +376,8 @@ body.lang-de .en{display:none}
 </table>
 <p class="warn">Eine andere Spanne zu wählen und zu speichern <b>leert dieses Diagramm</b>. Das muss so sein: die gespeicherten Slots würden sonst als eine Zeitspanne gelesen, für die sie nie aufgezeichnet wurden. Das 24-h-Diagramm und die Balkendiagramme bleiben unberührt.</p>
 <p>Jeder Punkt ist der Mittelwert über seinen ganzen Slot &mdash; eine kürzere Spanne ist also nicht unruhiger, sondern wirklich feiner. Sonst ändert sich nichts: es ist derselbe Ring, und ein 15-Minuten-Diagramm braucht keinen Speicher mehr als ein 4-Stunden-Diagramm.</p>
-<p>Der Knopf <b>&#x21BB; Auto-Update</b> über den Diagrammen lädt die Seite alle 10 Sekunden neu. Google Charts zeichnet einmal beim Seitenaufbau, und Tasmotas eigene Aktualisierung fasst nur die Werteliste an &mdash; ohne den Knopf steht ein 15-Minuten-Diagramm also fest, während die Zahlen darüber weiterlaufen. Die Einstellung merkt sich der Browser, nicht das Gerät, und solange ein Feld ausgewählt ist, wird nicht neu geladen.</p>
+<p><b>Wochendiagramm.</b> Kalenderwochen 1&ndash;53 (ISO, eine Woche beginnt Montag 00:00). Die aktuelle Woche ist rot umrandet. Die noch kommenden Wochen dieses Jahres sind blass gezeichnet: Sie tragen die Werte des <i>Vorjahres</i>, bis ihre Woche wieder dran ist &mdash; das Diagramm zeigt so immer die letzten zwölf Monate.</p>
+<p>Der Knopf <b>&#x21BB; Auto</b> über den Diagrammen lädt die Seite alle 10 Sekunden neu. Google Charts zeichnet einmal beim Seitenaufbau, und Tasmotas eigene Aktualisierung fasst nur die Werteliste an &mdash; ohne den Knopf steht ein 15-Minuten-Diagramm also fest, während die Zahlen darüber weiterlaufen. Die Einstellung merkt sich der Browser, nicht das Gerät, und solange ein Feld ausgewählt ist, wird nicht neu geladen.</p>
 </div>
 </section>
 
@@ -357,24 +385,24 @@ body.lang-de .en{display:none}
 <h2><span class="en">Chart data</span><span class="de">Diagrammdaten</span></h2>
 <div class="en">
 <table>
-<tr><th>&#x1F522; Reset</th><td>Restarts the day, month and year values from the current meter reading. Do this once after installing, and whenever the counters show nonsense &mdash; a full meter reading instead of a daily figure means the baselines are missing. The charts keep their history.</td></tr>
+<tr><th>&#x1F522; Reset</th><td>Restarts the day, week, month and year values from the current meter reading. Do this once after installing, and whenever the counters show nonsense &mdash; a full meter reading instead of a daily figure means the baselines are missing. The charts keep their history.</td></tr>
 <tr><th>&#x1F4C8; Reset</th><td>Empties the short-term and 24&nbsp;h power charts. The values above and the bar charts stay as they are.</td></tr>
-<tr><th>&#x1F4CA; Reset</th><td>Clears the day and month columns. The counters keep running. Asks first.</td></tr>
+<tr><th>&#x1F4CA; Reset</th><td>Clears the day, week and month columns. The counters keep running. Asks first.</td></tr>
 </table>
 <p>The <b>&#x1F4BE; CSV</b> button at the bottom of the settings page writes <code>/sml_chart.csv</code>, and <code>/sml_chart_pv.csv</code> as well when the feed-in side is on. It reads only, so it fires without asking. Download the files in Tasmota's <a href="/ufsd">file manager</a>.</p>
-<p>The CSV holds the baselines in line&nbsp;1, then the short-term, 24&nbsp;h, daily and monthly arrays &mdash; tab separated, one array per line. That is the format to keep a backup in or to open in a spreadsheet.</p>
+<p>The CSV holds the baselines in line&nbsp;1, then the short-term, 24&nbsp;h, daily, monthly and weekly arrays &mdash; tab separated, one array per line. That is the format to keep a backup in or to open in a spreadsheet.</p>
 <p>The live data lives in the slot's <code>.pvs</code> file, saved by name. A backup is that one file: copy it away, copy it back, restart the slot. <code>/sml_chart.bin</code> is only read once at startup, for importing data from an older version.</p>
 <p>The export also works while the meter is silent &mdash; that is deliberate, since a meter that stopped is exactly when the stored data matters.</p>
 <p class="warn">Charts need the clock. Before the device has NTP time (<code>2020</code>) nothing is recorded.</p>
 </div>
 <div class="de">
 <table>
-<tr><th>&#x1F522; Reset</th><td>Lässt Tages-, Monats- und Jahreswert neu beim aktuellen Zählerstand beginnen. Einmal nach der Installation, und immer dann, wenn die Zähler Unsinn zeigen &mdash; ein voller Zählerstand statt eines Tageswerts heißt, die Nullpunkte fehlen. Die Diagramme behalten ihren Verlauf.</td></tr>
+<tr><th>&#x1F522; Reset</th><td>Lässt Tages-, Wochen-, Monats- und Jahreswert neu beim aktuellen Zählerstand beginnen. Einmal nach der Installation, und immer dann, wenn die Zähler Unsinn zeigen &mdash; ein voller Zählerstand statt eines Tageswerts heißt, die Nullpunkte fehlen. Die Diagramme behalten ihren Verlauf.</td></tr>
 <tr><th>&#x1F4C8; Reset</th><td>Leert das Kurzzeit- und das 24-h-Verlaufsdiagramm. Die Werte darüber und die Balkendiagramme bleiben unberührt.</td></tr>
-<tr><th>&#x1F4CA; Reset</th><td>Löscht die Tages- und Monatsspalten. Die Zähler laufen weiter. Fragt vorher nach.</td></tr>
+<tr><th>&#x1F4CA; Reset</th><td>Löscht die Tages-, Wochen- und Monatsspalten. Die Zähler laufen weiter. Fragt vorher nach.</td></tr>
 </table>
 <p>Der Knopf <b>&#x1F4BE; CSV</b> ganz unten auf der Einstellungsseite schreibt <code>/sml_chart.csv</code>, bei eingeschalteter Einspeiseseite zusätzlich <code>/sml_chart_pv.csv</code>. Er liest nur und fragt deshalb nicht nach. Heruntergeladen werden die Dateien im <a href="/ufsd">Dateimanager</a> von Tasmota.</p>
-<p>Die CSV enthält in Zeile&nbsp;1 die Nullpunkte, danach die Arrays für das Kurzzeit-Diagramm, 24&nbsp;h, Tage und Monate &mdash; tabgetrennt, ein Array je Zeile. Das ist das Format für eine Sicherung oder zum Öffnen in der Tabellenkalkulation.</p>
+<p>Die CSV enthält in Zeile&nbsp;1 die Nullpunkte, danach die Arrays für das Kurzzeit-Diagramm, 24&nbsp;h, Tage, Monate und Wochen &mdash; tabgetrennt, ein Array je Zeile. Das ist das Format für eine Sicherung oder zum Öffnen in der Tabellenkalkulation.</p>
 <p>Die laufenden Daten liegen in der <code>.pvs</code>-Datei des Slots, namensbasiert gespeichert. Eine Sicherung ist genau diese eine Datei: wegkopieren, zurückkopieren, Slot neu starten. <code>/sml_chart.bin</code> wird nur einmal beim Start gelesen, zum Übernehmen von Daten aus einer älteren Version.</p>
 <p>Der Export funktioniert auch, während der Zähler schweigt &mdash; das ist Absicht, denn ein ausgefallener Zähler ist genau der Moment, in dem die gespeicherten Daten zählen.</p>
 <p class="warn">Diagramme brauchen die Uhr. Bevor das Gerät NTP-Zeit hat (<code>2020</code>), wird nichts aufgezeichnet.</p>
@@ -406,8 +434,42 @@ body.lang-de .en{display:none}
 <pre><code>{"power2":-217,"cpwr":-180,"power":-440,"in":26714.950,"out":659.775}</code></pre>
 <p>Für einen zweiten Akku, der über HTTP pollt statt auf einen Zähler zu horchen &mdash; zum Beispiel der Dynamic Power Limiter von opendtu-onbattery. Bei ausgeschalteter Telemetrie antwortet der Endpunkt mit <code>{"enabled":0}</code>.</p>
 <p>Warum gemittelt: ein Akku, der jeder Spitze folgt, schwingt. <code>power</code> ist der Rohwert, <code>power2</code> der ruhige.</p>
-<p>Der aktuelle gefilterte Wert steht in diesem Abschnitt auf der Einstellungsseite. Früher stand er als <i>Leistung (gefiltert)</i> auf der Hauptseite und ist hierher gewandert, neben den Schalter, der ihn versendet.</p>
+<p>Der aktuelle gefilterte Wert steht in diesem Abschnitt auf der Einstellungsseite. Früher stand er auf der Hauptseite und ist hierher gewandert, neben den Schalter, der ihn versendet.</p>
 <p>Die Publishes tragen Log-Stufe&nbsp;3: bei <code>weblog&nbsp;2</code> bleibt die Konsole ruhig, ab <code>weblog&nbsp;3</code> werden sie sichtbar, ohne neu zu übersetzen. Ein fehlgeschlagener Publish wird einmal mit Rückgabewert protokolliert &mdash; <code>-2</code> heißt, MQTT ist auf dem Gerät abgeschaltet (<code>SetOption3</code>).</p>
+</div>
+</section>
+
+<section id="vars">
+<h2>HTTP <code>/pwr?v=</code></h2>
+<div class="en">
+<p>Chart programs only. Reads chosen values as JSON &mdash; the TinyC counterpart of the Scripter's <code>cm?cmnd=script?dval;dcon</code>, with the same names. Always available, independent of telemetry, without a password. It rides on <code>/pwr</code>: the firmware has room for seven URLs of its own and the family uses all of them.</p>
+<pre><code>http://&lt;ip&gt;/pwr?v=sml[1];yval;dcon</code></pre>
+<pre><code>{"sml[1]":-3.000,"yval":31850.120,"dcon":[12.410,9.800, ...]}</code></pre>
+<p>Names are separated by <code>;</code>. <code>?v=all</code> returns all of them; <code>/pwr</code> without <code>?v=</code> answers as before. An unknown name answers <code>null</code>.</p>
+<table>
+<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Meter value <i>n</i> from the descriptor. <code>sml[3]</code> is the export total &mdash; computed on an <a href="#bezug">import-only meter</a>.</td></tr>
+<tr><th><code>power2</code></th><td>Smoothed power [W]</td></tr>
+<tr><th><code>dval wval mval yval</code></th><td>Import baselines [kWh]: day, week, month, year</td></tr>
+<tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Export baselines</td></tr>
+<tr><th><code>dcon wcon mcon</code></th><td>Import bars: 31 days, 53 weeks, 12 months</td></tr>
+<tr><th><code>dprod wprod mprod</code></th><td>Export bars</td></tr>
+</table>
+<p>Differences to the Scripter: <code>mcon</code> holds 12 values, import only &mdash; the Scripter's months 13&ndash;24 are <code>mprod</code>. The answer is a plain object without the Scripter's <code>{"script":{…}}</code> around it. In <code>curl</code> the brackets need <code>-g</code>, or write <code>sml1</code>.</p>
+</div>
+<div class="de">
+<p>Nur in den Diagramm-Programmen. Liest ausgewählte Werte als JSON &mdash; das TinyC-Gegenstück zu <code>cm?cmnd=script?dval;dcon</code> aus dem Scripter, mit denselben Namen. Immer verfügbar, unabhängig von der Telemetrie, ohne Passwort. Die Abfrage läuft über <code>/pwr</code>: Die Firmware hat Platz für sieben eigene URLs, und die Familie belegt alle.</p>
+<pre><code>http://&lt;ip&gt;/pwr?v=sml[1];yval;dcon</code></pre>
+<pre><code>{"sml[1]":-3.000,"yval":31850.120,"dcon":[12.410,9.800, ...]}</code></pre>
+<p>Namen werden mit <code>;</code> getrennt. <code>?v=all</code> liefert alle; <code>/pwr</code> ohne <code>?v=</code> antwortet wie bisher. Ein unbekannter Name liefert <code>null</code>.</p>
+<table>
+<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Wert <i>n</i> aus dem Descriptor. <code>sml[3]</code> ist der Einspeise-Zählerstand &mdash; beim <a href="#bezug">Bezugszähler</a> der gerechnete.</td></tr>
+<tr><th><code>power2</code></th><td>Gemittelte Leistung [W]</td></tr>
+<tr><th><code>dval wval mval yval</code></th><td>Basiswerte Bezug [kWh]: Tag, Woche, Monat, Jahr</td></tr>
+<tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Basiswerte Einspeisung</td></tr>
+<tr><th><code>dcon wcon mcon</code></th><td>Balken Bezug: 31 Tage, 53 Wochen, 12 Monate</td></tr>
+<tr><th><code>dprod wprod mprod</code></th><td>Balken Einspeisung</td></tr>
+</table>
+<p>Unterschiede zum Scripter: <code>mcon</code> hat 12 Werte, nur Bezug &mdash; die Monate 13&ndash;24 des Scripters sind hier <code>mprod</code>. Die Antwort ist ein einfaches Objekt, ohne das <code>{"script":{…}}</code> drumherum. In <code>curl</code> brauchen die eckigen Klammern <code>-g</code>, oder man schreibt <code>sml1</code>.</p>
 </div>
 </section>
 
@@ -477,13 +539,14 @@ body.lang-de .en{display:none}
 <tr><th><code>sml_*</code></th><td>Meter, RX/TX pin, filter, phases, driver rows.</td></tr>
 <tr><th><code>es_*</code> / <code>ct_*</code> / <code>mb_*</code></th><td>Emulators and Modbus.</td></tr>
 <tr><th><code>chart_*</code></th><td><code>chart_short</code> is the short-term chart's range in <b>minutes</b> (15, 30, 60, 120, 240) &mdash; minutes rather than a menu position, so the number says what it means. <code>chart_onmain</code> puts the charts on Tasmota's main page.</td></tr>
-<tr><th><code>imp_*</code> / <code>exp_*</code></th><td>The energy baselines in kWh: the zero points day, month and year totals are counted from. <code>sml_da</code> is the last-seen day of the month and belongs with them.</td></tr>
+<tr><th><code>imp_*</code> / <code>exp_*</code></th><td>The energy baselines in kWh: the zero points day, week, month and year totals are counted from. <code>sml_da</code> is the last-seen day of the month and belongs with them.</td></tr>
+<tr><th><code>sml_bezug</code> / <code>exp_virt</code></th><td>The <a href="#bezug">import-only meter</a> switch and its computed export total in kWh.</td></tr>
 </table>
 <h3>Editing by hand</h3>
 <p>Download the file, change it, upload it, <b>then restart the script</b> &mdash; in that order. It is read once at start; a running program holds the values in memory and would write yours back over at the next rollover.</p>
 <p>The baselines are what you would correct: set <code>imp_day</code> to the meter reading at midnight and today's consumption is right again.</p>
 <p class="warn">Do not delete the file to "reset" things &mdash; it is rebuilt from whatever the current program has in its own <code>.pvs</code>, which after a program change may be zeros.</p>
-<p>The file is written when something actually changes: once when it is created, on a Save that changed a value, and when a baseline rolls over at midnight. Not on a timer &mdash; roughly one write a day.</p>
+<p>The file is written when something actually changes: once when it is created, on a Save that changed a value, and when a baseline rolls over at midnight. Not on a timer &mdash; roughly one write a day. The import-only meter's <code>exp_virt</code> rides along with the midnight write; a program without charts writes it once at midnight.</p>
 </div>
 <div class="de">
 <p>Jedes Programm hält seine Einstellungen in einer eigenen <code>.pvs</code> &mdash; der Name wird aus der <code>.tcb</code> abgeleitet. Ein Programmwechsel fing deshalb bei null an: kein Zähler, keine Pins, keine Sprache, und die Tages-, Monats- und Jahreswerte zurück auf Anfang. <code>/tc_options.cfg</code> liegt daneben und gehört allen gemeinsam.</p>
@@ -504,13 +567,14 @@ body.lang-de .en{display:none}
 <tr><th><code>sml_*</code></th><td>Zähler, RX-/TX-Pin, Filter, Phasen, Treiberzeilen.</td></tr>
 <tr><th><code>es_*</code> / <code>ct_*</code> / <code>mb_*</code></th><td>Emulatoren und Modbus.</td></tr>
 <tr><th><code>chart_*</code></th><td><code>chart_short</code> ist die Zeitspanne des Kurzzeit-Diagramms in <b>Minuten</b> (15, 30, 60, 120, 240) &mdash; Minuten statt einer Menüposition, damit die Zahl sagt, was sie bedeutet. <code>chart_onmain</code> legt die Diagramme auf Tasmotas Hauptseite.</td></tr>
-<tr><th><code>imp_*</code> / <code>exp_*</code></th><td>Die Basiswerte in kWh: die Nullpunkte, von denen Tages-, Monats- und Jahressumme aus gezählt werden. <code>sml_da</code> ist der zuletzt gesehene Monatstag und gehört dazu.</td></tr>
+<tr><th><code>imp_*</code> / <code>exp_*</code></th><td>Die Basiswerte in kWh: die Nullpunkte, von denen Tages-, Wochen-, Monats- und Jahressumme aus gezählt werden. <code>sml_da</code> ist der zuletzt gesehene Monatstag und gehört dazu.</td></tr>
+<tr><th><code>sml_bezug</code> / <code>exp_virt</code></th><td>Der Schalter <a href="#bezug">Bezugszähler</a> und sein gerechneter Einspeise-Zählerstand in kWh.</td></tr>
 </table>
 <h3>Von Hand editieren</h3>
 <p>Datei herunterladen, ändern, hochladen, <b>dann das Script neu starten</b> &mdash; in dieser Reihenfolge. Gelesen wird sie einmal beim Start; ein laufendes Programm hält die Werte im Speicher und schriebe deine Korrektur beim nächsten Umbruch wieder weg.</p>
 <p>Zu korrigieren sind vor allem die Basiswerte: <code>imp_day</code> auf den Zählerstand um Mitternacht gesetzt, und der Tagesverbrauch stimmt wieder.</p>
 <p class="warn">Die Datei nicht löschen, um etwas &bdquo;zurückzusetzen&ldquo; &mdash; sie wird aus dem neu aufgebaut, was das gerade laufende Programm in seiner eigenen <code>.pvs</code> stehen hat, und das können nach einem Programmwechsel Nullen sein.</p>
-<p>Geschrieben wird nur, wenn sich wirklich etwas ändert: einmal beim Anlegen, bei einem Speichern mit geändertem Wert, und wenn um Mitternacht ein Basiswert umspringt. Nicht im Takt &mdash; also etwa einmal am Tag.</p>
+<p>Geschrieben wird nur, wenn sich wirklich etwas ändert: einmal beim Anlegen, bei einem Speichern mit geändertem Wert, und wenn um Mitternacht ein Basiswert umspringt. Nicht im Takt &mdash; also etwa einmal am Tag. Das <code>exp_virt</code> des Bezugszählers fährt beim Mitternachts-Schreiben mit; ein Programm ohne Diagramme schreibt es einmal um Mitternacht.</p>
 </div>
 </section>
 
@@ -518,7 +582,7 @@ body.lang-de .en{display:none}
 <h2><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></h2>
 <div class="en">
 <table>
-<tr><th>All values 0</th><td>Check <b>Meter active</b>, then the pins, then the descriptor. <b>Show driver rows</b> on tells you whether the driver is producing anything at all.</td></tr>
+<tr><th>All values 0</th><td>Check <b>Meter active</b>, then the pins, then the descriptor. <b>SML display</b> on tells you whether the driver is producing anything at all.</td></tr>
 <tr><th>Power has the wrong sign</th><td>Import and export are swapped in the descriptor. Feed-in must be negative.</td></tr>
 <tr><th>Values jump</th><td>Switch the <a href="#filter">filter</a> on. If it stays wild, the reading head is sitting badly.</td></tr>
 <tr><th>Charts stay empty</th><td>No NTP time yet, or the baselines were never initialised. See <a href="#data">chart data</a>.</td></tr>

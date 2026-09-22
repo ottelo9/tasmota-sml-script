@@ -6,7 +6,8 @@
 // IEEE-754 float big-endian):
 //   40000 (PDU 0) Power       [W]    smlGet(1)
 //   40002 (PDU 2) Import      [kWh]  smlGet(2)
-//   40004 (PDU 4) Export      [kWh]  smlGet(3)
+//   40004 (PDU 4) Export      [kWh]  sml_export() - smlGet(3), or the computed
+//                                     total on a Bezugszaehler
 
 #include "ui_common.tc"
 
@@ -55,7 +56,7 @@ void mbPoll() {
     if (mb_started == 0) {
         if (tcpServer(mb_port) == 0) {
             mb_started = 1;
-            addLog("sml_modbus: Modbus-TCP slave on port %d", mb_port);
+            addLog("modbus: port %d", mb_port);
         }
         return;                       // network not up yet — retry next tick
     }
@@ -115,7 +116,8 @@ void mbPoll() {
     int floats = qty / 2;
     int k = 0;
     while (k < floats) {
-        mb_dat[k] = smlGet(first + k);
+        if (first + k == 3) mb_dat[k] = sml_export();
+        else                mb_dat[k] = smlGet(first + k);
         k = k + 1;
     }
     tcpWriteArray(mb_dat, floats, 3); // raw 32-bit big-endian
@@ -139,7 +141,7 @@ void mbTick() {
         mb_started = 0;               // mbPoll() re-binds if still enabled
         snapshot(mb_port);
         snapshot(mb_on);
-        addLog("sml_modbus: slave %d on port %d", mb_on, mb_port);
+        addLog("modbus: on=%d port %d", mb_on, mb_port);
     }
 }
 
@@ -158,15 +160,10 @@ void mbRows() {
 // From WebUI(): emitted inside an already-open settings panel.
 void mbPanel() {
     uiHead("&#x1F5A7;&#xFE0F;", "Modbus-TCP", "Modbus-TCP", "sml/#modbus");
-    if (ui_de) webCheckbox(mb_e_on, "Slave (Server) aktiv");
-    else       webCheckbox(mb_e_on, "Slave (Server) active");
+    if (ui_de) webCheckbox(mb_e_on, "Aktiv");
+    else       webCheckbox(mb_e_on, "Active");
     if (mb_e_on == 0) return;
 
-    if (ui_de) webNumber(mb_e_port, 1, 65535, "TCP-Port");
-    else       webNumber(mb_e_port, 1, 65535, "TCP port");
-    if (ui_de) {
-        webSend("<div class='hint'>FC03 &middot; 40000 Leistung W &middot; 40002 Bezug kWh &middot; 40004 Einspeisung kWh<br>je 2 Register, IEEE-754 float, big-endian</div>");
-    } else {
-        webSend("<div class='hint'>FC03 &middot; 40000 power W &middot; 40002 import kWh &middot; 40004 export kWh<br>2 registers each, IEEE-754 float, big-endian</div>");
-    }
+    webNumber(mb_e_port, 1, 65535, "Port");
+    webSend("<div class='hint'>FC03 &middot; 40000 W &middot; 40002/40004 kWh &middot; float32 BE</div>");
 }

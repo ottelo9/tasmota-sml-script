@@ -353,7 +353,7 @@ void ctRotate() {
     if (ct_rotoff >= CT_NSLOT) ct_rotoff = 0;
     int i = 0;
     for (i = 0; i < CT_NSLOT; i = i + 1) ct_sfade[i] = 1.0;   // hand over gently
-    addLog("CT002: efficiency rotation, offset %d", ct_rotoff);
+    addLog("CT002: rotate %d", ct_rotoff);
 }
 
 // Rank of this slot within its bucket, counted from the rotation offset.
@@ -545,7 +545,7 @@ void ctBuild(byte btype[], byte bmac[], byte reqctmac[]) {
         // CT003 only: 4 tariff registers, everything on the peak tariff.
         // Wh assumed - the exact scaling is unconfirmed.
         int ein  = (int)(smlGet(2) * 1000.0);
-        int eout = (int)(smlGet(3) * 1000.0);
+        int eout = (int)(sml_export() * 1000.0);
         sprintfAppend(ct_innb, "|0|%d|0|%d", ein, eout);           // 25..28
     }
     ctFrame(ct_txb, ct_innb);
@@ -597,8 +597,8 @@ void ctHandle(int n) {
     // Phase changes are worth a line: a battery reporting '0' is still
     // diagnosing which phase it sits on and gets the raw meter (ctBuild).
     if (ct_sph[idx] != f) {
-        if (f == 0) addLog("CT002: %s in inspection mode, raw meter sent", ct_qbmac);
-        else        addLog("CT002: %s settled on phase %s", ct_qbmac, ct_qph);
+        if (f == 0) addLog("CT002: %s inspect", ct_qbmac);
+        else        addLog("CT002: %s phase %s", ct_qbmac, ct_qph);
     }
     ct_sph[idx]   = f;
     ct_spwr[idx]  = strToInt(ct_qpwr);
@@ -864,7 +864,7 @@ int ctLogin() {
     byte dig[20];
     byte dighex[40];
     if (md5(ct_pass, strlen(ct_pass), dig) != 1) {
-        strcpy(ct_msg, "MD5 not available in this firmware");
+        strcpy(ct_msg, "No MD5 in firmware");
         return 0;
     }
     bin2hex(dig, 16, dighex);
@@ -882,10 +882,10 @@ int ctLogin() {
     // The TLS handshake wants one large contiguous block. On a fragmented
     // heap it fails to allocate and httpGet just returns 0, so log what was
     // available - that is the difference between "no network" and "no RAM".
-    addLog("CT002: login, heap %d, largest block %d", tasm_heap, tasm_maxblock);
+    addLog("CT002: login %d/%d", tasm_heap, tasm_maxblock);
     int n = httpGet(ct_req, ct_resp);
-    if (n >= 1000) addLog("CT002: WARNING login reply %d chars, ct_resp holds 1023 - may be truncated", n);
-    else           addLog("CT002: login reply %d chars", n);
+    if (n >= 1000) addLog("CT002: reply %d B, truncated", n);
+    else           addLog("CT002: reply %d B", n);
     if (n <= 0) {
         // BearSSL wants one contiguous 16 kB record buffer. Measured on an
         // ESP32-C3: the handshake went through at ~12.7 kB largest block and
@@ -893,9 +893,9 @@ int ctLogin() {
         // TinyC programs at runtime leaves the heap in pieces (60 kB free,
         // largest block 10 kB), a reboot restores it.
         if (tasm_maxblock < 13000) {
-            sprintf(ct_msg, "Not enough contiguous RAM (%d B) - restart the device, then log in right away", tasm_maxblock);
+            sprintf(ct_msg, "Low RAM (%d B): restart, then log in", tasm_maxblock);
         } else {
-            sprintf(ct_msg, "No reply from Marstek (rc=%d, free block %d B)", n, tasm_maxblock);
+            sprintf(ct_msg, "No reply (rc=%d, %d B)", n, tasm_maxblock);
         }
         return 0;
     }
@@ -903,9 +903,9 @@ int ctLogin() {
     if (p < 0) {
         // The API answers 200 with code=4 on a wrong password.
         if (strFind(ct_resp, "\"code\":4") >= 0) {
-            strcpy(ct_msg, "Login refused - wrong password?");
+            strcpy(ct_msg, "Wrong password?");
         } else {
-            strcpy(ct_msg, "No token in reply - login failed");
+            strcpy(ct_msg, "No token");
         }
         return 0;
     }
@@ -946,9 +946,9 @@ int ctScan() {
                 // the other one.
                 if (found == 0 && strlen(ct_mac) != 12) {
                     strcpy(ct_mac, ct_buf);
-                    addLog("CT002: fake CT adopted: %s", ct_buf);
+                    addLog("CT002: adopted %s", ct_buf);
                 } else {
-                    addLog("CT002: fake CT found: %s (not adopted)", ct_buf);
+                    addLog("CT002: found %s", ct_buf);
                 }
                 found = found + 1;
             }
@@ -965,10 +965,10 @@ void ctDoLogin() {
     if (found > 0) {
         saveVars();
         ct_okflag = 1;
-        sprintf(ct_msg, "OK - %d fake CT(s) found, CT MAC = ", found);
+        sprintf(ct_msg, "OK - %d CT, MAC = ", found);
         strcat(ct_msg, ct_mac);
     } else {
-        strcpy(ct_msg, "Login OK, no CT found");
+        strcpy(ct_msg, "OK, no CT");
     }
 }
 
@@ -976,7 +976,7 @@ void ctDoLogin() {
 void ctDoCreate() {
     ct_okflag = 0;
     if (strlen(ct_mac) == 12) {
-        strcpy(ct_msg, "CT MAC already set - clear it first");
+        strcpy(ct_msg, "CT MAC set - clear first");
         return;
     }
     strcpy(ct_msg, "Creating ...");
@@ -984,7 +984,7 @@ void ctDoCreate() {
     if (ctScan() > 0) {
         saveVars();
         ct_okflag = 1;
-        strcpy(ct_msg, "Fake CT already exists - adopted instead");
+        strcpy(ct_msg, "CT exists - adopted");
         return;
     }
 
@@ -1002,7 +1002,7 @@ void ctDoCreate() {
         strcat(nm, one);
     }
     if (strlen(nm) != 12) {
-        strcpy(ct_msg, "MAC generation failed");
+        strcpy(ct_msg, "MAC failed");
         return;
     }
     byte sfx[8];
@@ -1031,9 +1031,9 @@ void ctDoCreate() {
     if (strlen(ct_req) + 12 <= 250) strcat(ct_req, "&version=121");
     if (strlen(ct_req) + 16 <= 250) strcat(ct_req, "&position=%7B%7D");
     int ulen = strlen(ct_req);
-    addLog("CT002: add_device URL %d chars", ulen);
+    addLog("CT002: url %d", ulen);
     if (ulen > 250) {
-        sprintf(ct_msg, "URL too long (%d chars) - mail address too long?", ulen);
+        sprintf(ct_msg, "URL too long (%d)", ulen);
         return;
     }
 
@@ -1042,10 +1042,10 @@ void ctDoCreate() {
     httpHeader("token", ct_tok);
 
     int rn = httpGet(ct_req, ct_resp);
-    if (rn >= 1000) addLog("CT002: WARNING create reply %d chars, ct_resp holds 1023 - may be truncated", rn);
-    else            addLog("CT002: create reply %d chars", rn);
+    if (rn >= 1000) addLog("CT002: reply %d B, truncated", rn);
+    else            addLog("CT002: reply %d B", rn);
     if (rn <= 0) {
-        sprintf(ct_msg, "No reply on create (rc=%d)", rn);
+        sprintf(ct_msg, "No reply (rc=%d)", rn);
         return;
     }
     int good = 0;
@@ -1062,9 +1062,9 @@ void ctDoCreate() {
     saveVars();
     strcpy(ct_pass, "");            // done - drop the password now
     ct_okflag = 1;
-    strcpy(ct_msg, "Fake CT created, CT MAC = ");
+    strcpy(ct_msg, "CT created, MAC = ");
     strcat(ct_msg, ct_mac);
-    addLog("CT002: fake CT created in Marstek cloud: %s (%s)", nm, ct_type);
+    addLog("CT002: created %s (%s)", nm, ct_type);
 }
 
 
@@ -1167,7 +1167,7 @@ void ctTick() {
             // Harmless under load, noisy when idle - 300 s keeps recovery.
             udp(8, 1, 300);
             ct_once = 1;
-            addLog("CT002: %s listening on UDP %d (CT MAC %s)", ct_type, ct_port, ct_mac);
+            addLog("CT002: %s UDP %d MAC %s", ct_type, ct_port, ct_mac);
         }
     }
 
@@ -1179,7 +1179,7 @@ void ctTick() {
     if (strlen(ct_pass) > 0 && ct_busy == 0) {
         if (millis() - ct_pts > 600000) {
             strcpy(ct_pass, "");
-            addLog("CT002: cached Marstek password discarded after 10 min");
+            addLog("CT002: pw cleared");
         }
     }
 }
@@ -1254,45 +1254,34 @@ void ctPanel() {
     uiHead("&#x1F50C;", "CT", "CT", "ct002/#ct");
     // CT MAC read-only: webText writes through a broken sv= path in the
     // firmware and corrupted the neighbouring settings. It is set on /ctreg.
-    if (ct_mac[0]) sprintf(ct_buf, "<div style='font-size:12px;color:#444'>CT MAC: <b>%s</b></div>", ct_mac);
-    else           strcpy(ct_buf, "<div style='font-size:12px;color:#444'>CT MAC: &mdash;</div>");
+    if (ct_mac[0]) sprintf(ct_buf, "<div class='n'>CT MAC: <b>%s</b></div>", ct_mac);
+    else           strcpy(ct_buf, "<div class='n'>CT MAC: &mdash;</div>");
     webSend(ct_buf);
-    if (ui_de) {
-        webPulldown(ct_e_kind, "Typ (Neustart)", "CT002 (HME-4)|CT003 (HME-3)");
-        webNumber(ct_e_port, 1024, 65535, "UDP-Port");
-        webNumber(ct_e_rssi, -90, -20, "RSSI [dBm]");
-        webNumber(ct_e_ttl, 0, 300, "Akku-Timeout [s]");
-    } else {
-        webPulldown(ct_e_kind, "Type (restart)", "CT002 (HME-4)|CT003 (HME-3)");
-        webNumber(ct_e_port, 1024, 65535, "UDP port");
-        webNumber(ct_e_rssi, -90, -20, "RSSI [dBm]");
-        webNumber(ct_e_ttl, 0, 300, "Battery timeout [s]");
-    }
-    sprintf(ct_buf, "<div style='font-size:12px;color:#444'>UDP rx/tx/bad: %d / %d / ", ct_rxc, ct_txc);
-    sprintfAppend(ct_buf, "%d</div>", ct_badc);
+    // Labels that read the same in both languages get one call, not two.
+    if (ui_de) webPulldown(ct_e_kind, "Typ",  "CT002 (HME-4)|CT003 (HME-3)");
+    else       webPulldown(ct_e_kind, "Type", "CT002 (HME-4)|CT003 (HME-3)");
+    webNumber(ct_e_port, 1024, 65535, "Port");
+    webNumber(ct_e_rssi, -90, -20, "RSSI [dBm]");
+    webNumber(ct_e_ttl, 0, 300, "Timeout [s]");
+    sprintf(ct_buf, "<div class='n'>UDP rx/tx/bad: %d / %d / %d</div>", ct_rxc, ct_txc, ct_badc);
     webSend(ct_buf);
 
     uiHead("&#x1F50B;", "Battery", "Akku", "ct002/#battery");
+    webNumber(ct_e_offset, -200, 200, "Offset [W]");
+    if (ui_de) webCheckbox(ct_e_tweak, "Aktive Regelung");
+    else       webCheckbox(ct_e_tweak, "Active control");
+    webNumber(ct_e_trim, 0, 100, "Trim [W]");
+    if (ui_de) webNumber(ct_e_pace, 0, 300, "Schritt [W]");
+    else       webNumber(ct_e_pace, 0, 300, "Step [W]");
+    webNumber(ct_e_mindc, 0, 200, "Min DC [W]");
+
+    uiHead("&#x2696;&#xFE0F;", "Several batteries", "Mehrere Akkus", "ct002/#multi");
     if (ui_de) {
-        webNumber(ct_e_offset, -200, 200, "Offset [W]");
-        webCheckbox(ct_e_tweak, "Aktive Regelung");
-        webNumber(ct_e_trim, 0, 100, "Import-Trim [W]");
-        webNumber(ct_e_pace, 0, 300, "Schrittweite [W]");
-        webNumber(ct_e_mindc, 0, 200, "Mindestabgabe DC [W]");
-
-        uiHead("&#x2696;&#xFE0F;", "Several batteries", "Mehrere Akkus", "ct002/#multi");
         webCheckbox(ct_e_fair, "Last verteilen");
-        webCheckbox(ct_e_sat, "Sättigung erkennen");
+        webCheckbox(ct_e_sat, "Sättigung");
     } else {
-        webNumber(ct_e_offset, -200, 200, "Offset [W]");
-        webCheckbox(ct_e_tweak, "Active control");
-        webNumber(ct_e_trim, 0, 100, "Import trim [W]");
-        webNumber(ct_e_pace, 0, 300, "Ramp step [W]");
-        webNumber(ct_e_mindc, 0, 200, "Min DC output [W]");
-
-        uiHead("&#x2696;&#xFE0F;", "Several batteries", "Mehrere Akkus", "ct002/#multi");
         webCheckbox(ct_e_fair, "Share the load");
-        webCheckbox(ct_e_sat, "Saturation detection");
+        webCheckbox(ct_e_sat, "Saturation");
     }
 
     // No Marstek block here - the account lives on /ctreg, reachable from the
@@ -1310,16 +1299,16 @@ void ctPanel() {
 // char[] too. TinyC decides the packing from the declared PARAMETER type, so a
 // byte[] handed to this would be read four bytes per character - silently.
 void ctPageLink() {
-    if (ui_de) webSend("<div style='margin:8px 0'>&#x1F50B; <a href='/tc_ui?p=4'>CT &amp; Akku &ndash; Emulator und Regelung</a></div>");
-    else       webSend("<div style='margin:8px 0'>&#x1F50B; <a href='/tc_ui?p=4'>CT &amp; battery &ndash; emulator and control</a></div>");
+    if (ui_de) webSend("<div style='margin:8px 0'>&#x1F50B; <a href='/tc_ui?p=4'>CT &amp; Akku</a></div>");
+    else       webSend("<div style='margin:8px 0'>&#x1F50B; <a href='/tc_ui?p=4'>CT &amp; battery</a></div>");
 }
 
 void ctPage4(char prog[], char vers[]) {
     sml_panel_open("&#x1F50B;", "CT &amp; battery", "CT &amp; Akku");
     ctPanel();
-    // Credit, deliberately English in both languages - it names a project and
-    // a person. Same size and colour as the version footer below.
-    webSend("<div style='text-align:center;font-size:10px;color:#555;line-height:1.5;margin-top:10px'>CT/battery control optimisations/options taken from the AstraMeter project. Thanks to tomquist.</div>");
+    // Credit, one text for both languages - it names a project and a person.
+    // Same size and colour as the version footer below.
+    webSend("<div style='text-align:center;font-size:10px;color:#555;margin-top:10px'>Regelung: AstraMeter (tomquist)</div>");
     webSend("<hr>");
     uiSaveButton();
     uiUptime();
@@ -1360,7 +1349,7 @@ int ctWebOn(int h) {
         if (strlen(ct_mac) == 12) {
             strcat(ct_buf, ct_mac);
         } else {
-            strcat(ct_buf, "(none yet)");
+            strcat(ct_buf, "-");
         }
         if (ct_busy == 1) {
             strcat(ct_buf, "|1");
@@ -1399,7 +1388,7 @@ int ctWebOn(int h) {
     }
     if (act == 3) {                     // clear the local CT MAC, cloud untouched
         strcpy(ct_mac, "");
-        strcpy(ct_msg, "CT MAC cleared (cloud device remains)");
+        strcpy(ct_msg, "CT MAC cleared");
         ct_okflag = 0;
         saveVars();
         webSend("<html><head><meta charset='utf-8'></head><body><script>location.replace('/ctreg');</script></body></html>");
@@ -1407,10 +1396,10 @@ int ctWebOn(int h) {
     }
     if (act > 0) {
         if (ct_busy == 1) {
-            strcpy(ct_msg, "Another job is running");
+            strcpy(ct_msg, "Busy");
         } else {
             ct_rreq = act;
-            strcpy(ct_msg, "requested, running ...");
+            strcpy(ct_msg, "running ...");
         }
         // Post/Redirect/Get - without it every reload asks to resubmit the
         // form and keeps showing the stale answer.
@@ -1418,71 +1407,45 @@ int ctWebOn(int h) {
         return 1;
     }
 
-    webSend("<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Marstek account</title>");
-    webSend("<style>body{font-family:sans-serif;background:#252525;color:#eaeaea;margin:0;padding:16px}");
-    webSend(".p{max-width:360px;margin:0 auto;background:#f0f0f0;color:#000;padding:18px;border:2px solid #ccc;border-radius:6px}");
-    webSend("h3{margin:0 0 10px;font-size:16px}label{display:block;margin:10px 0 4px;font-size:13px}");
-    webSend("input[type=text],input[type=password]{width:100%;box-sizing:border-box;padding:6px}");
-    webSend("button{padding:8px 12px;border-radius:4px;margin:8px 0;width:100%}");
-    webSend(".n{font-size:12px;color:#444;line-height:1.35;margin:8px 0}.w{font-size:12px;color:#a00;line-height:1.35;margin:8px 0}");
-    webSend("a.i{text-decoration:none;margin-left:6px}");
-    webSend(".s{background:#fff;border:1px solid #bbb;padding:8px;font-size:13px;margin-top:10px}");
-    webSend(".s.ok{background:#e6f6e6;border-color:#5f9e5f;color:#155f15}</style></head><body><div class='p'>");
-    webSend("<h3>&#x2601;&#xFE0F; Marstek</h3>");
+    webSend("<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Marstek</title><style>body{font-family:sans-serif;background:#252525;margin:0;padding:16px}.p{max-width:360px;margin:0 auto;background:#f0f0f0;padding:18px;border-radius:6px}h3{margin:0 0 10px}label{display:block;margin:10px 0 4px}input{width:100%;box-sizing:border-box;padding:6px}button{padding:8px;margin:8px 0;width:100%}.n,.w{font-size:12px;color:#444;margin:8px 0}.w{color:#a00}a.i{text-decoration:none}.s{background:#fff;border:1px solid #bbb;padding:8px;margin-top:10px}.ok{background:#e6f6e6}</style></head><body><div class='p'><h3>&#x2601;&#xFE0F; Marstek</h3>");
     uiI("ct002/#marstek");
-    uiText("<div class='n'>The battery only talks to a CT that exists in your Marstek account.</div>",
-           "<div class='n'>Der Akku spricht nur mit einem CT, das im Marstek-Konto existiert.</div>");
+    uiText("<div class='n'>Battery needs a CT in your Marstek account.</div>",
+           "<div class='n'>Der Akku braucht ein CT im Marstek-Konto.</div>");
 
     webSend("<form method='post' action='/ctreg'>");
     sprintf(ct_buf, "<label>Mail</label><input type='text' name='mail' value='%s'>", ct_mail);
     webSend(ct_buf);
     uiText("<label>Password</label>", "<label>Passwort</label>");
     webSend("<input type='password' name='pw' value=''>");
-    if (strlen(ct_pass) > 0) {
-        uiText("<div class='n'>Password kept for 10 min. Leave empty to reuse.</div>",
-               "<div class='n'>Passwort 10 min gemerkt. Leer lassen zum Wiederverwenden.</div>");
-    }
-    uiText("<div class='w'>&#x26A0;&#xFE0F; Plain text over your LAN. Never stored on flash.</div>",
-           "<div class='w'>&#x26A0;&#xFE0F; Klartext im LAN. Wird nie auf Flash gespeichert.</div>");
+    if (strlen(ct_pass) > 0) uiText("<div class='n'>Kept 10 min.</div>", "<div class='n'>10 min gemerkt.</div>");
+    uiText("<div class='w'>&#x26A0;&#xFE0F; Plain text in LAN, never on flash.</div>",
+           "<div class='w'>&#x26A0;&#xFE0F; Klartext im LAN, nie im Flash.</div>");
     uiText("<button type='submit' name='do' value='login'>1. Log in</button>",
            "<button type='submit' name='do' value='login'>1. Anmelden</button>");
     // Create stays out of reach while a MAC is set - ctDoCreate() refuses too,
     // but a disabled button says so before the click, not after.
     if (strlen(ct_mac) == 12) {
-        uiText("<button type='submit' name='do' value='create' disabled>2. Create fake CT</button><div class='n'>A CT MAC is set. Clear it below first.</div>",
-               "<button type='submit' name='do' value='create' disabled>2. Fake-CT anlegen</button><div class='n'>CT-MAC ist gesetzt. Unten erst loeschen.</div>");
+        uiText("<button disabled>2. Create fake CT</button><div class='n'>CT MAC set &ndash; clear below first.</div>",
+               "<button disabled>2. Fake-CT anlegen</button><div class='n'>CT-MAC gesetzt &ndash; erst unten löschen.</div>");
     } else {
-        uiText("<button type='submit' name='do' value='create' onclick='return confirm(\"Create a new CT in your Marstek account?\")'>2. Create fake CT</button>",
-               "<button type='submit' name='do' value='create' onclick='return confirm(\"Neues CT im Marstek-Konto anlegen?\")'>2. Fake-CT anlegen</button>");
+        uiText("<button type='submit' name='do' value='create' onclick='return confirm(\"Create CT in account?\")'>2. Create fake CT</button>",
+               "<button type='submit' name='do' value='create' onclick='return confirm(\"CT im Konto anlegen?\")'>2. Fake-CT anlegen</button>");
     }
     webSend("</form>");
 
-    if (ct_okflag == 1) {
-        sprintf(ct_buf, "<div class='s ok' id='stbox'><b>Status:</b> <span id='st'>%s</span></div>", ct_msg);
-    } else {
-        sprintf(ct_buf, "<div class='s' id='stbox'><b>Status:</b> <span id='st'>%s</span></div>", ct_msg);
-    }
+    sprintf(ct_buf, "<div class='s%s' id='stbox'><b>Status:</b> <span id='st'>%s</span></div>", ct_okflag == 1 ? " ok" : "", ct_msg);
+    webSend(ct_buf);
+    if (strlen(ct_mac) == 12) sprintf(ct_buf, "<div class='s'><b>CT MAC:</b> <span id='mc'>%s</span></div>", ct_mac);
+    else                      strcpy(ct_buf, "<div class='s'><b>CT MAC:</b> <span id='mc'>-</span></div>");
     webSend(ct_buf);
     if (strlen(ct_mac) == 12) {
-        sprintf(ct_buf, "<div class='s'><b>CT MAC:</b> <span id='mc'>%s</span></div>", ct_mac);
-    } else {
-        if (ui_de) strcpy(ct_buf, "<div class='s'><b>CT MAC:</b> <span id='mc'>(noch keine)</span></div>");
-        else       strcpy(ct_buf, "<div class='s'><b>CT MAC:</b> <span id='mc'>(none yet)</span></div>");
+        uiText("<form method='post' action='/ctreg'><button type='submit' name='do' value='clear' onclick='return confirm(\"Clear CT MAC? (stays in account)\")'>&#x274C; Clear CT MAC</button></form>",
+               "<form method='post' action='/ctreg'><button type='submit' name='do' value='clear' onclick='return confirm(\"CT-MAC löschen? (bleibt im Konto)\")'>&#x274C; CT-MAC löschen</button></form>");
     }
-    webSend(ct_buf);
-    if (strlen(ct_mac) == 12) {
-        uiText("<form method='post' action='/ctreg'><button type='submit' name='do' value='clear' onclick='return confirm(\"Clear the CT MAC here? The CT in your account stays.\")'>&#x274C; Clear CT MAC</button></form>",
-               "<form method='post' action='/ctreg'><button type='submit' name='do' value='clear' onclick='return confirm(\"CT-MAC hier loeschen? Das CT im Konto bleibt.\")'>&#x274C; CT-MAC loeschen</button></form>");
-    }
-    uiText("<div><a href='/'><button type='button'>&#x2B05;&#xFE0F; Main menu</button></a></div>",
-           "<div><a href='/'><button type='button'>&#x2B05;&#xFE0F; Hauptmenue</button></a></div>");
+    webSend("<div><a href='/'><button type='button'>&#x2B05;&#xFE0F; Tasmota</button></a></div>");
     // The cloud call runs in TaskLoop and is unfinished when this renders.
     // Chained setTimeout, not setInterval, so slow answers cannot stack.
-    webSend("<script>function pl(){fetch('/ctreg?st=1',{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var p=t.split('|');");
-    webSend("document.getElementById('st').textContent=p[0];document.getElementById('mc').textContent=p[1];");
-    webSend("document.getElementById('stbox').className=(p[3]=='1')?'s ok':'s';})");
-    webSend(".catch(function(){}).then(function(){setTimeout(pl,1500);});}setTimeout(pl,800);</script>");
-    webSend("</div></body></html>");
+    webSend("<script>function pl(){fetch('/ctreg?st=1',{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var p=t.split('|'),g=function(i){return document.getElementById(i)};g('st').textContent=p[0];g('mc').textContent=p[1];g('stbox').className=p[3]=='1'?'s ok':'s'}).catch(function(){}).then(function(){setTimeout(pl,1500)})}setTimeout(pl,800)</script></div></body></html>");
     return 1;
 }
 
