@@ -7,7 +7,7 @@
 //   sml_chart_5s_tick()   / sml_chart_pv_5s_tick()    every 5 s
 //   sml_chart_60s_tick()  / sml_chart_pv_60s_tick()   every 60 s
 //   sml_chart_init_baselines/_clear_power/_init_columns/_save() + _pv_ twins
-//   sml_chart_render_totals/_4h/_24h/_days/_months()  the charts
+//   sml_chart_render_totals/_st/_24h/_days/_weeks/_months()  the charts
 //   sml_chart_pv_render_dayprod/_render_months_dual() the PV charts
 //   sml_chart_pv_render_totals()                      the export rows
 //   sml_chart_week_opt()                              every second, week baselines <-> cfg
@@ -632,52 +632,6 @@ float sml_power2;                    // exponentially-smoothed power [W]
 int   sml_pv_hr_last;                // PV-side midnight edge detector
 byte  sml_pv_resp[64];               // tasmCmd response buffer
 
-#ifdef SML_CHART_DEMO
-void sml_chart_pv_demo_fill() {
-    // Match the consumption-side demo curves so the multi-chart page
-    // shows recognisable shapes before any live meter data lands.
-    int i = 0;
-    while (i < 480) {
-        float x = ((float)i - 240.0) / 60.0;
-        float bell = cos(x * 0.5);
-        if (bell < 0.0) bell = 0.0;
-        sml_s4h[i] = sml_chart_w16(bell * bell * 5000.0 + 200.0);
-        i = i + 1;
-    }
-    sml_s4h_pos = 240;
-
-    i = 0;
-    while (i < 1440) {
-        float t = (float)i;
-        float solar = 0.0;
-        if (t > 360.0 && t < 1080.0) {
-            float phase = (t - 360.0) / 720.0;
-            solar = sin(phase * 3.14159);
-            solar = solar * solar * 4500.0;
-        }
-        sml_s24h[i] = sml_chart_w16(solar + 150.0);
-        i = i + 1;
-    }
-    sml_s24h_pos = 720;
-
-    i = 0;
-    while (i < 31) {
-        float ph = (float)i / 31.0 * 6.28318;
-        sml_dcon[i]  = 15.0 + 10.0 * cos(ph);          // consumption 5..25 kWh
-        sml_dprod[i] =  9.0 +  7.0 * cos(ph + 1.57);   // production phase-shifted
-        i = i + 1;
-    }
-    i = 0;
-    while (i < 12) {
-        float ph = (float)i / 12.0 * 6.28318;
-        sml_mcon[i]  = 325.0 + 125.0 * cos(ph);
-        sml_mprod[i] = 180.0 + 100.0 * cos(ph + 3.14); // anti-phase to consumption
-        i = i + 1;
-    }
-    addLog("sml_chart_pv: demo data loaded into all six chart blocks");
-}
-#endif
-
 // Arrays and baselines go into the slot's .pvs, same as the consumption side.
 void sml_chart_pv_save() {
     saveVars();
@@ -985,7 +939,6 @@ void sml_chart_options_panel() {
            "<div class='w'>&#9888; Ändern leert das Diagramm!</div>");
     if (ui_de) webCheckbox(sml_e_chmain, "Charts Hauptseite");
     else       webCheckbox(sml_e_chmain, "Main Charts");
-    webSend("<div class='hint'>JSON: <a href='/pwr?v=all' target='_blank'>/pwr?v=all</a></div>");
 }
 
 // One row on the main page, from WebCall().
@@ -1031,27 +984,57 @@ byte sml_vsel[128];      // the ?v= list
 byte sml_vtok[20];       // one name out of it
 int  sml_vcnt;           // names written so far - a comma before all but the first
 
+// ── The answer goes out as a raw HTTP response ──────────────────────────────
+// webSend() would hand the text to Tasmota's page path, which declares
+// text/html - and a JSON reader that checks the type (Home Assistant, ioBroker,
+// Node-RED) then refuses it. So the handler writes the header itself and says
+// application/json. The length is not known in advance (?v=all is ~1.5 KB), so
+// the body goes out chunked: each chunk is its length in hex, the bytes, CRLF.
+//
+// Collected, not one chunk per value: that would be ~200 tiny TCP writes for
+// ?v=all. Fragments are gathered here and leave as one chunk per ~240 chars.
+byte sml_vout[256];
+int  sml_vlen;
+byte sml_vchunk[16];     // the chunk-size line
+
+void sml_vars_flush() {
+    if (sml_vlen == 0) return;
+    sprintf(sml_vchunk, "%x\r\n", sml_vlen);
+    webRawWrite(sml_vchunk);
+    webRawWrite(sml_vout);
+    webRawWrite("\r\n");
+    sml_vout[0] = 0;
+    sml_vlen = 0;
+}
+
+void sml_vars_send(byte s[]) {
+    int n = strlen(s);
+    if (sml_vlen + n > 240) sml_vars_flush();
+    strcat(sml_vout, s);
+    sml_vlen = sml_vlen + n;
+}
+
 void sml_vars_f(float v) {
     sprintf(sml_buf, "%.3f", v);
-    webSend(sml_buf);
+    sml_vars_send(sml_buf);
 }
 
 void sml_vars_a(float a[], int n) {
-    webSend("[");
+    sml_vars_send("[");
     int i = 0;
     while (i < n) {
         if (i > 0) sprintf(sml_buf, ",%.3f", a[i]);
         else       sprintf(sml_buf, "%.3f", a[i]);
-        webSend(sml_buf);
+        sml_vars_send(sml_buf);
         i = i + 1;
     }
-    webSend("]");
+    sml_vars_send("]");
 }
 
 void sml_vars_one(byte t[]) {
     // The name is echoed as the key, so it must not carry anything a browser
-    // would run: the page is served as text/html, and a link to
-    // /pwr?v=<script>... would otherwise execute on the device's origin.
+    // would run - a link to /pwr?v=<script>... would otherwise execute on the
+    // device's origin, whatever the content type says.
     // Letters, digits, _ and [ ] are all a real name ever needs.
     int k = 0;
     while (t[k] != 0) {
@@ -1064,10 +1047,10 @@ void sml_vars_one(byte t[]) {
         if (ok == 0) return;
         k = k + 1;
     }
-    if (sml_vcnt > 0) webSend(",");
+    if (sml_vcnt > 0) sml_vars_send(",");
     sml_vcnt = sml_vcnt + 1;
     sprintf(sml_buf, "\"%s\":", t);
-    webSend(sml_buf);
+    sml_vars_send(sml_buf);
 
     if      (strcmp(t, "dval")   == 0) sml_vars_f(sml_dval);
     else if (strcmp(t, "wval")   == 0) sml_vars_f(sml_wval);
@@ -1092,9 +1075,9 @@ void sml_vars_one(byte t[]) {
         while (t[p] >= '0' && t[p] <= '9' && n < 1000) { n = n * 10 + (t[p] - '0'); p = p + 1; }
         if (n == 3)                sml_vars_f(SML_PV_TOTAL);
         else if (n > 0 && n < 100) sml_vars_f(smlGet(n));
-        else                       webSend("null");
+        else                       sml_vars_send("null");
     }
-    else webSend("null");
+    else sml_vars_send("null");
 }
 
 // From the program's WebOn() for /pwr, before anything else. Returns 1 when
@@ -1105,14 +1088,23 @@ int sml_chart_vars() {
     if (strcmp(sml_vsel, "all") == 0) {
         strcpy(sml_vsel, "sml1;sml2;sml3;power2;dval;wval;mval;yval;dval2;wval2;mval2;yval2;dcon;wcon;mcon;dprod;wprod;mprod");
     }
+    // Our own HTTP response from here on: webRawMode() switches Tasmota's
+    // page machinery off for this request, header and body are ours.
+    webRawMode();
+    webRawWrite("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n\r\n");
     sml_vcnt = 0;
-    webSend("{");
+    sml_vlen = 0;
+    sml_vout[0] = 0;
+    sml_vars_send("{");
     int k = 1;
     while (k <= 40) {
         if (strToken(sml_vtok, sml_vsel, ';', k) <= 0) break;
         sml_vars_one(sml_vtok);
         k = k + 1;
     }
-    webSend("}");
+    sml_vars_send("}");
+    sml_vars_flush();
+    webRawWrite("0\r\n\r\n");        // the terminating empty chunk
+    webKeepAlive();
     return 1;
 }

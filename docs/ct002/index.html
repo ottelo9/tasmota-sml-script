@@ -270,7 +270,7 @@ body.lang-de .en{display:none}
 <tr><th>SML active</th><td>Switches the SML driver on. Without it there are no readings and the emulator answers 0&nbsp;W.</td></tr>
 <tr><th>Descriptor</th><td>Picks a meter definition from the script repository and writes it to <code>/sml_meter.def</code>. Use the <b>Descriptor</b> link for manual changes.</td></tr>
 <tr><th>RX / TX pin</th><td>GPIOs of the reading head. Common: RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattwächter), RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
-<tr><th>Median filter</th><td>Smooths single outliers. Costs reaction time &mdash; leave it off for zero feed-in, the batteries filter on their own.</td></tr>
+<tr><th>SML Filter</th><td>Median filter, smooths single outliers. Costs reaction time &mdash; leave it off for zero feed-in, the batteries filter on their own.</td></tr>
 </table>
 <p>Value order matters: <code>1</code> power, <code>2</code> energy import, <code>3</code> energy export, <code>4/5/6</code> the three phase powers. Only meters that publish per-phase values can drive the <b>3 phases</b> option.</p>
 </div>
@@ -279,7 +279,7 @@ body.lang-de .en{display:none}
 <tr><th>SML active</th><td>Schaltet den SML-Treiber ein. Ohne ihn gibt es keine Messwerte und der Emulator antwortet mit 0&nbsp;W.</td></tr>
 <tr><th>Descriptor</th><td>Wählt eine Zählerdefinition aus dem Script-Repository und schreibt sie nach <code>/sml_meter.def</code>. Für Handarbeit den Link <b>Descriptor</b>.</td></tr>
 <tr><th>RX / TX pin</th><td>GPIOs des Lesekopfs (wo ist die Sende- und Empfangsdiode angeschlossen). Häufig: RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattwächter), RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
-<tr><th>Median filter</th><td>Glättet einzelne Ausreißer, kostet aber Reaktionszeit &mdash; für Nulleinspeisung besser aus lassen, die Akkus filtern selbst.</td></tr>
+<tr><th>SML Filter</th><td>Median-Filter, glättet einzelne Ausreißer, kostet aber Reaktionszeit &mdash; für Nulleinspeisung besser aus lassen, die Akkus filtern selbst.</td></tr>
 </table>
 <p>Die Reihenfolge der Werte zählt: <code>1</code> Leistung, <code>2</code> Bezug, <code>3</code> Einspeisung, <code>4/5/6</code> die drei Phasenleistungen. Nur Zähler, die Einzelphasen liefern, können die Option <b>3 phases</b> bedienen.</p>
 </div>
@@ -288,7 +288,7 @@ body.lang-de .en{display:none}
 <section id="telemetry">
 <h2><span class="en">Telemetry</span><span class="de">Telemetrie</span></h2>
 <div class="en">
-<p><b>Send power</b> hands two values to the outside: <code>power2</code>, the heavily smoothed grid power, and <code>cpwr</code>, what this CT reports to the batteries. Both go out over MQTT every 5&nbsp;s and are served as JSON.</p>
+<p><b>Send power2 (MQTT)</b> hands two values to the outside: <code>power2</code>, the heavily smoothed grid power, and <code>cpwr</code>, what this CT reports to the batteries. Both go out over MQTT every 5&nbsp;s and are served as JSON.</p>
 <h3>MQTT</h3>
 <pre><code>stat/&lt;topic&gt;/script/power2
 stat/&lt;topic&gt;/script/cpwr</code></pre>
@@ -300,7 +300,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 <p><code>power2</code> is an exponential average, <code>0.9&nbsp;&times;&nbsp;old + 0.1&nbsp;&times;&nbsp;reading</code> every 5&nbsp;s &mdash; about a 50&nbsp;s time constant. It is meant for a slow consumer that must not chase every spike; use <code>cpwr</code> or <code>L1..L3</code> if you want the live value.</p>
 </div>
 <div class="de">
-<p><b>Leistung senden</b> gibt zwei Werte nach au&szlig;en: <code>power2</code>, die stark gegl&auml;ttete Netzleistung, und <code>cpwr</code>, das was dieses CT den Akkus meldet. Beide gehen alle 5&nbsp;s per MQTT raus und stehen als JSON bereit.</p>
+<p><b>power2 senden (MQTT)</b> gibt zwei Werte nach au&szlig;en: <code>power2</code>, die stark gegl&auml;ttete Netzleistung, und <code>cpwr</code>, das was dieses CT den Akkus meldet. Beide gehen alle 5&nbsp;s per MQTT raus und stehen als JSON bereit.</p>
 <h3>MQTT</h3>
 <pre><code>stat/&lt;topic&gt;/script/power2
 stat/&lt;topic&gt;/script/cpwr</code></pre>

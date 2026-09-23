@@ -180,13 +180,12 @@ void WebUI() {
     else       webCheckbox(sml_e_pv, "Feed-in");
 
     uiHead("&#x1F527;", "Telemetry", "Telemetrie", "sml/#telemetry");
-    if (ui_de) webCheckbox(sml_e_sndpwr, "Leistung senden");
-    else       webCheckbox(sml_e_sndpwr, "Send power");
+    if (ui_de) webCheckbox(sml_e_sndpwr, "power2 senden (MQTT)");
+    else       webCheckbox(sml_e_sndpwr, "Send power2 (MQTT)");
     sprintf(sml_buf, "<div class='n'>power2: <b>%.0f W</b></div>", sml_power2);
     webSend(sml_buf);
-    if (sml_e_sndpwr > 0) {
-        webSend("<div class='n'>MQTT: power2 + cpwr &middot; HTTP: <a href='/pwr'>/pwr</a></div>");
-    }
+    webSend("<b>HTTP API</b>");
+    webSend("<div class='n'>HTTP: <a href='/pwr' target='_blank'>/pwr</a> &nbsp; <a href='/pwr?v=all' target='_blank'>/pwr?v=all</a> &nbsp; <a href='/pwr?v=sml[1]' target='_blank'>/pwr?v=sml[1]</a></div>");
     mbPanel();
 
     sml_chart_options_panel();

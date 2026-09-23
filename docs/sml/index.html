@@ -61,7 +61,7 @@ body.lang-de .en{display:none}
   <a href="#meter"><span class="en">Meter</span><span class="de">Zähler</span></a>
   <a href="#bezug"><span class="en">Import meter</span><span class="de">Bezugszähler</span></a>
   <a href="#filter">Filter</a>
-  <a href="#display"><span class="en">Driver rows</span><span class="de">Treiberzeilen</span></a>
+  <a href="#display"><span class="en">SML display</span><span class="de">SML Anzeige</span></a>
   <a href="#pv">PV</a>
   <a href="#charts"><span class="en">Charts</span><span class="de">Diagramme</span></a>
   <a href="#data"><span class="en">Chart data</span><span class="de">Diagrammdaten</span></a>
@@ -90,8 +90,6 @@ body.lang-de .en{display:none}
 <p>Ein ESP32 mit Lesekopf sitzt am Stromzähler und liest ihn über SML aus. Alle Programme dieser Familie teilen sich die gleiche Zählereinrichtung; sie unterscheiden sich nur in dem, was oben drauf kommt: Diagramme, ein Zähler-Emulator für eine PV-Batterie, ein Modbus-Slave.</p>
 <p><b>Voraussetzungen:</b> ESP32 (kein ESP8266), Tasmota mit TinyC und <code>USE_SML</code> und ein Lesekopf (Beispiele auf meinem <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">Blog</a>).</p>
 <p>Alles wird auf der Weboberfläche eingestellt, nichts im Code. Sprache, Zähler, Pins und Optionen liegen auf dem Gerät.</p>
-<p>The current smoothed value is shown in this section on the settings page. It used to sit on the main page and moved here, next to the switch that publishes it.</p>
-<p>The publishes carry log level&nbsp;3: the console stays quiet at <code>weblog&nbsp;2</code> and shows them from <code>weblog&nbsp;3</code>, without recompiling. A failed publish is logged once with its return code &mdash; <code>-2</code> means MQTT is switched off on the device (<code>SetOption3</code>).</p>
 <p><b>Buttons in Tasmotas Hauptmenü.</b> Ein laufendes Programm ergänzt eigene Einträge:</p>
 <table>
 <tr><th>&#x2699;&#xFE0F; SML</th><td>Alle Einstellungen. Programme mit Akku-Emulator zeigen stattdessen <b>&#x2699;&#xFE0F; SML /&#x1F50B;</b>.</td></tr>
@@ -333,7 +331,7 @@ body.lang-de .en{display:none}
 <h2>PV</h2>
 <div class="en">
 <p>Only in the chart variants. <span class="sw">OFF</span> shows consumption alone, <span class="sw">ON</span> adds feed-in: day, week, month and year rows, a daily production chart, and both directions in the week and month charts.</p>
-<p>Switch it on if your meter has a feed-in register (<code>1.8.0</code> and <code>2.8.0</code>) &mdash; or no register but negative power, then together with <a href="#bezug">import-only meter</a>. Without solar the extra charts stay at zero.</p>
+<p>Switch it on if your meter has a feed-in register (<code>1.8.0</code> and <code>2.8.0</code>) &mdash; or no register but negative power, then together with <a href="#bezug">Import meter</a>. Without solar the extra charts stay at zero.</p>
 </div>
 <div class="de">
 <p>Nur in den Diagramm-Varianten. <span class="sw">AUS</span> zeigt nur den Verbrauch, <span class="sw">EIN</span> nimmt die Einspeisung dazu: Tages-, Wochen-, Monats- und Jahreszeile, ein Tagesertragsdiagramm und beide Richtungen im Wochen- und Monatsdiagramm.</p>
@@ -412,7 +410,7 @@ body.lang-de .en{display:none}
 <section id="telemetry">
 <h2><span class="en">Telemetry</span><span class="de">Telemetrie</span></h2>
 <div class="en">
-<p>Default <span class="sw">OFF</span>. Switched <span class="sw">ON</span>, the script publishes a heavily smoothed power value every 5&nbsp;s and serves it over HTTP as well.</p>
+<p><b>Send power2 (MQTT)</b>, default <span class="sw">OFF</span>. Switched <span class="sw">ON</span>, the script publishes a heavily smoothed power value every 5&nbsp;s and serves it over HTTP as well. Below the switch, <b>HTTP API</b> links <code>/pwr</code> and, in the chart programs, <a href="#vars"><code>/pwr?v=</code></a>.</p>
 <h3>MQTT</h3>
 <table>
 <tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Smoothed power [W]. Exponential average, 10&nbsp;% new value per step &mdash; slow on purpose.</td></tr>
@@ -422,9 +420,11 @@ body.lang-de .en{display:none}
 <pre><code>{"power2":-217,"cpwr":-180,"power":-440,"in":26714.950,"out":659.775}</code></pre>
 <p>For a second battery that polls over HTTP instead of listening for a meter &mdash; opendtu-onbattery's dynamic power limiter, for example. With telemetry off the endpoint answers <code>{"enabled":0}</code>.</p>
 <p>Why smoothed: a battery that follows every spike swings. <code>power</code> is the raw value, <code>power2</code> the calm one.</p>
+<p>The current smoothed value is shown in this section on the settings page. It used to sit on the main page and moved here, next to the switch that publishes it.</p>
+<p>The publishes carry log level&nbsp;3: the console stays quiet at <code>weblog&nbsp;2</code> and shows them from <code>weblog&nbsp;3</code>, without recompiling. A failed publish is logged once with its return code &mdash; <code>-2</code> means MQTT is switched off on the device (<code>SetOption3</code>).</p>
 </div>
 <div class="de">
-<p>Standard <span class="sw">AUS</span>. Auf <span class="sw">EIN</span> veröffentlicht das Script alle 5&nbsp;s einen stark gemittelten Leistungswert und liefert ihn zusätzlich über HTTP.</p>
+<p><b>power2 senden (MQTT)</b>, Standard <span class="sw">AUS</span>. Auf <span class="sw">EIN</span> veröffentlicht das Script alle 5&nbsp;s einen stark gemittelten Leistungswert und liefert ihn zusätzlich über HTTP. Unter dem Schalter verlinkt <b>HTTP API</b> auf <code>/pwr</code> und in den Diagramm-Programmen auf <a href="#vars"><code>/pwr?v=</code></a>.</p>
 <h3>MQTT</h3>
 <table>
 <tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Gemittelte Leistung [W]. Exponentieller Mittelwert, 10&nbsp;% neuer Wert pro Schritt &mdash; absichtlich träge.</td></tr>
@@ -447,7 +447,7 @@ body.lang-de .en{display:none}
 <pre><code>{"sml[1]":-3.000,"yval":31850.120,"dcon":[12.410,9.800, ...]}</code></pre>
 <p>Names are separated by <code>;</code>. <code>?v=all</code> returns all of them; <code>/pwr</code> without <code>?v=</code> answers as before. An unknown name answers <code>null</code>.</p>
 <table>
-<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Meter value <i>n</i> from the descriptor. <code>sml[3]</code> is the export total &mdash; computed on an <a href="#bezug">import-only meter</a>.</td></tr>
+<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Meter value <i>n</i> from the descriptor. <code>sml[3]</code> is the export total &mdash; computed on an <a href="#bezug">Import meter</a>.</td></tr>
 <tr><th><code>power2</code></th><td>Smoothed power [W]</td></tr>
 <tr><th><code>dval wval mval yval</code></th><td>Import baselines [kWh]: day, week, month, year</td></tr>
 <tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Export baselines</td></tr>
@@ -540,13 +540,13 @@ body.lang-de .en{display:none}
 <tr><th><code>es_*</code> / <code>ct_*</code> / <code>mb_*</code></th><td>Emulators and Modbus.</td></tr>
 <tr><th><code>chart_*</code></th><td><code>chart_short</code> is the short-term chart's range in <b>minutes</b> (15, 30, 60, 120, 240) &mdash; minutes rather than a menu position, so the number says what it means. <code>chart_onmain</code> puts the charts on Tasmota's main page.</td></tr>
 <tr><th><code>imp_*</code> / <code>exp_*</code></th><td>The energy baselines in kWh: the zero points day, week, month and year totals are counted from. <code>sml_da</code> is the last-seen day of the month and belongs with them.</td></tr>
-<tr><th><code>sml_bezug</code> / <code>exp_virt</code></th><td>The <a href="#bezug">import-only meter</a> switch and its computed export total in kWh.</td></tr>
+<tr><th><code>sml_bezug</code> / <code>exp_virt</code></th><td>The <a href="#bezug">Import meter</a> switch and its computed export total in kWh.</td></tr>
 </table>
 <h3>Editing by hand</h3>
 <p>Download the file, change it, upload it, <b>then restart the script</b> &mdash; in that order. It is read once at start; a running program holds the values in memory and would write yours back over at the next rollover.</p>
 <p>The baselines are what you would correct: set <code>imp_day</code> to the meter reading at midnight and today's consumption is right again.</p>
 <p class="warn">Do not delete the file to "reset" things &mdash; it is rebuilt from whatever the current program has in its own <code>.pvs</code>, which after a program change may be zeros.</p>
-<p>The file is written when something actually changes: once when it is created, on a Save that changed a value, and when a baseline rolls over at midnight. Not on a timer &mdash; roughly one write a day. The import-only meter's <code>exp_virt</code> rides along with the midnight write; a program without charts writes it once at midnight.</p>
+<p>The file is written when something actually changes: once when it is created, on a Save that changed a value, and when a baseline rolls over at midnight. Not on a timer &mdash; roughly one write a day. The Import meter's <code>exp_virt</code> rides along with the midnight write; a program without charts writes it once at midnight.</p>
 </div>
 <div class="de">
 <p>Jedes Programm hält seine Einstellungen in einer eigenen <code>.pvs</code> &mdash; der Name wird aus der <code>.tcb</code> abgeleitet. Ein Programmwechsel fing deshalb bei null an: kein Zähler, keine Pins, keine Sprache, und die Tages-, Monats- und Jahreswerte zurück auf Anfang. <code>/tc_options.cfg</code> liegt daneben und gehört allen gemeinsam.</p>
