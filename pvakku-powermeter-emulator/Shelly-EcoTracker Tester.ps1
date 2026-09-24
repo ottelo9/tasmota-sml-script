@@ -1010,6 +1010,7 @@ function Invoke-MdnsCheck {
 $pwrExamples = @(
   "/pwr",
   "/pwr?v=all",
+  "/pwr?v=sml",
   "/pwr?v=sml[1]",
   "/pwr?v=sml1;sml2;sml3",
   "/pwr?v=power2",

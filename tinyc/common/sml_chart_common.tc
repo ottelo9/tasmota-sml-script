@@ -11,7 +11,7 @@
 //   sml_chart_pv_render_dayprod/_render_months_dual() the PV charts
 //   sml_chart_pv_render_totals()                      the export rows
 //   sml_chart_week_opt()                              every second, week baselines <-> cfg
-//   sml_chart_vars()                                  from WebOn for /pwr, answers ?v=
+//   sml_chart_var()                                   the chart names for smlVars() (/pwr?v=)
 //   sml_chart_data_panel()                            the three reset buttons
 // Defines no callbacks - the firmware saves the .pvs on restart and slot stop.
 //
@@ -19,6 +19,7 @@
 // 1.9 packed), plus dcon 31 + mcon 12 + wcon 53 and the same three for the
 // export side as floats (0.8 KB). Needs firmware ABI 27 for the packed rings.
 
+#define SML_CHART 1            // smlVars() also asks sml_chart_var()
 #include "sml_descriptor.tc"
 
 // ── Energy baselines (delta against current SML kWh counter) ────────────────
@@ -636,7 +637,6 @@ persist float sml_wprod[53];         // ISO weeks, see sml_wcon
 persist watch int sml_sndpwr;        // 1 = publish smoothed power via MQTT
 
 // ── Runtime state ──────────────────────────────────────────────────────────
-float sml_power2;                    // exponentially-smoothed power [W]
 int   sml_pv_hr_last;                // PV-side midnight edge detector
 byte  sml_pv_resp[64];               // tasmCmd response buffer
 
@@ -980,57 +980,10 @@ void sml_chart_datetime_rows() {
     webSend(sml_buf);
 }
 
-// ── /pwr?v=: chosen values as JSON ──────────────────────────────────────────
-// What the Scripter answered to cm?cmnd=script?dval;dcon, with the same names:
-//   /pwr?v=yval;dcon;sml[1]    ->  {"yval":123.456,"dcon":[...],"sml[1]":-3}
-//   /pwr?v=all                 ->  every name in the default list below
-// On /pwr rather than a URL of its own: the firmware has seven webOn slots
-// (TC_MAX_WEB_HANDLERS) and the family already uses all of them - a webOn(8)
-// is dropped without a word.
-// Only these names: the VM has no symbol table at runtime. sml[n] (or smln)
-// is meter value n, and sml[3] the export total - computed on a
-// Bezugszaehler, like the Scripter's sml3. mcon is 12 months of import only;
-// the Scripter's months 13..24 are mprod here. An unknown name answers null,
-// so a typo shows instead of vanishing.
-byte sml_vsel[128];      // the ?v= list
-byte sml_vtok[20];       // one name out of it
-int  sml_vcnt;           // names written so far - a comma before all but the first
-
-// ── The answer goes out as a raw HTTP response ──────────────────────────────
-// webSend() would hand the text to Tasmota's page path, which declares
-// text/html - and a JSON reader that checks the type (Home Assistant, ioBroker,
-// Node-RED) then refuses it. So the handler writes the header itself and says
-// application/json. The length is not known in advance (?v=all is ~1.5 KB), so
-// the body goes out chunked: each chunk is its length in hex, the bytes, CRLF.
-//
-// Collected, not one chunk per value: that would be ~200 tiny TCP writes for
-// ?v=all. Fragments are gathered here and leave as one chunk per ~240 chars.
-byte sml_vout[256];
-int  sml_vlen;
-byte sml_vchunk[16];     // the chunk-size line
-
-void sml_vars_flush() {
-    if (sml_vlen == 0) return;
-    sprintf(sml_vchunk, "%x\r\n", sml_vlen);
-    webRawWrite(sml_vchunk);
-    webRawWrite(sml_vout);
-    webRawWrite("\r\n");
-    sml_vout[0] = 0;
-    sml_vlen = 0;
-}
-
-void sml_vars_send(byte s[]) {
-    int n = strlen(s);
-    if (sml_vlen + n > 240) sml_vars_flush();
-    strcat(sml_vout, s);
-    sml_vlen = sml_vlen + n;
-}
-
-void sml_vars_f(float v) {
-    sprintf(sml_buf, "%.3f", v);
-    sml_vars_send(sml_buf);
-}
-
+// ── /pwr?v=: the chart names ────────────────────────────────────────────────
+// smlVars() in sml_descriptor.tc does the request, the sml names, power2 and
+// cpwr; this adds the baselines and the bar arrays. 1 = the name was ours.
+// mcon is 12 months of import only - the Scripter's months 13..24 are mprod.
 void sml_vars_a(float a[], int n) {
     sml_vars_send("[");
     int i = 0;
@@ -1043,27 +996,7 @@ void sml_vars_a(float a[], int n) {
     sml_vars_send("]");
 }
 
-void sml_vars_one(byte t[]) {
-    // The name is echoed as the key, so it must not carry anything a browser
-    // would run - a link to /pwr?v=<script>... would otherwise execute on the
-    // device's origin, whatever the content type says.
-    // Letters, digits, _ and [ ] are all a real name ever needs.
-    int k = 0;
-    while (t[k] != 0) {
-        int c = t[k];
-        int ok = 0;
-        if (c >= 'a' && c <= 'z') ok = 1;
-        if (c >= 'A' && c <= 'Z') ok = 1;
-        if (c >= '0' && c <= '9') ok = 1;
-        if (c == '_' || c == '[' || c == ']') ok = 1;
-        if (ok == 0) return;
-        k = k + 1;
-    }
-    if (sml_vcnt > 0) sml_vars_send(",");
-    sml_vcnt = sml_vcnt + 1;
-    sprintf(sml_buf, "\"%s\":", t);
-    sml_vars_send(sml_buf);
-
+int sml_chart_var(byte t[]) {
     if      (strcmp(t, "dval")   == 0) sml_vars_f(sml_dval);
     else if (strcmp(t, "wval")   == 0) sml_vars_f(sml_wval);
     else if (strcmp(t, "mval")   == 0) sml_vars_f(sml_mval);
@@ -1072,51 +1005,12 @@ void sml_vars_one(byte t[]) {
     else if (strcmp(t, "wval2")  == 0) sml_vars_f(sml_wval2);
     else if (strcmp(t, "mval2")  == 0) sml_vars_f(sml_mval2);
     else if (strcmp(t, "yval2")  == 0) sml_vars_f(sml_yval2);
-    else if (strcmp(t, "power2") == 0) sml_vars_f(sml_power2);
     else if (strcmp(t, "dcon")   == 0) sml_vars_a(sml_dcon,  31);
     else if (strcmp(t, "wcon")   == 0) sml_vars_a(sml_wcon,  53);
     else if (strcmp(t, "mcon")   == 0) sml_vars_a(sml_mcon,  12);
     else if (strcmp(t, "dprod")  == 0) sml_vars_a(sml_dprod, 31);
     else if (strcmp(t, "wprod")  == 0) sml_vars_a(sml_wprod, 53);
     else if (strcmp(t, "mprod")  == 0) sml_vars_a(sml_mprod, 12);
-    else if (t[0] == 's' && t[1] == 'm' && t[2] == 'l') {
-        // sml1 or sml[1]
-        int p = 3;
-        int n = 0;
-        if (t[p] == '[') p = p + 1;
-        while (t[p] >= '0' && t[p] <= '9' && n < 1000) { n = n * 10 + (t[p] - '0'); p = p + 1; }
-        if (n == 3)                sml_vars_f(SML_PV_TOTAL);
-        else if (n > 0 && n < 100) sml_vars_f(smlGet(n));
-        else                       sml_vars_send("null");
-    }
-    else sml_vars_send("null");
-}
-
-// From the program's WebOn() for /pwr, before anything else. Returns 1 when
-// the request carried ?v= and has been answered; 0 leaves /pwr to its own
-// reply. Not gated by the telemetry switch - reading values changes nothing.
-int sml_chart_vars() {
-    if (webArg("v", sml_vsel) <= 0) return 0;
-    if (strcmp(sml_vsel, "all") == 0) {
-        strcpy(sml_vsel, "sml1;sml2;sml3;power2;dval;wval;mval;yval;dval2;wval2;mval2;yval2;dcon;wcon;mcon;dprod;wprod;mprod");
-    }
-    // Our own HTTP response from here on: webRawMode() switches Tasmota's
-    // page machinery off for this request, header and body are ours.
-    webRawMode();
-    webRawWrite("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n\r\n");
-    sml_vcnt = 0;
-    sml_vlen = 0;
-    sml_vout[0] = 0;
-    sml_vars_send("{");
-    int k = 1;
-    while (k <= 40) {
-        if (strToken(sml_vtok, sml_vsel, ';', k) <= 0) break;
-        sml_vars_one(sml_vtok);
-        k = k + 1;
-    }
-    sml_vars_send("}");
-    sml_vars_flush();
-    webRawWrite("0\r\n\r\n");        // the terminating empty chunk
-    webKeepAlive();
+    else return 0;
     return 1;
 }

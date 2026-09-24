@@ -110,6 +110,7 @@ void sml_virt_tick() {
 
 // ── Shared sprintf scratch (also used by chart/totals renderers) ────────────
 byte sml_buf[160];
+float sml_power2;          // smoothed power [W], kept by the program's 5 s tick
 byte sml_ftopic[96];       // full MQTT topic - mqttPublish takes it at runtime
 int  sml_pub_rc;           // last mqttPublish result, logged when it changes
 int  sml_pub_seen;
@@ -127,6 +128,156 @@ void smlSendJson(byte s[]) {
     sprintf(sml_jhdr, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", strlen(s));
     webRawWrite(sml_jhdr);
     webRawWrite(s);
+}
+
+// Meter value 4/5/6 as phase power. Without "3 phases" they carry no phases,
+// so the total counts as L1 and L2/L3 as 0.
+float sml_phase(int n) {
+    if (sml_ph3 == 1) return smlGet(n);
+    if (n == 4) return smlGet(1);
+    return 0.0;
+}
+
+// The /pwr answer into sml_buf: meter values 1..6, then the smoothed power.
+// Left open - the emulator programs append ,"cpwr" before the closing }.
+void smlPwrJson(float p2) {
+    sprintf(sml_buf, "{\"sml1\":%.0f,\"sml2\":%.3f,\"sml3\":%.3f", smlGet(1), smlGet(2), sml_export());
+    sprintfAppend(sml_buf, ",\"sml4\":%.0f,\"sml5\":%.0f,\"sml6\":%.0f", sml_phase(4), sml_phase(5), sml_phase(6));
+    sprintfAppend(sml_buf, ",\"power2\":%.0f", p2);
+}
+
+// ── /pwr?v=: chosen values as JSON ──────────────────────────────────────────
+// What the Scripter answered to cm?cmnd=script?dval;dcon, with the same names:
+//   /pwr?v=yval;dcon;sml[1]    ->  {"yval":123.456,"dcon":[...],"sml[1]":-3}
+//   /pwr?v=all                 ->  every name in the default list in smlVars()
+//   /pwr?v=sml                 ->  sml1..sml6 (see sml_phase())
+// On /pwr rather than a URL of its own: the firmware has seven webOn slots
+// (TC_MAX_WEB_HANDLERS) and the family already uses all of them - a webOn(8)
+// is dropped without a word.
+// Only these names: the VM has no symbol table at runtime. sml[n] (or smln)
+// is meter value n, and sml[3] the export total - computed on a
+// Bezugszaehler, like the Scripter's sml3. power2 everywhere, cpwr in the
+// emulators, the day/week/month names only in the chart programs
+// (sml_chart_var()). An unknown name answers null, so a typo shows instead
+// of vanishing.
+byte sml_vsel[128];      // the ?v= list
+byte sml_vtok[20];       // one name out of it
+int  sml_vcnt;           // names written so far - a comma before all but the first
+
+// ── The answer goes out as a raw HTTP response ──────────────────────────────
+// webSend() would hand the text to Tasmota's page path, which declares
+// text/html - and a JSON reader that checks the type (Home Assistant, ioBroker,
+// Node-RED) then refuses it. So the handler writes the header itself and says
+// application/json. The length is not known in advance (?v=all is ~1.5 KB), so
+// the body goes out chunked: each chunk is its length in hex, the bytes, CRLF.
+//
+// Collected, not one chunk per value: that would be ~200 tiny TCP writes for
+// ?v=all. Fragments are gathered here and leave as one chunk per ~240 chars.
+byte sml_vout[256];
+int  sml_vlen;
+byte sml_vchunk[16];     // the chunk-size line
+
+void sml_vars_flush() {
+    if (sml_vlen == 0) return;
+    sprintf(sml_vchunk, "%x\r\n", sml_vlen);
+    webRawWrite(sml_vchunk);
+    webRawWrite(sml_vout);
+    webRawWrite("\r\n");
+    sml_vout[0] = 0;
+    sml_vlen = 0;
+}
+
+void sml_vars_send(byte s[]) {
+    int n = strlen(s);
+    if (sml_vlen + n > 240) sml_vars_flush();
+    strcat(sml_vout, s);
+    sml_vlen = sml_vlen + n;
+}
+
+void sml_vars_f(float v) {
+    sprintf(sml_buf, "%.3f", v);
+    sml_vars_send(sml_buf);
+}
+
+// The emulators set these before smlVars(): the value handed to the battery.
+float sml_cpwr;
+int   sml_hascp;
+
+void sml_vars_one(byte t[]) {
+    // The name is echoed as the key, so it must not carry anything a browser
+    // would run - a link to /pwr?v=<script>... would otherwise execute on the
+    // device's origin, whatever the content type says.
+    // Letters, digits, _ and [ ] are all a real name ever needs.
+    int k = 0;
+    while (t[k] != 0) {
+        int c = t[k];
+        int ok = 0;
+        if (c >= 'a' && c <= 'z') ok = 1;
+        if (c >= 'A' && c <= 'Z') ok = 1;
+        if (c >= '0' && c <= '9') ok = 1;
+        if (c == '_' || c == '[' || c == ']') ok = 1;
+        if (ok == 0) return;
+        k = k + 1;
+    }
+    if (sml_vcnt > 0) sml_vars_send(",");
+    sml_vcnt = sml_vcnt + 1;
+    sprintf(sml_buf, "\"%s\":", t);
+    sml_vars_send(sml_buf);
+
+    if (strcmp(t, "power2") == 0) sml_vars_f(sml_power2);
+    else if (strcmp(t, "cpwr") == 0 && sml_hascp == 1) sml_vars_f(sml_cpwr);
+    else if (t[0] == 's' && t[1] == 'm' && t[2] == 'l') {
+        // sml1 or sml[1]
+        int p = 3;
+        int n = 0;
+        if (t[p] == '[') p = p + 1;
+        while (t[p] >= '0' && t[p] <= '9' && n < 1000) { n = n * 10 + (t[p] - '0'); p = p + 1; }
+        if (n == 3)                sml_vars_f(sml_export());
+        else if (n >= 4 && n <= 6) sml_vars_f(sml_phase(n));
+        else if (n > 0 && n < 100) sml_vars_f(smlGet(n));
+        else                       sml_vars_send("null");
+    }
+#ifdef SML_CHART
+    else if (sml_chart_var(t) == 0) sml_vars_send("null");
+#else
+    else sml_vars_send("null");
+#endif
+}
+
+// From the program's WebOn() for /pwr, before anything else. Returns 1 when
+// the request carried ?v= and has been answered; 0 leaves /pwr to its own
+// reply. Not gated by the telemetry switch - reading values changes nothing.
+int smlVars() {
+    if (webArg("v", sml_vsel) <= 0) return 0;
+    if (strcmp(sml_vsel, "all") == 0) {
+#ifdef SML_CHART
+        strcpy(sml_vsel, "sml1;sml2;sml3;power2;dval;wval;mval;yval;dval2;wval2;mval2;yval2;dcon;wcon;mcon;dprod;wprod;mprod");
+#else
+        strcpy(sml_vsel, "sml1;sml2;sml3;sml4;sml5;sml6;power2");
+#endif
+        if (sml_hascp == 1) strcat(sml_vsel, ";cpwr");
+    } else if (strcmp(sml_vsel, "sml") == 0) {
+        strcpy(sml_vsel, "sml1;sml2;sml3;sml4;sml5;sml6");
+    }
+    // Our own HTTP response from here on: webRawMode() switches Tasmota's
+    // page machinery off for this request, header and body are ours.
+    webRawMode();
+    webRawWrite("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n\r\n");
+    sml_vcnt = 0;
+    sml_vlen = 0;
+    sml_vout[0] = 0;
+    sml_vars_send("{");
+    int k = 1;
+    while (k <= 40) {
+        if (strToken(sml_vtok, sml_vsel, ';', k) <= 0) break;
+        sml_vars_one(sml_vtok);
+        k = k + 1;
+    }
+    sml_vars_send("}");
+    sml_vars_flush();
+    webRawWrite("0\r\n\r\n");        // the terminating empty chunk
+    webKeepAlive();
+    return 1;
 }
 
 // Sanity check for "3 phases". The option only makes sense if the descriptor

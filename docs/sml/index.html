@@ -410,31 +410,35 @@ body.lang-de .en{display:none}
 <section id="telemetry">
 <h2><span class="en">Telemetry</span><span class="de">Telemetrie</span></h2>
 <div class="en">
-<p><b>Send power2 (MQTT)</b>, default <span class="sw">OFF</span>. Switched <span class="sw">ON</span>, the script publishes a heavily smoothed power value every 5&nbsp;s and serves it over HTTP as well. Below the switch, <b>HTTP API</b> links <code>/pwr</code> and, in the chart programs, <a href="#vars"><code>/pwr?v=</code></a>.</p>
+<p><b>Send power2 (MQTT)</b> &mdash; in the emulator variants <b>Send power2 + cpwr (MQTT)</b> &mdash;, default <span class="sw">OFF</span>. Switched <span class="sw">ON</span>, the script publishes a heavily smoothed power value every 5&nbsp;s, in the emulator variants also <code>cpwr</code>. The switch is for MQTT only: <code>/pwr</code> always answers. Below the switch the current <code>power2</code> (and <code>cpwr</code>) are shown, and <b>HTTP API</b> links <code>/pwr</code> and <a href="#vars"><code>/pwr?v=</code></a>.</p>
 <h3>MQTT</h3>
 <table>
 <tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Smoothed power [W]. Exponential average, 10&nbsp;% new value per step &mdash; slow on purpose.</td></tr>
 <tr><th><code>stat/&lt;topic&gt;/script/cpwr</code></th><td>Emulator variants only: the value handed to the battery, after offset and shaping.</td></tr>
 </table>
+<p>In MQTT Explorer or Home Assistant the values sit under <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, e.g. <code>stat/tasmota_31F8D4/script/power2</code>. <code>&lt;topic&gt;</code> is the device&apos;s MQTT topic (Tasmota: Configuration &rarr; MQTT &rarr; Topic).</p>
 <h3>HTTP <code>/pwr</code></h3>
-<pre><code>{"power2":-217,"cpwr":-180,"power":-440,"in":26714.950,"out":659.775}</code></pre>
-<p>For a second battery that polls over HTTP instead of listening for a meter &mdash; opendtu-onbattery's dynamic power limiter, for example. With telemetry off the endpoint answers <code>{"enabled":0}</code>.</p>
-<p>Why smoothed: a battery that follows every spike swings. <code>power</code> is the raw value, <code>power2</code> the calm one.</p>
-<p>The current smoothed value is shown in this section on the settings page. It used to sit on the main page and moved here, next to the switch that publishes it.</p>
+<pre><code>{"sml1":-440,"sml2":26714.950,"sml3":659.775,"sml4":-440,"sml5":0,"sml6":0,"power2":-217,"cpwr":-180}</code></pre>
+<p>For a second battery that polls over HTTP instead of listening for a meter &mdash; opendtu-onbattery's dynamic power limiter, for example. Always available, independent of the MQTT switch, without a password.</p>
+<p><code>sml1</code>&ndash;<code>sml6</code> are the meter values; without <a href="#meter">3 phases</a> <code>sml4</code> carries the total power and <code>sml5</code>/<code>sml6</code> are 0. <code>cpwr</code> only in the emulator variants.</p>
+<p>Why smoothed: a battery that follows every spike swings. <code>sml1</code> is the raw value, <code>power2</code> the calm one.</p>
+<p>The current <code>power2</code> (and <code>cpwr</code>) is shown in this section on the settings page, next to the switch that publishes it.</p>
 <p>The publishes carry log level&nbsp;3: the console stays quiet at <code>weblog&nbsp;2</code> and shows them from <code>weblog&nbsp;3</code>, without recompiling. A failed publish is logged once with its return code &mdash; <code>-2</code> means MQTT is switched off on the device (<code>SetOption3</code>).</p>
 </div>
 <div class="de">
-<p><b>power2 senden (MQTT)</b>, Standard <span class="sw">AUS</span>. Auf <span class="sw">EIN</span> veröffentlicht das Script alle 5&nbsp;s einen stark gemittelten Leistungswert und liefert ihn zusätzlich über HTTP. Unter dem Schalter verlinkt <b>HTTP API</b> auf <code>/pwr</code> und in den Diagramm-Programmen auf <a href="#vars"><code>/pwr?v=</code></a>.</p>
+<p><b>power2 senden (MQTT)</b> &mdash; in den Emulator-Varianten <b>power2 + cpwr senden (MQTT)</b> &mdash;, Standard <span class="sw">AUS</span>. Auf <span class="sw">EIN</span> veröffentlicht das Script alle 5&nbsp;s einen stark gemittelten Leistungswert, in den Emulator-Varianten zusätzlich <code>cpwr</code>. Der Schalter gilt nur für MQTT: <code>/pwr</code> antwortet immer. Unter dem Schalter stehen die aktuellen Werte <code>power2</code> (und <code>cpwr</code>), darunter verlinkt <b>HTTP API</b> auf <code>/pwr</code> und auf <a href="#vars"><code>/pwr?v=</code></a>.</p>
 <h3>MQTT</h3>
 <table>
 <tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Gemittelte Leistung [W]. Exponentieller Mittelwert, 10&nbsp;% neuer Wert pro Schritt &mdash; absichtlich träge.</td></tr>
 <tr><th><code>stat/&lt;topic&gt;/script/cpwr</code></th><td>Nur Emulator-Varianten: der Wert, den der Akku bekommt, nach Offset und Regleroptimierung.</td></tr>
 </table>
+<p>Im MQTT Explorer bzw. in Home Assistant liegen die Werte unter <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, z.&nbsp;B. <code>stat/tasmota_31F8D4/script/power2</code>. <code>&lt;topic&gt;</code> ist das MQTT-Topic des Geräts (Tasmota: Einstellungen &rarr; MQTT &rarr; Topic).</p>
 <h3>HTTP <code>/pwr</code></h3>
-<pre><code>{"power2":-217,"cpwr":-180,"power":-440,"in":26714.950,"out":659.775}</code></pre>
-<p>Für einen zweiten Akku, der über HTTP pollt statt auf einen Zähler zu horchen &mdash; zum Beispiel der Dynamic Power Limiter von opendtu-onbattery. Bei ausgeschalteter Telemetrie antwortet der Endpunkt mit <code>{"enabled":0}</code>.</p>
-<p>Warum gemittelt: ein Akku, der jeder Spitze folgt, schwingt. <code>power</code> ist der Rohwert, <code>power2</code> der ruhige.</p>
-<p>Der aktuelle gefilterte Wert steht in diesem Abschnitt auf der Einstellungsseite. Früher stand er auf der Hauptseite und ist hierher gewandert, neben den Schalter, der ihn versendet.</p>
+<pre><code>{"sml1":-440,"sml2":26714.950,"sml3":659.775,"sml4":-440,"sml5":0,"sml6":0,"power2":-217,"cpwr":-180}</code></pre>
+<p>Für einen zweiten Akku, der über HTTP pollt statt auf einen Zähler zu horchen &mdash; zum Beispiel der Dynamic Power Limiter von opendtu-onbattery. Immer verfügbar, unabhängig vom MQTT-Schalter, ohne Passwort.</p>
+<p><code>sml1</code>&ndash;<code>sml6</code> sind die Zählerwerte; ohne <a href="#meter">3 Phasen</a> trägt <code>sml4</code> die Gesamtleistung, <code>sml5</code>/<code>sml6</code> sind 0. <code>cpwr</code> nur in den Emulator-Varianten.</p>
+<p>Warum gemittelt: ein Akku, der jeder Spitze folgt, schwingt. <code>sml1</code> ist der Rohwert, <code>power2</code> der ruhige.</p>
+<p>Der aktuelle Wert <code>power2</code> (und <code>cpwr</code>) steht in diesem Abschnitt auf der Einstellungsseite, neben dem Schalter, der ihn versendet.</p>
 <p>Die Publishes tragen Log-Stufe&nbsp;3: bei <code>weblog&nbsp;2</code> bleibt die Konsole ruhig, ab <code>weblog&nbsp;3</code> werden sie sichtbar, ohne neu zu übersetzen. Ein fehlgeschlagener Publish wird einmal mit Rückgabewert protokolliert &mdash; <code>-2</code> heißt, MQTT ist auf dem Gerät abgeschaltet (<code>SetOption3</code>).</p>
 </div>
 </section>
@@ -442,14 +446,16 @@ body.lang-de .en{display:none}
 <section id="vars">
 <h2>HTTP <code>/pwr?v=</code></h2>
 <div class="en">
-<p>Chart programs only. Reads chosen values as JSON &mdash; the TinyC counterpart of the Scripter's <code>cm?cmnd=script?dval;dcon</code>, with the same names. Always available, independent of telemetry, without a password. It rides on <code>/pwr</code>: the firmware has room for seven URLs of its own and the family uses all of them.</p>
+<p>All programs. Reads chosen values as JSON &mdash; the TinyC counterpart of the Scripter's <code>cm?cmnd=script?dval;dcon</code>, with the same names. Always available, independent of telemetry, without a password. It rides on <code>/pwr</code>: the firmware has room for seven URLs of its own and the family uses all of them.</p>
 <pre><code>http://&lt;ip&gt;/pwr?v=sml[1];yval;dcon</code></pre>
 <pre><code>{"sml[1]":-3.000,"yval":31850.120,"dcon":[12.410,9.800, ...]}</code></pre>
-<p>Names are separated by <code>;</code>. <code>?v=all</code> returns all of them; <code>/pwr</code> without <code>?v=</code> answers as before. An unknown name answers <code>null</code>.</p>
+<p>Names are separated by <code>;</code>. <code>?v=all</code> returns all of them (without charts: <code>sml1</code>&ndash;<code>sml6</code>, <code>power2</code>, <code>cpwr</code>); <code>/pwr</code> without <code>?v=</code> answers as before. An unknown name answers <code>null</code>.</p>
 <table>
-<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Meter value <i>n</i> from the descriptor. <code>sml[3]</code> is the export total &mdash; computed on an <a href="#bezug">Import meter</a>.</td></tr>
+<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Meter value <i>n</i> from the descriptor. <code>sml[3]</code> is the export total &mdash; computed on an <a href="#bezug">Import meter</a>. Without <a href="#meter">3 phases</a>, <code>sml4</code> is the total power and <code>sml5</code>/<code>sml6</code> are 0.</td></tr>
+<tr><th><code>sml</code></th><td>Short for <code>sml1;sml2;sml3;sml4;sml5;sml6</code></td></tr>
 <tr><th><code>power2</code></th><td>Smoothed power [W]</td></tr>
-<tr><th><code>dval wval mval yval</code></th><td>Import baselines [kWh]: day, week, month, year</td></tr>
+<tr><th><code>cpwr</code></th><td>Emulator variants only: the value handed to the battery [W], offset included</td></tr>
+<tr><th><code>dval wval mval yval</code></th><td>Chart programs only, like everything below. Import baselines [kWh]: day, week, month, year</td></tr>
 <tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Export baselines</td></tr>
 <tr><th><code>dcon wcon mcon</code></th><td>Import bars: 31 days, 53 weeks, 12 months</td></tr>
 <tr><th><code>dprod wprod mprod</code></th><td>Export bars</td></tr>
@@ -457,14 +463,16 @@ body.lang-de .en{display:none}
 <p>Differences to the Scripter: <code>mcon</code> holds 12 values, import only &mdash; the Scripter's months 13&ndash;24 are <code>mprod</code>. The answer is a plain object without the Scripter's <code>{"script":{…}}</code> around it. In <code>curl</code> the brackets need <code>-g</code>, or write <code>sml1</code>.</p>
 </div>
 <div class="de">
-<p>Nur in den Diagramm-Programmen. Liest ausgewählte Werte als JSON &mdash; das TinyC-Gegenstück zu <code>cm?cmnd=script?dval;dcon</code> aus dem Scripter, mit denselben Namen. Immer verfügbar, unabhängig von der Telemetrie, ohne Passwort. Die Abfrage läuft über <code>/pwr</code>: Die Firmware hat Platz für sieben eigene URLs, und die Familie belegt alle.</p>
+<p>Alle Programme. Liest ausgewählte Werte als JSON &mdash; das TinyC-Gegenstück zu <code>cm?cmnd=script?dval;dcon</code> aus dem Scripter, mit denselben Namen. Immer verfügbar, unabhängig von der Telemetrie, ohne Passwort. Die Abfrage läuft über <code>/pwr</code>: Die Firmware hat Platz für sieben eigene URLs, und die Familie belegt alle.</p>
 <pre><code>http://&lt;ip&gt;/pwr?v=sml[1];yval;dcon</code></pre>
 <pre><code>{"sml[1]":-3.000,"yval":31850.120,"dcon":[12.410,9.800, ...]}</code></pre>
-<p>Namen werden mit <code>;</code> getrennt. <code>?v=all</code> liefert alle; <code>/pwr</code> ohne <code>?v=</code> antwortet wie bisher. Ein unbekannter Name liefert <code>null</code>.</p>
+<p>Namen werden mit <code>;</code> getrennt. <code>?v=all</code> liefert alle (ohne Diagramme: <code>sml1</code>&ndash;<code>sml6</code>, <code>power2</code>, <code>cpwr</code>); <code>/pwr</code> ohne <code>?v=</code> antwortet wie bisher. Ein unbekannter Name liefert <code>null</code>.</p>
 <table>
-<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Wert <i>n</i> aus dem Descriptor. <code>sml[3]</code> ist der Einspeise-Zählerstand &mdash; beim <a href="#bezug">Bezugszähler</a> der gerechnete.</td></tr>
+<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Wert <i>n</i> aus dem Descriptor. <code>sml[3]</code> ist der Einspeise-Zählerstand &mdash; beim <a href="#bezug">Bezugszähler</a> der gerechnete. Ohne <a href="#meter">3 Phasen</a> ist <code>sml4</code> die Gesamtleistung, <code>sml5</code>/<code>sml6</code> sind 0.</td></tr>
+<tr><th><code>sml</code></th><td>Kurz für <code>sml1;sml2;sml3;sml4;sml5;sml6</code></td></tr>
 <tr><th><code>power2</code></th><td>Gemittelte Leistung [W]</td></tr>
-<tr><th><code>dval wval mval yval</code></th><td>Basiswerte Bezug [kWh]: Tag, Woche, Monat, Jahr</td></tr>
+<tr><th><code>cpwr</code></th><td>Nur Emulator-Varianten: der Wert, den der Akku bekommt [W], inkl. Offset</td></tr>
+<tr><th><code>dval wval mval yval</code></th><td>Nur Diagramm-Programme, wie alles darunter. Basiswerte Bezug [kWh]: Tag, Woche, Monat, Jahr</td></tr>
 <tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Basiswerte Einspeisung</td></tr>
 <tr><th><code>dcon wcon mcon</code></th><td>Balken Bezug: 31 Tage, 53 Wochen, 12 Monate</td></tr>
 <tr><th><code>dprod wprod mprod</code></th><td>Balken Einspeisung</td></tr>

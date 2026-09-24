@@ -124,15 +124,9 @@ void EverySecond() {
 void WebOn() {
     int h = webHandler();
     if (h != 7) return;               // /pwr
-    if (sml_chart_vars()) return;     // /pwr?v=... single values
-    if (sml_sndpwr > 0) {
-        sprintf(sml_buf, "{\"power2\":%.0f", sml_power2);
-        sprintfAppend(sml_buf, ",\"power\":%.0f", smlGet(1));
-        sprintfAppend(sml_buf, ",\"in\":%.3f", smlGet(2));
-        sprintfAppend(sml_buf, ",\"out\":%.3f}", sml_export());
-    } else {
-        strcpy(sml_buf, "{\"enabled\":0}");
-    }
+    if (smlVars()) return;           // /pwr?v=... single values
+    smlPwrJson(sml_power2);
+    strcat(sml_buf, "}");
     smlSendJson(sml_buf);
 }
 

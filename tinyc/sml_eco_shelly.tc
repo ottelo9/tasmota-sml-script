@@ -14,12 +14,11 @@
 char sml_vers[] = "22.09.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
-persist int sml_sndpwr;      // 1 = publish power via MQTT and serve /pwr
+persist int sml_sndpwr;      // 1 = publish power2 via MQTT
 
 int sml_e_sndpwr;             // edit buffer, applied by Save
 
 // ─── Runtime ───────────────────────────────────────────────────────────────
-float sml_power2;
 int   sml_pwr_last;
 char  sml_mtopic[64];
 byte  sml_pub[128];
@@ -67,15 +66,10 @@ void WebOn() {
     int h = webHandler();
     if (esWebOn(h)) return;          // /v1/json, /rpc/*
     if (h != 7) return;              // /pwr
-    if (sml_sndpwr > 0) {
-        sprintf(sml_buf, "{\"power2\":%.0f", sml_power2);
-        sprintfAppend(sml_buf, ",\"cpwr\":%.0f", es_cpwr);
-        sprintfAppend(sml_buf, ",\"power\":%.0f", smlGet(1));
-        sprintfAppend(sml_buf, ",\"in\":%.3f", smlGet(2));
-        sprintfAppend(sml_buf, ",\"out\":%.3f}", sml_export());
-    } else {
-        strcpy(sml_buf, "{\"enabled\":0}");
-    }
+    sml_cpwr = es_cpwr; sml_hascp = 1;
+    if (smlVars()) return;          // /pwr?v=... single values
+    smlPwrJson(sml_power2);
+    sprintfAppend(sml_buf, ",\"cpwr\":%.0f}", es_cpwr);
     smlSendJson(sml_buf);
 }
 
@@ -107,12 +101,14 @@ void WebUI() {
     esPanel();
 
     uiHead("&#x1F4E1;", "Telemetry", "Telemetrie", "sml/#telemetry");
-    if (ui_de) webCheckbox(sml_e_sndpwr, "power2 senden (MQTT)");
-    else       webCheckbox(sml_e_sndpwr, "Send power2 (MQTT)");
+    if (ui_de) webCheckbox(sml_e_sndpwr, "power2 + cpwr senden (MQTT)");
+    else       webCheckbox(sml_e_sndpwr, "Send power2 + cpwr (MQTT)");
     sprintf(sml_buf, "<div class='n'>power2: <b>%.0f W</b></div>", sml_power2);
     webSend(sml_buf);
+    sprintf(sml_buf, "<div class='n'>cpwr: <b>%.0f W</b></div>", es_cpwr);
+    webSend(sml_buf);
     webSend("<b>HTTP API</b>");
-    webSend("<div class='n'>HTTP: <a href='/pwr' target='_blank'>/pwr</a></div>");
+    webSend("<div class='n'>HTTP: <a href='/pwr' target='_blank'>/pwr</a> &nbsp; <a href='/pwr?v=all' target='_blank'>/pwr?v=all</a> &nbsp; <a href='/pwr?v=sml[1]' target='_blank'>/pwr?v=sml[1]</a></div>");
     mbPanel();
 
     webSend("<hr>");

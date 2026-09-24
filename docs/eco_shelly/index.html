@@ -146,6 +146,7 @@ body.lang-de .en{display:none}
 <tr><th>Force sending</th><td>Shelly mode only. Repeats the last answer over UDP even without a request. Some firmwares regulate better with a steady stream; most do not need it.</td></tr>
 </table>
 <p>The <b>To battery</b> row on the main page shows what actually leaves the device, after offset and shaping. Compare it with the raw power to see what the settings do.</p>
+<p>The same value is called <code>cpwr</code> outside the device. With <b>Send power2 + cpwr (MQTT)</b> in the <a href="../sml/#telemetry">telemetry</a> section on, it is published every 5&nbsp;s as <code>stat/&lt;topic&gt;/script/cpwr</code>, next to the smoothed grid power <code>power2</code> &mdash; in MQTT Explorer or Home Assistant under <b>stat &rarr; &lt;topic&gt; &rarr; script</b>. <code>/pwr</code> always carries it as well: <code>{…,"power2":-217,"cpwr":-180}</code>.</p>
 <p>The <b>3 phases</b> option lives in the meter settings, not here &mdash; it says whether your meter delivers per-phase power at all. With it on, the sample payloads below carry three real values instead of zeros in <code>powerPhase2</code>, <code>powerPhase3</code> and <code>b_act_power</code>, <code>c_act_power</code>. The total stays the netted meter value either way &mdash; that is what the battery regulates on.</p>
 </div>
 <div class="de">
@@ -156,6 +157,7 @@ body.lang-de .en{display:none}
 <tr><th>Senden erzwingen</th><td>Nur im Shelly-Modus. Wiederholt die letzte Antwort über UDP auch ohne Anfrage. Manche Firmware regelt mit einem stetigen Strom besser; die meisten brauchen es nicht.</td></tr>
 </table>
 <p>Die Zeile <b>An den Akku</b> auf der Hauptseite zeigt, was das Gerät tatsächlich verlässt &mdash; nach Offset und Formung. Im Vergleich mit der Rohleistung sieht man, was die Einstellungen bewirken.</p>
+<p>Außerhalb des Geräts heißt derselbe Wert <code>cpwr</code>. Ist im Abschnitt <a href="../sml/#telemetry">Telemetrie</a> <b>power2 + cpwr senden (MQTT)</b> an, geht er alle 5&nbsp;s als <code>stat/&lt;topic&gt;/script/cpwr</code> raus, neben der gemittelten Netzleistung <code>power2</code> &mdash; im MQTT Explorer bzw. in Home Assistant unter <b>stat &rarr; &lt;topic&gt; &rarr; script</b>. <code>/pwr</code> liefert ihn immer mit: <code>{…,"power2":-217,"cpwr":-180}</code>.</p>
 <p>Die Option <b>3 Phasen</b> steht im Abschnitt Zähler, nicht hier &mdash; sie sagt aus, ob der Zähler überhaupt Werte je Phase liefert. Ist sie an, tragen die Beispiel-Antworten weiter unten drei echte Werte statt Nullen in <code>powerPhase2</code>, <code>powerPhase3</code> sowie <code>b_act_power</code> und <code>c_act_power</code>. Der Gesamtwert bleibt in beiden Fällen der saldierte Zählerwert &mdash; darauf regelt der Akku.</p>
 </div>
 </section>
