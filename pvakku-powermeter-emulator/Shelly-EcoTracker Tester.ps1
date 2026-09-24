@@ -1,8 +1,8 @@
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-# --- Hauptfenster ---
-$appVersion = "v2026-09-05 08:42"
+# --- Main window ---
+$appVersion = "v2026-09-24"
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  UDP"
 $form.Size = New-Object System.Drawing.Size(780, 900)
@@ -13,7 +13,7 @@ $form.Font = New-Object System.Drawing.Font("Segoe UI", 9)
 $form.BackColor = [System.Drawing.Color]::FromArgb(30, 30, 30)
 $form.ForeColor = [System.Drawing.Color]::White
 
-# --- Farben ---
+# --- Colours ---
 $bgDark      = [System.Drawing.Color]::FromArgb(30, 30, 30)
 $bgField     = [System.Drawing.Color]::FromArgb(45, 45, 45)
 $bgButton    = [System.Drawing.Color]::FromArgb(60, 60, 60)
@@ -43,7 +43,7 @@ function New-StyledButton($text, $x, $y, $w, $h, $color) {
     return $btn
 }
 
-# ===================== Protokoll-Umschalter =====================
+# ===================== Protocol switch =====================
 $lblProto = New-StyledLabel "Protokoll:" 15 15 75 22
 $form.Controls.Add($lblProto)
 
@@ -83,7 +83,7 @@ $lblModeIndicator.ForeColor = $accent
 $lblModeIndicator.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Bold)
 $form.Controls.Add($lblModeIndicator)
 
-# ===================== Verbindungsbereich =====================
+# ===================== Connection =====================
 $lblHost = New-StyledLabel "Ziel-Host / IP:" 15 48 110 22
 $form.Controls.Add($lblHost)
 
@@ -104,7 +104,7 @@ $txtPort.BackColor = $bgField; $txtPort.ForeColor = $fgWhite
 $txtPort.BorderStyle = "FixedSingle"; $txtPort.Text = "1010"
 $form.Controls.Add($txtPort)
 
-# ===================== Anfrage-Bereich (UDP/HTTP) =====================
+# ===================== Request (UDP/HTTP) =====================
 $lblCmd = New-StyledLabel "UDP-Anfrage:" 15 85 110 22
 $form.Controls.Add($lblCmd)
 
@@ -119,7 +119,7 @@ $btnSend = New-StyledButton "Senden" 585 80 155 30 $accent
 $btnSend.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Bold)
 $form.Controls.Add($btnSend)
 
-# ===================== Vorgabe-Buttons (UDP) =====================
+# ===================== Presets (UDP/HTTP) =====================
 # Two drop-downs instead of the seven preset buttons there used to be. With the
 # EM Gen3 there are four devices and six RPC methods, and the same method needs
 # a different port per device - that no longer fits on a row of buttons, and a
@@ -141,7 +141,8 @@ $cmbDevice.FlatStyle = "Flat"
   "Shelly Pro 3EM (2220, B2500)",
   "Shelly Pro EM50 (2223)",
   "Shelly EM Gen3 (2222)",
-  "EcoTracker (HTTP)"
+  "EcoTracker (HTTP)",
+  "Tasmota SML /pwr (HTTP)"
 ))
 $cmbDevice.SelectedIndex = 0
 $form.Controls.Add($cmbDevice)
@@ -155,6 +156,8 @@ $cmbMethod.Size = New-Object System.Drawing.Size(160, 26)
 $cmbMethod.DropDownStyle = "DropDownList"
 $cmbMethod.BackColor = $bgField; $cmbMethod.ForeColor = $fgWhite
 $cmbMethod.FlatStyle = "Flat"
+# The /pwr?v= examples are longer than the box - the open list may be wider.
+$cmbMethod.DropDownWidth = 300
 $form.Controls.Add($cmbMethod)
 
 # UDP Listener Checkbox
@@ -166,10 +169,10 @@ $chkUdpListener.ForeColor = [System.Drawing.Color]::FromArgb(180, 130, 255)
 $chkUdpListener.FlatStyle = "Flat"
 $form.Controls.Add($chkUdpListener)
 
-# HTTP Keep-Alive Checkbox (nur im HTTP-Modus sichtbar, am selben Platz wie UDP Listener)
-# AUS  = Connection: close, Socket wird nach jeder Antwort geschlossen (sauber, Standard).
-# AN   = Connection: keep-alive, Verbindung bleibt offen -> simuliert Jackery/NOAH-Verhalten,
-#        das den Tasmota-Webserver-Slot dauerhaft belegt (zum Testen des "Haengens").
+# HTTP Keep-Alive checkbox (HTTP mode only, in the same place as the UDP Listener)
+# OFF = Connection: close, the socket is closed after every answer (clean, default).
+# ON  = Connection: keep-alive, the connection stays open -> simulates Jackery/NOAH,
+#       which keeps the Tasmota web server slot busy (to test the "hanging").
 $chkHttpKeepAlive = New-Object System.Windows.Forms.CheckBox
 $chkHttpKeepAlive.Text = "Keep-Alive"
 $chkHttpKeepAlive.Location = New-Object System.Drawing.Point(610, 120)
@@ -179,7 +182,7 @@ $chkHttpKeepAlive.FlatStyle = "Flat"
 $chkHttpKeepAlive.Visible = $false
 $form.Controls.Add($chkHttpKeepAlive)
 
-# ===================== Intervall-Bereich (UDP/HTTP) =====================
+# ===================== Interval (UDP/HTTP) =====================
 $lblInterval = New-StyledLabel "Intervall (Sek.):" 15 158 110 22
 $form.Controls.Add($lblInterval)
 
@@ -204,7 +207,7 @@ $lblIntervalStatus.Size = New-Object System.Drawing.Size(220, 22)
 $lblIntervalStatus.ForeColor = $fgGray; $lblIntervalStatus.Text = ""
 $form.Controls.Add($lblIntervalStatus)
 
-# ===================== Ping-Bereich (nur im Ping-Modus sichtbar) =====================
+# ===================== Ping (visible in ping mode only) =====================
 $lblPingInterval = New-StyledLabel "Ping-Intervall (Sek.):" 15 85 140 22
 $lblPingInterval.Visible = $false
 $form.Controls.Add($lblPingInterval)
@@ -237,7 +240,7 @@ $lblPingHint2 = New-StyledLabel "(0 = unendlich)" 225 120 200 22
 $lblPingHint2.Visible = $false
 $form.Controls.Add($lblPingHint2)
 
-# Ping-Optionen: Datei-Log und Nur-Fehler
+# Ping options: log to file, errors only
 $chkPingLogFile = New-Object System.Windows.Forms.CheckBox
 $chkPingLogFile.Text = "In Datei loggen"
 $chkPingLogFile.Location = New-Object System.Drawing.Point(450, 84)
@@ -276,7 +279,7 @@ $lblPingStatus.ForeColor = $fgGray; $lblPingStatus.Text = ""
 $lblPingStatus.Visible = $false
 $form.Controls.Add($lblPingStatus)
 
-# ===================== mDNS-Controls =====================
+# ===================== mDNS controls =====================
 $lblMdnsHint = New-Object System.Windows.Forms.Label
 $lblMdnsHint.Location = New-Object System.Drawing.Point(15, 84)
 $lblMdnsHint.Size = New-Object System.Drawing.Size(735, 40)
@@ -304,14 +307,14 @@ $lblMdnsStatus.ForeColor = $fgGray; $lblMdnsStatus.Text = ""
 $lblMdnsStatus.Visible = $false
 $form.Controls.Add($lblMdnsStatus)
 
-# ===================== Trennlinie =====================
+# ===================== Separator =====================
 $separator = New-Object System.Windows.Forms.Label
 $separator.Location = New-Object System.Drawing.Point(15, 190)
 $separator.Size = New-Object System.Drawing.Size(735, 1)
 $separator.BackColor = [System.Drawing.Color]::FromArgb(70, 70, 70)
 $form.Controls.Add($separator)
 
-# ===================== Antwort-Log =====================
+# ===================== Response log =====================
 $lblLog = New-StyledLabel "Antwort-Log:" 15 200 110 22
 $form.Controls.Add($lblLog)
 
@@ -327,7 +330,7 @@ $txtLog.BackColor = $bgField; $txtLog.ForeColor = [System.Drawing.Color]::FromAr
 $txtLog.Font = New-Object System.Drawing.Font("Consolas", 9.5)
 $form.Controls.Add($txtLog)
 
-# ===================== JSON-Anzeige =====================
+# ===================== JSON view =====================
 $lblJson = New-StyledLabel "JSON (formatiert):" 15 475 130 22
 $form.Controls.Add($lblJson)
 
@@ -343,7 +346,7 @@ $txtJson.BackColor = $bgField; $txtJson.ForeColor = [System.Drawing.Color]::From
 $txtJson.Font = New-Object System.Drawing.Font("Consolas", 9.5)
 $form.Controls.Add($txtJson)
 
-# ===================== Website-Link =====================
+# ===================== Website link =====================
 $linkLabel = New-Object System.Windows.Forms.LinkLabel
 $linkLabel.Text = "https://ottelo.jimdofree.com/"
 $linkLabel.Location = New-Object System.Drawing.Point(15, 778)
@@ -370,7 +373,7 @@ $timer.Enabled = $false
 $pingTimer = New-Object System.Windows.Forms.Timer
 $pingTimer.Enabled = $false
 
-# ===================== Ping-Statistik =====================
+# ===================== Ping statistics =====================
 $script:pingSent     = 0
 $script:pingReceived = 0
 $script:pingLost     = 0
@@ -381,7 +384,7 @@ $script:pingStartTime = $null
 $script:pingDurationSec = 0
 $script:pingLogFile  = $null
 
-# ===================== Log-Farben & Hilfsfunktionen =====================
+# ===================== Log colours & helpers =====================
 $colorGreen  = [System.Drawing.Color]::FromArgb(100, 255, 180)
 $colorRed    = [System.Drawing.Color]::FromArgb(255, 80, 80)
 $colorYellow = [System.Drawing.Color]::FromArgb(255, 220, 100)
@@ -407,14 +410,14 @@ function Process-Response([string]$response, [string]$timestamp, [string]$label,
     $isDuplicate = $false
     $firstJson = $null
 
-    # Zuerst pruefen ob es gueltiges einzelnes JSON ist
+    # First check whether it is one valid JSON object
     try {
         $jsonObj = $response | ConvertFrom-Json -ErrorAction Stop
         $firstJson = $jsonObj
     }
     catch {
-        # Kein gueltiges JSON - pruefen ob mehrere JSON-Objekte aneinandergereiht sind
-        # Suche nach }{ Pattern (Ende eines Objekts, Anfang des naechsten)
+        # Not valid JSON - check whether several JSON objects are concatenated
+        # Look for the }{ pattern (end of one object, start of the next)
         $idx = $response.IndexOf("}{")
         if ($idx -gt 0) {
             $firstPart = $response.Substring(0, $idx + 1)
@@ -427,7 +430,7 @@ function Process-Response([string]$response, [string]$timestamp, [string]$label,
     }
 
     if ($isDuplicate) {
-        # Doppeltes Paket: Log in Orange mit Hinweis
+        # Duplicate packet: log in orange with a note
         $logEntry = "[$timestamp]  $label`r`n[HINWEIS] Paket doppelt erhalten!`r`n$response`r`n" + ("-" * 80) + "`r`n"
         Write-Log $logEntry $colorOrange
     } else {
@@ -435,7 +438,7 @@ function Process-Response([string]$response, [string]$timestamp, [string]$label,
         Write-Log $logEntry $successColor
     }
 
-    # JSON-Anzeige (immer nur das erste gueltige Objekt)
+    # JSON view (always only the first valid object)
     if ($firstJson) {
         $formatted = $firstJson | ConvertTo-Json -Depth 20
         $dupHint = if ($isDuplicate) { "`r`n# HINWEIS: Paket doppelt erhalten - nur erstes JSON angezeigt" } else { "" }
@@ -446,11 +449,11 @@ function Process-Response([string]$response, [string]$timestamp, [string]$label,
     }
 }
 
-# ===================== UDP Listener Funktionen =====================
+# ===================== UDP listener functions =====================
 function Start-UdpListener {
     if ($script:udpListenerClient) { return }
     try {
-        # Persistenter Client - OS vergibt freien lokalen Port
+        # Persistent client - the OS picks a free local port
         $script:udpListenerClient = New-Object System.Net.Sockets.UdpClient(0)
         $script:udpListenerClient.Client.ReceiveBufferSize = 65535
         $localPort = ([System.Net.IPEndPoint]$script:udpListenerClient.Client.LocalEndPoint).Port
@@ -475,7 +478,7 @@ function Stop-UdpListener {
 
 function Poll-UdpListener {
     if (-not $script:udpListenerClient) { return }
-    if ($script:udpSending) { return }  # Nicht pollen waehrend aktivem Senden
+    if ($script:udpSending) { return }  # Do not poll while a send is in progress
     try {
         $remoteEP = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
         while ($script:udpListenerClient.Available -gt 0) {
@@ -490,11 +493,11 @@ function Poll-UdpListener {
 
             $response = [System.Text.Encoding]::UTF8.GetString($receiveBytes)
 
-            # Log in Lila
+            # Log in purple
             $logEntry = "[$timestamp]  LISTENER << Erzwungenes Paket vom Server erhalten ($($remoteEP.Address):$($remoteEP.Port), $($receiveBytes.Length) Bytes)`r`n$response`r`n" + ("-" * 80) + "`r`n"
             Write-Log $logEntry $colorPurple
 
-            # JSON-Anzeige (erstes gueltiges Objekt)
+            # JSON view (first valid object)
             $firstJson = $null
             try {
                 $firstJson = $response | ConvertFrom-Json -ErrorAction Stop
@@ -511,14 +514,14 @@ function Poll-UdpListener {
             }
         }
     }
-    catch { }  # Timeout oder kein Paket = normal
+    catch { }  # Timeout or no packet = normal
 }
 
 $udpListenerTimer.Add_Tick({ Poll-UdpListener })
 
 $script:udpSending = $false
 
-# ===================== UDP Sende-Funktion =====================
+# ===================== UDP send function =====================
 function Send-UDPRequest {
     $host_target = $txtHost.Text.Trim()
     $port_target = 0
@@ -538,7 +541,7 @@ function Send-UDPRequest {
     $statusLabel.Text = "UDP: Sende an ${host_target}:${port_target} ..."
     $form.Refresh()
 
-    # Listener-Modus: persistenten Client nutzen, sonst temporaeren erstellen
+    # Listener mode: use the persistent client, otherwise create a temporary one
     $useListener = ($script:udpListenerClient -ne $null)
     $udpClient = $null
 
@@ -561,13 +564,13 @@ function Send-UDPRequest {
         $remoteEP = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
 
         if ($useListener) {
-            # Listener-Modus: nur erstes echtes Paket nehmen, Rest faengt der Listener auf
+            # Listener mode: take only the first real packet, the listener catches the rest
             $receiveBytes = $null
             $attempts = 0
             while ($attempts -lt 10) {
                 $receiveBytes = $udpClient.Receive([ref]$remoteEP)
                 if ($receiveBytes.Length -gt 0) { break }
-                # Leeres Paket melden
+                # Report an empty packet
                 $tsEmpty = Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff"
                 $logEmpty = "[$tsEmpty]  UDP << Leeres Paket (0 Bytes) von $($remoteEP.Address):$($remoteEP.Port) erhalten!`r`n" + ("-" * 80) + "`r`n"
                 Write-Log $logEmpty $colorRed
@@ -575,7 +578,7 @@ function Send-UDPRequest {
             }
             $response = [System.Text.Encoding]::UTF8.GetString($receiveBytes)
         } else {
-            # Ohne Listener: alle Pakete innerhalb 500ms einsammeln
+            # Without listener: collect every packet that arrives within 500 ms
             $allBytes = New-Object System.IO.MemoryStream
             $receiveBytes = $udpClient.Receive([ref]$remoteEP)
             $allBytes.Write($receiveBytes, 0, $receiveBytes.Length)
@@ -613,7 +616,7 @@ function Send-UDPRequest {
     }
 }
 
-# ===================== HTTP GET Funktion =====================
+# ===================== HTTP GET function =====================
 function Send-HTTPRequest {
     $host_target = $txtHost.Text.Trim()
     $port_target = $txtPort.Text.Trim()
@@ -639,12 +642,12 @@ function Send-HTTPRequest {
     $form.Refresh()
 
     try {
-        # HttpWebRequest statt WebClient, damit das Keep-Alive-Verhalten steuerbar ist.
-        # Checkbox AUS (Standard): KeepAlive=$false -> "Connection: close", Socket wird
-        #   nach jeder Antwort via $resp.Close() geschlossen -> Tasmota-Slot frei, sauber.
-        # Checkbox AN: KeepAlive=$true -> Verbindung bleibt offen (simuliert Jackery/NOAH).
-        #   Der einzige Webserver-Slot des ESP32 bleibt belegt -> Geraet haengt, bis
-        #   dieses Script schliesst. Genau das Verhalten, das echte PV-Akkus ausloesen.
+        # HttpWebRequest instead of WebClient, so the keep-alive behaviour can be controlled.
+        # Checkbox OFF (default): KeepAlive=$false -> "Connection: close", the socket is
+        #   closed after every answer via $resp.Close() -> Tasmota slot free, clean.
+        # Checkbox ON: KeepAlive=$true -> the connection stays open (simulates Jackery/NOAH).
+        #   The ESP32's only web server slot stays busy -> the device hangs until this
+        #   script closes. Exactly the behaviour real PV batteries trigger.
         $useKeepAlive = $chkHttpKeepAlive.Checked
         $request = [System.Net.HttpWebRequest]::Create($url)
         $request.Method           = "GET"
@@ -659,8 +662,8 @@ function Send-HTTPRequest {
         $response = $reader.ReadToEnd()
         $reader.Close()
         $stream.Close()
-        # Bei KeepAlive=$false schliesst Close() den Socket; bei $true wandert die
-        # Verbindung zurueck in den Pool und bleibt offen (gewolltes Jackery-Sim).
+        # With KeepAlive=$false Close() closes the socket; with $true the connection
+        # goes back into the pool and stays open (the intended Jackery simulation).
         $resp.Close()
 
         $kaTag = if ($useKeepAlive) { "[keep-alive]" } else { "[close]" }
@@ -684,7 +687,7 @@ function Send-HTTPRequest {
     }
 }
 
-# ===================== Ping Funktion =====================
+# ===================== Ping function =====================
 function Send-SinglePing {
     $host_target = $txtHost.Text.Trim()
     if ([string]::IsNullOrEmpty($host_target)) { return }
@@ -730,14 +733,14 @@ function Send-SinglePing {
         $statusLabel.Text = "Ping #$($script:pingSent): Fehler  |  Verlust=${lossPercent}%"
     }
 
-    # In Datei loggen
+    # Log to file
     if ($script:pingLogFile -and $logLine) {
         if (-not $errorsOnly -or $isError) {
             Add-Content -Path $script:pingLogFile -Value $logLine -Encoding UTF8
         }
     }
 
-    # Dauer pruefen
+    # Check the duration
     if ($script:pingDurationSec -gt 0) {
         $elapsed = ((Get-Date) - $script:pingStartTime).TotalSeconds
         if ($elapsed -ge $script:pingDurationSec) {
@@ -757,7 +760,7 @@ function Stop-PingTest {
     $radioUDP.Enabled = $true
     $radioHTTP.Enabled = $true
 
-    # Zusammenfassung
+    # Summary
     $host_target = $txtHost.Text.Trim()
     $lossPercent = if ($script:pingSent -gt 0) { [math]::Round(($script:pingLost / $script:pingSent) * 100, 1) } else { 0 }
     $avgMs = if ($script:pingReceived -gt 0) { [math]::Round($script:pingTotalMs / $script:pingReceived, 1) } else { 0 }
@@ -772,7 +775,7 @@ function Stop-PingTest {
     $summary += ("=" * 80) + "`r`n"
     Write-Log $summary $colorYellow
 
-    # Zusammenfassung in Datei
+    # Summary to file
     if ($script:pingLogFile) {
         $fileSummary  = ""
         $fileSummary += ("=" * 80)
@@ -799,8 +802,8 @@ function Send-Request {
     elseif ($radioHTTP.Checked) { Send-HTTPRequest }
 }
 
-# ===================== Modus-Umschaltung =====================
-# Sammlung aller modusabhaengigen Controls
+# ===================== Mode switching =====================
+# All mode-dependent controls
 $udpHttpControls = @($lblCmd, $txtCommand, $btnSend,
     $lblDevice, $cmbDevice, $lblMethod, $cmbMethod,
     $chkUdpListener, $chkHttpKeepAlive,
@@ -813,11 +816,11 @@ $pingControls = @($lblPingInterval, $txtPingInterval, $lblPingHint1,
 
 $mdnsControls = @($lblMdnsHint, $chkMdnsAll, $btnMdnsScan, $lblMdnsStatus)
 
-# ===================== mDNS-Pruefer =====================
-# Warum ein eigener Socket und nicht Port 5353: den haelt unter Windows der
-# eigene mDNS-Dienst, ein zweiter Bind bekommt dort keine Pakete geliefert.
-# Stattdessen von einem freien Port fragen und im Query das "unicast response"-
-# Bit setzen (QCLASS 0x8001) - die Antwort kommt dann direkt zurueck.
+# ===================== mDNS checker =====================
+# Why a socket of our own and not port 5353: on Windows the system's own mDNS
+# service holds it, and a second bind there is not handed any packets.
+# Instead ask from a free port and set the "unicast response" bit in the query
+# (QCLASS 0x8001) - the answer then comes straight back.
 
 function New-MdnsQuery([string]$name) {
     $ms = New-Object System.IO.MemoryStream
@@ -830,12 +833,12 @@ function New-MdnsQuery([string]$name) {
     }
     $w.Write([byte]0)
     $w.Write([byte]0); $w.Write([byte]12)                 # QTYPE = PTR
-    $w.Write([byte]0x80); $w.Write([byte]0x01)            # QCLASS IN + Unicast-Antwort
+    $w.Write([byte]0x80); $w.Write([byte]0x01)            # QCLASS IN + unicast response
     $w.Flush()
     ,$ms.ToArray()
 }
 
-# DNS-Namen benutzen Komprimierungszeiger; denen folgen, mit Schleifenschutz.
+# DNS names use compression pointers; follow them, with a loop guard.
 function Read-DnsName([byte[]]$buf, [ref]$pos) {
     $parts = @(); $p = $pos.Value; $jumped = $false; $guard = 0
     while ($true) {
@@ -873,7 +876,7 @@ function Read-MdnsRecords([byte[]]$buf) {
         $type  = ($buf[$p] -shl 8) -bor $buf[$p+1]
         $rdlen = ($buf[$p+8] -shl 8) -bor $buf[$p+9]
         $p += 10
-        $rdStart = $p                      # merken: die [ref] unten verschiebt ihre eigene Kopie
+        $rdStart = $p                      # remember: the [ref] below moves its own copy
         if ($rdStart + $rdlen -gt $buf.Length) { break }
         $val = ""
         switch ($type) {
@@ -896,9 +899,9 @@ function Read-MdnsRecords([byte[]]$buf) {
     ,$out
 }
 
-# Die lokale IP heraussuchen, ueber die das LAN erreichbar ist. Ein Rechner mit
-# Hyper-V, WLAN und Kabel hat oft mehrere 169.254-Adapter, und Windows schickt
-# den Multicast sonst womoeglich ueber einen davon - die Anfrage kommt dann nie an.
+# Find the local IP the LAN is reachable through. A PC with Hyper-V, WiFi and
+# cable often has several 169.254 adapters, and Windows might otherwise send the
+# multicast out through one of them - the query then never arrives.
 function Get-MdnsLocalIp([string]$peer) {
     $cands = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
                Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' })
@@ -931,7 +934,7 @@ function Invoke-MdnsScan([string[]]$services, [int]$waitMs, [string]$localIp) {
                 try { $n = $sock.ReceiveFrom($buf, [ref]$ep) } catch { continue }
                 if ($n -le 0) { continue }
                 $from = ([System.Net.IPEndPoint]$ep).Address.ToString()
-                if ($from -eq $localIp) { continue }        # eigene Anfrage, zurueckgespiegelt
+                if ($from -eq $localIp) { continue }        # our own query, echoed back
                 $pkt = New-Object byte[] $n; [Array]::Copy($buf, $pkt, $n)
                 foreach ($rec in (Read-MdnsRecords $pkt)) {
                     $rec | Add-Member -NotePropertyName From -NotePropertyValue $from
@@ -1000,12 +1003,33 @@ function Invoke-MdnsCheck {
     $btnMdnsScan.Enabled = $true
 }
 
+# The TinyC SML programs (ottelo) answer on /pwr. Plain /pwr is the telemetry
+# JSON, /pwr?v=... reads chosen values the way the Scripter's script?... did -
+# names separated by ";", ?v=all for everything, arrays come back as JSON arrays.
+# ?v= needs a chart program (sml_chart*), plain /pwr works in all of them.
+$pwrExamples = @(
+  "/pwr",
+  "/pwr?v=all",
+  "/pwr?v=sml[1]",
+  "/pwr?v=sml1;sml2;sml3",
+  "/pwr?v=power2",
+  "/pwr?v=dval;wval;mval;yval",
+  "/pwr?v=dval2;wval2;mval2;yval2",
+  "/pwr?v=dcon",
+  "/pwr?v=wcon",
+  "/pwr?v=mcon",
+  "/pwr?v=dprod;wprod;mprod",
+  "/pwr?v=sml[1];yval;dcon"
+)
+
 # Which methods the selected device actually answers. Anything else would just
 # produce a timeout and look like a fault.
 function Set-MethodList {
     $sel = [string]$cmbMethod.SelectedItem
     $cmbMethod.Items.Clear()
-    if ($cmbDevice.SelectedIndex -eq 4) {
+    if ($cmbDevice.SelectedIndex -eq 5) {
+        [void]$cmbMethod.Items.AddRange($pwrExamples)
+    } elseif ($cmbDevice.SelectedIndex -eq 4) {
         [void]$cmbMethod.Items.Add("/v1/json")
     } else {
         [void]$cmbMethod.Items.Add("Shelly.GetStatus")
@@ -1025,14 +1049,14 @@ function Set-MethodList {
 }
 
 function Update-ModeUI {
-    # Listener stoppen bei Moduswechsel
+    # Stop the listener on a mode change
     if ($chkUdpListener.Checked -and -not $radioUDP.Checked) {
         $chkUdpListener.Checked = $false
         Stop-UdpListener
     }
 
     if ($radioPing.Checked) {
-        # Ping-Modus: UDP/HTTP Controls ausblenden
+        # Ping mode: hide the UDP/HTTP controls
         foreach ($c in $udpHttpControls) { $c.Visible = $false }
         $lblPort.Visible = $false; $txtPort.Visible = $false
         foreach ($c in $pingControls) { $c.Visible = $true }
@@ -1043,7 +1067,7 @@ function Update-ModeUI {
         $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  Ping"
     }
     elseif ($radioMdns.Checked) {
-        # mDNS-Modus: alles andere ausblenden, nur Suchen-Knopf zeigen
+        # mDNS mode: hide everything else, show only the search button
         foreach ($c in $udpHttpControls) { $c.Visible = $false }
         foreach ($c in $pingControls)    { $c.Visible = $false }
         $lblPort.Visible = $false; $txtPort.Visible = $false
@@ -1054,12 +1078,12 @@ function Update-ModeUI {
         $form.Text = "ottelo.jimdo.de - Shelly/EcoTracker Tester $appVersion  -  mDNS"
     }
     else {
-        # UDP/HTTP: Ping-Controls ausblenden
+        # UDP/HTTP: hide the ping controls
         foreach ($c in $pingControls) { $c.Visible = $false }
         foreach ($c in $mdnsControls) { $c.Visible = $false }
         $lblPort.Visible = $true; $txtPort.Visible = $true
 
-        # Basis-Controls einblenden
+        # Show the base controls
         $lblCmd.Visible = $true; $txtCommand.Visible = $true; $btnSend.Visible = $true
         $lblDevice.Visible = $true
         $lblInterval.Visible = $true; $txtInterval.Visible = $true
@@ -1100,7 +1124,7 @@ $radioPing.Add_CheckedChanged({ Update-ModeUI })
 $radioMdns.Add_CheckedChanged({ Update-ModeUI })
 $btnMdnsScan.Add_Click({ Invoke-MdnsCheck })
 
-# ===================== Event-Handler =====================
+# ===================== Event handlers =====================
 
 $btnSend.Add_Click({ Send-Request })
 
@@ -1108,7 +1132,7 @@ $txtCommand.Add_KeyDown({
     if ($_.KeyCode -eq "Return") { Send-Request; $_.SuppressKeyPress = $true }
 })
 
-# Vorgabe-Buttons
+# Presets
 # Picking a device sets the port and re-fills the method list - the EcoTracker
 # speaks no RPC at all, the Gen3 answers three methods the others do not have.
 $cmbDevice.Add_SelectedIndexChanged({
@@ -1121,6 +1145,12 @@ $cmbDevice.Add_SelectedIndexChanged({
             4 { $txtPort.Text = "80"   }
         }
     }
+    # /pwr is HTTP only - switch the mode instead of leaving a path in the UDP
+    # request field. Update-ModeUI refills the method list itself.
+    if ($cmbDevice.SelectedIndex -eq 5 -and -not $radioHTTP.Checked) {
+        $radioHTTP.Checked = $true
+        return
+    }
     Set-MethodList
 })
 
@@ -1131,8 +1161,8 @@ $cmbMethod.Add_SelectedIndexChanged({
     if ($m -eq "") { return }
     if ($radioUDP.Checked) {
         $txtCommand.Text = $m
-    } elseif ($m -eq "/v1/json") {
-        $txtCommand.Text = "/v1/json"
+    } elseif ($m -eq "/v1/json" -or $m.StartsWith("/pwr")) {
+        $txtCommand.Text = $m
     } else {
         $txtCommand.Text = "/rpc/$m"
     }
@@ -1141,7 +1171,7 @@ $cmbMethod.Add_SelectedIndexChanged({
 $btnClearLog.Add_Click({ $txtLog.Text = ""; $statusLabel.Text = "Log geleert." })
 $btnClearJson.Add_Click({ $txtJson.Text = "" })
 
-# UDP Listener ein/aus
+# UDP listener on/off
 $chkUdpListener.Add_CheckedChanged({
     if ($chkUdpListener.Checked) {
         Start-UdpListener
@@ -1150,7 +1180,7 @@ $chkUdpListener.Add_CheckedChanged({
     }
 })
 
-# Intervall starten (UDP/HTTP)
+# Start the interval (UDP/HTTP)
 $btnStartInterval.Add_Click({
     $intervalSec = 0
     if (-not [int]::TryParse($txtInterval.Text.Trim(), [ref]$intervalSec) -or $intervalSec -lt 1) {
@@ -1171,7 +1201,7 @@ $btnStartInterval.Add_Click({
     Send-Request
 })
 
-# Intervall stoppen (UDP/HTTP)
+# Stop the interval (UDP/HTTP)
 $btnStopInterval.Add_Click({
     $timer.Enabled = $false
     $btnStartInterval.Enabled = $true
@@ -1187,7 +1217,7 @@ $btnStopInterval.Add_Click({
 
 $timer.Add_Tick({ Send-Request })
 
-# Ping starten
+# Start ping
 $btnPingStart.Add_Click({
     $host_target = $txtHost.Text.Trim()
     if ([string]::IsNullOrEmpty($host_target)) {
@@ -1207,13 +1237,13 @@ $btnPingStart.Add_Click({
         return
     }
 
-    # Statistik zuruecksetzen
+    # Reset the statistics
     $script:pingSent = 0; $script:pingReceived = 0; $script:pingLost = 0
     $script:pingMinMs = [double]::MaxValue; $script:pingMaxMs = 0; $script:pingTotalMs = 0
     $script:pingStartTime = Get-Date
     $script:pingDurationSec = $durationSec
 
-    # Log-Datei erstellen
+    # Create the log file
     if ($chkPingLogFile.Checked) {
         $dateStr = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
         $script:pingLogFile = [System.IO.Path]::Combine(
@@ -1251,23 +1281,23 @@ $btnPingStart.Add_Click({
     }
 
     if ($pingIntervalSec -eq 0) {
-        $pingTimer.Interval = 100  # ~100ms = so schnell wie moeglich mit GUI-Refresh
+        $pingTimer.Interval = 100  # ~100 ms = as fast as possible while the GUI stays responsive
     } else {
         $pingTimer.Interval = $pingIntervalSec * 1000
     }
     $pingTimer.Enabled = $true
     $statusLabel.Text = "Ping laeuft: $host_target ..."
 
-    # Ersten Ping sofort senden
+    # Send the first ping right away
     Send-SinglePing
 })
 
-# Ping stoppen
+# Stop ping
 $btnPingStop.Add_Click({ Stop-PingTest })
 
 $pingTimer.Add_Tick({ Send-SinglePing })
 
-# Aufraeumen
+# Clean up
 $form.Add_FormClosing({
     $timer.Enabled = $false; $timer.Dispose()
     $pingTimer.Enabled = $false; $pingTimer.Dispose()
@@ -1275,7 +1305,7 @@ $form.Add_FormClosing({
     if ($script:udpListenerClient) { try { $script:udpListenerClient.Close() } catch { } }
 })
 
-# ===================== Anzeige =====================
+# ===================== Show =====================
 # Fill the method list once before the window opens - Set-MethodList otherwise
 # runs only on a mode change, and the drop-down would start empty.
 Set-MethodList

@@ -76,7 +76,7 @@ void WebOn() {
     } else {
         strcpy(sml_buf, "{\"enabled\":0}");
     }
-    webSend(sml_buf);
+    smlSendJson(sml_buf);
 }
 
 void WebCall() {

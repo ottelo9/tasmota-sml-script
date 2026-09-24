@@ -133,11 +133,15 @@ int sml_hr_last;                // last seen tasm_hour (midnight edge detect)
 // Layout, raw float32 little-endian, no header:
 //   s4h 481 | s24h 1441 | dcon 31 | mcon 12          = 1965  (as before)
 //   + dval | mval | yval | da                        = 1969  (optional)
+//   + wval | wcon 53                                 = 2023  (optional)
 // and for the feed-in file:
 //   dprod 31 | mprod 12                              =   43  (as before)
 //   + dval2 | mval2 | yval2                          =   46  (optional)
-// The baseline block is read only if it is actually there, so a 1965-value
-// file from an older editor still imports exactly as it used to.
+//   + wval2 | wprod 53                               =  100  (optional)
+// Each block is read only if it is actually there, so a 1965-value file from
+// an older editor still imports exactly as it used to. The week block sits
+// behind the baselines and needs them: the converter writes it for
+// 2_SML_Chart_PV3.tas, the only Scripter script with weekly bars.
 #ifndef CHART_CSV_DEC
 #define CHART_CSV_DEC 3
 #endif
@@ -183,6 +187,10 @@ void sml_chart_load() {
         sml_mval = base[1];
         sml_yval = base[2];
         sml_da   = (int)base[3];
+        if (fileReadBin(h, base, 1) == 1) {     // optional week block
+            sml_wval = base[0];
+            fileReadBin(h, sml_wcon, 53);
+        }
     }
     fileClose(h);
     saveVars();                                 // the .pvs rules from here on
@@ -650,6 +658,10 @@ void sml_chart_pv_load() {
         sml_dval2 = base[0];
         sml_mval2 = base[1];
         sml_yval2 = base[2];
+        if (fileReadBin(h, base, 1) == 1) {     // optional week block
+            sml_wval2 = base[0];
+            fileReadBin(h, sml_wprod, 53);
+        }
     }
     fileClose(h);
     saveVars();

@@ -86,6 +86,8 @@ body.lang-de .en{display:none}
 <p>The layout is detected from the line and column counts, so you do not have to say which script wrote it.</p>
 <p><b>No data.csv on the old device?</b> An ESP8266 with 1&nbsp;MB flash has no file system, so its Scripter never wrote one. Then take path <b>a)</b> in the tool: the bars live in the running script's memory, and one clicked link reads them out as JSON &mdash; paste the answer and press <i>Balken übernehmen</i> (take over bars):</p>
 <pre><code>http://&lt;ip&gt;/cm?cmnd=script%3Fdcon%3Bdprod%3Bmcon</code></pre>
+<p>From <code>2_SML_Chart_PV3</code>, fetch the weekly bars as well and paste that answer too &mdash; it has its own link because bars and weeks together would overflow the answer. The answers are collected, in any order:</p>
+<pre><code>http://&lt;ip&gt;/cm?cmnd=script%3Fwcon%3Bwprod</code></pre>
 <p>Whether the script has feed-in is recognised from the answer: <code>dprod</code> present and <code>mcon</code> with 24 values, or <code>dprod</code> as <code>"???"</code> and <code>mcon</code> with 12. Two limits: <b>do not restart the old device first</b> &mdash; without a file system the bars are gone after a restart &mdash; and the 24&nbsp;h curve does not come through this way (1441 values overflow the answer, the device replies <code>"???"</code>), so it stays empty.</p>
 </div>
 <div class="de">
@@ -93,6 +95,8 @@ body.lang-de .en{display:none}
 <p>Das Layout wird an den Zeilen- und Spaltenzahlen erkannt, du musst also nicht angeben, welches Script sie geschrieben hat.</p>
 <p><b>Keine data.csv auf dem alten Gerät?</b> Ein ESP8266 mit 1&nbsp;MB Flash hat kein Dateisystem, sein Scripter hat also nie eine geschrieben. Dann im Werkzeug Weg <b>a)</b> nehmen: die Balken liegen im Arbeitsspeicher des laufenden Scripts, und ein angeklickter Link liest sie als JSON aus &mdash; Antwort einfügen, <i>Balken übernehmen</i> drücken:</p>
 <pre><code>http://&lt;ip&gt;/cm?cmnd=script%3Fdcon%3Bdprod%3Bmcon</code></pre>
+<p>Bei <code>2_SML_Chart_PV3</code> zusätzlich die Wochenbalken holen und diese Antwort ebenfalls einfügen &mdash; sie haben einen eigenen Link, weil Balken und Wochen zusammen die Antwort sprengen würden. Die Antworten werden gesammelt, die Reihenfolge ist egal:</p>
+<pre><code>http://&lt;ip&gt;/cm?cmnd=script%3Fwcon%3Bwprod</code></pre>
 <p>Ob das Script Einspeisung hat, wird an der Antwort erkannt: <code>dprod</code> vorhanden und <code>mcon</code> mit 24 Werten, oder <code>dprod</code> als <code>"???"</code> und <code>mcon</code> mit 12. Zwei Grenzen: <b>das alte Gerät vorher nicht neu starten</b> &mdash; ohne Dateisystem sind die Balken danach weg &mdash; und der 24-h-Verlauf kommt so nicht mit (1441 Werte sprengen die Antwort, das Gerät meldet <code>"???"</code>), er bleibt leer.</p>
 </div>
 
@@ -102,30 +106,41 @@ body.lang-de .en{display:none}
 <pre><code>sml_dcon[today] = meter reading &minus; sml_dval</code></pre>
 <p>and with <code>sml_dval</code> at 0 that puts the <b>whole meter reading</b> into today's bar &mdash; it shoots up to something like 45,000 kWh and squashes the entire imported history onto the zero line.</p>
 <p>Click the generated link (the IP is entered in step 1), copy the answer back into the field. A link you <i>click</i> is a normal navigation, so the same-origin rule that blocks a <code>fetch</code> from a local file does not apply &mdash; no <code>USE_CORS</code> needed.</p>
-<pre><code>http://&lt;ip&gt;/cm?cmnd=script%3Fdval%3Bmval%3Byval%3Bda
-http://&lt;ip&gt;/cm?cmnd=script%3Fdval2%3Bmval2%3Byval2</code></pre>
+<pre><code>http://&lt;ip&gt;/cm?cmnd=script%3Fdval%3Bmval%3Byval%3Bda%3Bwval
+http://&lt;ip&gt;/cm?cmnd=script%3Fdval2%3Bmval2%3Byval2%3Bwval2%3Bsml3</code></pre>
+<p>Three fields are optional and stay empty for most scripts &mdash; the device answers <code>"???"</code> for a variable the script does not have, which is harmless:</p>
+<ul>
+<li><code>wval</code> / <code>wval2</code> &mdash; the week zero points, only in <code>2_SML_Chart_PV3</code>. Left empty, today's zero point is used: the running week then counts from today.</li>
+<li><code>sml3</code> &mdash; the computed export counter of <code>3_SML_Chart_PV_Bezugszaehler</code>. It goes into the <code>tc_options.cfg</code> as <code>exp_virt</code> and switches the <b>Import meter</b> option on, so the new device carries on counting from the same reading.</li>
+</ul>
 <p>Typing these by hand: keep <code>%3F</code> and <code>%3B</code> encoded. With a plain <code>;</code> the device answers with the first variable only &mdash; <code>{"script":{"dval":26714.37}}</code> &mdash; and the baselines stay incomplete.</p>
-<p>Leave the fields empty and no baselines are written. Then press <i>Reset day/month/year consumption</i> once on the device: the history survives, only the running day and month start at 0.</p>
+<p>Leave the fields empty and no baselines are written. Then press <i>&#x1F522; Reset</i> (Reset counters) once on the device: the history survives, only the running day and month start at 0.</p>
 </div>
 <div class="de">
 <p><code>dval</code>, <code>mval</code>, <code>yval</code> und die Einspeise-Zwillinge sind die Zähler-Nullpunkte. Im Scripter sind das <code>p:</code>-Variablen in den Tasmota-Einstellungen und stehen deshalb <b>nicht</b> in der <code>data.csv</code>. Ohne sie rechnet das Programm jeden laufenden Balken als</p>
 <pre><code>sml_dcon[heute] = Zählerstand &minus; sml_dval</code></pre>
 <p>und bei <code>sml_dval</code> = 0 landet der <b>komplette Zählerstand</b> im heutigen Balken &mdash; der schießt auf z.&nbsp;B. 45.000 kWh hoch und drückt die ganze importierte Historie auf die Nulllinie.</p>
 <p>Auf den erzeugten Link klicken (die IP steht in Schritt 1), die Antwort ins Feld zurückkopieren. Ein <i>angeklickter</i> Link ist eine normale Navigation &mdash; die Same-Origin-Sperre, die ein <code>fetch</code> aus einer lokalen Datei blockiert, greift dort nicht. Es braucht also kein <code>USE_CORS</code>.</p>
-<pre><code>http://&lt;ip&gt;/cm?cmnd=script%3Fdval%3Bmval%3Byval%3Bda
-http://&lt;ip&gt;/cm?cmnd=script%3Fdval2%3Bmval2%3Byval2</code></pre>
+<pre><code>http://&lt;ip&gt;/cm?cmnd=script%3Fdval%3Bmval%3Byval%3Bda%3Bwval
+http://&lt;ip&gt;/cm?cmnd=script%3Fdval2%3Bmval2%3Byval2%3Bwval2%3Bsml3</code></pre>
+<p>Drei Felder sind optional und bleiben bei den meisten Scripten leer &mdash; für eine Variable, die das Script nicht hat, antwortet das Gerät mit <code>"???"</code>, das schadet nicht:</p>
+<ul>
+<li><code>wval</code> / <code>wval2</code> &mdash; die Wochen-Nullpunkte, nur in <code>2_SML_Chart_PV3</code>. Bleiben sie leer, wird der Tages-Nullpunkt genommen: die laufende Woche zählt dann ab heute.</li>
+<li><code>sml3</code> &mdash; der gerechnete Einspeisezähler aus <code>3_SML_Chart_PV_Bezugszaehler</code>. Er kommt als <code>exp_virt</code> in die <code>tc_options.cfg</code> und schaltet die Option <b>Bezugszähler</b> ein, damit das neue Gerät beim selben Stand weiterzählt.</li>
+</ul>
 <p>Wer die Links von Hand eintippt: <code>%3F</code> und <code>%3B</code> kodiert lassen. Mit einem einfachen <code>;</code> antwortet das Gerät nur mit der ersten Variable &mdash; <code>{"script":{"dval":26714.37}}</code> &mdash; und die Basiswerte bleiben unvollständig.</p>
-<p>Bleiben die Felder leer, werden keine Basiswerte geschrieben. Dann auf dem Gerät einmal <i>Tages/Monats/Jahres-Verbrauchswerte zurücksetzen</i> drücken: die Historie bleibt, nur der laufende Tag und Monat fangen bei 0 an.</p>
+<p>Bleiben die Felder leer, werden keine Basiswerte geschrieben. Dann auf dem Gerät einmal <i>&#x1F522; Reset</i> (Zählerwerte zurücksetzen) drücken: die Historie bleibt, nur der laufende Tag und Monat fangen bei 0 an.</p>
 </div>
 
 <h3><span class="en">3 &middot; Download</span><span class="de">3 &middot; Herunterladen</span></h3>
 <div class="en">
 <p>Only now &mdash; that way the baselines from step 2 are inside.</p>
 <table>
-<tr><th>File</th><th>Contents</th><th>without</th><th>with baselines</th></tr>
-<tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td><b>1969</b></td></tr>
-<tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td><b>46</b></td></tr>
+<tr><th>File</th><th>Contents</th><th>without</th><th>with baselines</th><th>+ weeks (PV3)</th></tr>
+<tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td><b>1969</b></td><td>2023</td></tr>
+<tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td><b>46</b></td><td>100</td></tr>
 </table>
+<p>The week block (<code>wval</code> + 53 weeks) sits behind the baselines and is only written together with them.</p>
 <p>Raw 4-byte little-endian <code>float32</code>, no header &mdash; including the two <code>int16</code> rings, which <code>sml_chart_imp16()</code> converts while reading. A script without feed-in produces only <code>sml_chart.bin</code>: 43 zeros would wipe a feed-in history that is already on the device.</p>
 <p><b>And the <code>tc_options.cfg</code> &mdash; always.</b> The TinyC programs share this file, and on their first tick it <b>wins over the imported values</b>:</p>
 <pre><code>sml_dval = tcOptGetF(0, sml_dval);   // sml_chart.tc, first tick</code></pre>
@@ -135,10 +150,11 @@ http://&lt;ip&gt;/cm?cmnd=script%3Fdval2%3Bmval2%3Byval2</code></pre>
 <div class="de">
 <p>Erst hier &mdash; so sind die Basiswerte aus Schritt 2 mit drin.</p>
 <table>
-<tr><th>Datei</th><th>Inhalt</th><th>ohne</th><th>mit Basiswerten</th></tr>
-<tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td><b>1969</b></td></tr>
-<tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td><b>46</b></td></tr>
+<tr><th>Datei</th><th>Inhalt</th><th>ohne</th><th>mit Basiswerten</th><th>+ Wochen (PV3)</th></tr>
+<tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td><b>1969</b></td><td>2023</td></tr>
+<tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td><b>46</b></td><td>100</td></tr>
 </table>
+<p>Der Wochenblock (<code>wval</code> + 53 Wochen) steht hinter den Basiswerten und wird nur zusammen mit ihnen geschrieben.</p>
 <p>Rohe 4-Byte-Little-Endian-<code>float32</code>, kein Kopf &mdash; auch für die beiden <code>int16</code>-Ringe, die <code>sml_chart_imp16()</code> beim Lesen umwandelt. Ein Script ohne Einspeisung erzeugt nur <code>sml_chart.bin</code>: 43 Nullen würden eine schon vorhandene Einspeise-Historie löschen.</p>
 <p><b>Dazu die <code>tc_options.cfg</code> &mdash; immer.</b> Die TinyC-Programme teilen sich diese Datei, und beim ersten Tick <b>gewinnt sie gegen die importierten Werte</b>:</p>
 <pre><code>sml_dval = tcOptGetF(0, sml_dval);   // sml_chart.tc, erster Tick</code></pre>
@@ -158,7 +174,7 @@ http://&lt;ip&gt;/cm?cmnd=script%3Fdval2%3Bmval2%3Byval2</code></pre>
 <tr><td><code>1_SML_Chart.tas</code></td><td>4</td><td>481 / 1441 / 31 / 12</td><td><span class="en">no feed-in</span><span class="de">ohne Einspeisung</span></td></tr>
 <tr><td><code>2_SML_Chart_PV.tas</code>, <code>_PV_Modbus</code>, <code>3_…_Bezugszaehler</code></td><td>5</td><td>481 / 1441 / 31 / 31 / 24</td><td></td></tr>
 <tr><td><code>2_SML_Chart_PV2.tas</code></td><td>5</td><td>721 / 1441 / 31 / 31 / 24</td><td><span class="en">1 h curve at 5 s, zeroed like the 4 h one</span><span class="de">1-h-Verlauf à 5 s, wird genullt wie der 4-h-Verlauf</span></td></tr>
-<tr><td><code>2_SML_Chart_PV3.tas</code></td><td>7</td><td>… + 53 / 53</td><td><span class="en">weekly bars dropped &mdash; TinyC has none</span><span class="de">Wochenbalken entfallen &mdash; TinyC hat keine</span></td></tr>
+<tr><td><code>2_SML_Chart_PV3.tas</code></td><td>7</td><td>… + 53 / 53</td><td><span class="en">weekly bars carried over</span><span class="de">Wochenbalken werden übernommen</span></td></tr>
 <tr><td><code>4_SML_Chart_PV_no_4h24h.tas</code></td><td>3</td><td>31 / 31 / 24</td><td><span class="en">4 h/24 h zeroed</span><span class="de">4 h/24 h werden genullt</span></td></tr>
 <tr><td><code>5_SteckdoseLeistungsmesser_1</code> / <code>_2</code>, <code>6_SML_Wasseruhr</code></td><td>4</td><td>481 <span class="en">(or</span><span class="de">(bzw.</span> 721) / 1441 / 31 / 12</td><td><span class="en">same shape, but no TinyC counterpart</span><span class="de">gleiche Form, aber kein TinyC-Gegenstück</span></td></tr>
 </table>
@@ -174,9 +190,9 @@ http://&lt;ip&gt;/cm?cmnd=script%3Fdval2%3Bmval2%3Byval2</code></pre>
 <li>Upload the files: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload &mdash; <code>tc_options.cfg</code> <b>always</b>, plus the <code>.bin</code> file(s) if there are any. The existing <code>tc_options.cfg</code> is overwritten.</li>
 <li>Start the slot: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; the green &#x25B6;</li>
 </ol>
-<p>If the slot is still running while you upload, <code>saveVars()</code> rewrites the <code>.pvs</code> before the <code>.bin</code> is read. The program imports the <code>.bin</code> <b>once</b>, writes it into the <code>.pvs</code> and then <b>deletes it</b> &mdash; the file being gone is the "already imported" marker. The log then says:</p>
-<pre><code>sml_chart: .bin carried baselines
-sml_chart: imported .bin into .pvs, /sml_chart.bin deleted</code></pre>
+<p>If the slot is still running while you upload, <code>saveVars()</code> rewrites the <code>.pvs</code> before the <code>.bin</code> is read. The program imports the <code>.bin</code> <b>once</b>, writes it into the <code>.pvs</code> and then <b>deletes it</b> &mdash; the file being gone is the "already imported" marker. The log then says (the second line only with feed-in):</p>
+<pre><code>chart: .bin imported
+pv: .bin imported</code></pre>
 </div>
 <div class="de">
 <ol>
@@ -184,9 +200,9 @@ sml_chart: imported .bin into .pvs, /sml_chart.bin deleted</code></pre>
 <li>Dateien hochladen: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload &mdash; <code>tc_options.cfg</code> <b>immer</b>, dazu die <code>.bin</code>-Datei(en), falls es welche gibt. Die vorhandene <code>tc_options.cfg</code> wird überschrieben.</li>
 <li>Slot starten: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das grüne &#x25B6;</li>
 </ol>
-<p>Läuft der Slot beim Hochladen noch, schreibt <code>saveVars()</code> die <code>.pvs</code> neu, bevor die <code>.bin</code> gelesen wird. Das Programm importiert die <code>.bin</code> <b>einmal</b>, schreibt sie in die <code>.pvs</code> und <b>löscht sie danach</b> &mdash; dass die Datei weg ist, ist die Markierung „schon importiert". Im Log steht dann:</p>
-<pre><code>sml_chart: .bin carried baselines
-sml_chart: imported .bin into .pvs, /sml_chart.bin deleted</code></pre>
+<p>Läuft der Slot beim Hochladen noch, schreibt <code>saveVars()</code> die <code>.pvs</code> neu, bevor die <code>.bin</code> gelesen wird. Das Programm importiert die <code>.bin</code> <b>einmal</b>, schreibt sie in die <code>.pvs</code> und <b>löscht sie danach</b> &mdash; dass die Datei weg ist, ist die Markierung „schon importiert". Im Log steht dann (die zweite Zeile nur mit Einspeisung):</p>
+<pre><code>chart: .bin imported
+pv: .bin imported</code></pre>
 </div>
 </section>
 
@@ -197,14 +213,16 @@ sml_chart: imported .bin into .pvs, /sml_chart.bin deleted</code></pre>
 <p><b>The 24 h curve</b>, also exactly. The Scripter indexes it by minute of the day (<code>s24h[0]=hours*60+mins</code>) and so does TinyC (<code>sml_s24h[hour*60+minute]</code>), and the program recomputes the ring position from the clock on every tick.</p>
 <p><b>The 4 h curve is not carried over</b> &mdash; it is written as zeros. In the TinyC programs this is a short-term chart with a selectable range (15&nbsp;min to 4&nbsp;h, 180 or 240 slots of 5 to 60&nbsp;s) and a free-running cursor. The Scripter's 480 values of 30&nbsp;s cannot be placed in it at the right time; they would show up as a plausible-looking wrong chart. It fills up again within its range.</p>
 <p><b>The baselines</b>, provided the <code>tc_options.cfg</code> goes up as well &mdash; see step 3. Check afterwards: <i>Import day</i> on the main page has to match the old device.</p>
-<p><code>wval</code> / <code>wval2</code> (weekly values from <code>2_SML_Chart_PV3</code>) have no counterpart in <code>sml_chart_common.tc</code> and are dropped.</p>
+<p><b>The weekly bars</b> from <code>2_SML_Chart_PV3</code> (<code>wcon</code> / <code>wprod</code>, ISO weeks 1&ndash;53), 1:1 like the day bars, together with their zero points <code>wval</code> / <code>wval2</code>. The other scripts have no weeks; the TinyC programs start their week chart empty there.</p>
+<p><b>The computed export counter</b> <code>sml3</code> of <code>3_SML_Chart_PV_Bezugszaehler</code>, when entered in step 2.</p>
 </div>
 <div class="de">
 <p><b>Die Balken</b> für Tag und Monat, Verbrauch wie Einspeisung. Sie sind nach Tag bzw. Monat indiziert, deshalb ist jede Zeile eine 1:1-Kopie (Scripter-Arrays sind 1-basiert, TinyC legt Tag 1 auf Index 0 &mdash; das hebt sich auf).</p>
 <p><b>Die 24-h-Kurve</b>, ebenfalls exakt. Der Scripter indiziert sie nach Minute des Tages (<code>s24h[0]=hours*60+mins</code>), TinyC genauso (<code>sml_s24h[hour*60+minute]</code>), und das Programm setzt die Ringposition bei jedem Tick neu aus der Uhrzeit.</p>
 <p><b>Die 4-h-Kurve wird nicht übernommen</b> &mdash; sie wird genullt. In den TinyC-Programmen ist das ein Kurzzeit-Diagramm mit einstellbarem Zeitraum (15&nbsp;min bis 4&nbsp;h, 180 oder 240 Werte à 5 bis 60&nbsp;s) und frei laufendem Zeiger. Die 480 Werte à 30&nbsp;s des Scripters lassen sich darin nicht zeitrichtig einordnen und kämen als plausibel aussehendes, falsches Diagramm an. Es füllt sich innerhalb seines Zeitraums von selbst wieder.</p>
 <p><b>Die Basiswerte</b>, sofern die <code>tc_options.cfg</code> mit hochgeladen wird &mdash; siehe Schritt 3. Kontrolle danach: der <i>Tagesverbrauch</i> auf der Hauptseite muss zum alten Gerät passen.</p>
-<p><code>wval</code> / <code>wval2</code> (Wochenwerte aus <code>2_SML_Chart_PV3</code>) haben in <code>sml_chart_common.tc</code> kein Gegenstück und entfallen.</p>
+<p><b>Die Wochenbalken</b> aus <code>2_SML_Chart_PV3</code> (<code>wcon</code> / <code>wprod</code>, ISO-Wochen 1&ndash;53), 1:1 wie die Tagesbalken, mit ihren Nullpunkten <code>wval</code> / <code>wval2</code>. Die anderen Scripte haben keine Wochen; dort beginnt das Wochendiagramm der TinyC-Programme leer.</p>
+<p><b>Der gerechnete Einspeisezähler</b> <code>sml3</code> aus <code>3_SML_Chart_PV_Bezugszaehler</code>, wenn er in Schritt 2 eingetragen wurde.</p>
 </div>
 </section>
 

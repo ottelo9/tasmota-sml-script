@@ -141,7 +141,7 @@ void WebOn() {
     } else {
         strcpy(sml_buf, "{\"enabled\":0}");
     }
-    webSend(sml_buf);
+    smlSendJson(sml_buf);
 }
 
 // Tasmota's own root page, rendered once per load (FUNC_WEB_ADD_MAIN_BUTTON).

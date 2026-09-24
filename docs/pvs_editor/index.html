@@ -144,6 +144,8 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 <tr><th><code>.pvs</code></th><th><code>tc_options.cfg</code></th></tr>
 <tr><td><code>sml_dval</code> &middot; <code>sml_mval</code> &middot; <code>sml_yval</code></td><td><code>imp_day</code> &middot; <code>imp_month</code> &middot; <code>imp_year</code></td></tr>
 <tr><td><code>sml_dval2</code> &middot; <code>sml_mval2</code> &middot; <code>sml_yval2</code></td><td><code>exp_day</code> &middot; <code>exp_month</code> &middot; <code>exp_year</code></td></tr>
+<tr><td><code>sml_wval</code> &middot; <code>sml_wval2</code></td><td><code>imp_week</code> &middot; <code>exp_week</code></td></tr>
+<tr><td><code>sml_virt_out</code></td><td><code>exp_virt</code> &mdash; <i>at start the higher of the two wins, not the cfg</i></td></tr>
 <tr><td><code>sml_stmin</code> &middot; <code>sml_chmain</code></td><td><code>chart_short</code> &middot; <code>chart_onmain</code></td></tr>
 <tr><td><code>sml_da</code>, <code>ui_*</code>, <code>sml_*</code> settings, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td>same name</td></tr>
 </table>
@@ -157,6 +159,8 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 <tr><th><code>.pvs</code></th><th><code>tc_options.cfg</code></th></tr>
 <tr><td><code>sml_dval</code> &middot; <code>sml_mval</code> &middot; <code>sml_yval</code></td><td><code>imp_day</code> &middot; <code>imp_month</code> &middot; <code>imp_year</code></td></tr>
 <tr><td><code>sml_dval2</code> &middot; <code>sml_mval2</code> &middot; <code>sml_yval2</code></td><td><code>exp_day</code> &middot; <code>exp_month</code> &middot; <code>exp_year</code></td></tr>
+<tr><td><code>sml_wval</code> &middot; <code>sml_wval2</code></td><td><code>imp_week</code> &middot; <code>exp_week</code></td></tr>
+<tr><td><code>sml_virt_out</code></td><td><code>exp_virt</code> &mdash; <i>beim Start gilt der höhere der beiden, nicht die cfg</i></td></tr>
 <tr><td><code>sml_stmin</code> &middot; <code>sml_chmain</code></td><td><code>chart_short</code> &middot; <code>chart_onmain</code></td></tr>
 <tr><td><code>sml_da</code>, <code>ui_*</code>, <code>sml_*</code>-Einstellungen, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td>gleicher Name</td></tr>
 </table>
@@ -173,8 +177,9 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 <tr><td><code>sml_s4h</code>, <code>sml_s24h</code></td><td><code>int16</code></td><td>481 / 1441</td></tr>
 <tr><td><code>sml_dcon</code>, <code>sml_dprod</code></td><td><code>float</code></td><td>31 each</td></tr>
 <tr><td><code>sml_mcon</code>, <code>sml_mprod</code></td><td><code>float</code></td><td>12 each</td></tr>
+<tr><td><code>sml_wcon</code>, <code>sml_wprod</code></td><td><code>float</code></td><td>53 each (ISO week 1 = index 0)</td></tr>
 <tr><td><code>sml_s4h_pos</code>, <code>sml_s24h_pos</code>, <code>sml_da</code></td><td><code>int32</code></td><td>1</td></tr>
-<tr><td><code>sml_dval</code>, <code>sml_mval</code>, <code>sml_yval</code> and the <code>2</code> twins</td><td><code>float</code></td><td>1</td></tr>
+<tr><td><code>sml_dval</code>, <code>sml_wval</code>, <code>sml_mval</code>, <code>sml_yval</code> and the <code>2</code> twins, <code>sml_virt_out</code></td><td><code>float</code></td><td>1</td></tr>
 <tr><td><code>sml_stmin</code>, <code>sml_chmain</code>, <code>sml_pv</code>, <code>sml_sndpwr</code>, <code>sml_meter_sel</code> &hellip; <code>ui_*</code>, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td><code>int32</code></td><td>1</td></tr>
 <tr><td><code>ct_mac</code>, <code>ct_mail</code></td><td><code>byte</code></td><td>16 / 64</td></tr>
 </table>
@@ -188,8 +193,9 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 <tr><td><code>sml_s4h</code>, <code>sml_s24h</code></td><td><code>int16</code></td><td>481 / 1441</td></tr>
 <tr><td><code>sml_dcon</code>, <code>sml_dprod</code></td><td><code>float</code></td><td>je 31</td></tr>
 <tr><td><code>sml_mcon</code>, <code>sml_mprod</code></td><td><code>float</code></td><td>je 12</td></tr>
+<tr><td><code>sml_wcon</code>, <code>sml_wprod</code></td><td><code>float</code></td><td>je 53 (ISO-Woche 1 = Index 0)</td></tr>
 <tr><td><code>sml_s4h_pos</code>, <code>sml_s24h_pos</code>, <code>sml_da</code></td><td><code>int32</code></td><td>1</td></tr>
-<tr><td><code>sml_dval</code>, <code>sml_mval</code>, <code>sml_yval</code> und die <code>2</code>-Zwillinge</td><td><code>float</code></td><td>1</td></tr>
+<tr><td><code>sml_dval</code>, <code>sml_wval</code>, <code>sml_mval</code>, <code>sml_yval</code> und die <code>2</code>-Zwillinge, <code>sml_virt_out</code></td><td><code>float</code></td><td>1</td></tr>
 <tr><td><code>sml_stmin</code>, <code>sml_chmain</code>, <code>sml_pv</code>, <code>sml_sndpwr</code>, <code>sml_meter_sel</code> &hellip; <code>ui_*</code>, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td><code>int32</code></td><td>1</td></tr>
 <tr><td><code>ct_mac</code>, <code>ct_mail</code></td><td><code>byte</code></td><td>16 / 64</td></tr>
 </table>
@@ -203,20 +209,22 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 <div class="en">
 <p>A <code>.bin</code> is read and written as well. It is the <i>import</i> file: raw <code>float32</code> in the order from <code>sml_chart_common.tc</code>, no header.</p>
 <table>
-<tr><th>File</th><th>Contents</th><th>without</th><th>with baselines</th></tr>
-<tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td>1969</td></tr>
-<tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td>46</td></tr>
+<tr><th>File</th><th>Contents</th><th>without</th><th>with baselines</th><th>+ weeks</th></tr>
+<tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td>1969</td><td>2023</td></tr>
+<tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td>46</td><td>100</td></tr>
 </table>
+<p>The week block &mdash; <code>sml_wval</code> + <code>sml_wcon[53]</code>, or <code>sml_wval2</code> + <code>sml_wprod[53]</code> &mdash; follows the baselines. The editor writes it when the <code>.pvs</code> holds both parts and the baselines are complete.</p>
 <p>The program reads it <b>once</b> at start-up, writes it into the <code>.pvs</code> and deletes it afterwards. The baseline block is only appended when all of its values are present &mdash; the program reads it whole or not at all.</p>
 <p>For the normal case the <code>.pvs</code> is the better route: it holds <i>all</i> variables, the <code>.bin</code> only these. Either way the baselines also have to go into the <a href="#cfg"><code>tc_options.cfg</code></a> &mdash; loading a <code>.bin</code> with baselines puts them into that card automatically.</p>
 </div>
 <div class="de">
 <p>Eine <code>.bin</code> wird ebenfalls gelesen und geschrieben. Sie ist die <i>Import</i>-Datei: rohe <code>float32</code> in der Reihenfolge aus <code>sml_chart_common.tc</code>, kein Kopf.</p>
 <table>
-<tr><th>Datei</th><th>Inhalt</th><th>ohne</th><th>mit Basiswerten</th></tr>
-<tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td>1969</td></tr>
-<tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td>46</td></tr>
+<tr><th>Datei</th><th>Inhalt</th><th>ohne</th><th>mit Basiswerten</th><th>+ Wochen</th></tr>
+<tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td>1969</td><td>2023</td></tr>
+<tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td>46</td><td>100</td></tr>
 </table>
+<p>Der Wochenblock &mdash; <code>sml_wval</code> + <code>sml_wcon[53]</code> bzw. <code>sml_wval2</code> + <code>sml_wprod[53]</code> &mdash; folgt auf die Basiswerte. Der Editor schreibt ihn, wenn die <code>.pvs</code> beide Teile enthält und die Basiswerte vollständig sind.</p>
 <p>Das Programm liest sie beim Start <b>einmal</b>, schreibt sie in die <code>.pvs</code> und löscht sie danach. Der Basiswert-Block wird nur angehängt, wenn alle seine Werte da sind &mdash; das Programm liest ihn ganz oder gar nicht.</p>
 <p>Für den normalen Fall ist die <code>.pvs</code> der bessere Weg: sie enthält <i>alle</i> Variablen, die <code>.bin</code> nur diese. In beiden Fällen müssen die Basiswerte zusätzlich in die <a href="#cfg"><code>tc_options.cfg</code></a> &mdash; wer eine <code>.bin</code> mit Basiswerten lädt, bekommt sie automatisch in diese Karte übernommen.</p>
 </div>

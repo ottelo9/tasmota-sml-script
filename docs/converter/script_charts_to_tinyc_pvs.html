@@ -52,7 +52,7 @@
 <body>
 <header>
   <h1>Scripter-Diagramme &rarr; TinyC<a class="hlp" href="https://ottelo9.github.io/tasmota-sml-script/converter/" target="_blank" rel="noopener" title="Hilfe zu diesem Werkzeug">i</a></h1>
-  <div class="sub">Übernimmt die Balkendiagramme (Tages- und Monatsverbrauch, Einspeisung) aus den
+  <div class="sub">Übernimmt die Balkendiagramme (Tages-, Wochen- und Monatswerte, Verbrauch und Einspeisung) aus den
   Scripter-Scripten in die TinyC-Programme. In vier Schritten, ohne Vorkenntnisse. Wer schon auf
   TinyC ist und nur seine Diagramme ansehen will, nimmt
   <a href="../pvs_editor/tinyc_chart_editor.html">tinyc_chart_editor.html</a>.</div>
@@ -78,7 +78,9 @@
 
     <div class="hint" style="margin-top:12px"><b>a) Import via HTTP/IP vom alten Gerät</b> — Link anklicken,
       im neuen Browser-Tab alles auf der Seite markieren und kopieren (inkl. den <code>{ }</code>) und hier
-      einfügen. Der 24-h-Verlauf lässt sich mit dieser Methode allerdings nicht importieren (zu viel Daten).</div>
+      einfügen. Bei <code>2_SML_Chart_PV3</code> zusätzlich die Wochenbalken holen und ebenfalls einfügen —
+      die Antworten werden gesammelt, die Reihenfolge ist egal. Der 24-h-Verlauf lässt sich mit dieser
+      Methode allerdings nicht importieren (zu viel Daten).</div>
     <div class="lnk" id="barLink">IP eintragen</div>
     <textarea id="barPaste" style="min-height:52px;margin-top:8px" spellcheck="false"
       placeholder='Antwort hier einfügen, z. B. {"script":{"dcon":[11.96,8.74,...],"dprod":[...],"mcon":[...]}}'></textarea>
@@ -105,7 +107,7 @@
           <tr><td><code>1_SML_Chart.tas</code></td><td>4 Zeilen</td><td>481 / 1441 / 31 / 12</td><td>ohne Einspeisung</td></tr>
           <tr><td><code>2_SML_Chart_PV.tas</code>, <code>_Modbus</code>, <code>3_…_Bezugszaehler</code></td><td>5 Zeilen</td><td>481 / 1441 / 31 / 31 / 24</td><td></td></tr>
           <tr><td><code>2_SML_Chart_PV2.tas</code></td><td>5 Zeilen</td><td>721 / 1441 / 31 / 31 / 24</td><td>1-h-Verlauf à 5 s, wird genullt</td></tr>
-          <tr><td><code>2_SML_Chart_PV3.tas</code></td><td>7 Zeilen</td><td>… + 53 / 53</td><td>Wochenbalken entfallen — TinyC hat keine</td></tr>
+          <tr><td><code>2_SML_Chart_PV3.tas</code></td><td>7 Zeilen</td><td>… + 53 / 53</td><td>Wochenbalken werden übernommen</td></tr>
           <tr><td><code>4_SML_Chart_PV_no_4h24h.tas</code></td><td>3 Zeilen</td><td>31 / 31 / 24</td><td>4 h/24 h werden genullt</td></tr>
           <tr><td><code>5_SteckdoseLeistungsmesser_1</code> / <code>_2</code>, <code>6_SML_Wasseruhr</code></td><td>4 Zeilen</td><td>481 (bzw. 721) / 1441 / 31 / 12</td><td>gleiche Form, aber kein TinyC-Gegenstück</td></tr>
         </tbody></table>
@@ -113,7 +115,9 @@
         Beim Weg <b>a)</b> wird am Vorhandensein von <code>dprod</code> und an der Länge von
         <code>mcon</code> (12 oder 24) erkannt, ob es Einspeisung gibt.
         Das <code>mcon[24]</code> des Scripters wird aufgeteilt in <code>sml_mcon[12]</code>
-        (Verbrauch) und <code>sml_mprod[12]</code> (Einspeisung) — deshalb entstehen zwei Dateien.</div>
+        (Verbrauch) und <code>sml_mprod[12]</code> (Einspeisung) — deshalb entstehen zwei Dateien.
+        Die Wochenbalken (<code>wcon</code>/<code>wprod</code>, 53 Kalenderwochen) hängen jeweils hinten
+        an diesen beiden Dateien, hinter den Basiswerten.</div>
     </details>
   </div>
 
@@ -127,7 +131,7 @@
       &#x1F522; Reset</b>) können die Werte auf dem neuen Gerät genullt werden. Im TinyC Programm werden
       diese Basiswerte fortan in der <code>tc_options.cfg</code> gespeichert (siehe auch Import Schritt 3).
       Bleiben die Felder leer, musst du auf dem Gerät, wie gesagt, einmal
-      <i>Tages/Monats/Jahres-Verbrauchswerte zurücksetzen</i>.</div>
+      <i>&#x1F522; Reset</i> (Zählerwerte zurücksetzen) drücken.</div>
     <div class="hint" style="margin-top:8px">Auf den Link klicken (IP in Schritt 1), im neuen Browser-Tab
       alles auf der Seite markieren und kopieren (inkl. den <code>{ }</code>) und hier einfügen — bei den
       PV-Scripten für beide Links nacheinander.</div>
@@ -183,8 +187,8 @@
       Läuft das TinyC-Programm beim Hochladen noch, werden alle importierten Einstellungen nach einem
       Neustart wieder überschrieben. Das Programm importiert die <code>.bin</code> Datei(en) einmal und
       <b>löscht sie danach</b> — ab dann ist die <code>.pvs</code> der Laufzeit-Speicher. In der Console
-      kann geprüft werden, ob der Import geklappt hat (<code>sml_chart: .bin carried baselines</code> und
-      <code>sml_chart: imported .bin into .pvs, /sml_chart.bin deleted</code>).</div>
+      kann geprüft werden, ob der Import geklappt hat (<code>chart: .bin imported</code> und bei Einspeisung
+      <code>pv: .bin imported</code>).</div>
   </div>
 
   <details class="card" id="advCard">
@@ -195,6 +199,7 @@
       <label>Datei <select id="presetSel" style="width:230px">
         <option value="standard">Verbrauch — sml_chart.bin</option>
         <option value="pv">Einspeisung — sml_chart_pv.bin</option>
+        <option value="week">Wochen — hängen an beiden .bin</option>
       </select></label>
       <span class="stats" id="schemaTotal"></span>
     </div>
@@ -235,29 +240,35 @@ const PRESETS = {
       { name: "sml_mprod (Einspeisung je Monat, 12)", count: 12, unit: "kWh" },
     ],
   },
+  // Not a file of its own: wcon is appended to sml_chart.bin and wprod to
+  // sml_chart_pv.bin, each behind its baseline block (see withBase()). Listed
+  // here so the preview can show and edit them like the other arrays.
+  week: {
+    label: "Wochen",
+    schema: [
+      { name: "sml_wcon  (Verbrauch je KW, 53)",    count: 53, unit: "kWh" },
+      { name: "sml_wprod (Einspeisung je KW, 53)",  count: 53, unit: "kWh" },
+    ],
+  },
 };
 const DEFAULT_SCHEMA = PRESETS.standard.schema;
-const CSV_DECIMALS = 3;   // matches CHART_CSV_DEC-ish; trailing zeros stripped
 
 // ─── Locale ──────────────────────────────────────────────────────────────────
 // Display the user's decimal separator (`,` in DE / FR / IT, `.` in EN / etc.)
 // — detected from the browser's locale at load. Parser accepts BOTH `,` and `.`
 // regardless (we just normalize before parseFloat), so pasted point-decimal
-// values still work for a comma-locale user and vice versa. CSV export keeps
-// `.` always to match `fileWriteArray` on the device.
+// values still work for a comma-locale user and vice versa.
 const DECIMAL_CHAR = (1.5).toLocaleString().replace(/[0-9]/g, "") || ".";
 const NF = new Intl.NumberFormat(undefined, { maximumFractionDigits: 3, useGrouping: false });
 
 let schema = DEFAULT_SCHEMA.map(s => ({...s}));
-let lastFloats = null;     // Float32 values from the most recent load (flat)
-let lastName   = "sml_chart";
+let lastFloats = null;     // the flat values shown in the preview (step 4)
 
 const $ = id => document.getElementById(id);
-// Optional elements: the editor and the converter share this script but not
-// every card, so writing to a missing one must be a no-op, not a crash.
+// Writing to an element that is not on the page is a no-op, not a crash.
 const setTxt = (id, s) => { const e = $(id); if (e) e.textContent = s; };
 
-// Apply a preset by name: swaps the layout and re-renders the schema table.
+// Apply a preset by name: swaps the layout and updates the total line.
 // Called from the preset <select> onchange and from importScripterCsv().
 function applyPreset(name) {
   const p = PRESETS[name];
@@ -267,119 +278,17 @@ function applyPreset(name) {
   renderSchema();
 }
 
-// Detect which preset a float-count matches. Returns preset name or null.
-// Also matches a file that carries the optional baseline block, so 1969 and 46
-// point at the right preset instead of reading as an unknown size.
-function detectPreset(floatCount) {
-  for (const [name, p] of Object.entries(PRESETS)) {
-    const t = p.schema.reduce((a, s) => a + s.count, 0);
-    const extra = (BASE_GROUP[name] === "cons") ? 4 : 3;
-    if (t === floatCount || t + extra === floatCount) return name;
-  }
-  return null;
-}
-
 // ─── Schema table ─────────────────────────────────────────────────────────────
-function renderSchema() {
-  // The converter has no schema editor - only the total line. Both files share
-  // this script, so the table is optional rather than duplicated away.
-  const tb = $("schemaBody");
-  if (!tb) { updateSchemaTotal(); return; }
-  tb.innerHTML = "";
-  schema.forEach((s, i) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML =
-      `<td><input type="text" value="${s.name}" data-i="${i}" data-k="name" style="width:220px"></td>` +
-      `<td><label>Anzahl</label> <input type="number" min="0" value="${s.count}" data-i="${i}" data-k="count"></td>`;
-    tb.appendChild(tr);
-  });
-  tb.querySelectorAll("input").forEach(inp => inp.addEventListener("change", e => {
-    const i = +e.target.dataset.i, k = e.target.dataset.k;
-    schema[i][k] = (k === "count") ? Math.max(0, parseInt(e.target.value || "0", 10)) : e.target.value;
-    updateSchemaTotal();
-  }));
-  updateSchemaTotal();
-}
+function renderSchema() { updateSchemaTotal(); }
 function schemaTotal() { return schema.reduce((a, s) => a + s.count, 0); }
 function updateSchemaTotal() {
   const t = schemaTotal();
   setTxt("schemaTotal", `Summe ${t} Werte · ${t*4} Bytes (.bin) · Dezimalzeichen: "${DECIMAL_CHAR}"`);
 }
 
-// ─── File loading ─────────────────────────────────────────────────────────────
+// ─── Messages and number lists ────────────────────────────────────────────────
 function setMsg(el, text, kind) { if (!el) return; el.className = "msg " + (kind || ""); el.textContent = text; }
 
-function loadArrayBuffer(buf, fname) {
-  const bytes = new Uint8Array(buf);
-  // Heuristic: text (CSV/tab) if it looks like printable ASCII digits/tabs/newlines.
-  const isText = looksLikeText(bytes);
-  let floats;
-  if (isText || /\.(csv|tab|txt)$/i.test(fname)) {
-    const p = parseDeviceCsv(new TextDecoder().decode(bytes));
-    floats = p.values;
-    // The device CSV carries the zero points in its `baselines` row - put them
-    // straight into the card, that is the only way they ever come back off a device.
-    if (p.baselines && p.baselines.length) {
-      setBaseBlock(p.baselines.length >= 4 ? "cons" : "prod", p.baselines);
-    }
-    const tail = p.baselines
-      ? ` Basiswerte (Tag/Monat/Jahr${p.baselines.length > 3 ? "/Monatstag" : ""}): ${p.baselines.map(fmt).join(" · ")} — stehen jetzt in der Karte „Basiswerte".`
-      : "";
-    setMsg($("loadmsg"), `Text/CSV "${fname}" geladen — ${floats.length} Werte aus ${p.rows} Datenzeile(n).${tail}`, "ok");
-  } else {
-    if (buf.byteLength % 4 !== 0) {
-      setMsg($("loadmsg"), `Achtung: "${fname}" hat ${buf.byteLength} Bytes — kein Vielfaches von 4. Wird als float32 gelesen, der angebrochene letzte Wert entfällt.`, "warn");
-    }
-    const n = Math.floor(buf.byteLength / 4);
-    const dv = new DataView(buf);
-    floats = new Array(n);
-    for (let i = 0; i < n; i++) floats[i] = dv.getFloat32(i * 4, true); // little-endian
-    const exp = schemaTotal();
-    // A file exactly one baseline block longer carries the zero points behind
-    // the arrays (1969 / 46). Split them off before the panels are built, or
-    // they would surface as a "leftover values" panel.
-    const grp = BASE_GROUP[$("presetSel").value];
-    const nbase = (grp === "cons") ? 4 : (grp === "prod" ? 3 : 0);
-    let tookBase = false;
-    if (nbase && n === exp + nbase) {
-      setBaseBlock(grp, floats.slice(exp));
-      floats = floats.slice(0, exp);
-      tookBase = true;
-    }
-    if (floats.length === exp) {
-      setMsg($("loadmsg"), `Binärdatei "${fname}" geladen — ${exp} float32-Werte (passt zur Aufteilung ✓).` +
-        (tookBase ? ` Die ${nbase} Basiswerte am Ende stehen jetzt in der Karte darunter.` : ""), "ok");
-    } else {
-      // Size mismatch — but does it match a known preset? If so, say which one
-      // instead of just complaining about the count.
-      const hit = detectPreset(n);
-      const tail = hit
-        ? ` — das ist die Größe der Vorlage "${PRESETS[hit].label}". Oben auswählen, dann stimmt die Aufteilung.`
-        : ` Die Anzahlen unten anpassen, dann "Datei mit dieser Aufteilung neu zerlegen".`;
-      setMsg($("loadmsg"), `Binärdatei "${fname}" geladen — ${n} float32-Werte, die Aufteilung erwartet aber ${exp}.${tail}`, "warn");
-    }
-  }
-  lastFloats = floats;
-  // A complete file is also the buffer step 3 writes back out.
-  const pp = $("presetSel").value;
-  if (floats.length === bufTotal(pp)) BUF[pp] = floats;
-  updateDlStatus();
-  // ".done" too, for a leftover from a firmware that still renamed instead of
-  // deleting: it must still export as sml_chart.bin.
-  lastName = fname.replace(/\.done$/i, "").replace(/\.(bin|csv|tab|txt|dat)$/i, "") || "sml_chart";
-  renderSegments();
-}
-
-function looksLikeText(bytes) {
-  const n = Math.min(bytes.length, 256);
-  if (n === 0) return false;
-  let printable = 0;
-  for (let i = 0; i < n; i++) {
-    const b = bytes[i];
-    if (b === 9 || b === 10 || b === 13 || (b >= 32 && b <= 126)) printable++;
-  }
-  return printable / n > 0.95;
-}
 function parseCsv(text) {
   // Each line = one array of whitespace-separated floats; flatten in order.
   // Locale: when the user's decimal is ',', don't split on ',' — it'd shred
@@ -398,40 +307,10 @@ function parseCsv(text) {
   return out;
 }
 
-// The device CSV is row-oriented and self-labelling since the persist rewrite:
-//   # row<TAB>values -> import side, tab separated
-//   baselines<TAB>dval<TAB>mval<TAB>yval<TAB>da
-//   power_4h_30s<TAB>...481 values
-//   power_24h_60s<TAB>...1441 values
-//   import_day_1_31<TAB>...31 values
-//   import_month_1_12<TAB>...12 values
-// (the feed-in CSV has 3 baselines and the two export_* rows.)
-// Flattening every number the way the old parser did shifted the whole layout by
-// the 4 baseline cells. So: drop the comment row, pull the baselines out
-// separately, and strip the leading label from every data row.
-function parseDeviceCsv(text) {
-  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-  const values = [];
-  let baselines = null, rows = 0;
-  for (const line of lines) {
-    if (/^\s*#/.test(line)) continue;
-    // Strip the leading label, but only when it really is one — the editor's own
-    // "Download .csv" writes label-less rows whose first cell is a number.
-    const body = line.replace(/^\s*[A-Za-z_][^\t]*\t/, "");
-    const v = parseCsv(body);
-    if (/^\s*baselines\b/i.test(line)) { baselines = v; continue; }
-    if (!v.length) continue;
-    values.push(...v);
-    rows++;
-  }
-  return { values, baselines, rows };
-}
-
 // ─── Segment rendering (one panel per array) ──────────────────────────────────
 function renderSegments() {
   const host = $("segments"); host.innerHTML = "";
-  const ec = $("exportCard");
-  if (!lastFloats) { if (ec) ec.style.display = "none"; return; }
+  if (!lastFloats) return;
   let off = 0;
   schema.forEach((s, i) => {
     const vals = lastFloats.slice(off, off + s.count);
@@ -442,8 +321,6 @@ function renderSegments() {
     const rest = lastFloats.slice(off);
     host.appendChild(segmentCard(-1, { name: `(${rest.length} überzählige Werte, nicht in der Aufteilung)`, count: rest.length }, rest));
   }
-  if (ec) ec.style.display = "";
-  setTxt("exportMsg", "");
 }
 
 function segmentCard(idx, s, vals) {
@@ -586,6 +463,7 @@ document.body.appendChild(tip);
 function hoverLabel(v, i, unit) {
   const pos = (v.length === 31) ? "Tag " + (i + 1)
             : (v.length === 12) ? "Monat " + (i + 1)
+            : (v.length === 53) ? "KW " + (i + 1)
                                 : "[" + i + "]";
   return pos + " · " + fmt(v[i]) + (unit ? " " + unit : "");
 }
@@ -626,7 +504,7 @@ function dlFloats(arr, fname) {
 // but the editor can only show one at a time, and step 3 has to be able to write
 // either. Downloading was moved out of the import on purpose — the baselines are
 // entered in step 2, so a file written during step 1 would always miss them.
-const BUF = { standard: null, pv: null };
+const BUF = { standard: null, pv: null, week: null };   // week: wcon 53 | wprod 53
 const BUF_NAME = { standard: "sml_chart.bin", pv: "sml_chart_pv.bin" };
 
 function bufTotal(p) { return PRESETS[p].schema.reduce((a, s) => a + s.count, 0); }
@@ -648,6 +526,7 @@ function updateDlStatus() {
     if (!b) { parts.push(BUF_NAME[p] + ": —"); continue; }
     parts.push(BUF_NAME[p] + ": " + withBase(b, p).length + " Werte");
   }
+  if (BUF.week) parts.push("Wochen: " + (baseBlock("cons") ? "dabei" : "fehlen — Basiswerte unvollständig"));
   setTxt("dlStatus", parts.join(" · "));
   if ($("dlCons")) $("dlCons").disabled = !BUF.standard;
   if ($("dlProd")) $("dlProd").disabled = !BUF.pv;
@@ -661,39 +540,19 @@ function dlFile(preset) {
   const out = withBase(b, preset);
   dlFloats(out, BUF_NAME[preset]);
   const withB = out.length > b.length;
+  const withW = out.length > b.length + (preset === "standard" ? 4 : 3);
   setTxt("dlMsg", `${BUF_NAME[preset]}: ${out.length} Werte (${out.length * 4} Bytes)` +
-    (withB ? " — Basiswerte sind mit drin." : " — OHNE Basiswerte, Schritt 2 ist unvollständig."));
+    (withB ? " — Basiswerte sind mit drin" + (withW ? ", Wochenbalken auch." : ".")
+           : " — OHNE Basiswerte, Schritt 2 ist unvollständig." + (BUF.week ? " Die Wochenbalken fehlen deshalb auch." : "")));
   updateDlStatus();
 }
 
 if ($("dlCons")) $("dlCons").onclick = () => dlFile("standard");
 if ($("dlProd")) $("dlProd").onclick = () => dlFile("pv");
-if ($("dlCsv")) $("dlCsv").onclick = () => {
-  const arrays = collectArrays();
-  const text = arrays.map(a => a.map(csvFmt).join("\t")).join("\n") + "\n";
-  dlBlob(new Blob([text], { type: "text/plain" }), lastName + ".csv");
-  $("exportMsg").textContent = `${arrays.length} Zeile(n) geschrieben, ${arrays.reduce((n,a)=>n+a.length,0)} Werte.`;
-};
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmt(v) { if (!isFinite(v)) return "0"; return NF.format(Math.round(v*1000)/1000); }   // user-locale (e.g. "1,5" on DE)
-function csvFmt(v) { if (!isFinite(v)) return "0"; let s = v.toFixed(CSV_DECIMALS); if (s.indexOf(".") >= 0) s = s.replace(/0+$/,"").replace(/\.$/,""); return s; }   // always "." — matches device fileWriteArray
 function escapeHtml(s){ return s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-
-// ─── Wire up file input + drag-drop ───────────────────────────────────────────
-// Drop zone and CSV export live in the editor only.
-const drop = $("drop"), fileInput = $("file");
-if (drop) {
-drop.onclick = () => fileInput.click();
-fileInput.onchange = e => { const f = e.target.files[0]; if (f) readFile(f); };
-["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("hover"); }));
-["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("hover"); }));
-drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) readFile(f); });
-function readFile(f) { const r = new FileReader(); r.onload = () => loadArrayBuffer(r.result, f.name); r.readAsArrayBuffer(f); }
-}
-if ($("resync")) $("resync").onclick = () => { if (lastFloats) renderSegments(); };
-
 
 // Preset dropdown — swaps the in-memory layout between the consumption and the
 // feed-in file.
@@ -701,7 +560,7 @@ $("presetSel").addEventListener("change", e => {
   syncBuf();                       // keep edits made under the old preset
   applyPreset(e.target.value);
   const b = BUF[e.target.value];
-  if (b) { lastFloats = b; lastName = e.target.value === "pv" ? "sml_chart_pv" : "sml_chart"; }
+  if (b) lastFloats = b;
   renderSegments();
 });
 
@@ -732,7 +591,10 @@ $("presetSel").addEventListener("change", e => {
 //   /sml_chart.bin    = s4h | s24h | dcon | mcon   (1965)
 //   /sml_chart_pv.bin = dprod | mprod              (43)
 //
-// The weekly bars (PV3) are dropped: sml_chart_common.tc has no weekly array.
+// The weekly bars (PV3) are carried: wcon goes behind the baselines of
+// sml_chart.bin and wprod behind those of sml_chart_pv.bin (+ wval/wval2 in
+// front of each). sml_chart_load() / sml_chart_pv_load() read that block only
+// when it is there. ISO week j is column j on both sides - a straight copy.
 //
 // The 24 h curve migrates exactly: the Scripter sets s24h[0]=hours*60+mins and
 // fwa() writes the raw buffer, so column j is minute j of the day - and
@@ -752,7 +614,7 @@ const S4H = [481, 721];
 const TAS_LAYOUTS = [
   { cols: [S4H, 1441, 31, 12],             map: "chart",  src: "1_SML_Chart.tas / 5_SteckdoseLeistungsmesser_1/_2 / 6_SML_Wasseruhr" },
   { cols: [S4H, 1441, 31, 31, 24],         map: "pv",     src: "2_SML_Chart_PV / _PV2 / _PV_Modbus / 3_…_Bezugszaehler" },
-  { cols: [S4H, 1441, 31, 31, 24, 53, 53], map: "pv",     src: "2_SML_Chart_PV3.tas (Wochenbalken entfallen — TinyC hat keine)" },
+  { cols: [S4H, 1441, 31, 31, 24, 53, 53], map: "pv3",    src: "2_SML_Chart_PV3.tas (mit Wochenbalken)" },
   { cols: [31, 31, 24],                    map: "bars",   src: "4_SML_Chart_PV_no_4h24h.tas" },
 ];
 const colFits = (c, n) => Array.isArray(c) ? c.includes(n) : c === n;
@@ -780,9 +642,10 @@ function detectTasLayout(rows) {
   if (hit.map === "chart") {
     out.s24h = rows[1]; out.dcon = rows[2]; out.mcon = rows[3];
     out.dprod = zeros(31); out.mprod = zeros(12);
-  } else if (hit.map === "pv") {
+  } else if (hit.map === "pv" || hit.map === "pv3") {
     out.s24h = rows[1]; out.dcon = rows[2]; out.dprod = rows[3];
     out.mcon = rows[4].slice(0, 12); out.mprod = rows[4].slice(12, 24);
+    if (hit.map === "pv3") { out.wcon = rows[5]; out.wprod = rows[6]; }
   } else {                                  // "bars" — no 4h/24h curves at all
     out.s24h = zeros(1441);
     out.dcon = rows[0]; out.dprod = rows[1];
@@ -819,16 +682,21 @@ function useMigration(m, head, note) {
   BUF.standard = cons;
   BUF.pv = m.hasPv ? prod : null;   // no feed-in in the source: 43 zeros would
                                     // erase a feed-in history already on the device
+  // Weekly bars only when the source has them (PV3). Without, nothing is
+  // appended and the device keeps whatever weeks it already has.
+  BUF.week = (m.wcon && m.wcon.length === 53)
+    ? [].concat(m.wcon, (m.wprod && m.wprod.length === 53) ? m.wprod : zeros(53))
+    : null;
   // Show the consumption file for review.
   applyPreset("standard");
   lastFloats = cons;
-  lastName = "sml_chart";
   renderSegments();
   updateDlStatus();
   setTxt("step1Status", m.layout.src);
-  const files = m.hasPv
+  const files = (m.hasPv
     ? "sml_chart.bin (1965) und sml_chart_pv.bin (43)"
-    : "sml_chart.bin (1965) — dieses Script hat keine Einspeisung, also keine sml_chart_pv.bin";
+    : "sml_chart.bin (1965) — dieses Script hat keine Einspeisung, also keine sml_chart_pv.bin")
+    + (BUF.week ? ", dazu die Wochenbalken (53 KW)" : "");
   setMsg($("impTasMsg"),
     `${head} Bereit sind ${files}. ${note} ` +
     `Weiter mit Schritt 2: ohne die Basiswerte rechnet das Programm den ganzen Zählerstand in den ` +
@@ -845,18 +713,28 @@ function useMigration(m, head, note) {
 // zeroed here. A variable the running script does not have answers "???" too,
 // which is how the script type is told apart:
 //   dcon 31 + mcon 12              1_SML_Chart, Steckdose, Wasseruhr
-//   dcon 31 + dprod 31 + mcon 24   every PV script (PV3's weekly bars are not
-//                                  asked for - TinyC has no weekly array)
+//   dcon 31 + dprod 31 + mcon 24   every PV script
+//   wcon 53 + wprod 53             PV3 only - its own link, the bars and the
+//                                  weeks together would overflow the answer
+// The answers are COLLECTED across pastes (JSONACC), in any order: the import
+// runs as soon as dcon and mcon are there, and again when weeks arrive later.
 // Values come with the Scripter's print precision (2 decimals), which is what
 // the bars display anyway.
+const JSONACC = {};
 function importScripterJson(text) {
-  const arr = {};
   // A regex sweep rather than JSON.parse: it also takes two answers pasted one
-  // after the other, and a copy that caught some of the surrounding page.
-  const re = /"(dcon|dprod|mcon)"\s*:\s*\[([^\]]*)\]/g;
-  let hit;
-  while ((hit = re.exec(text))) arr[hit[1]] = parseTabFloats(hit[2]);
+  // after the other, a copy that caught some of the surrounding page, and the
+  // Scripter's ??? for a variable the script does not have.
+  const re = /"(dcon|dprod|mcon|wcon|wprod)"\s*:\s*\[([^\]]*)\]/g;
+  let hit, n = 0;
+  while ((hit = re.exec(text))) { JSONACC[hit[1]] = parseTabFloats(hit[2]); n++; }
+  const arr = JSONACC;
   const d = arr.dcon, p = arr.dprod, mc = arr.mcon;
+  const wk = arr.wcon && arr.wcon.length === 53;
+  if (n && wk && !d) {
+    setMsg($("impTasMsg"), "Wochenbalken übernommen (53 KW). Jetzt noch die Balkendiagramm-Daten einfügen.", "ok");
+    return true;
+  }
   if (!d || d.length !== 31 || !mc || (mc.length !== 12 && mc.length !== 24) || (p && p.length !== 31)) {
     const got = Object.keys(arr).map(k => `${k}[${arr[k].length}]`).join(", ") || "keine";
     setMsg($("impTasMsg"),
@@ -871,8 +749,10 @@ function importScripterJson(text) {
     s4h: zeros(481), s24h: zeros(1441),
     dcon: d, dprod: p || zeros(31),
     mcon: mc.slice(0, 12), mprod: mc.length === 24 ? mc.slice(12, 24) : zeros(12),
+    wcon: wk ? arr.wcon : null,
+    wprod: (arr.wprod && arr.wprod.length === 53) ? arr.wprod : null,
   };
-  return useMigration(m, `Balken übernommen: dcon[31]${p ? ", dprod[31]" : ""}, mcon[${mc.length}].`,
+  return useMigration(m, `Balken übernommen: dcon[31]${p ? ", dprod[31]" : ""}, mcon[${mc.length}]${wk ? ", wcon[53]" : ""}${m.wprod ? ", wprod[53]" : ""}.`,
     "Der 4-h- und der 24-h-Verlauf sind leer — über den Link nicht abrufbar.");
 }
 
@@ -910,6 +790,13 @@ const BASE_FIELDS = [
   { k: "dval2", g: "prod", label: "dval2 — Tages-Nullpunkt Einspeisung [kWh]" },
   { k: "mval2", g: "prod", label: "mval2 — Monats-Nullpunkt Einspeisung [kWh]" },
   { k: "yval2", g: "prod", label: "yval2 — Jahres-Nullpunkt Einspeisung [kWh]" },
+  // Optional, outside the two blocks: the week zero points (2_SML_Chart_PV3)
+  // travel with the week block, empty = today's zero point (dval/dval2). sml3
+  // is the computed export counter of 3_SML_Chart_PV_Bezugszaehler - it goes
+  // into the cfg as exp_virt and switches the import-meter option on.
+  { k: "wval",  g: "wk",   label: "wval — Wochen-Nullpunkt Bezug [kWh] (nur PV3, sonst leer)" },
+  { k: "wval2", g: "wk",   label: "wval2 — Wochen-Nullpunkt Einspeisung [kWh] (nur PV3, sonst leer)" },
+  { k: "sml3",  g: "virt", label: "sml3 — gerechneter Einspeisezähler [kWh] (nur 3_…_Bezugszaehler)" },
 ];
 const BASE_GROUP = { standard: "cons", pv: "prod" };
 
@@ -946,8 +833,10 @@ function baseBlock(group) {
 function updateBaseStatus() {
   const c = baseBlock("cons"), p = baseBlock("prod");
   const bits = [];
-  bits.push(c ? "Bezug ✓ (.bin wird 1969 Werte lang)" : "Bezug unvollständig — .bin bleibt bei 1965");
-  bits.push(p ? "Einspeisung ✓ (46)" : "Einspeisung unvollständig — bleibt bei 43");
+  const w = BUF.week ? 54 : 0;
+  bits.push(c ? `Bezug ✓ (.bin wird ${1969 + w} Werte lang)` : "Bezug unvollständig — .bin bleibt bei 1965");
+  bits.push(p ? `Einspeisung ✓ (${46 + w})` : "Einspeisung unvollständig — bleibt bei 43");
+  if (parseNum($("b_sml3").value) !== null) bits.push("sml3 ✓ (Bezugszähler)");
   $("baseStatus").textContent = bits.join(" · ");
   updateDlStatus();          // the baselines change the file length shown there
 }
@@ -961,14 +850,17 @@ function withBase(flat, presetName) {
   const want = PRESETS[presetName].schema.reduce((a, s) => a + s.count, 0);
   if (flat.length !== want) return flat;
   const b = baseBlock(group);
-  return b ? flat.concat(b) : flat;
-}
-
-// Fill the card from a block read out of a loaded .bin.
-function setBaseBlock(group, vals) {
-  const fs = BASE_FIELDS.filter(f => f.g === group);
-  fs.forEach((f, i) => { if (vals[i] !== undefined) $("b_" + f.k).value = fmt(vals[i]); });
-  updateBaseStatus();
+  if (!b) return flat;
+  let out = flat.concat(b);
+  // Week block behind the baselines: its zero point, then the 53 weeks. An
+  // empty week zero point falls back to today's - the running week then
+  // counts from today, the finished weeks are unaffected.
+  if (BUF.week) {
+    const cons = group === "cons";
+    const wv = parseNum($(cons ? "b_wval" : "b_wval2").value);
+    out = out.concat([wv !== null ? wv : b[0]], BUF.week.slice(cons ? 0 : 53, cons ? 53 : 106));
+  }
+  return out;
 }
 
 $("baseClear").onclick = () => {
@@ -1002,10 +894,11 @@ function renderBaseLinks() {
   const cm = cmd => "/cm?cmnd=" + encodeURIComponent(cmd);
   // One link per line (.lnk a is display:block).
   $("baseLinks").innerHTML =
-    a(cm("script?dval;mval;yval;da"), "Basiswerte Bezug abrufen", "Scripter-Variablen auslesen") +
-    a(cm("script?dval2;mval2;yval2"), "Basiswerte Einspeisung abrufen", "nur bei den PV-Scripten");
+    a(cm("script?dval;mval;yval;da;wval"), "Basiswerte Bezug abrufen", "Scripter-Variablen auslesen") +
+    a(cm("script?dval2;mval2;yval2;wval2;sml3"), "Basiswerte Einspeisung abrufen", "nur bei den PV-Scripten");
   $("csvLink").innerHTML = a("/ufsd?download=/data.csv", "data.csv herunterladen", "Diagrammdaten herunterladen, dann unten auswählen");
-  $("barLink").innerHTML = a(cm("script?dcon;dprod;mcon"), "Balkendiagramm-Daten abrufen", "Tages- und Monatsbalken als JSON");
+  $("barLink").innerHTML = a(cm("script?dcon;dprod;mcon"), "Balkendiagramm-Daten abrufen", "Tages- und Monatsbalken als JSON") +
+    a(cm("script?wcon;wprod"), "Wochenbalken abrufen (nur 2_SML_Chart_PV3)", "53 Kalenderwochen, Verbrauch und Einspeisung");
 }
 $("devIp").addEventListener("input", renderBaseLinks);
 
@@ -1068,6 +961,9 @@ const CFG_MAP = [
   { k: "mval2", c: "exp_month", f: true },
   { k: "yval2", c: "exp_year",  f: true },
   { k: "da",    c: "sml_da",    f: false },
+  { k: "wval",  c: "imp_week",  f: true },
+  { k: "wval2", c: "exp_week",  f: true },
+  { k: "sml3",  c: "exp_virt",  f: true },
 ];
 const CFG_HEAD = "# tc_options - shared by all programs";
 let cfgDev = null;          // text of the device's cfg, null = none loaded
@@ -1099,6 +995,12 @@ function cfgValues() {
     const v = parseNum($("b_" + m.k).value);
     if (v !== null) set[m.c] = m.f ? v.toFixed(3) : String(Math.round(v));
   });
+  // The week zero points win over the .bin at start like the others do. Left
+  // empty, they take today's - the same fallback the .bin and the program use.
+  if (set.imp_week === undefined && set.imp_day !== undefined) set.imp_week = set.imp_day;
+  if (set.exp_week === undefined && set.exp_day !== undefined) set.exp_week = set.exp_day;
+  // A computed export counter only means something with the option that uses it.
+  if (set.exp_virt !== undefined) set.sml_bezug = "1";
   return set;
 }
 

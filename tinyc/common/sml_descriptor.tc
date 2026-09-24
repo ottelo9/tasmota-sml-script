@@ -115,6 +115,20 @@ int  sml_pub_rc;           // last mqttPublish result, logged when it changes
 int  sml_pub_seen;
 int  sml_drv_init;              // 0 until the display option was applied once
 
+// /pwr: one short JSON answer, written as a raw HTTP response so it says
+// application/json - webSend() goes through Tasmota's page path, which
+// declares text/html. The body is known in full here, so Content-Length
+// rather than chunked. Connection: close as before: /pwr is polled every few
+// seconds, and a held socket can block Tasmota's web server.
+byte sml_jhdr[112];
+
+void smlSendJson(byte s[]) {
+    webRawMode();
+    sprintf(sml_jhdr, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", strlen(s));
+    webRawWrite(sml_jhdr);
+    webRawWrite(s);
+}
+
 // Sanity check for "3 phases". The option only makes sense if the descriptor
 // really carries the per-phase power in values 4/5/6 - the family's convention.
 // Nothing enforces that convention: the Elster AS1440 descriptor, for one, has

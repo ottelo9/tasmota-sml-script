@@ -213,6 +213,12 @@ const BIN_BASE = {
   sml_chart:    ["sml_dval", "sml_mval", "sml_yval", "sml_da"],
   sml_chart_pv: ["sml_dval2", "sml_mval2", "sml_yval2"],
 };
+// Optional week block behind the baselines: zero point, then 53 weeks
+// (sml_chart_load / sml_chart_pv_load read it only when it is there).
+const BIN_WEEK = {
+  sml_chart:    ["sml_wval", "sml_wcon"],
+  sml_chart_pv: ["sml_wval2", "sml_wprod"],
+};
 
 const $ = id => document.getElementById(id);
 const DECIMAL_CHAR = (1.5).toLocaleString().replace(/[0-9]/g, "") || ".";
@@ -496,6 +502,7 @@ document.body.appendChild(tip);
 function hoverLabel(v, i, unit) {
   const pos = (v.length === 31) ? "Tag " + (i + 1)
             : (v.length === 12) ? "Monat " + (i + 1)
+            : (v.length === 53) ? "KW " + (i + 1)
                                 : "[" + i + "]";
   return pos + " · " + fmt(v[i]) + (unit ? " " + unit : "");
 }
@@ -566,9 +573,10 @@ function loadBin(bytes, fname) {
   }
   const f = new Float32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4);
   for (const key of ["sml_chart", "sml_chart_pv"]) {
-    const arrs = BIN_LAYOUT[key], base = BIN_BASE[key];
+    const arrs = BIN_LAYOUT[key], base = BIN_BASE[key], week = BIN_WEEK[key];
     const need = arrs.reduce((a, n) => a + PV_TYPES[n].n, 0);
-    const withBase = f.length === need + base.length;
+    const withWeek = f.length === need + base.length + 1 + 53;
+    const withBase = withWeek || f.length === need + base.length;
     if (f.length !== need && !withBase) continue;
     if (!pvs) pvs = { ver: 3, head: new Uint8Array([80, 86, 51, 0]), entries: [] };
     const put = (name, vals) => {
@@ -586,11 +594,12 @@ function loadBin(bytes, fname) {
     let off = 0;
     arrs.forEach(n => { const k = PV_TYPES[n]; put(n, Array.from(f.slice(off, off + k.n))); off += k.n; });
     if (withBase) base.forEach(n => put(n, [f[off++]]));
+    if (withWeek) { put(week[0], [f[off++]]); put(week[1], Array.from(f.slice(off, off + 53))); off += 53; }
     pvs.head[3] = pvs.entries.length;
     $("fileInfo").textContent = `${fname} · .bin · ${f.length} Werte`;
     setMsg($("loadmsg"),
       `"${fname}" als ${key}.bin gelesen (${f.length} Werte)` +
-      (withBase ? " inklusive Basiswerte." : ".") +
+      (withWeek ? " inklusive Basiswerte und Wochenbalken." : withBase ? " inklusive Basiswerte." : ".") +
       " Eine .bin ist eine Import-Datei — sie enthält nur diese Variablen, nicht die ganze .pvs.",
       "ok");
     render();
@@ -598,7 +607,7 @@ function loadBin(bytes, fname) {
   }
   setMsg($("loadmsg"),
     `"${fname}": kein "PV"-Kopf, und ${f.length} float32 passen zu keiner bekannten .bin ` +
-    `(erwartet 1965 oder 1969 für sml_chart, 43 oder 46 für sml_chart_pv).`, "warn");
+    `(erwartet 1965, 1969 oder 2023 für sml_chart, 43, 46 oder 100 für sml_chart_pv).`, "warn");
 }
 
 // ═══ Saving ══════════════════════════════════════════════════════════════════
@@ -629,11 +638,19 @@ $("dlBin").onclick = () => {
   const es = names.map(n => pvs.entries.find(x => x.name === n));
   const complete = es.every(Boolean);
   if (complete) es.forEach((e, i) => vals.push(decode(e, PV_TYPES[names[i]].t, 1)[0]));
+  // Week block only behind a complete baseline block, and only when both parts
+  // are in the .pvs - an older program has no weeks, and zeros would be wrong.
+  const wk = BIN_WEEK[key].map(n => pvs.entries.find(x => x.name === n));
+  const withWeek = complete && wk.every(Boolean);
+  if (withWeek) {
+    vals.push(decode(wk[0], PV_TYPES[BIN_WEEK[key][0]].t, 1)[0]);
+    vals.push(...decode(wk[1], PV_TYPES[BIN_WEEK[key][1]].t, 53));
+  }
   const buf = new ArrayBuffer(vals.length * 4), dv = new DataView(buf);
   vals.forEach((v, i) => dv.setFloat32(i * 4, v, true));
   dl(new Blob([buf], { type: "application/octet-stream" }), key + ".bin");
   $("saveMsg").textContent = `${key}.bin — ${vals.length} float32 (${vals.length * 4} Bytes)` +
-    (complete ? ", Basiswerte am Ende." : ", ohne Basiswerte.");
+    (withWeek ? ", Basiswerte und Wochenbalken am Ende." : complete ? ", Basiswerte am Ende." : ", ohne Basiswerte.");
 };
 
 $("dlCsv").onclick = () => {
