@@ -87,19 +87,7 @@ Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akk
 Beispiel mit mehreren Akkus:  
 [3 Marstek (2 × B2500 und einmal Venus A) im Parallelbetrieb](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773)  
 
-Getestete Akkus (E = Ecotracker Script, S = Shelly Script):  
-- ✅ Marstek Jupiter C Plus (E+S) mit Option Regleroptimierung
-- ✅ [Marstek Venus A (E+S)](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762600#post4762600)
-- ✅ [Marstek Venus E V2 V3 (E+S)](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762402#post4762402) mit 3.0 gibt es Probleme?
-- ✅ Marstek B2500 (E+S) mit UDP-Port 2220 (je nach Firmware), [auch 3 parallel](https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762714#post4762714)
-- ✅ [Hoymiles MS-A2 (E)](https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762332#post4762332) [(S funktioniert wohl nicht)](https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762405#post4762405)
-- ✅ [Hoymiles HiBattery 1920 AC (E)](https://github.com/ottelo9/tasmota-sml-script/discussions/49)
-- ✅ [Growatt NOAH 2000 (S)](https://www.photovoltaikforum.com/thread/257383-growatt-noah-2000-shelly-pro-3em-ecotracker-emulator-f%C3%BCr-tasmota-lesekopf/?pageNo=1)
-- ✅ Solakon ONE (S) mit UDP-Port = 1010
-- ✅ Indevolt SF2000 (E)
-- ❌ Jackery Homepower 2000 Ultra (S unmöglich, E kann getestet werden via [TinyC Test](https://github.com/ottelo9/tasmota-sml-script/issues/24#issuecomment-4447909656))
-- ✅ Ecoflow Stream AC Pro (E, S?)
-- ✅ [Minjet Speicher (S, E?)](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#Kommentare)
+Getestete Akkus: [Liste mit getesteten Akkus](https://ottelo9.github.io/tasmota-sml-script/eco_shelly/#tested)  
 
 Scripte:  
 - `1_SML_EcoTrackerEmu_Simple`  

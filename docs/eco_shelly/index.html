@@ -56,6 +56,7 @@ body.lang-de .en{display:none}
 
 <nav>
   <a href="#overview"><span class="en">Overview</span><span class="de">Überblick</span></a>
+  <a href="#tested"><span class="en">Tested batteries</span><span class="de">Getestete Akkus</span></a>
   <a href="#setup"><span class="en">Setup</span><span class="de">Einrichtung</span></a>
   <a href="#mode"><span class="en">Mode</span><span class="de">Modus</span></a>
   <a href="#battery"><span class="en">Battery</span><span class="de">Akku</span></a>
@@ -87,6 +88,54 @@ body.lang-de .en{display:none}
 </table>
 <p>Funktioniert mit Marstek, Jackery, NOAH, Hoymiles und anderen. Für Marstek gibt es eine dritte Möglichkeit, die mehrere Akkus koordiniert: den <a href="../ct002/">CT002-Emulator</a>.</p>
 <p><b>Voraussetzungen:</b> ESP32, Tasmota mit TinyC und <code>USE_SML</code>, ein Lesekopf. Die Zählereinrichtung steht unter <a href="../sml/">SML</a>.</p>
+</div>
+</section>
+
+<section id="tested">
+<h2><span class="en">Tested batteries</span><span class="de">Getestete Akkus</span></h2>
+<div class="en">
+<p>Reported by users, still with the earlier Scripter emulator scripts. The TinyC program speaks the same protocols and does it better, so a battery from this list should run here as well. Feedback with the TinyC program is welcome on <a href="https://github.com/ottelo9/tasmota-sml-script/discussions">GitHub</a> or in the <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/">forum</a>.</p>
+<p>&#x2705; works &middot; &#x274C; does not work &middot; &ndash; not tested</p>
+<table>
+<tr><th>Battery</th><th>EcoTracker</th><th>Shelly</th><th>Note</th></tr>
+<tr><td>Marstek Jupiter C Plus</td><td>&#x2705;</td><td>&#x2705;</td><td>with <a href="#battery">Regulator tweak</a></td></tr>
+<tr><td>Marstek Venus A</td><td>&#x2705;</td><td>&#x2705;</td><td><a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762600#post4762600">Forum</a></td></tr>
+<tr><td>Marstek Venus E V2 / V3</td><td>&#x2705;</td><td>&#x2705;</td><td><a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762402#post4762402">Forum</a>; problems reported with 3.0</td></tr>
+<tr><td>Marstek B2500</td><td>&#x2705;</td><td>&#x2705;</td><td>UDP port 2220 (depends on firmware); <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762714#post4762714">three in parallel</a></td></tr>
+<tr><td>Hoymiles MS-A2</td><td>&#x2705;</td><td>&#x274C;</td><td><a href="https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762332#post4762332">EcoTracker</a>, <a href="https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762405#post4762405">Shelly apparently not</a></td></tr>
+<tr><td>Hoymiles HiBattery 1920 AC</td><td>&#x2705;</td><td>&ndash;</td><td><a href="https://github.com/ottelo9/tasmota-sml-script/discussions/49">Discussion</a></td></tr>
+<tr><td>Growatt NOAH 2000</td><td>&ndash;</td><td>&#x2705;</td><td><a href="https://www.photovoltaikforum.com/thread/257383-growatt-noah-2000-shelly-pro-3em-ecotracker-emulator-f%C3%BCr-tasmota-lesekopf/?pageNo=1">Forum</a></td></tr>
+<tr><td>Solakon ONE</td><td>&ndash;</td><td>&#x2705;</td><td>UDP port 1010</td></tr>
+<tr><td>Indevolt SF2000</td><td>&#x2705;</td><td>&ndash;</td><td></td></tr>
+<tr><td>Ecoflow Stream AC Pro</td><td>&#x2705;</td><td>&ndash;</td><td></td></tr>
+<tr><td>Minjet</td><td>&ndash;</td><td>&#x2705;</td><td><a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#Kommentare">Blog comments</a></td></tr>
+<tr><td>Jackery Homepower 2000 Ultra</td><td>&ndash;</td><td>&#x274C;</td><td>Shelly impossible; EcoTracker can be tried with the <a href="https://github.com/ottelo9/tasmota-sml-script/issues/24#issuecomment-4447909656">TinyC test</a></td></tr>
+</table>
+<p>Several batteries on one emulator: <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773">3 Marstek (2&times; B2500, 1&times; Venus A) in parallel</a>. For several Marstek batteries the <a href="../ct002/">CT002 emulator</a> is the better choice.</p>
+<p>The battery and the reading head need a good WiFi link. A Marstek Jupiter C Plus with poor reception found the emulator and dropped it again at once. Some batteries also fail when they and the emulator sit on different access points or repeaters.</p>
+<p>If the battery has problems or the web interface feels sluggish, power saving can be switched off. Option <a href="../sml/#sleep">Power saving off</a> (top of the settings page, below the language).</p>
+</div>
+<div class="de">
+<p>Von Nutzern gemeldet, noch mit den früheren Scripter-Emulator-Scripten. Das TinyC-Programm spricht dieselben Protokolle und macht es besser &mdash; ein Akku aus dieser Liste sollte also auch hier laufen. Rückmeldungen mit dem TinyC-Programm gern auf <a href="https://github.com/ottelo9/tasmota-sml-script/discussions">GitHub</a> oder im <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/">Forum</a>.</p>
+<p>&#x2705; läuft &middot; &#x274C; läuft nicht &middot; &ndash; nicht getestet</p>
+<table>
+<tr><th>Akku</th><th>EcoTracker</th><th>Shelly</th><th>Hinweis</th></tr>
+<tr><td>Marstek Jupiter C Plus</td><td>&#x2705;</td><td>&#x2705;</td><td>mit <a href="#battery">Regleroptimierung</a></td></tr>
+<tr><td>Marstek Venus A</td><td>&#x2705;</td><td>&#x2705;</td><td><a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762600#post4762600">Forum</a></td></tr>
+<tr><td>Marstek Venus E V2 / V3</td><td>&#x2705;</td><td>&#x2705;</td><td><a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762402#post4762402">Forum</a>; mit 3.0 wurden Probleme gemeldet</td></tr>
+<tr><td>Marstek B2500</td><td>&#x2705;</td><td>&#x2705;</td><td>UDP-Port 2220 (je nach Firmware); <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762714#post4762714">auch 3 parallel</a></td></tr>
+<tr><td>Hoymiles MS-A2</td><td>&#x2705;</td><td>&#x274C;</td><td><a href="https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762332#post4762332">EcoTracker</a>, <a href="https://www.photovoltaikforum.com/thread/251277-hoymiles-ms-a2-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4762405#post4762405">Shelly wohl nicht</a></td></tr>
+<tr><td>Hoymiles HiBattery 1920 AC</td><td>&#x2705;</td><td>&ndash;</td><td><a href="https://github.com/ottelo9/tasmota-sml-script/discussions/49">Diskussion</a></td></tr>
+<tr><td>Growatt NOAH 2000</td><td>&ndash;</td><td>&#x2705;</td><td><a href="https://www.photovoltaikforum.com/thread/257383-growatt-noah-2000-shelly-pro-3em-ecotracker-emulator-f%C3%BCr-tasmota-lesekopf/?pageNo=1">Forum</a></td></tr>
+<tr><td>Solakon ONE</td><td>&ndash;</td><td>&#x2705;</td><td>UDP-Port 1010</td></tr>
+<tr><td>Indevolt SF2000</td><td>&#x2705;</td><td>&ndash;</td><td></td></tr>
+<tr><td>Ecoflow Stream AC Pro</td><td>&#x2705;</td><td>&ndash;</td><td></td></tr>
+<tr><td>Minjet</td><td>&ndash;</td><td>&#x2705;</td><td><a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#Kommentare">Blog-Kommentare</a></td></tr>
+<tr><td>Jackery Homepower 2000 Ultra</td><td>&ndash;</td><td>&#x274C;</td><td>Shelly unmöglich; EcoTracker kann mit dem <a href="https://github.com/ottelo9/tasmota-sml-script/issues/24#issuecomment-4447909656">TinyC-Test</a> probiert werden</td></tr>
+</table>
+<p>Mehrere Akkus an einem Emulator: <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773">3 Marstek (2&times; B2500, 1&times; Venus A) parallel</a>. Für mehrere Marstek-Akkus ist der <a href="../ct002/">CT002-Emulator</a> die bessere Wahl.</p>
+<p>Akku und Lesekopf brauchen eine gute WLAN-Verbindung. Ein Marstek Jupiter C Plus mit schlechtem Empfang fand den Emulator und verlor ihn sofort wieder. Manche Akkus scheitern auch, wenn sie und der Emulator an unterschiedlichen Accesspoints bzw. Repeatern hängen.</p>
+<p>Bei Problemen mit dem Akku oder trägem Verhalten der Weboberfläche kann der Energiesparmodus ausgeschaltet werden. Option <a href="../sml/#sleep">Energiesparmodus aus</a> (oben auf der Einstellungsseite, unter der Sprache).</p>
 </div>
 </section>
 

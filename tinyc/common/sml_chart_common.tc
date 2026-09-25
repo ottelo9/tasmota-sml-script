@@ -546,7 +546,7 @@ void sml_chart_data_panel(int idx_base, int idx_power, int idx_bars) {
 // export side by side, each on its own axis) the week and month charts share.
 // The loader is already on the page from the WebChart line charts above.
 void sml_chart_bar_js() {
-    webSend("<style>.smlc{width:100%;box-sizing:border-box;height:280px}</style><script>function _smlB(i,t,r,o){google.charts.setOnLoadCallback(function(){if(o.d){o.chartArea={left:60,right:60,top:30,height:'70%'};o.legend={position:'top'};o.series={0:{color:'#27ae60',targetAxisIndex:0},1:{color:'#f39c12',targetAxisIndex:1}};o.vAxes={0:{format:'# kWh'},1:{format:'# kWh'}}}o.title=t;o.chartArea=o.chartArea||{left:50,right:20,top:30,height:'70%'};o.chartArea.backgroundColor='#f0f2f5';o.legend=o.legend||'none';o.vAxis={format:'# kWh'};new google.visualization.ColumnChart(document.getElementById(i)).draw(google.visualization.arrayToDataTable(r),o)})}</script>");
+    webSend("<style>.smlc{width:100%;box-sizing:border-box;height:280px}</style><script>function _smlB(i,t,r,o){google.charts.setOnLoadCallback(function(){if(o.d){o.chartArea={left:60,right:60,top:30,height:'70%'};o.legend={position:'top'};o.series={0:{color:'#27ae60',targetAxisIndex:0},1:{color:'#f39c12',targetAxisIndex:1}};o.vAxes={0:{format:'#.## kWh'},1:{format:'#.## kWh'}}}o.title=t;o.chartArea=o.chartArea||{left:50,right:20,top:30,height:'70%'};o.chartArea.backgroundColor='#f0f2f5';o.legend=o.legend||'none';o.vAxis={format:'#.## kWh'};new google.visualization.ColumnChart(document.getElementById(i)).draw(google.visualization.arrayToDataTable(r),o)})}</script>");
 }
 
 // Opens one bar chart up to its header row; the caller sends the rows and

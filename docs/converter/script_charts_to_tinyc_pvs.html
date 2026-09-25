@@ -419,7 +419,9 @@ function drawSeries(c, v) {
     x.beginPath(); x.moveTo(padL, yy); x.lineTo(w - padR, yy); x.stroke();
   });
 
-  if (v.length <= 40) {
+  // Bars up to the 53 weeks; the power rings (180..1441 points) are curves.
+  const bars = v.length <= 60;
+  if (bars) {
     // Bars sit in SLOTS, not on the endpoints. With the endpoint mapping the
     // first bar was centred on padL, so half of it covered the axis labels.
     const slot = (w - padL - padR) / v.length;
@@ -445,7 +447,7 @@ function drawSeries(c, v) {
   const unit = c.dataset.unit || "";
   if (unit) { x.textAlign = "left"; x.fillText(unit, padL + 4, padT + 3); }
 
-  c._plot = { v: v, padL: padL, padR: padR, bars: v.length <= 40 };   // for the hover handler
+  c._plot = { v: v, padL: padL, padR: padR, bars: bars };   // for the hover handler
 }
 
 // ── Hover: the value under the cursor ────────────────────────────────────────

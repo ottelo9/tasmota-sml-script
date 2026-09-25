@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tasmota SML scripts</title>
+<title>Tasmota TinyC Programme (SML/Emulator)</title>
 <style>
 :root{--bg:#f7f7f8;--fg:#1c1c1e;--mut:#5b5b60;--card:#fff;--line:#dcdce0;--accent:#0a6ebd;--code:#f0f0f2}
 @media (prefers-color-scheme:dark){
@@ -18,10 +18,12 @@ h1{margin:0 0 4px;font-size:22px}
 .switch{margin-top:14px;display:flex;gap:8px}
 .switch button{font:inherit;font-size:13px;padding:5px 14px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;cursor:pointer}
 .switch button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:0 0 12px;text-decoration:none;color:inherit}
-a.card:hover{border-color:var(--accent)}
-a.card b{color:var(--accent);font-size:16px}
-a.card span{display:block;color:var(--mut);font-size:14px;margin-top:3px}
+.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:0 0 12px;text-decoration:none;color:inherit}
+.card:hover{border-color:var(--accent)}
+.card b{color:var(--accent);font-size:16px}
+.card b a{color:inherit;text-decoration:none}
+.card span a{color:var(--accent)}
+.card span{display:block;color:var(--mut);font-size:14px;margin-top:3px}
 footer{color:var(--mut);font-size:13px;text-align:center;margin-top:26px}
 footer a{color:var(--accent)}
 .sw{display:inline-block;background:var(--code);border:1px solid var(--line);border-radius:4px;padding:0 6px;font:600 .8em/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.06em;vertical-align:baseline}
@@ -33,8 +35,8 @@ body.lang-de .en{display:none}
 <div class="wrap">
 
 <header>
-  <h1>Tasmota SML scripts</h1>
-  <p class="sub"><span class="en">Read your electricity meter with an ESP32 &mdash; and let a PV battery use it</span><span class="de">Stromzähler mit einem ESP32 auslesen &mdash; und eine PV-Batterie damit versorgen</span></p>
+  <h1>Tasmota TinyC Programme (SML/Emulator)</h1>
+  <p class="sub"><span class="en">Read your electricity meter with a Tasmota IR reading head (ESP32), short- and long-term charts, import/export per week, month and year. Optionally with a Shelly/EcoTracker/CT002 emulator for zero feed-in (PV battery)</span><span class="de">Stromzähler mit einem Tasmota IR-Lesekopf (ESP32) auslesen, Kurz- und Langzeitdiagramme, Verbräuche/Einspeisung pro Woche, Monat und Jahr. Optional auch mit einem Shelly/EcoTracker/CT002-Emulator um Nulleinspeisung (PV-Akku) zu realisieren</span></p>
   <div class="switch">
     <button data-set="en">English</button>
     <button data-set="de">Deutsch</button>
@@ -42,33 +44,27 @@ body.lang-de .en{display:none}
 </header>
 
 <a class="card" href="sml/">
-  <b><span class="en">SML meter</span><span class="de">SML-Zähler</span></b>
-  <span class="en">The base: programs, descriptor, pins, charts, telemetry, Modbus-TCP</span>
-  <span class="de">Die Basis: Programme, Descriptor, Pins, Diagramme, Telemetrie, Modbus-TCP</span>
+  <b><span class="en">General: the meter program(s) (SML) explained</span><span class="de">Allgemein: Stromzähler Programm(e) (SML) erklärt</span></b>
+  <span class="en">Settings and programs: meter selection (descriptor), pins, charts, HTTP API, Modbus-TCP, ...</span>
+  <span class="de">Einstellungen und Programme: Stromzählerauswahl (Descriptor), Pins, Diagramme, HTTP-API, Modbus-TCP, ...</span>
 </a>
 
 <a class="card" href="ct002/">
   <b>Marstek CT002 / CT003</b>
-  <span class="en">CT emulator on UDP 12345, coordinates several batteries</span>
-  <span class="de">CT-Emulator auf UDP 12345, koordiniert mehrere Akkus</span>
+  <span class="en">Emulates a Marstek CT002/CT003 3-phase smart meter. If more than one Marstek battery is to be used, this is the better choice over Shelly/EcoTracker.</span>
+  <span class="de">Emuliert einen Marstek CT002 CT003 3-Phasen Smart Meter. Falls mehr als ein Marstek Akku verwendet werden soll ist das die bessere Wahl gegenüber Shelly/EcoTracker.</span>
 </a>
 
-<a class="card" href="eco_shelly/">
-  <b>EcoTracker / Shelly Pro 3EM, EM50, EM Gen3</b>
-  <span class="en">Meter emulator for nearly any PV battery</span>
-  <span class="de">Zähler-Emulator für fast jede PV-Batterie</span>
-</a>
-
-<a class="card" href="converter/">
-  <b><span class="en">Scripter charts &rarr; TinyC</span><span class="de">Scripter-Diagramme &rarr; TinyC</span></b>
-  <span class="en">Move the bar charts over from a Tasmota Scripter script, in four steps</span>
-  <span class="de">Die Balkendiagramme aus einem Tasmota-Scripter-Script umziehen, in vier Schritten</span>
-</a>
+<div class="card">
+  <b><a href="eco_shelly/">EcoTracker / Shelly (Pro 3EM, EM50, EM Gen3)</a></b>
+  <span class="en">3-phase smart meter for nearly any PV battery. <a href="eco_shelly/#tested">List of tested batteries</a></span>
+  <span class="de">3-Phasen Smart Meter für fast jeden PV-Akku. <a href="eco_shelly/#tested">Liste mit getesteten Akkus</a></span>
+</div>
 
 <a class="card" href="pvs_editor/">
-  <b><span class="en">Chart editor</span><span class="de">Diagramm-Editor</span></b>
-  <span class="en">Look at and edit the data of a running TinyC program</span>
-  <span class="de">Diagramme und Daten vom TinyC Programm anzeigen/bearbeiten</span>
+  <b><span class="en">TinyC data &amp; chart editor</span><span class="de">TinyC Daten&amp;Diagramm Editor</span></b>
+  <span class="en">Load, edit and export consumption/feed-in data and charts from the .pvs file and/or tc_options.cfg</span>
+  <span class="de">Verbräuche/Einspeisedaten/Diagramme aus der .pvs Datei und/oder tc_options.cfg laden/bearbeiten/exportieren</span>
 </a>
 
 <a class="card" href="converter/">
