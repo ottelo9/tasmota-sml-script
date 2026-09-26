@@ -11,7 +11,7 @@
 #include "sml_modbus_common.tc"
 #include "eco_shelly_common.tc"
 
-char sml_vers[] = "25.09.2026";
+char sml_vers[] = "26.09.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 

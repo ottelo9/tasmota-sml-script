@@ -12,7 +12,7 @@
 #include "sml_modbus_common.tc"
 #include "ct002_common.tc"
 
-char sml_vers[] = "25.09.2026";
+char sml_vers[] = "26.09.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int  sml_sndpwr;         // 1 = publish power2 via MQTT

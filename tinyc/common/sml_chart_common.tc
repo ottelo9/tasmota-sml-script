@@ -982,7 +982,9 @@ void sml_chart_datetime_rows() {
 
 // ── /pwr?v=: the chart names ────────────────────────────────────────────────
 // smlVars() in sml_descriptor.tc does the request, the sml names, power2 and
-// cpwr; this adds the baselines and the bar arrays. 1 = the name was ours.
+// cpwr; this adds the totals and the bar arrays. 1 = the name was ours.
+// dval..yval2 answer what the main page shows - the energy since the zero
+// point (day/week/month/year), not the zero point itself.
 // mcon is 12 months of import only - the Scripter's months 13..24 are mprod.
 void sml_vars_a(float a[], int n) {
     sml_vars_send("[");
@@ -997,14 +999,16 @@ void sml_vars_a(float a[], int n) {
 }
 
 int sml_chart_var(byte t[]) {
-    if      (strcmp(t, "dval")   == 0) sml_vars_f(sml_dval);
-    else if (strcmp(t, "wval")   == 0) sml_vars_f(sml_wval);
-    else if (strcmp(t, "mval")   == 0) sml_vars_f(sml_mval);
-    else if (strcmp(t, "yval")   == 0) sml_vars_f(sml_yval);
-    else if (strcmp(t, "dval2")  == 0) sml_vars_f(sml_dval2);
-    else if (strcmp(t, "wval2")  == 0) sml_vars_f(sml_wval2);
-    else if (strcmp(t, "mval2")  == 0) sml_vars_f(sml_mval2);
-    else if (strcmp(t, "yval2")  == 0) sml_vars_f(sml_yval2);
+    float ein  = smlGet(2);
+    float eout = SML_PV_TOTAL;
+    if      (strcmp(t, "dval")   == 0) sml_vars_f(ein - sml_dval);
+    else if (strcmp(t, "wval")   == 0) sml_vars_f(ein - sml_wval);
+    else if (strcmp(t, "mval")   == 0) sml_vars_f(ein - sml_mval);
+    else if (strcmp(t, "yval")   == 0) sml_vars_f(ein - sml_yval);
+    else if (strcmp(t, "dval2")  == 0) sml_vars_f(eout - sml_dval2);
+    else if (strcmp(t, "wval2")  == 0) sml_vars_f(eout - sml_wval2);
+    else if (strcmp(t, "mval2")  == 0) sml_vars_f(eout - sml_mval2);
+    else if (strcmp(t, "yval2")  == 0) sml_vars_f(eout - sml_yval2);
     else if (strcmp(t, "dcon")   == 0) sml_vars_a(sml_dcon,  31);
     else if (strcmp(t, "wcon")   == 0) sml_vars_a(sml_wcon,  53);
     else if (strcmp(t, "mcon")   == 0) sml_vars_a(sml_mcon,  12);
