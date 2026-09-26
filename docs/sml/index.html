@@ -592,7 +592,7 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>All values 0</th><td>Check <b>Meter active</b>, then the pins, then the descriptor. <b>SML display</b> on tells you whether the driver is producing anything at all.</td></tr>
 <tr><th>Power has the wrong sign</th><td>Import and export are swapped in the descriptor. Feed-in must be negative.</td></tr>
-<tr><th>Values jump</th><td>Switch the <a href="#filter">filter</a> on. If it stays wild, the reading head is sitting badly.</td></tr>
+<tr><th>Values jump</th><td>Switch the <a href="#filter">filter</a> on. If values still jump around, the reading head is aligned badly with IR diodes of meter.</td></tr>
 <tr><th>Charts stay empty</th><td>No NTP time yet, or the baselines were never initialised. See <a href="#data">chart data</a>.</td></tr>
 <tr><th>Settings lost after reboot</th><td>Settings are written when they change and at program stop. A power cut in between can cost the last change.</td></tr>
 <tr><th>Modbus does not answer</th><td>Check the port, and whether the network was up when the program started. <kbd>weblog 4</kbd> shows the bind.</td></tr>
