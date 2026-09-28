@@ -420,11 +420,18 @@ void sml_chart_render_totals() {
 // readability) + DE date in the tooltip (dd.MM.yyyy), independent of the
 // browser locale. WebChartJS runs in the chart's draw scope (dt/o/el) and
 // o.done=1 takes over the draw so it renders as an AreaChart.
-byte sml_chart_js[560];   // snippet incl. x-axis rebuild, format and o.done=1
+//
+// ⚠️ The firmware takes at most 383 chars of it (TC_BUF(js, 384) in
+// SYS_WEB_CHART_JS) and cuts the rest WITHOUT a word. The short-term snippet
+// was 422..430 and lost its tail: at 4 h the cut left a syntax error and the
+// firmware drew its default chart, at 1 h/2 h it left valid JS that threw -
+// never an AreaChart. Keep the longest one (4 h) under 383: it is 367 now.
+// areaOpacity is left out: 0.3 is Google's default anyway.
+byte sml_chart_js[384];   // snippet incl. x-axis rebuild, format and o.done=1
 
 void sml_chart_area_de() {
     strcpy(sml_chart_js,
-        "var f=new google.visualization.DateFormat({pattern:'dd.MM.yyyy HH:mm'});f.format(dt,0);o.chartArea={left:58,right:16,top:30,height:'65%'};o.areaOpacity=0.3;new google.visualization.AreaChart(el).draw(dt,o);o.done=1");
+        "var f=new google.visualization.DateFormat({pattern:'dd.MM.yyyy HH:mm'});f.format(dt,0);o.chartArea={left:58,right:16,top:30,height:'65%'};new google.visualization.AreaChart(el).draw(dt,o);o.done=1");
     WebChartJS(sml_chart_js);
 }
 
@@ -436,20 +443,20 @@ void sml_chart_area_st() {
     int stp = sml_st_step();
     int pad = stp * 1000;
     if (pad < 5000) pad = 5000;
-    sprintf(sml_chart_js, "var N=new Date(),n=dt.getNumberOfRows(),i=0,S=%d", stp * 1000);
+    sprintf(sml_chart_js, "var g=google.visualization,T=Date.now(),n=dt.getNumberOfRows(),i=0,S=%d", stp * 1000);
     sprintfAppend(sml_chart_js, ",P=%d;", pad);
-    strcat(sml_chart_js, "for(;i<n;i++)dt.setValue(i,0,new Date(N.getTime()-(n-1-i)*S));");
+    strcat(sml_chart_js, "for(;i<n;i++)dt.setValue(i,0,new Date(T-(n-1-i)*S));");
     // The window has to be overwritten as well, not just the data: the
     // firmware pins o.hAxis.viewWindow from the ORIGINAL minute-spaced x
     // values, so rewriting dt alone left a 179-minute axis with 15 minutes of
     // data squeezed against its right edge.
-    strcat(sml_chart_js, "o.hAxis={format:'HH:mm',viewWindow:{min:new Date(N.getTime()-(n-1)*S-P),max:new Date(N.getTime()+P)}};");
+    strcat(sml_chart_js, "o.hAxis={format:'HH:mm',viewWindow:{min:new Date(T-(n-1)*S-P),max:new Date(T+P)}};");
     // Seconds in the TOOLTIP where a slot is shorter than a minute; the axis
     // ticks stay at HH:mm, which is all they have room for.
-    strcat(sml_chart_js, "new google.visualization.DateFormat({pattern:'");
+    strcat(sml_chart_js, "new g.DateFormat({pattern:'");
     if (stp < 60) strcat(sml_chart_js, "HH:mm:ss");
     else          strcat(sml_chart_js, "dd.MM.yyyy HH:mm");
-    strcat(sml_chart_js, "'}).format(dt,0);o.chartArea={left:58,right:16,top:30,height:'65%'};o.areaOpacity=0.3;new google.visualization.AreaChart(el).draw(dt,o);o.done=1");
+    strcat(sml_chart_js, "'}).format(dt,0);o.chartArea={left:58,right:16,top:30,height:'65%'};new g.AreaChart(el).draw(dt,o);o.done=1");
     WebChartJS(sml_chart_js);
 }
 
