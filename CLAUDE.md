@@ -151,11 +151,17 @@ Control loop ported from AstraMeter (GPL-3.0; credit on page 4),
   samples) → oscillation damper (sign reversals) → **absolute** pace clamp.
   Never pace against the last reported value — that is a windup oscillator.
 - A battery reporting phase `0` is diagnosing its phase: send it the **raw**
-  meter, no control, no offset (AstraMeter `_resolve_target`).
+  meter, no control, no offset (AstraMeter `_resolve_target`). When it leaves
+  phase `0`, `ctCtrlReset()` re-seeds all four loops (AstraMeter #653) — Venus
+  FW 1.50 repeats the sweep about every 35 min.
 - `ctShare()` splits per bucket. Concentration and rotation apply only to the
   B2500 family (`HMA`/`HMJ`/`HMK`, 80 W start floor); Venus and Jupiter always
   share. Batteries on different phases never form a pool — with a netting meter
-  they belong on phase D.
+  they belong on phase D. With saturation detection on, a saturated peer leaves
+  the share and the balance average (AstraMeter #679, ceilings there).
+- Last AstraMeter comparison: `0a8371a` (2026-09-27). Start the next one there.
+- Source files may be CRLF or LF per file (Git `autocrlf`); patch scripts must
+  keep each file's ending.
 
 ## Other facts
 

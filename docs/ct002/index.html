@@ -158,7 +158,7 @@ body.lang-de .en{display:none}
 <li><code>A</code> / <code>B</code> / <code>C</code>: the battery regulates against that phase and shares it with other batteries on the same phase.</li>
 <li><code>D</code>: combined mode. The battery reads the <b>total</b> of all three phases. With a netting meter this is normally the right choice.</li>
 <li><code>x</code> in the web UI means the battery has not decided yet and is still probing. It changes its own output and watches which phase moves. With a simulator that produces constant values it can never conclude &mdash; give it a real meter, or set the phase manually in the app.</li>
-<li>While a battery is probing, the emulator answers it with the <b>raw</b> meter reading: active control and the offset are bypassed for that battery alone. They would otherwise defeat the diagnosis &mdash; the grid predictor exists precisely to subtract the battery's own output change, so it could open up to 800&nbsp;W and still be shown 0&nbsp;W. The log says <code>in inspection mode</code> while this lasts and <code>settled on phase</code> when it is over. Every other battery keeps being steered normally.</li>
+<li>While a battery is probing, the emulator answers it with the <b>raw</b> meter reading: active control and the offset are bypassed for that battery alone. They would otherwise defeat the diagnosis &mdash; the grid predictor exists precisely to subtract the battery's own output change, so it could open up to 800&nbsp;W and still be shown 0&nbsp;W. The log says <code>inspect</code> when it starts and <code>phase A</code> (or B, C, D) when it is over, followed by <code>re-seed</code>: the control loop starts again from a clean state, since the sweep drove the battery through a kilowatt swing it would otherwise still be carrying. A Venus on firmware 1.50 repeats this inspection about every 35&nbsp;minutes, not only once. Every other battery keeps being steered normally.</li>
 </ul>
 </div>
 <div class="de">
@@ -186,7 +186,7 @@ body.lang-de .en{display:none}
 <li><code>A</code> / <code>B</code> / <code>C</code>: der Akku regelt gegen diese Phase und teilt sie sich mit anderen Akkus auf derselben Phase.</li>
 <li><code>D</code>: kombiniert. Der Akku liest die <b>Summe</b> aller drei Phasen. Bei saldierendem Zähler normalerweise die richtige Wahl.</li>
 <li><code>x</code> in der Weboberfläche heißt: der Akku hat sich noch nicht entschieden und sucht. Er ändert dazu seine eigene Leistung und schaut, welche Phase sich mitbewegt. Bei einem Simulator mit konstanten Werten kommt er nie zu einem Schluss &mdash; also echten Zähler anschließen oder die Phase in der App fest vorgeben.</li>
-<li>Solange ein Akku sucht, bekommt er den <b>rohen</b> Zählerwert: aktive Regelung und Offset sind für genau diesen Akku ausgesetzt. Sie würden die Diagnose sonst unmöglich machen &mdash; der Netz-Prädiktor ist ja gerade dazu da, die eigene Leistungsänderung des Akkus herauszurechnen, also könnte er auf 800&nbsp;W aufmachen und würde trotzdem 0&nbsp;W sehen. Im Log steht währenddessen <code>in inspection mode</code> und danach <code>settled on phase</code>. Alle anderen Akkus werden normal weitergeregelt.</li>
+<li>Solange ein Akku sucht, bekommt er den <b>rohen</b> Zählerwert: aktive Regelung und Offset sind für genau diesen Akku ausgesetzt. Sie würden die Diagnose sonst unmöglich machen &mdash; der Netz-Prädiktor ist ja gerade dazu da, die eigene Leistungsänderung des Akkus herauszurechnen, also könnte er auf 800&nbsp;W aufmachen und würde trotzdem 0&nbsp;W sehen. Im Log steht zu Beginn <code>inspect</code> und am Ende <code>phase A</code> (oder B, C, D), danach <code>re-seed</code>: die Regelung startet neu von einem sauberen Stand, denn der Suchlauf hat den Akku durch einen Kilowatt-Hub gefahren, den sie sonst noch mitschleppen würde. Eine Venus mit Firmware 1.50 wiederholt diese Suche etwa alle 35&nbsp;Minuten, nicht nur einmal. Alle anderen Akkus werden normal weitergeregelt.</li>
 </ul>
 </div>
 </section>
@@ -198,7 +198,7 @@ body.lang-de .en{display:none}
 <p class="warn">Fair distribution is a correction, not a refinement. Without it <b>every</b> battery is told the whole deviation of its phase, so two of them each pull the full amount and the pair overshoots by a factor of two. If you run more than one battery, switch it on.</p>
 <table>
 <tr><th>Share the load</th><td>Divides the phase deviation by the number of participating batteries and adds the balance term below. Off = the old behaviour, every battery hears the full value.</td></tr>
-<tr><th>Saturation</th><td>Tracks whether a battery follows what it is told. One that is full or empty stops moving; its share shrinks and the others pick it up automatically. Also suspends the minimum output below, which an empty battery cannot deliver anyway.</td></tr>
+<tr><th>Saturation</th><td>Tracks whether a battery follows what it is told. One that is full, empty or held at an output limit set in its firmware stops moving; its share goes to the others, and it drops out of the balancing average &mdash; otherwise a battery capped at 800&nbsp;W would hold back a 2500&nbsp;W one beside it and leave about 150&nbsp;W of import standing under heavy load. Also suspends the minimum output below, which an empty battery cannot deliver anyway.</td></tr>
 </table>
 <p>A deprioritised battery fades out by 15&nbsp;% per cycle instead of dropping to zero at once, so the promoted one has time to ramp and no gap opens at the handover.</p>
 
@@ -232,7 +232,7 @@ body.lang-de .en{display:none}
 <p class="warn">Die faire Verteilung ist eine Korrektur, keine Feinabstimmung. Ohne sie bekommt <b>jeder</b> Akku die volle Abweichung seiner Phase gemeldet &mdash; zwei Akkus ziehen also beide den ganzen Betrag und schießen gemeinsam um das Doppelte über. Wer mehr als einen Akku hat, sollte sie einschalten.</p>
 <table>
 <tr><th>Last verteilen</th><td>Teilt die Phasenabweichung durch die Zahl der teilnehmenden Akkus und rechnet den Ausgleich unten dazu. Aus = das bisherige Verhalten, jeder Akku hört den vollen Wert.</td></tr>
-<tr><th>Sättigung</th><td>Verfolgt, ob ein Akku dem folgt, was ihm gesagt wird. Ein voller oder leerer bewegt sich nicht mehr; sein Anteil sinkt, die anderen übernehmen ihn von selbst. Setzt außerdem die Mindestabgabe aus, die ein leerer Akku ohnehin nicht liefern kann.</td></tr>
+<tr><th>Sättigung</th><td>Verfolgt, ob ein Akku dem folgt, was ihm gesagt wird. Einer, der voll, leer oder in seiner Firmware auf eine Höchstleistung begrenzt ist, bewegt sich nicht mehr; sein Anteil geht an die anderen, und beim Ausgleich zählt er nicht mehr mit &mdash; sonst würde ein auf 800&nbsp;W begrenzter Akku einen 2500-W-Akku daneben bremsen, und unter Volllast blieben rund 150&nbsp;W Bezug stehen. Setzt außerdem die Mindestabgabe aus, die ein leerer Akku ohnehin nicht liefern kann.</td></tr>
 </table>
 <p>Ein zurückgestellter Akku blendet mit 15&nbsp;% je Zyklus aus statt sofort auf null zu fallen &mdash; so hat der übernehmende Zeit hochzufahren und es entsteht keine Lücke.</p>
 
