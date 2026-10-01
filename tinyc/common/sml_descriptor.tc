@@ -74,8 +74,11 @@ void smlDescEditLoad() {
 }
 
 // The export total [kWh], whichever way the meter provides it.
+// The driver answers an index past its last value with value 1 - a descriptor
+// with only power and import (S0) would otherwise report its power as export.
 float sml_export() {
     if (sml_bezug > 0) return sml_virt_out;
+    if (smlGet(0) < 3) return 0.0;
     return smlGet(3);
 }
 

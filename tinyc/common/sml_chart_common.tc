@@ -387,15 +387,16 @@ void sml_chart_60s_tick() {
 // The live meter values, so the driver's own rows can be switched off - they
 // prefix every value with the meter name, which reads badly. Split from the
 // totals below so a per-phase row can go between them, where it belongs.
+// The export row only with "Feed-in" on, like the other export rows.
 void sml_chart_render_meter() {
     if (ui_de) {
         sprintf(sml_buf, "{s}Leistung{m}%.0f W{e}", smlGet(1));      webSend(sml_buf);
         sprintf(sml_buf, "{s}Bezug{m}%.3f kWh{e}", smlGet(2));       webSend(sml_buf);
-        sprintf(sml_buf, "{s}Einspeisung{m}%.3f kWh{e}", SML_PV_TOTAL); webSend(sml_buf);
+        if (sml_pv > 0) { sprintf(sml_buf, "{s}Einspeisung{m}%.3f kWh{e}", SML_PV_TOTAL); webSend(sml_buf); }
     } else {
         sprintf(sml_buf, "{s}Power{m}%.0f W{e}", smlGet(1));         webSend(sml_buf);
         sprintf(sml_buf, "{s}Import{m}%.3f kWh{e}", smlGet(2));      webSend(sml_buf);
-        sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", SML_PV_TOTAL);    webSend(sml_buf);
+        if (sml_pv > 0) { sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", SML_PV_TOTAL); webSend(sml_buf); }
     }
 }
 
