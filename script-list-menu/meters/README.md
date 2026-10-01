@@ -32,13 +32,18 @@ Voraussetzung ist ein Tasmota-Image ab **v15.1.0** (mit `USE_SML_M`, `USE_SML_SC
 ```json
 {
 	"smartmeter": [
-		{ "label": "Kein Zähler gewählt", "filename": "" },
-		{ "label": "Iskra MT175", "filename": "Iskra/Iskra MT175.tas" }
+		{ "id": 0, "label": "Keiner/Selbstdefinierter Zähler", "filename": "" },
+		{ "id": 89, "label": "Iskra MT175", "filename": "Iskra/Iskra MT175.tas" }
 	]
 }
 ```
 
 `label` ist der Anzeigetext im DropDown, `filename` der Pfad relativ zu diesem Ordner.
+`id` ist eine feste Nummer je Eintrag: nie ändern, nie neu vergeben. Ein neuer Zähler bekommt die
+nächste freie Nummer. Solange ältere Firmware die Auswahl noch über die Position speichert, neue
+Einträge **ans Ende** setzen. Eintrag `0` (Keiner/Selbstdefinierter Zähler) lädt nichts herunter und behält die
+`/sml_meter.def`, für einen selbst geschriebenen Descriptor. RX/TX und Filter werden nur
+dort eingetragen, wo die Platzhalter `%0rxpin%`, `%0txpin%`, `%0smlf%` stehen.
 
 ---
 

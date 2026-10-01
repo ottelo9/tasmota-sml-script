@@ -1,0 +1,10 @@
+; S0-Zähler mit 1000 Imp/kWh. Leistung wird aus dem Impulsabstand errechnet.
+; Unter 720 W zeigt die Leistung 0 W: kommt 5 s lang kein Impuls, setzt der
+; Treiber sie auf 0 (CNT_PULSE_TIMEOUT 5000 ms, bei 720 W kommt alle 5 s ein Impuls).
+; Zählerstand setzen (Konsole, Wert in Impulsen = Wh), z.B. 12345,678 kWh:
+; Sensor53 c1 12345678
+>M 1
++1,%0rxpin%,c,1,-20,S0
+1,1-0:1.7.0*255(@0.0166667,Leistung,W,Power,0
+1,1-0:1.8.0*255(@1000,Verbrauch,kWh,ImportActive,3
+#

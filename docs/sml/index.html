@@ -234,7 +234,7 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>Meter active</th><td>Switches the SML driver on and off (Rule1). Off means no readings at all.</td></tr>
 <tr><th>3 phases</th><td>Default <span class="sw">OFF</span>. Switch it on only if two things are true: your meter really sends power per phase, and the three phases are entered in the descriptor (<code>sml_meter.def</code>). The main page then shows an <b>L1 / L2 / L3</b> row and the emulators report real per-phase values instead of putting everything on L1. Publishing over MQTT does not depend on this option: if the phases are in the descriptor they are published either way &mdash; as zeros if the meter cannot supply them. If they are not in the descriptor, nothing is published, whatever this option says.</td></tr>
-<tr><th>Repo</th><td>Pulldown with ready-made descriptors from my repository. Picking one downloads it and restarts the driver.</td></tr>
+<tr><th>Repo</th><td>Pulldown with ready-made descriptors from my repository. Picking one downloads it and restarts the driver. <b>None/own meter</b> downloads nothing and keeps your <code>/sml_meter.def</code> &mdash; for a descriptor you write or edit yourself. RX/TX and the filter still go in wherever the file has the placeholders <code>%0rxpin%</code>, <code>%0txpin%</code>, <code>%0smlf%</code>; without them the file stays as it is.</td></tr>
 <tr><th>Descriptor</th><td>The link opens the file editor for hand-tuning. Your meter not in the list? Start from the closest one.</td></tr>
 </table>
 <p>The first three values are fixed by convention and everything else builds on them: <code>1</code> power&nbsp;[W], <code>2</code> import&nbsp;[kWh], <code>3</code> export&nbsp;[kWh].</p>
@@ -244,7 +244,7 @@ body.lang-de .en{display:none}
 <table>
 <tr><th>Zähler aktiv</th><td>Schaltet den SML-Treiber ein und aus (Rule1). Aus heißt: gar keine Messwerte.</td></tr>
 <tr><th>3 Phasen</th><td>Standard <span class="sw">AUS</span>. Nur einschalten, wenn beides zutrifft: der Zähler sendet die Leistung je Phase wirklich, und die drei Phasen sind im Descriptor (<code>sml_meter.def</code>) eingetragen. Dann erscheint auf der Hauptseite eine Zeile <b>L1 / L2 / L3</b>, und die Emulatoren melden echte Phasenwerte statt alles auf L1. Vom Zustand dieser Option unabhängig ist die Veröffentlichung per MQTT: Stehen die Phasen im Descriptor, werden sie so oder so gesendet &mdash; kann der Zähler sie nicht liefern, als Nullen. Fehlen sie im Descriptor, wird gar nichts veröffentlicht, egal wie diese Option steht.</td></tr>
-<tr><th>Repo</th><td>Auswahlliste mit fertigen Descriptoren aus meinem Repository. Eine Auswahl lädt ihn herunter und startet den Treiber neu.</td></tr>
+<tr><th>Repo</th><td>Auswahlliste mit fertigen Descriptoren aus meinem Repository. Eine Auswahl lädt ihn herunter und startet den Treiber neu. <b>Keiner/Selbstdefinierter Zähler</b> lädt nichts herunter und behält deine <code>/sml_meter.def</code> &mdash; für einen Descriptor, den du selbst schreibst oder bearbeitest. RX/TX und Filter werden trotzdem eingetragen, wo die Datei die Platzhalter <code>%0rxpin%</code>, <code>%0txpin%</code>, <code>%0smlf%</code> enthält; ohne sie bleibt die Datei, wie sie ist.</td></tr>
 <tr><th>Descriptor</th><td>Der Link öffnet den Dateieditor zum Anpassen. Zähler nicht in der Liste? Mit dem ähnlichsten anfangen.</td></tr>
 </table>
 <p>Die ersten drei Werte sind per Konvention festgelegt, alles andere baut darauf auf: <code>1</code> Leistung&nbsp;[W], <code>2</code> Bezug&nbsp;[kWh], <code>3</code> Einspeisung&nbsp;[kWh].</p>
