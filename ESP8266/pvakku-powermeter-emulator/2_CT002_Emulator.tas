@@ -1,0 +1,431 @@
+>D 180
+; CT002 Emulator V1.1 für ESP8266 und Tasmota Image von next145 (via KI)
+; https://github.com/ottelo9/tasmota-sml-script/discussions/79#discussioncomment-18709465
+; Emuliert einen Marstek CT002 (Smart Meter) für Marstek Akkus (Venus, Jupiter, B2500)
+; Bis zu 4 Akkus, UDP-Port 12345. Die Akkus fragen den CT002 per UDP ab, das Script
+; antwortet mit der Netzleistung und den Summen der anderen Akkus.
+; Lesbare Fassung mit Kommentaren. Auf dem ESP8266 ist die Scriptgröße auf 4096 Zeichen
+; begrenzt (EEP_SCRIPT_SIZE) - dort die Version aus dem Ordner "komprimiert" verwenden.
+
+; Puffer und Zeichenketten
+; cm = MAC des CT (klein geschrieben, aus der Anfrage)
+; rx = empfangener UDP-Rahmen, später Nutzdaten bzw. Antwortrahmen
+; r  = Hilfsstring für ein Feld
+; tx = Akkutyp aus der Anfrage, später Antwort-Nutzdaten
+cm=""
+rx=""
+r=""
+tx=""
+
+; Feld d[1..61]:
+; d[1..5]   Anzahl aktiver Akkus je Modus (1=Total/x, 2=A, 3=B, 4=C, 5=D)
+; d[6..10]  Summe der negativen Leistungen je Modus (Laden)
+; d[11..15] Summe der positiven Leistungen je Modus (Entladen)
+; d[16..55] 4 Slots für Akkus, je 10 Werte ab b=16+(k-1)*10:
+;           d[b]=Modus (0=frei), d[b+1]=Leistung, d[b+2]=Teilnahme,
+;           d[b+3]=letzte Anfrage (upsecs), d[b+4..b+9]=MAC des Akkus
+; d[56..61] MAC des anfragenden Akkus (6 Bytes)
+M:d=0 61
+
+; Zähler, Indizes, Zwischenwerte
+i=0
+j=0
+k=0
+b=0
+c=0
+n=0
+; cs = XOR-Prüfsumme
+cs=0
+; v = Zahlenwert beim Parsen, sg = Vorzeichen, a = Startindex nach "-"
+v=0
+ok=0
+sg=1
+a=0
+; f = Modus, p = Leistung, e = Teilnahme des Akkus
+f=0
+p=0
+e=0
+; ix = laufende Nummer der Antwort (0..255)
+ix=0
+; up = UDP-Port offen
+up=0
+; t = Zeitstempel, g = Hilfswert
+t=0
+g=0
+; cl = Länge der CT-MAC
+cl=0
+; mt = Zeitpunkt der letzten Fehlermeldung per MQTT
+mt=-30
+
+>B
+->SetOption57 0
+->sensor53 r
+smlj=9
+
+; Fehler höchstens alle 30 s per MQTT melden
+#perr
+g=upsecs-mt
+if g>=30 {
+  mt=upsecs
+  =>Publish2 stat/%topic%/CTDiag {"error":"invalid_power","uptime":%0upsecs%}
+}
+
+>F
+; ---------------------------------------------------------------------------
+; Anfrage eines Akkus empfangen und prüfen
+; Rahmen: SOH STX <Länge> |Feld1|...|FeldN ETX <Prüfsumme 2 Hex>
+; ---------------------------------------------------------------------------
+if up==0 {
+  break
+}
+rx=udp(1)
+n=sl(rx)
+if n==0 {
+  break
+}
+if n<12 {
+  break
+}
+if n>=179 {
+  break
+}
+
+; Steuerzeichen: SOH (1) am Anfang, STX (2) danach, ETX (3) vor der Prüfsumme
+c=asc(rx)
+j=asc(sb(rx 1 1))
+b=asc(sb(rx -3 1))
+if c!=1 {
+  break
+}
+if j!=2 {
+  break
+}
+if b!=3 {
+  break
+}
+
+; Die Längenangabe zwischen STX und dem ersten "|" muss zur Rahmenlänge passen
+j=ins(rx "|")
+if j<3 {
+  break
+}
+r=sb(rx 2 j-2)
+if r!=s(0n) {
+  break
+}
+
+; XOR-Prüfsumme über alles außer den letzten 2 Zeichen
+r=sb(rx 0 n-2)
+cs=0
+for i 0 (sl(r)-1) 1
+  cs=cs^asc(sb(r i 1))
+next
+r=sb(rx -2 2)
+; Manche Akkus senden eine einstellige Prüfsumme mit führendem Leerzeichen
+if sb(r 0 1)==" " {
+  if cs>=16 {
+    break
+  }
+  r="0"+sb(r 1 1)
+}
+; Beide Zeichen müssen Hex-Ziffern sein
+for i 0 1 1
+  if ins("0123456789abcdefABCDEF" sb(r i 1))<0 {
+    return 0
+  }
+next
+if hd(r)!=cs {
+  break
+}
+
+; Nutzdaten zwischen dem ersten "|" und ETX, mit "|" am Ende für st()
+rx=sb(rx j+1 (n-j-4))+"|"
+
+; ---------------------------------------------------------------------------
+; Felder lesen (ohne Stringkopien)
+; ---------------------------------------------------------------------------
+; Feld 1: Akkutyp (1..10 Zeichen), wird in der Antwort zurückgegeben
+r=st(rx '|' 1)
+tx=r
+if sl(tx)<1 {
+  break
+}
+if sl(tx)>10 {
+  break
+}
+
+; Feld 2: MAC des Akkus, 12 Hex-Zeichen -> d[56..61]
+r=st(rx '|' 2)
+if sl(r)!=12 {
+  break
+}
+for i 1 6 1
+  j=(i-1)*2
+  d[55+i]=hd(sb(r j 2))
+next
+
+; Feld 3: angefragter CT-Typ, muss HME-4 (CT002) sein
+r=st(rx '|' 3)
+if r!="HME-4" {
+  break
+}
+
+; Feld 4: MAC des CT, wird klein geschrieben zurückgegeben
+cm=st(rx '|' 4)
+cl=sl(cm)
+if cl!=12 {
+  break
+}
+r=""
+for i 0 (cl-1) 1
+  c=asc(sb(cm i 1))
+  ; A..F -> a..f
+  if c>=65 {
+    if c<=70 {
+      c+=32
+    }
+  }
+  r+=tc(c)
+next
+cm=r
+
+; Feld 5: Modus/Phase des Akkus: A/B/C/D -> f=2..5, sonst Total -> f=1
+r=st(rx '|' 5)
+f=1
+if sl(r)==1 {
+  c=ins("ABCDabcd" r)
+  if c>=0 {
+    f=c%4
+    f+=2
+  }
+}
+
+; Feld 6: Leistung des Akkus mit Vorzeichen (ganze Zahl)
+r=st(rx '|' 6)
+v=0
+sg=1
+a=0
+ok=1
+if sb(r 0 1)=="-" {
+  sg=-1
+  a=1
+}
+if sl(r)<=a {
+  =#perr
+  break
+}
+for i a (sl(r)-1) 1
+  c=asc(sb(r i 1))
+  ; nur Ziffern 0..9
+  if c<48 {
+    ok=0
+  }
+  if c>57 {
+    ok=0
+  }
+  v=v*10+c-48
+next
+if ok==0 {
+  =#perr
+  break
+}
+p=v*sg
+; muss in 16 Bit mit Vorzeichen passen
+if p<-32768 {
+  =#perr
+  break
+}
+if p>32767 {
+  =#perr
+  break
+}
+
+; Feld 7: Teilnahme, leer = aktiv (1), sonst Zahl 0..255
+r=st(rx '|' 7)
+e=1
+if r!="" {
+  e=0
+  ok=1
+  for i 0 (sl(r)-1) 1
+    c=asc(sb(r i 1))
+    if c<48 {
+      ok=0
+    }
+    if c>57 {
+      ok=0
+    }
+    e=e*10+c-48
+  next
+  if ok==0 {
+    break
+  }
+  if e>255 {
+    break
+  }
+}
+
+; ---------------------------------------------------------------------------
+; Slot für den Akku suchen (4 Akkus, erkannt an der MAC)
+; ---------------------------------------------------------------------------
+t=upsecs
+; k = Slot mit gleicher MAC, v = freier Slot
+k=0
+v=0
+for j 1 4 1
+  b=16+((j-1)*10)
+  ; Slot freigeben, wenn sich der Akku seit über 30 s nicht gemeldet hat
+  g=t-d[b+3]
+  if g>30 {
+    d[b]=0
+  }
+  if d[b]==0 {
+    v=j
+  }
+  ; belegt und alle 6 MAC-Bytes gleich?
+  ok=1
+  if d[b]==0 {
+    ok=0
+  }
+  if d[b+4]!=d[56] {
+    ok=0
+  }
+  if d[b+5]!=d[57] {
+    ok=0
+  }
+  if d[b+6]!=d[58] {
+    ok=0
+  }
+  if d[b+7]!=d[59] {
+    ok=0
+  }
+  if d[b+8]!=d[60] {
+    ok=0
+  }
+  if d[b+9]!=d[61] {
+    ok=0
+  }
+  if ok==1 {
+    k=j
+  }
+next
+; unbekannter Akku: freien Slot nehmen
+if k==0 {
+  k=v
+}
+; alle 4 Slots belegt
+if k==0 {
+  break
+}
+
+; Akku im Slot speichern: MAC, Modus, Leistung, Teilnahme, Zeit
+b=16+((k-1)*10)
+for i 1 6 1
+  d[b+3+i]=d[55+i]
+next
+d[b]=f
+d[b+1]=p
+d[b+2]=e
+d[b+3]=t
+
+; ---------------------------------------------------------------------------
+; Teilnehmer und Leistungen je Modus summieren
+; ---------------------------------------------------------------------------
+for i 1 15 1
+  d[i]=0
+next
+for k 1 4 1
+  b=16+((k-1)*10)
+  ; nur belegte Slots, die teilnehmen
+  if d[b]>0 {
+    if d[b+2]!=0 {
+      f=d[b]
+      d[f]+=1
+      g=d[b+1]
+      if g<0 {
+        d[5+f]+=g
+      }
+      if g>=0 {
+        d[10+f]+=g
+      }
+    }
+  }
+next
+
+; ---------------------------------------------------------------------------
+; Antwort-Nutzdaten: Netzleistung (Saldo) als Phase A und als Total
+; |HME-4|<CT-MAC>|<Akkutyp>|<Akku-MAC>|A|B|C|Total|Anzahl A..D|RSSI|Nr|
+;  Summen negativ (Laden) 1..5|Summen positiv (Entladen) 1..5
+; ---------------------------------------------------------------------------
+r=tx
+tx="|HME-4|"+cm+"|"+r+"|"
+for i 1 6 1
+  tx+=hn(d[55+i])
+next
+ix=(ix+1)%256
+tx+="|"+s(0sml[1])+"|0|0|"+s(0sml[1])
+for i 2 5 1
+  tx+="|"+s(0d[i])
+next
+; feste Signalstärke -50, dann die laufende Nummer
+tx+="|-50|"+s(0ix)
+for i 1 5 1
+  if d[5+i]<-32768 {
+    d[5+i]=-32768
+  }
+  tx+="|"+s(0d[5+i])
+next
+for i 1 5 1
+  if d[10+i]>32767 {
+    d[10+i]=32767
+  }
+  tx+="|"+s(0d[10+i])
+next
+
+; ---------------------------------------------------------------------------
+; Antwortrahmen bilden und senden
+; ---------------------------------------------------------------------------
+; Länge = Nutzdaten + SOH + STX + ETX + 2 Prüfsummenzeichen + Stellen der
+; Längenangabe selbst - mehrfach gerechnet, bis die Stellenzahl stimmt
+n=sl(tx)+5
+n=sl(tx)+5+sl(s(0n))
+n=sl(tx)+5+sl(s(0n))
+if n>=179 {
+  break
+}
+rx=tc(1)
+rx+=tc(2)
+rx+=s(0n)
+rx+=tx
+rx+=tc(3)
+; XOR-Prüfsumme über den ganzen Rahmen, als 2 Hex-Zeichen anhängen
+cs=0
+for i 0 (sl(rx)-1) 1
+  cs=cs^asc(sb(rx i 1))
+next
+rx+=hn(cs)
+udp(2 rx)
+
+>S
+; UDP-Port 12345 öffnen, sobald WLAN verbunden ist
+if wifis==0 {
+  up=0
+} else {
+  if up==0 {
+    up=udp(0 12345)
+  }
+}
+
+>W
+CT Type{m}CT002
+CT MAC{m}%cm%
+Mode A/B/C/D{m}%0d[2]%/%0d[3]%/%0d[4]%/%0d[5]%
+$<small>CT-Emu V1.1 Script: %0slen% / 4096</small>
+
+; SML Sektion an euren Stromzähler anpassen
+; Reihenfolge nicht ändern: 1=Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]
+>M 1
++1,3,s,0,9600,DTZ541,1
+1,77070100100700ff@1,Leistung,W,curr_w,0
+1,77070100010800ff@1000,Verbrauch,kWh,total_kwh,2
+1,77070100020800ff@1000,Einspeisung,kWh,export_total_kwh,2
+#

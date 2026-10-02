@@ -1,6 +1,7 @@
 {
 	"smartmeter": [
-		{ "id": 0, "label": "Keiner/Selbstdefinierter Zähler", "filename": "" },
+		{ "id": 0, "label": "Keiner/Selbstdefinierter Zähler", "filename": "", "keep": 1 },
+		{ "id": 147, "label": "S0 Zähler (1000Imp/kWh)", "filename": "Allgemein/S0_1000Imp_kWh.tas" },
 		{ "id": 1, "label": "> Lesekopftest mit Spiegel <", "filename": "_Test/Lesekopftest mit Spiegel.tas" },
 		{ "id": 2, "label": "ABB B-Series (B21, B23) (M-Bus via IR)", "filename": "ABB/ABB B-Series (like B21, B23) (M-Bus over Infrared port).tas" },
 		{ "id": 3, "label": "ABB B23 (MODBus)", "filename": "ABB/ABB B23 (MODBus).tas" },
@@ -146,7 +147,6 @@
 		{ "id": 143, "label": "ZPA GH305", "filename": "ZPA/ZPA GH305.tas" },
 		{ "id": 144, "label": "ZPA GS303", "filename": "ZPA/ZPA GS303.tas" },
 		{ "id": 145, "label": "ZPA ZE311", "filename": "ZPA/ZPA ZE311.tas" },
-		{ "id": 146, "label": "ZPA ZE314", "filename": "ZPA/ZPA ZE314.tas" },
-		{ "id": 147, "label": "S0 Zähler (1000Imp/kWh)", "filename": "Allgemein/S0_1000Imp_kWh.tas" }
+		{ "id": 146, "label": "ZPA ZE314", "filename": "ZPA/ZPA ZE314.tas" }
 	]
 }
