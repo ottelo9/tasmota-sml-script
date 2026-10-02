@@ -65,8 +65,8 @@ int ui_reloading;            // latched for the current tick
 //
 // Chart data (dval/mval/yval, the sample rings) is NOT here. It belongs to
 // one program's charts, not to the family, and stays in the .pvs.
-int  tc_opt[34];
-int  tc_opt_own[34];
+int  tc_opt[35];
+int  tc_opt_own[35];
 int  tc_opt_dirty;
 byte tc_opt_b[48];
 
@@ -106,7 +106,7 @@ void tcOptSet(int i, int v) {
 
 void tcOptLoad() {
     int i = 0;
-    while (i < 34) {
+    while (i < 35) {
         tc_opt[i] = -32768;
         tc_opt_own[i] = 0;
         i++;
@@ -143,6 +143,7 @@ void tcOptLoad() {
     if (fileGetStr(tc_opt_b, h, "@es_throttle=",   1, 10) > 0) tc_opt[18] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@ct_kind=",       1, 10) > 0) tc_opt[19] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@ct_offset=",     1, 10) > 0) tc_opt[20] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@ct_maxdc=",      1, 10) > 0) tc_opt[34] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@ct_port=",       1, 10) > 0) tc_opt[21] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@ct_rssi=",       1, 10) > 0) tc_opt[22] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@ct_ttl=",        1, 10) > 0) tc_opt[23] = atoi(tc_opt_b);
@@ -224,6 +225,7 @@ void tcOptSave() {
     tcOptW(h,  "ct_mindc",    28);
     tcOptW(h,  "ct_fair",     29);
     tcOptW(h,  "ct_sat",      33);
+    tcOptW(h,  "ct_maxdc",    34);
     // Short-term chart: the time range in MINUTES (15/30/60/120/240) and
     // whether the charts sit on the settings page instead of their own.
     tcOptW(h,  "chart_short",  30);

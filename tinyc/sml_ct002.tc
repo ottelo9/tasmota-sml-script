@@ -137,7 +137,7 @@ void WebUI() {
 
 void Command(char cmd[]) {
     if (ctCmd(cmd)) return;
-    responseCmnd("CTSTAT | CTCLR | CTOFFSET [W] | CTMAC <hex12> | CTMAIL <adr> | CTPASS <pw> | CTLOGIN | CTCREATE JA");
+    responseCmnd("CTSTAT | CTCLR | CTOFFSET [W] | CTLIMIT [W] | CTMAC <hex12> | CTMAIL <adr> | CTPASS <pw> | CTLOGIN | CTCREATE JA");
 }
 
 void JsonCall() {

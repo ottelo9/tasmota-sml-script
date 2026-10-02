@@ -51,7 +51,7 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   named after the `.tcb`). `@name=value` lines; `-32768` = absent; floats
   (energy baselines) in a separate table. A new option needs: a slot in
   `tc_opt[]`, a `tcOptLoad` line, a `tcOptSave` line, `tcOptGet/Set` in the
-  program. **All 34 slots are taken** — the next option must grow the arrays.
+  program. **All 35 slots are taken** — the next option must grow the arrays.
 
   | idx | key | idx | key | idx | key |
   |---|---|---|---|---|---|
@@ -65,7 +65,7 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   | 7 | sml_drvrows | 19 | ct_kind | 31 | chart_onmain |
   | 8 | sml_ph3 | 20 | ct_offset | 32 | sml_bezug |
   | 9 | sml_pv | 21 | ct_port | 33 | ct_sat |
-  | 10 | sml_sndpwr | 22 | ct_rssi | | |
+  | 10 | sml_sndpwr | 22 | ct_rssi | 34 | ct_maxdc |
   | 11 | mb_on | 23 | ct_ttl | | |
 
   Floats (`tc_optf[]`, 9 slots, all taken): 0 `imp_day`, 1 `imp_month`,
