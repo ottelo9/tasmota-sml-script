@@ -62,6 +62,7 @@ body.lang-de .en{display:none}
   <a href="#multi"><span class="en">Several batteries</span><span class="de">Mehrere Akkus</span></a>
   <a href="#meter"><span class="en">Meter</span><span class="de">Zähler</span></a>
   <a href="#telemetry"><span class="en">Telemetry</span><span class="de">Telemetrie</span></a>
+  <a href="#homeassistant">Home Assistant</a>
   <a href="#marstek"><span class="en">Marstek account</span><span class="de">Marstek-Konto</span></a>
   <a href="#console"><span class="en">Console</span><span class="de">Konsole</span></a>
   <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
@@ -313,6 +314,84 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 </div>
 </section>
 
+<section id="homeassistant">
+<h2>Home Assistant</h2>
+<div class="en">
+<h3>Offset from Home Assistant</h3>
+<p>The console command <code>CTOffset &lt;W&gt;</code> sets the offset while the script runs; <code>CTOffset</code> alone shows it. Over MQTT that is <code>cmnd/&lt;topic&gt;/CTOffset</code>, over HTTP <code>/cm?cmnd=CTOffset%20-50</code>. It answers <code>{"CTOffset":-50}</code>; the current value is also in <code>tele/&lt;topic&gt;/SENSOR</code> as <code>"CT002":{…,"Offset":-50}</code>. At least &minus;200&nbsp;W, no upper limit (the field on the page stops at 200&nbsp;W).</p>
+<p>The value is kept in <b>RAM only</b>, so an automation can change it as often as it likes without wearing out the flash. After a restart the value saved on the page applies again. To keep a value set this way, open the page and press <b>Save</b> &mdash; the field already shows it.</p>
+<p>A number entity in <code>configuration.yaml</code> (replace <code>&lt;topic&gt;</code> with the device's MQTT topic):</p>
+<pre><code>mqtt:
+  number:
+    - name: "CT002 Offset"
+      unique_id: ct002_offset
+      command_topic: "cmnd/&lt;topic&gt;/CTOffset"
+      state_topic: "tele/&lt;topic&gt;/SENSOR"
+      value_template: &gt;-
+        {% if value_json.CT002 is defined %}{{ value_json.CT002.Offset }}
+        {% else %}{{ states('number.ct002_offset') }}{% endif %}
+      optimistic: true
+      min: -200
+      max: 2000
+      step: 5
+      mode: box
+      unit_of_measurement: "W"</code></pre>
+<p><code>optimistic</code> shows the new value immediately; the <code>SENSOR</code> message corrects it at the next TelePeriod (e.g. after a restart). A meter value with immediate MQTT sends <code>SENSOR</code> messages that carry only that value; the <code>if</code> keeps the current state for those. Without MQTT, the same over HTTP:</p>
+<pre><code>rest_command:
+  pv_offset:
+    url: "http://&lt;ip&gt;/cm?cmnd=CTOffset%20{{ offset }}"</code></pre>
+<p>Then call <code>rest_command.pv_offset</code> with <code>offset: -50</code>. An automation that raises the margin at night:</p>
+<pre><code>automation:
+  - alias: "Offset 50 W at night"
+    triggers:
+      - trigger: time
+        at: "22:00:00"
+    actions:
+      - action: number.set_value
+        target:
+          entity_id: number.ct002_offset
+        data:
+          value: 50</code></pre>
+</div>
+<div class="de">
+<h3>Offset aus Home Assistant</h3>
+<p>Das Konsolen-Kommando <code>CTOffset &lt;W&gt;</code> setzt den Offset im laufenden Betrieb; <code>CTOffset</code> allein zeigt ihn an. Per MQTT ist das <code>cmnd/&lt;topic&gt;/CTOffset</code>, per HTTP <code>/cm?cmnd=CTOffset%20-50</code>. Die Antwort lautet <code>{"CTOffset":-50}</code>; der aktuelle Wert steht außerdem in <code>tele/&lt;topic&gt;/SENSOR</code> als <code>"CT002":{…,"Offset":-50}</code>. Mindestens &minus;200&nbsp;W, nach oben ohne Grenze (das Feld auf der Seite endet bei 200&nbsp;W).</p>
+<p>Der Wert liegt <b>nur im RAM</b>, eine Automation darf ihn also beliebig oft ändern, ohne den Flash abzunutzen. Nach einem Neustart gilt wieder der auf der Seite gespeicherte Wert. Soll ein so gesetzter Wert bleiben: Seite öffnen und <b>Speichern</b> drücken &mdash; das Feld zeigt ihn bereits.</p>
+<p>Eine Number-Entität in der <code>configuration.yaml</code> (<code>&lt;topic&gt;</code> durch das MQTT-Topic des Geräts ersetzen):</p>
+<pre><code>mqtt:
+  number:
+    - name: "CT002 Offset"
+      unique_id: ct002_offset
+      command_topic: "cmnd/&lt;topic&gt;/CTOffset"
+      state_topic: "tele/&lt;topic&gt;/SENSOR"
+      value_template: &gt;-
+        {% if value_json.CT002 is defined %}{{ value_json.CT002.Offset }}
+        {% else %}{{ states('number.ct002_offset') }}{% endif %}
+      optimistic: true
+      min: -200
+      max: 2000
+      step: 5
+      mode: box
+      unit_of_measurement: "W"</code></pre>
+<p><code>optimistic</code> zeigt den neuen Wert sofort; die <code>SENSOR</code>-Meldung korrigiert ihn zur nächsten TelePeriod (z.&nbsp;B. nach einem Neustart). Ein Zählerwert mit sofortigem MQTT schickt <code>SENSOR</code>-Meldungen, die nur diesen Wert enthalten; das <code>if</code> behält für die den aktuellen Stand. Ohne MQTT dasselbe per HTTP:</p>
+<pre><code>rest_command:
+  pv_offset:
+    url: "http://&lt;ip&gt;/cm?cmnd=CTOffset%20{{ offset }}"</code></pre>
+<p>Dann <code>rest_command.pv_offset</code> mit <code>offset: -50</code> aufrufen. Eine Automation, die nachts den Abstand erhöht:</p>
+<pre><code>automation:
+  - alias: "Offset 50 W at night"
+    triggers:
+      - trigger: time
+        at: "22:00:00"
+    actions:
+      - action: number.set_value
+        target:
+          entity_id: number.ct002_offset
+        data:
+          value: 50</code></pre>
+</div>
+</section>
+
 <section id="marstek">
 <h2><span class="en">Marstek account</span><span class="de">Marstek-Konto</span></h2>
 <div class="en">
@@ -357,6 +436,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 <h2><span class="en">Console commands</span><span class="de">Konsolen-Kommandos</span></h2>
 <pre><code>CTSTAT            rx/tx/bad counters, one log line per battery
 CTCLR             clear the battery table
+CTOFFSET [W]      set the offset now, RAM only (no value = show it)
 CTMAC &lt;hex12&gt;     set the CT MAC (empty = answer any)
 CTMAIL &lt;address&gt;  set the Marstek account mail
 CTPASS &lt;password&gt; set the password (RAM only)

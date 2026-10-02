@@ -1371,7 +1371,7 @@ void ctJson() {
     // names, and "Total" is its energy key - the watts showed up as kWh.
     sprintf(ct_buf, ",\"CT002\":{\"Power\":%d", ct_ptot);
     sprintfAppend(ct_buf, ",\"L1\":%d,\"L2\":%d,\"L3\":%d", ct_pa, ct_pb, ct_pc);
-    sprintfAppend(ct_buf, ",\"Slaves\":%d}", live);
+    sprintfAppend(ct_buf, ",\"Slaves\":%d,\"Offset\":%d}", live, ct_offset);
     responseAppend(ct_buf);
 }
 
@@ -1536,6 +1536,18 @@ int ctCmd(char cmd[]) {
     } else if (strcmp(cmd, "CREATE JA") == 0) {
         ct_rreq = 2;
         responseCmnd("create requested");
+    } else if (strcmp(cmd, "OFFSET") == 0 || strStartsWith(cmd, "OFFSET ") == 1) {
+        // RAM only: Home Assistant may change it often, and a flash write per
+        // change is what the Save button is for. A restart restores the saved one.
+        if (strlen(cmd) > 7) {
+            strSub(ct_buf, cmd, 7, 0);
+            int v = atoi(ct_buf);
+            if (v < -200) v = -200;
+            ct_offset = v;
+            ct_e_offset = v;
+        }
+        sprintf(ct_buf, "{\"CTOffset\":%d}", ct_offset);
+        responseCmnd(ct_buf);
     } else {
         return 0;      // not ours - the wiring answers
     }

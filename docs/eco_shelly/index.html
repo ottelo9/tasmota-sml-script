@@ -197,6 +197,41 @@ body.lang-de .en{display:none}
 <p>The <b>To battery</b> row on the main page shows what actually leaves the device, after offset and shaping. Compare it with the raw power to see what the settings do.</p>
 <p>The same value is called <code>cpwr</code> outside the device. With <b>Send power2 + cpwr (MQTT)</b> in the <a href="../sml/#telemetry">telemetry</a> section on, it is published every 5&nbsp;s as <code>stat/&lt;topic&gt;/script/cpwr</code>, next to the smoothed grid power <code>power2</code> &mdash; in MQTT Explorer or Home Assistant under <b>stat &rarr; &lt;topic&gt; &rarr; script</b>. <code>/pwr</code> always carries it as well: <code>{…,"power2":-217,"cpwr":-180}</code>.</p>
 <p>The <b>3 phases</b> option lives in the meter settings, not here &mdash; it says whether your meter delivers per-phase power at all. With it on, the sample payloads below carry three real values instead of zeros in <code>powerPhase2</code>, <code>powerPhase3</code> and <code>b_act_power</code>, <code>c_act_power</code>. The total stays the netted meter value either way &mdash; that is what the battery regulates on.</p>
+<h3>Offset from Home Assistant</h3>
+<p>The console command <code>PVEmuOffset &lt;W&gt;</code> sets the offset while the script runs; <code>PVEmuOffset</code> alone shows it. Over MQTT that is <code>cmnd/&lt;topic&gt;/PVEmuOffset</code>, over HTTP <code>/cm?cmnd=PVEmuOffset%20-50</code>. It answers <code>{"PVEmuOffset":-50}</code>; the current value is also in <code>tele/&lt;topic&gt;/SENSOR</code> as <code>"PVEmu":{…,"Offset":-50}</code>. At least &minus;200&nbsp;W, no upper limit (the field on the page stops at 200&nbsp;W).</p>
+<p>The value is kept in <b>RAM only</b>, so an automation can change it as often as it likes without wearing out the flash. After a restart the value saved on the page applies again. To keep a value set this way, open the page and press <b>Save</b> &mdash; the field already shows it.</p>
+<p>A number entity in <code>configuration.yaml</code> (replace <code>&lt;topic&gt;</code> with the device's MQTT topic):</p>
+<pre><code>mqtt:
+  number:
+    - name: "PV Offset"
+      unique_id: pv_offset
+      command_topic: "cmnd/&lt;topic&gt;/PVEmuOffset"
+      state_topic: "tele/&lt;topic&gt;/SENSOR"
+      value_template: &gt;-
+        {% if value_json.PVEmu is defined %}{{ value_json.PVEmu.Offset }}
+        {% else %}{{ states('number.pv_offset') }}{% endif %}
+      optimistic: true
+      min: -200
+      max: 2000
+      step: 5
+      mode: box
+      unit_of_measurement: "W"</code></pre>
+<p><code>optimistic</code> shows the new value immediately; the <code>SENSOR</code> message corrects it at the next TelePeriod (e.g. after a restart). A meter value with immediate MQTT sends <code>SENSOR</code> messages that carry only that value; the <code>if</code> keeps the current state for those. Without MQTT, the same over HTTP:</p>
+<pre><code>rest_command:
+  pv_offset:
+    url: "http://&lt;ip&gt;/cm?cmnd=PVEmuOffset%20{{ offset }}"</code></pre>
+<p>Then call <code>rest_command.pv_offset</code> with <code>offset: -50</code>. An automation that raises the margin at night:</p>
+<pre><code>automation:
+  - alias: "Offset 50 W at night"
+    triggers:
+      - trigger: time
+        at: "22:00:00"
+    actions:
+      - action: number.set_value
+        target:
+          entity_id: number.pv_offset
+        data:
+          value: 50</code></pre>
 </div>
 <div class="de">
 <table>
@@ -208,6 +243,41 @@ body.lang-de .en{display:none}
 <p>Die Zeile <b>An den Akku</b> auf der Hauptseite zeigt, was das Gerät tatsächlich verlässt &mdash; nach Offset und Formung. Im Vergleich mit der Rohleistung sieht man, was die Einstellungen bewirken.</p>
 <p>Außerhalb des Geräts heißt derselbe Wert <code>cpwr</code>. Ist im Abschnitt <a href="../sml/#telemetry">Telemetrie</a> <b>power2 + cpwr senden (MQTT)</b> an, geht er alle 5&nbsp;s als <code>stat/&lt;topic&gt;/script/cpwr</code> raus, neben der gemittelten Netzleistung <code>power2</code> &mdash; im MQTT Explorer bzw. in Home Assistant unter <b>stat &rarr; &lt;topic&gt; &rarr; script</b>. <code>/pwr</code> liefert ihn immer mit: <code>{…,"power2":-217,"cpwr":-180}</code>.</p>
 <p>Die Option <b>3 Phasen</b> steht im Abschnitt Zähler, nicht hier &mdash; sie sagt aus, ob der Zähler überhaupt Werte je Phase liefert. Ist sie an, tragen die Beispiel-Antworten weiter unten drei echte Werte statt Nullen in <code>powerPhase2</code>, <code>powerPhase3</code> sowie <code>b_act_power</code> und <code>c_act_power</code>. Der Gesamtwert bleibt in beiden Fällen der saldierte Zählerwert &mdash; darauf regelt der Akku.</p>
+<h3>Offset aus Home Assistant</h3>
+<p>Das Konsolen-Kommando <code>PVEmuOffset &lt;W&gt;</code> setzt den Offset im laufenden Betrieb; <code>PVEmuOffset</code> allein zeigt ihn an. Per MQTT ist das <code>cmnd/&lt;topic&gt;/PVEmuOffset</code>, per HTTP <code>/cm?cmnd=PVEmuOffset%20-50</code>. Die Antwort lautet <code>{"PVEmuOffset":-50}</code>; der aktuelle Wert steht außerdem in <code>tele/&lt;topic&gt;/SENSOR</code> als <code>"PVEmu":{…,"Offset":-50}</code>. Mindestens &minus;200&nbsp;W, nach oben ohne Grenze (das Feld auf der Seite endet bei 200&nbsp;W).</p>
+<p>Der Wert liegt <b>nur im RAM</b>, eine Automation darf ihn also beliebig oft ändern, ohne den Flash abzunutzen. Nach einem Neustart gilt wieder der auf der Seite gespeicherte Wert. Soll ein so gesetzter Wert bleiben: Seite öffnen und <b>Speichern</b> drücken &mdash; das Feld zeigt ihn bereits.</p>
+<p>Eine Number-Entität in der <code>configuration.yaml</code> (<code>&lt;topic&gt;</code> durch das MQTT-Topic des Geräts ersetzen):</p>
+<pre><code>mqtt:
+  number:
+    - name: "PV Offset"
+      unique_id: pv_offset
+      command_topic: "cmnd/&lt;topic&gt;/PVEmuOffset"
+      state_topic: "tele/&lt;topic&gt;/SENSOR"
+      value_template: &gt;-
+        {% if value_json.PVEmu is defined %}{{ value_json.PVEmu.Offset }}
+        {% else %}{{ states('number.pv_offset') }}{% endif %}
+      optimistic: true
+      min: -200
+      max: 2000
+      step: 5
+      mode: box
+      unit_of_measurement: "W"</code></pre>
+<p><code>optimistic</code> zeigt den neuen Wert sofort; die <code>SENSOR</code>-Meldung korrigiert ihn zur nächsten TelePeriod (z.&nbsp;B. nach einem Neustart). Ein Zählerwert mit sofortigem MQTT schickt <code>SENSOR</code>-Meldungen, die nur diesen Wert enthalten; das <code>if</code> behält für die den aktuellen Stand. Ohne MQTT dasselbe per HTTP:</p>
+<pre><code>rest_command:
+  pv_offset:
+    url: "http://&lt;ip&gt;/cm?cmnd=PVEmuOffset%20{{ offset }}"</code></pre>
+<p>Dann <code>rest_command.pv_offset</code> mit <code>offset: -50</code> aufrufen. Eine Automation, die nachts den Abstand erhöht:</p>
+<pre><code>automation:
+  - alias: "Offset 50 W at night"
+    triggers:
+      - trigger: time
+        at: "22:00:00"
+    actions:
+      - action: number.set_value
+        target:
+          entity_id: number.pv_offset
+        data:
+          value: 50</code></pre>
 </div>
 </section>
 

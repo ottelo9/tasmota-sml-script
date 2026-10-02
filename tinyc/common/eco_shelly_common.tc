@@ -456,6 +456,23 @@ void esJson() {
     if (sml_ph3 == 1) {
         sprintfAppend(es_body, ",\"L1\":%.0f,\"L2\":%.0f,\"L3\":%.0f", es_pa, es_pb, es_pc);
     }
-    sprintfAppend(es_body, ",\"Mode\":%d}", es_mode);
+    sprintfAppend(es_body, ",\"Mode\":%d,\"Offset\":%d}", es_mode, es_offset);
     responseAppend(es_body);
+}
+
+// From Command(), prefix "PVEmu". Returns 1 when the command was ours.
+// RAM only: Home Assistant may change the offset often, and a flash write per
+// change is what the Save button is for. A restart restores the saved one.
+int esCmd(char cmd[]) {
+    if (strcmp(cmd, "OFFSET") != 0 && strStartsWith(cmd, "OFFSET ") != 1) return 0;
+    if (strlen(cmd) > 7) {
+        strSub(es_rxb, cmd, 7, 0);
+        int v = atoi(es_rxb);
+        if (v < -200) v = -200;
+        es_offset = v;
+        es_e_offset = v;
+    }
+    sprintf(es_rxb, "{\"PVEmuOffset\":%d}", es_offset);
+    responseCmnd(es_rxb);
+    return 1;
 }

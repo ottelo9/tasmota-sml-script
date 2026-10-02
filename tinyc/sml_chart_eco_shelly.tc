@@ -11,7 +11,7 @@
 #include "sml_modbus_common.tc"
 #include "eco_shelly_common.tc"
 
-char sml_vers[] = "01.10.2026";
+char sml_vers[] = "02.10.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 
@@ -199,6 +199,11 @@ void WebUI() {
     webSend("<script>if(window.__tcv){document.getElementById('tcv').textContent=window.__tcv;}else{fetch('/tc_api?cmd=status').then(function(r){return r.json();}).then(function(j){window.__tcv=j.release;var e=document.getElementById('tcv');if(e)e.textContent=j.release;}).catch(function(){});}</script>");
 }
 
+void Command(char cmd[]) {
+    if (esCmd(cmd)) return;
+    responseCmnd("PVEMUOFFSET [W]");
+}
+
 void JsonCall() {
     esJson();
 }
@@ -220,6 +225,7 @@ int main() {
 
     esInit(1, 2, 3, 5, 6);       // /v1/json, EM, Shelly, EM1, EMData
     mbInit();
+    addCommand("PVEmu");
     webPageLabel(0, "&#x2699;&#xFE0F; SML /&#x1F50B;");
     webPageLabel(1, "");
     webPageLabel(2, "");                // charts page, reached by link
