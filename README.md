@@ -3,12 +3,14 @@
 Tasmota TinyC Programs or Scripts for Smart Meter Readers / Smart Powerplugs / Meters [by ottelo]  
 Display values graphically, implement zero-feed-in for smart batteries  
 
-- [Infos/Anleitungen/Hardwareauswahl/News](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/) (mein Blog)
-- [Schnellanleitung (nur TinyC)](https://ottelo.jimdofree.com/tasmota-tinyc/) (auf meinem Blog)
-- [Infos/Hilfe/Editor/Konverter in Deutsch/English](https://ottelo9.github.io/tasmota-sml-script/) (wenn ihr im TinyC-Programm auf ein ℹ️ drückt gelangt ihr auch dahin).
+<a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/"><img src="https://img.shields.io/badge/Mein%20Blog%20%E2%80%93%20Infos%2C%20Anleitungen%2C%20Hardware-0A6EBD?style=for-the-badge&logo=readme&logoColor=white" alt="Mein Blog: Ausführliche Infos, Anleitungen, Hardware"></a><br>
+<a href="https://ottelo.jimdofree.com/tasmota-tinyc/"><img src="https://img.shields.io/badge/Mein%20Blog%20%E2%80%93%20TinyC%20Schnellanleitung-2EA043?style=for-the-badge&logo=rocket&logoColor=white" alt="Schnellanleitung TinyC"></a><br>
+<a href="https://ottelo9.github.io/tasmota-sml-script/"><img src="https://img.shields.io/badge/Wiki%2FAnleitung%20%E2%80%93%20TinyC%20Programme%20erkl%C3%A4rt%20%26%20Script%3ETinyC%20Konverter%20(DE%2FEN)-8250DF?style=for-the-badge&logo=bookstack&logoColor=white" alt="Wiki/Anleitung – TinyC Programme erklärt &amp; Script&gt;TinyC Konverter (DE/EN)"></a><br>
+<a href="https://github.com/ottelo9/tasmota-sml-images"><img src="https://img.shields.io/badge/Firmware%20%E2%80%93%20Hier%20gehts%20zu%20meinen%20Tasmota%20Images-D73A49?style=for-the-badge&logo=github&logoColor=white" alt="Firmware: Hier gehts zu meinen Tasmota Images"></a><br>
+<sub>Die Hilfe erreicht ihr auch über das ℹ️ im TinyC-Programm.</sub>
 
-**WICHTIG:  
-Damit die TinyC-Programme / Scripte funktionieren müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!**
+> [!IMPORTANT]
+> Damit die TinyC-Programme / Scripte funktionieren, müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!
 
 ### TinyC-Programme (löst Script ab!)
 Eine Liste von Programmen findet ihr direkt in Tasmota auf eurem ESP. Ich habe meine bekannten Scripte zu TinyC konvertiert und teilweise auch mehrere Scripte kombiniert. Das alles ist mit TinyC problemlos möglich gewesen. Z.b. ist nun ModbusTCP Slave als Option immer mit drin.  
@@ -79,6 +81,7 @@ Auch die PIN-Auswahl geschieht nun bequem via DropDown. Je nach erkanntem ESP we
 
 **ESP8266**  
 Alle Scripte (auch pvakku-powermeter-emulator) in der alten Version für den kleinen ESP8266 und ohne Zähler-DropDown Auswahlmenü. Es sind die gleichen wie aus dem Hauptverzeichnis nur werden diese nicht mehr aktualisiert (eingeforener Versionstand). Die Scripte funktionieren natürlich auch auf einem ESP32. Hier findet ihr auch die pvakku-powermeter-emulator Scripte, die auf dem ESP8266 lauffähig sind. Hier gibt es keine Diagramme, da der ESP zu klein ist. Aber die Emulation läuft ebenfalls einwandfrei!  
+Neu: [Marstek CT002 Emulator](https://github.com/ottelo9/tasmota-sml-script/tree/main/ESP8266/pvakku-powermeter-emulator) für bis zu 4 Marstek-Akkus (`2_CT002_Emulator.tas`, von next145). Dafür das Image **tasmota1m_ct002_ottelo_tas** aus meinem [Image-Repo](https://github.com/ottelo9/tasmota-sml-images) verwenden. Es hat die Seite **Marstek CT002** (`/ctreg`, unter Werkzeuge) zur einmaligen Anmeldung in der Marstek-Cloud.  
 
 ### pvakku-powermeter-emulator (ESP32)
 Diese Scripte emulieren einen Shelly Pro 3EM oder Ecotracker, die mit smarten Akkus verbunden werden (zur Nulleinspeisung). Das Script ist direkt auf dem Lesekopf lauffähig und übernimmt neben dem Stromzähler auslesen die Emulation.  

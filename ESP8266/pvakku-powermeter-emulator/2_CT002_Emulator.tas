@@ -419,7 +419,7 @@ if wifis==0 {
 CT Type{m}CT002
 CT MAC{m}%cm%
 Mode A/B/C/D{m}%0d[2]%/%0d[3]%/%0d[4]%/%0d[5]%
-$<small>CT-Emu V1.1 Script: %0slen% / 4096</small>
+$<small>CT-Emu 03.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
 
 ; SML Sektion an euren Stromzähler anpassen
 ; Reihenfolge nicht ändern: 1=Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]
