@@ -21,10 +21,12 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
 
 ## Workflow
 
-- **Building:** the `.tcb` files are committed next to the source. The owner
-  can compile in `tinyc/bytecode/build.html`; Claude can compile with Node
-  through gemu's compiler (script in `CLAUDE.local.md`). A change to a common
-  module means rebuilding all six.
+- **Building:** always the way `tinyc/bytecode/build.html` does it: the
+  compiler from `tinyc/bytecode/tinyc_ide.html`, every `.tc` with `main()`,
+  output `.tcb` + `index.txt` + `index.json`. The owner uses the page;
+  Claude runs the same steps in Node (script in `CLAUDE.local.md`). Not gemu's
+  `idesrc` - the IDE in this repo decides the compiler version. The `.tcb`
+  files are committed next to the source.
 - Bump `sml_vers` in **all six** programs whenever something ships — it is
   the date, `dd.MM.yyyy`, of the day of the change.
 - Help pages are bilingual — change both languages together. Behaviour changes
@@ -51,7 +53,7 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   named after the `.tcb`). `@name=value` lines; `-32768` = absent; floats
   (energy baselines) in a separate table. A new option needs: a slot in
   `tc_opt[]`, a `tcOptLoad` line, a `tcOptSave` line, `tcOptGet/Set` in the
-  program. **All 34 slots are taken** — the next option must grow the arrays.
+  program. **All 35 slots are taken** — the next option must grow the arrays.
 
   | idx | key | idx | key | idx | key |
   |---|---|---|---|---|---|
@@ -65,7 +67,7 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   | 7 | sml_drvrows | 19 | ct_kind | 31 | chart_onmain |
   | 8 | sml_ph3 | 20 | ct_offset | 32 | sml_bezug |
   | 9 | sml_pv | 21 | ct_port | 33 | ct_sat |
-  | 10 | sml_sndpwr | 22 | ct_rssi | | |
+  | 10 | sml_sndpwr | 22 | ct_rssi | 34 | ct_maxdc |
   | 11 | mb_on | 23 | ct_ttl | | |
 
   Floats (`tc_optf[]`, 9 slots, all taken): 0 `imp_day`, 1 `imp_month`,

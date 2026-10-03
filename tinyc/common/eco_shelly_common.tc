@@ -8,6 +8,7 @@
 //   Shelly 3EM  mDNS "shellypro3em-<mac>", HTTP /rpc/*, UDP 1010 or 2220
 
 #include "ui_common.tc"
+#include "ha_discovery.tc"
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int es_mode;        // 0 = EcoTracker, 1 = Pro 3EM, 2 = Pro EM50, 3 = EM Gen3
@@ -56,10 +57,18 @@ void esCommit() {
         addLog("eco: port");
     }
 }
+// The offset in effect, right of its field (.lv, see sml_panel_open).
+void esLive() {
+    sprintf(sml_buf, "<div class='lv'><b>%d W</b></div>", es_offset);
+    webSend(sml_buf);
+}
+
 void esEditLoad() {
     es_e_mode = es_mode;
     es_e_port = es_port;
-    es_e_offset = es_offset;
+    // The field shows the SAVED offset - PVEmuOffset changes only the live
+    // one, which is shown right of the field.
+    es_e_offset = tcOptGet(15, es_offset);
     es_e_tweak = es_tweak;
     es_e_force = es_force;
     es_e_throttle = es_throttle;
@@ -271,7 +280,24 @@ void esPoll() {
 }
 
 // From EverySecond().
+// Home Assistant: the offset as a number entity, announced once per MQTT
+// connect and whenever HA comes online, its value published whenever it
+// changes (PVEmuOffset, Save, start).
+int es_ha_con;
+int es_ha_off;
+int es_ha_step;
+
+void esHaTick() {
+    if (tasm_mqttcon == 0) { es_ha_con = 0; return; }
+    if (es_ha_con == 0) { es_ha_con = 1; es_ha_step = 0; }
+    if (ha_again == 1) { ha_again = 0; es_ha_step = 0; }
+    if (es_ha_step == 0) { haPrepare(); haNumber("offset", "PV Offset", "PVEmuOffset", -2000, 2000); es_ha_step = 1; return; }
+    if (es_ha_step == 1) { haState("offset", es_offset); es_ha_off = es_offset; es_ha_step = 2; return; }
+    if (es_ha_off != es_offset) { haState("offset", es_offset); es_ha_off = es_offset; }
+}
+
 void esTick() {
+    esHaTick();
     if (tc_opt_first == 1) {
         es_mode     = tcOptGet(13, es_mode);
         es_port     = tcOptGet(14, es_port);
@@ -432,12 +458,16 @@ void esPanel() {
 
     uiHead("&#x1F50B;", "Battery", "Akku", "eco_shelly/#battery");
     if (ui_de) {
+        webSend("<br>");             // see ctPanel: inline field after a heading
         webNumber(es_e_offset, -200, 200, "Offset [W]");
+        esLive();
         webCheckbox(es_e_tweak, "Regleroptimierung");
         webNumber(es_e_throttle, 1, 60, "Update-Rate [s]");
         if (es_e_mode != 0) webCheckbox(es_e_force, "Senden erzwingen");
     } else {
+        webSend("<br>");             // see ctPanel: inline field after a heading
         webNumber(es_e_offset, -200, 200, "Offset [W]");
+        esLive();
         webCheckbox(es_e_tweak, "Regulator tweak");
         webNumber(es_e_throttle, 1, 60, "Update rate [s]");
         if (es_e_mode != 0) webCheckbox(es_e_force, "Force sending");
@@ -456,6 +486,21 @@ void esJson() {
     if (sml_ph3 == 1) {
         sprintfAppend(es_body, ",\"L1\":%.0f,\"L2\":%.0f,\"L3\":%.0f", es_pa, es_pb, es_pc);
     }
-    sprintfAppend(es_body, ",\"Mode\":%d}", es_mode);
+    sprintfAppend(es_body, ",\"Mode\":%d,\"Offset\":%d}", es_mode, es_offset);
     responseAppend(es_body);
+}
+
+// From Command(), prefix "PVEmu". Returns 1 when the command was ours.
+// RAM only: Home Assistant may change the offset often, and a flash write per
+// change is what the Save button is for. A restart restores the saved one.
+int esCmd(char cmd[]) {
+    if (strcmp(cmd, "OFFSET") != 0 && strStartsWith(cmd, "OFFSET ") != 1) return 0;
+    if (strlen(cmd) > 7) {
+        strSub(es_rxb, cmd, 7, 0);
+        int v = atoi(es_rxb);         // not clamped - automations decide
+        es_offset = v;
+    }
+    sprintf(es_rxb, "{\"PVEmuOffset\":%d}", es_offset);
+    responseCmnd(es_rxb);
+    return 1;
 }

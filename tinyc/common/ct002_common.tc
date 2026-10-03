@@ -16,6 +16,7 @@
 // The app's live view comes over MQTT only; a fake CT there is always offline.
 
 #include "ui_common.tc"
+#include "ha_discovery.tc"
 
 #define CT_NSLOT     9        // consumer slots — the real CT keeps 9
 #define CT_RXMAX   192        // request buffer  (a request is ~55 B)
@@ -36,6 +37,7 @@ persist int  ct_tweak;          // 1 = active control (was: regulator shaping)
 persist int  ct_trim;           // steady-import trim [W], 0 = off
 persist int  ct_pace;           // ramp step per cycle [W], 0 = off
 persist int  ct_mindc;          // minimum reported import [W], 0 = off
+persist int  ct_maxdc;          // discharge limit per battery [W], 0 = off
 persist int  ct_fair;           // 1 = split the load across batteries
 // Balance gain, rotation interval and the efficiency threshold used to be
 // three more settings. They are constants now, at AstraMeter's field-tested
@@ -56,7 +58,7 @@ persist byte ct_mail[64];      // Marstek account mail (registration only)
 int ct_e_kind; int ct_e_port; int ct_e_rssi; int ct_e_ttl;
 int ct_e_offset; int ct_e_tweak;
 int ct_e_trim; int ct_e_pace; int ct_e_mindc;
-int ct_e_fair; int ct_e_sat;
+int ct_e_fair; int ct_e_sat; int ct_e_maxdc;
 
 void ctCommit() {
     ct_kind = ct_e_kind;
@@ -70,6 +72,7 @@ void ctCommit() {
     ct_mindc = ct_e_mindc;
     ct_fair = ct_e_fair;
     ct_sat = ct_e_sat;
+    ct_maxdc = ct_e_maxdc;
     tcOptSet(19, ct_kind);
     tcOptSet(20, ct_offset);
     tcOptSet(21, ct_port);
@@ -81,19 +84,23 @@ void ctCommit() {
     tcOptSet(28, ct_mindc);
     tcOptSet(29, ct_fair);
     tcOptSet(33, ct_sat);
+    tcOptSet(34, ct_maxdc);
 }
 void ctEditLoad() {
     ct_e_kind = ct_kind;
     ct_e_port = ct_port;
     ct_e_rssi = ct_rssi;
     ct_e_ttl = ct_ttl;
-    ct_e_offset = ct_offset;
+    // Offset and Max DC: the field shows the SAVED value - CTOffset/CTLimit
+    // change only the live one, which is shown right of the field.
+    ct_e_offset = tcOptGet(20, ct_offset);
     ct_e_tweak = ct_tweak;
     ct_e_trim = ct_trim;
     ct_e_pace = ct_pace;
     ct_e_mindc = ct_mindc;
     ct_e_fair = ct_fair;
     ct_e_sat = ct_sat;
+    ct_e_maxdc = tcOptGet(34, ct_maxdc);
 }
 
 // ─── Consumer table (one row per battery, keyed by its MAC) ────────────────
@@ -553,6 +560,17 @@ void ctBuild(byte btype[], byte bmac[], byte reqctmac[]) {
             if (ct_sph[ct_slot] == 2) vb = ctShare(ct_slot, 2, ct_pb);
             if (ct_sph[ct_slot] == 3) vc = ctShare(ct_slot, 3, ct_pc);
             if (ct_sph[ct_slot] == 4) vd = ctShare(ct_slot, 4, ct_ptot);
+            // The battery adds what it is told to what it already delivers, so
+            // capping the value alone would only slow it down. Cap the sum.
+            if (ct_maxdc > 0) {
+                int lim = ct_maxdc - ct_spwr[ct_slot];
+                if (ct_sph[ct_slot] == 1 && va > lim) va = lim;
+                if (ct_sph[ct_slot] == 2 && vb > lim) vb = lim;
+                if (ct_sph[ct_slot] == 3 && vc > lim) vc = lim;
+                if (ct_sph[ct_slot] == 4 && vd > lim) vd = lim;
+                // Held by the limit is not saturated.
+                if (ct_starg[ct_slot] > lim) ct_starg[ct_slot] = lim;
+            }
         }
     }
     sprintfAppend(ct_innb, "|%d|%d|%d|%d", va, vb, vc, vd);                  // 5..8
@@ -1176,7 +1194,28 @@ void ctPoll() {
 }
 
 // From EverySecond().
+// Home Assistant: announce Offset and Max DC as number entities once per
+// MQTT connect and whenever HA comes online, then publish each value when it
+// changes (CTOffset/CTLimit, Save, start). One message per second at most.
+int ct_ha_con;
+int ct_ha_off;
+int ct_ha_lim;
+int ct_ha_step;
+
+void ctHaTick() {
+    if (tasm_mqttcon == 0) { ct_ha_con = 0; return; }
+    if (ct_ha_con == 0) { ct_ha_con = 1; ct_ha_step = 0; }
+    if (ha_again == 1) { ha_again = 0; ct_ha_step = 0; }
+    if (ct_ha_step == 0) { haPrepare(); haNumber("offset", "CT002 Offset", "CTOffset", -2000, 2000); ct_ha_step = 1; return; }
+    if (ct_ha_step == 1) { haNumber("limit", "CT002 Max DC", "CTLimit", 0, 5000); ct_ha_step = 2; return; }
+    if (ct_ha_step == 2) { haState("offset", ct_offset); ct_ha_off = ct_offset; ct_ha_step = 3; return; }
+    if (ct_ha_step == 3) { haState("limit", ct_maxdc); ct_ha_lim = ct_maxdc; ct_ha_step = 4; return; }
+    if (ct_ha_off != ct_offset) { haState("offset", ct_offset); ct_ha_off = ct_offset; return; }
+    if (ct_ha_lim != ct_maxdc) { haState("limit", ct_maxdc); ct_ha_lim = ct_maxdc; }
+}
+
 void ctTick() {
+    ctHaTick();
     if (tc_opt_first == 1) {
         ct_kind   = tcOptGet(19, ct_kind);
         ct_offset = tcOptGet(20, ct_offset);
@@ -1189,6 +1228,7 @@ void ctTick() {
         ct_mindc  = tcOptGet(28, ct_mindc);
         ct_fair   = tcOptGet(29, ct_fair);
         ct_sat    = tcOptGet(33, ct_sat);
+        ct_maxdc  = tcOptGet(34, ct_maxdc);
         tcOptSet(19, ct_kind);
         tcOptSet(20, ct_offset);
         tcOptSet(21, ct_port);
@@ -1200,6 +1240,7 @@ void ctTick() {
         tcOptSet(28, ct_mindc);
         tcOptSet(29, ct_fair);
         tcOptSet(33, ct_sat);
+        tcOptSet(34, ct_maxdc);
         ctEditLoad();
     }
     if (ui_reloading) ctEditLoad();
@@ -1284,14 +1325,23 @@ void ctRows() {
     if (ui_de) {
         sprintf(ct_buf, "{s}Akkus{m}%d{e}", live);            webSend(ct_buf);
         sprintf(ct_buf, "{s}CT meldet{m}%d W{e}", ct_ptot);   webSend(ct_buf);
+        if (ct_maxdc > 0) { sprintf(ct_buf, "{s}Max DC{m}%d W{e}", ct_maxdc); webSend(ct_buf); }
     } else {
         sprintf(ct_buf, "{s}Batteries{m}%d{e}", live);        webSend(ct_buf);
         sprintf(ct_buf, "{s}CT sees{m}%d W{e}", ct_ptot);     webSend(ct_buf);
+        if (ct_maxdc > 0) { sprintf(ct_buf, "{s}Max DC{m}%d W{e}", ct_maxdc); webSend(ct_buf); }
     }
 }
 
 // From WebUI(): emitted inside an already-open settings panel, so no <div>
 // and no styles of its own beyond the help-link class.
+// The value in effect, right of its field (.lv, see sml_panel_open):
+// CTOffset/CTLimit change it without touching the saved one in the field.
+void ctLive(int now) {
+    sprintf(ct_buf, "<div class='lv'><b>%d W</b></div>", now);
+    webSend(ct_buf);
+}
+
 void ctPanel() {
     webSend("<style>a.i{text-decoration:none;margin-left:6px}</style>");
 
@@ -1311,13 +1361,19 @@ void ctPanel() {
     webSend(ct_buf);
 
     uiHead("&#x1F50B;", "Battery", "Akku", "ct002/#battery");
+    // The field is inline (its live value sits right of it) and would join the
+    // heading line above without this break.
+    webSend("<br>");
     webNumber(ct_e_offset, -200, 200, "Offset [W]");
+    ctLive(ct_offset);
     if (ui_de) webCheckbox(ct_e_tweak, "Aktive Regelung");
     else       webCheckbox(ct_e_tweak, "Active control");
     webNumber(ct_e_trim, 0, 100, "Trim [W]");
     if (ui_de) webNumber(ct_e_pace, 0, 300, "Schritt [W]");
     else       webNumber(ct_e_pace, 0, 300, "Step [W]");
     webNumber(ct_e_mindc, 0, 200, "Min DC [W]");
+    webNumber(ct_e_maxdc, 0, 5000, "Max DC [W]");
+    ctLive(ct_maxdc);
 
     uiHead("&#x2696;&#xFE0F;", "Several batteries", "Mehrere Akkus", "ct002/#multi");
     if (ui_de) {
@@ -1371,7 +1427,8 @@ void ctJson() {
     // names, and "Total" is its energy key - the watts showed up as kWh.
     sprintf(ct_buf, ",\"CT002\":{\"Power\":%d", ct_ptot);
     sprintfAppend(ct_buf, ",\"L1\":%d,\"L2\":%d,\"L3\":%d", ct_pa, ct_pb, ct_pc);
-    sprintfAppend(ct_buf, ",\"Slaves\":%d}", live);
+    sprintfAppend(ct_buf, ",\"Slaves\":%d,\"Offset\":%d", live, ct_offset);
+    sprintfAppend(ct_buf, ",\"Limit\":%d}", ct_maxdc);
     responseAppend(ct_buf);
 }
 
@@ -1536,6 +1593,27 @@ int ctCmd(char cmd[]) {
     } else if (strcmp(cmd, "CREATE JA") == 0) {
         ct_rreq = 2;
         responseCmnd("create requested");
+    } else if (strcmp(cmd, "OFFSET") == 0 || strStartsWith(cmd, "OFFSET ") == 1) {
+        // RAM only: Home Assistant may change it often, and a flash write per
+        // change is what the Save button is for. A restart restores the saved one.
+        if (strlen(cmd) > 7) {
+            strSub(ct_buf, cmd, 7, 0);
+            int v = atoi(ct_buf);     // not clamped - automations decide
+            ct_offset = v;
+        }
+        sprintf(ct_buf, "{\"CTOffset\":%d}", ct_offset);
+        responseCmnd(ct_buf);
+    } else if (strcmp(cmd, "LIMIT") == 0 || strStartsWith(cmd, "LIMIT ") == 1) {
+        // Maximum discharge per battery, 0 = off. RAM only, like CTOffset;
+        // the field on the page is the saved one.
+        if (strlen(cmd) > 6) {
+            strSub(ct_buf, cmd, 6, 0);
+            int v = atoi(ct_buf);
+            if (v < 0) v = 0;
+            ct_maxdc = v;
+        }
+        sprintf(ct_buf, "{\"CTLimit\":%d}", ct_maxdc);
+        responseCmnd(ct_buf);
     } else {
         return 0;      // not ours - the wiring answers
     }

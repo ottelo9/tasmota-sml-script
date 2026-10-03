@@ -62,6 +62,7 @@ body.lang-de .en{display:none}
   <a href="#multi"><span class="en">Several batteries</span><span class="de">Mehrere Akkus</span></a>
   <a href="#meter"><span class="en">Meter</span><span class="de">Zähler</span></a>
   <a href="#telemetry"><span class="en">Telemetry</span><span class="de">Telemetrie</span></a>
+  <a href="#homeassistant">Home Assistant</a>
   <a href="#marstek"><span class="en">Marstek account</span><span class="de">Marstek-Konto</span></a>
   <a href="#console"><span class="en">Console</span><span class="de">Konsole</span></a>
   <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
@@ -142,6 +143,7 @@ body.lang-de .en{display:none}
 <tr><th>Trim [W]</th><td>Recommended <b>15</b>. Every Marstek firmware stops a few watts short on the <i>import</i> side: its own input deadband. Household load the battery could cover keeps being bought at the retail tariff. This adds a fixed nudge past that deadband, but only once the grid has held between 0 and 120&nbsp;W of import for six fresh meter readings. The dwell keeps it out of a load step; the upper limit keeps it away from an empty or full battery, where the import is not the firmware's doing.</td></tr>
 <tr><th>Step [W]</th><td>Recommended <b>30</b>. Caps the size of the correction sent per second, measured from zero &mdash; not the step away from the last reported value, which would trail the battery instead of bounding it. The cap doubles towards three times this value while the batteries demonstrably follow, falls back with the deviation, and returns to the base step the moment the direction reverses.</td></tr>
 <tr><th>Min DC [W]</th><td>Default 0 = off, otherwise <b>20</b> or more. A Marstek B2500 switches its inverter off at 0&nbsp;W and falls asleep under high PV surplus. This never reports less than that much import, so the battery keeps discharging and stays awake. <b>It costs exactly that many watts of export while the sun is out</b> &mdash; only worth it for a DC battery that actually falls asleep. AC batteries (Venus) do not need it.</td></tr>
+<tr><th>Max DC [W]</th><td>Default 0 = off. Highest discharge power <b>per battery</b>; the rest of the load comes from the grid. Charging is not affected. See <a href="#homeassistant">Discharge limit</a>, which also has the console command for a temporary change.</td></tr>
 <tr><th>3 phases</th><td><span class="sw">ON</span>: L1/L2/L3 come from the meter individually (not all meter supports this). <span class="sw">OFF</span>: the total goes onto L1 and B/C stay at 0 &mdash; then set every battery to phase A or D, otherwise a battery on B or C would read 0&nbsp;W forever.</td></tr>
 </table>
 <p>Offset and import trim pull in opposite directions on purpose. The offset is the margin <i>you</i> choose and holds at all times; the trim closes the gap the battery firmware leaves once things are calm, and it aims at the offset, not at zero. Setting an offset of 50&nbsp;W and a trim of 15 therefore means: hold 50&nbsp;W of import, and let the trim make sure those 50 are actually reached rather than 65.</p>
@@ -170,6 +172,7 @@ body.lang-de .en{display:none}
 <tr><th>Trim [W]</th><td>Empfohlen <b>15</b>. Jede Marstek-Firmware bleibt ein paar Watt auf der <i>Bezugsseite</i> stehen &mdash; ihr eigenes Totband am Eingang. Haushaltslast, die der Akku decken könnte, wird also weiter zum Arbeitspreis gekauft. Das schiebt mit einem festen Wert über dieses Totband hinweg, aber erst wenn das Netz sechs frische Zählerwerte lang zwischen 0 und 120&nbsp;W Bezug lag. Die Wartezeit hält es aus Lastsprüngen heraus, die Obergrenze von einem leeren oder vollen Akku fern &mdash; dort liegt der Bezug nicht an der Firmware.</td></tr>
 <tr><th>Schritt [W]</th><td>Empfohlen <b>30</b>. Begrenzt die Größe der Korrektur je Sekunde, gemessen ab null &mdash; nicht den Schritt weg vom zuletzt gemeldeten Wert, denn der würde dem Akku hinterherlaufen statt ihn zu begrenzen. Die Grenze verdoppelt sich auf bis zum Dreifachen, solange die Akkus nachweislich folgen, fällt mit der Abweichung zurück und springt bei jedem Richtungswechsel sofort auf den Grundwert.</td></tr>
 <tr><th>Min DC [W]</th><td>Standard 0 = aus, sonst <b>20</b> oder mehr. Ein Marstek B2500 schaltet bei 0&nbsp;W seinen Wechselrichter ab und schläft bei viel PV-Überschuss ein. Hier wird nie weniger als dieser Bezug gemeldet, der Akku entlädt also weiter und bleibt wach. <b>Das kostet bei Sonne genau diese Watt an Einspeisung</b> &mdash; lohnt sich nur bei einem DC-Akku, der wirklich einschläft. AC-Akkus (Venus) brauchen es nicht.</td></tr>
+<tr><th>Max DC [W]</th><td>Standard 0 = aus. Höchste Entladeleistung <b>pro Akku</b>; der Rest der Last kommt aus dem Netz. Laden bleibt unberührt. Siehe <a href="#homeassistant">Entladelimit</a>, dort auch das Konsolen-Kommando für eine vorübergehende Änderung.</td></tr>
 <tr><th>3 phases</th><td><span class="sw">EIN</span>: L1/L2/L3 kommen einzeln vom Zähler (nicht alle Stromzähler unterstützten das). <span class="sw">AUS</span>: die Gesamtleistung liegt auf L1, B und C bleiben 0 &mdash; dann alle Akkus auf Phase A oder D stellen, sonst liest ein Akku auf B oder C dauerhaft 0&nbsp;W.</td></tr>
 </table>
 <p>Offset und Trim ziehen absichtlich in verschiedene Richtungen. Der Offset ist der Abstand, den <i>du</i> willst, und gilt immer; der Trim schließt die Lücke, die die Akku-Firmware lässt, sobald Ruhe herrscht &mdash; und er zielt auf den Offset, nicht auf null. Offset 50&nbsp;W und Trim 15 heißt also: 50&nbsp;W Bezug halten, und der Trim sorgt dafür, dass es wirklich 50 werden und nicht 65.</p>
@@ -315,6 +318,124 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 </div>
 </section>
 
+<section id="homeassistant">
+<h2>Home Assistant</h2>
+<div class="en">
+<h3>Offset from Home Assistant</h3>
+<p>The console command <code>CTOffset &lt;W&gt;</code> sets the offset while the script runs; <code>CTOffset</code> alone shows it. Over MQTT that is <code>cmnd/&lt;topic&gt;/CTOffset</code>, over HTTP <code>/cm?cmnd=CTOffset%20-50</code>. It answers <code>{"CTOffset":-50}</code>; the current value is also in <code>tele/&lt;topic&gt;/SENSOR</code> as <code>"CT002":{…,"Offset":-50}</code>. At least &minus;200&nbsp;W, no upper limit (the field on the page stops at 200&nbsp;W).</p>
+<p>The value is kept in <b>RAM only</b>, so an automation can change it as often as it likes without wearing out the flash. After a restart the value saved on the page applies again. The field on the page keeps showing the saved value; the value in effect is shown right of it. To keep a value, enter it in the field and press <b>Save</b> &mdash; that also replaces a value set by command.</p>
+<p><b>Automatic:</b> the program announces the offset and Max DC to Home Assistant itself (MQTT discovery). They appear as number entities on the Tasmota device &mdash; nothing to configure. It is announced again whenever Home Assistant restarts. Needs MQTT discovery in Home Assistant (on by default) and the default FullTopic.</p>
+<p>Without discovery: a number entity in <code>configuration.yaml</code> (replace <code>&lt;topic&gt;</code> with the device's MQTT topic):</p>
+<pre><code>mqtt:
+  number:
+    - name: "CT002 Offset"
+      unique_id: ct002_offset
+      command_topic: "cmnd/&lt;topic&gt;/CTOffset"
+      state_topic: "tele/&lt;topic&gt;/SENSOR"
+      value_template: &gt;-
+        {% if value_json.CT002 is defined %}{{ value_json.CT002.Offset }}
+        {% else %}{{ states('number.ct002_offset') }}{% endif %}
+      optimistic: true
+      min: -200
+      max: 2000
+      step: 5
+      mode: box
+      unit_of_measurement: "W"</code></pre>
+<p><code>optimistic</code> shows the new value immediately; the <code>SENSOR</code> message corrects it at the next TelePeriod (e.g. after a restart). A meter value with immediate MQTT sends <code>SENSOR</code> messages that carry only that value; the <code>if</code> keeps the current state for those. Without MQTT, the same over HTTP:</p>
+<pre><code>rest_command:
+  pv_offset:
+    url: "http://&lt;ip&gt;/cm?cmnd=CTOffset%20{{ offset }}"</code></pre>
+<p>Then call <code>rest_command.pv_offset</code> with <code>offset: -50</code>. An automation that raises the margin at night:</p>
+<pre><code>automation:
+  - alias: "Offset 50 W at night"
+    triggers:
+      - trigger: time
+        at: "22:00:00"
+    actions:
+      - action: number.set_value
+        target:
+          entity_id: number.ct002_offset
+        data:
+          value: 50</code></pre>
+<h3>Discharge limit</h3>
+<p><code>CTLimit &lt;W&gt;</code> caps how much each battery discharges; <code>CTLimit 0</code> switches it off, <code>CTLimit</code> alone shows it. Like the offset it is kept in RAM only: after a restart the <b>Max DC</b> value saved on the page applies again. It answers <code>{"CTLimit":100}</code> and appears as <code>"Limit"</code> in the <code>CT002</code> block of <code>SENSOR</code>; while it is active the main page shows a <b>Max DC</b> row.</p>
+<p>A battery adds the reported value to what it already delivers, so cutting the reported value alone would only slow it down. The emulator therefore reports at most <i>limit &minus; the battery&#39;s own current output</i>. With a limit of 100&nbsp;W a battery at 300&nbsp;W is told &minus;200&nbsp;W and comes down, one at 60&nbsp;W may still add 40. The rest of the load comes from the grid. The limit applies <b>per battery</b> and does not touch charging. During phase detection it is suspended like the offset.</p>
+<pre><code>mqtt:
+  number:
+    - name: "CT002 Limit"
+      unique_id: ct002_limit
+      command_topic: "cmnd/&lt;topic&gt;/CTLimit"
+      state_topic: "tele/&lt;topic&gt;/SENSOR"
+      value_template: &gt;-
+        {% if value_json.CT002 is defined %}{{ value_json.CT002.Limit }}
+        {% else %}{{ states('number.ct002_limit') }}{% endif %}
+      optimistic: true
+      min: 0
+      max: 2500
+      step: 10
+      mode: box
+      unit_of_measurement: "W"</code></pre>
+<p>Setting the limit to <code>0</code> in Home Assistant switches it off; it does not stop the battery. To hold a battery at zero, use 1&nbsp;W.</p>
+</div>
+<div class="de">
+<h3>Offset aus Home Assistant</h3>
+<p>Das Konsolen-Kommando <code>CTOffset &lt;W&gt;</code> setzt den Offset im laufenden Betrieb; <code>CTOffset</code> allein zeigt ihn an. Per MQTT ist das <code>cmnd/&lt;topic&gt;/CTOffset</code>, per HTTP <code>/cm?cmnd=CTOffset%20-50</code>. Die Antwort lautet <code>{"CTOffset":-50}</code>; der aktuelle Wert steht außerdem in <code>tele/&lt;topic&gt;/SENSOR</code> als <code>"CT002":{…,"Offset":-50}</code>. Mindestens &minus;200&nbsp;W, nach oben ohne Grenze (das Feld auf der Seite endet bei 200&nbsp;W).</p>
+<p>Der Wert liegt <b>nur im RAM</b>, eine Automation darf ihn also beliebig oft ändern, ohne den Flash abzunutzen. Nach einem Neustart gilt wieder der auf der Seite gespeicherte Wert. Das Feld auf der Seite zeigt weiter den gespeicherten Wert; der gerade gültige steht rechts daneben. Soll ein Wert bleiben, ihn ins Feld eintragen und <b>Speichern</b> drücken &mdash; das ersetzt auch einen per Kommando gesetzten Wert.</p>
+<p><b>Automatisch:</b> Das Programm meldet Offset und Max DC selbst bei Home Assistant an (MQTT-Discovery). Sie erscheinen als Zahlenfelder am Tasmota-Gerät &mdash; nichts einzurichten. Nach jedem Neustart von Home Assistant wird neu angemeldet. Voraussetzung: MQTT-Discovery in Home Assistant (standardmäßig an) und das Standard-FullTopic.</p>
+<p>Ohne Discovery: eine Number-Entität in der <code>configuration.yaml</code> (<code>&lt;topic&gt;</code> durch das MQTT-Topic des Geräts ersetzen):</p>
+<pre><code>mqtt:
+  number:
+    - name: "CT002 Offset"
+      unique_id: ct002_offset
+      command_topic: "cmnd/&lt;topic&gt;/CTOffset"
+      state_topic: "tele/&lt;topic&gt;/SENSOR"
+      value_template: &gt;-
+        {% if value_json.CT002 is defined %}{{ value_json.CT002.Offset }}
+        {% else %}{{ states('number.ct002_offset') }}{% endif %}
+      optimistic: true
+      min: -200
+      max: 2000
+      step: 5
+      mode: box
+      unit_of_measurement: "W"</code></pre>
+<p><code>optimistic</code> zeigt den neuen Wert sofort; die <code>SENSOR</code>-Meldung korrigiert ihn zur nächsten TelePeriod (z.&nbsp;B. nach einem Neustart). Ein Zählerwert mit sofortigem MQTT schickt <code>SENSOR</code>-Meldungen, die nur diesen Wert enthalten; das <code>if</code> behält für die den aktuellen Stand. Ohne MQTT dasselbe per HTTP:</p>
+<pre><code>rest_command:
+  pv_offset:
+    url: "http://&lt;ip&gt;/cm?cmnd=CTOffset%20{{ offset }}"</code></pre>
+<p>Dann <code>rest_command.pv_offset</code> mit <code>offset: -50</code> aufrufen. Eine Automation, die nachts den Abstand erhöht:</p>
+<pre><code>automation:
+  - alias: "Offset 50 W at night"
+    triggers:
+      - trigger: time
+        at: "22:00:00"
+    actions:
+      - action: number.set_value
+        target:
+          entity_id: number.ct002_offset
+        data:
+          value: 50</code></pre>
+<h3>Entladelimit</h3>
+<p><code>CTLimit &lt;W&gt;</code> begrenzt, wie viel jeder Akku entlädt; <code>CTLimit 0</code> schaltet es ab, <code>CTLimit</code> allein zeigt es an. Wie der Offset liegt es nur im RAM: nach einem Neustart gilt wieder der auf der Seite gespeicherte Wert <b>Max DC</b>. Die Antwort lautet <code>{"CTLimit":100}</code>; in <code>SENSOR</code> steht es als <code>"Limit"</code> im Block <code>CT002</code>. Solange es aktiv ist, zeigt die Hauptseite eine Zeile <b>Max DC</b>.</p>
+<p>Ein Akku addiert den gemeldeten Wert zu dem, was er schon liefert &mdash; den gemeldeten Wert nur zu kappen würde ihn also bloß bremsen. Der Emulator meldet deshalb höchstens <i>Limit &minus; aktuelle Leistung des Akkus</i>. Bei 100&nbsp;W Limit bekommt ein Akku mit 300&nbsp;W &minus;200&nbsp;W gemeldet und regelt herunter, einer mit 60&nbsp;W darf noch 40 zulegen. Den Rest der Last deckt das Netz. Das Limit gilt <b>pro Akku</b> und lässt das Laden unberührt. Während der Phasensuche ist es wie der Offset ausgesetzt.</p>
+<pre><code>mqtt:
+  number:
+    - name: "CT002 Limit"
+      unique_id: ct002_limit
+      command_topic: "cmnd/&lt;topic&gt;/CTLimit"
+      state_topic: "tele/&lt;topic&gt;/SENSOR"
+      value_template: &gt;-
+        {% if value_json.CT002 is defined %}{{ value_json.CT002.Limit }}
+        {% else %}{{ states('number.ct002_limit') }}{% endif %}
+      optimistic: true
+      min: 0
+      max: 2500
+      step: 10
+      mode: box
+      unit_of_measurement: "W"</code></pre>
+<p>Limit <code>0</code> in Home Assistant schaltet die Begrenzung ab, es hält den Akku nicht an. Um einen Akku bei null zu halten: 1&nbsp;W.</p>
+</div>
+</section>
+
 <section id="marstek">
 <h2><span class="en">Marstek account</span><span class="de">Marstek-Konto</span></h2>
 <div class="en">
@@ -359,6 +480,8 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 <h2><span class="en">Console commands</span><span class="de">Konsolen-Kommandos</span></h2>
 <pre><code>CTSTAT            rx/tx/bad counters, one log line per battery
 CTCLR             clear the battery table
+CTOFFSET [W]      set the offset now, RAM only (no value = show it)
+CTLIMIT [W]       discharge limit per battery (Max DC), RAM only, 0 = off
 CTMAC &lt;hex12&gt;     set the CT MAC (empty = answer any)
 CTMAIL &lt;address&gt;  set the Marstek account mail
 CTPASS &lt;password&gt; set the password (RAM only)

@@ -1,0 +1,78 @@
+// ha_discovery.tc — Home Assistant MQTT discovery for the emulators' settings
+// that may change at runtime (offset, Max DC), as number entities.
+//
+// Not retained: mqttPublish() cannot set the flag, and the Publish2 command
+// through tasmCmd() takes at most 127 characters (a discovery message is ~330).
+// Instead the program listens for HA's birth message (homeassistant/status =
+// online, sent at every HA start) and announces everything again - the way
+// HA's own docs suggest. Nothing is written to the device's flash.
+//
+// The entity's state is the plain value on stat/<topic>/script/<key>, like
+// power2 - not the SENSOR JSON, which also carries messages without it.
+// Assumes the default FullTopic %prefix%/%topic%/, as power2 does.
+// The entity joins the Tasmota device through its MAC ("connections").
+
+#include "ui_common.tc"
+
+byte ha_topic[64];           // device topic (tasmInfo 0)
+byte ha_id[16];              // MAC, lowercase hex - unique ids
+byte ha_mac[20];             // MAC as aa:bb:cc:dd:ee:ff - device link
+byte ha_dev[40];             // Tasmota DeviceName - HA names the device after it
+byte ha_t[128];              // MQTT topic
+byte ha_buf[400];            // MQTT payload
+byte ha_p[128];              // pieces; sprintf output stays well below 255
+int  ha_sub;                 // subscribed to homeassistant/status
+int  ha_again;               // HA came online: announce again
+
+// Topic, MAC, and the subscription. Called before the first entity.
+void haPrepare() {
+    tasmInfo(0, ha_topic);
+    tasmInfo(4, ha_dev);
+    tasmInfo(1, ha_id);              // hex without colons, uppercase
+    strToLower(ha_id);
+    int i = 0;
+    int j = 0;
+    while (i < 12 && ha_id[i] != 0) {
+        if (i > 0 && (i % 2) == 0) {
+            ha_mac[j] = ':';
+            j = j + 1;
+        }
+        ha_mac[j] = ha_id[i];
+        j = j + 1;
+        i = i + 1;
+    }
+    ha_mac[j] = 0;
+    if (ha_sub == 0) {               // re-sent by the firmware on reconnect
+        mqttSubscribe("homeassistant/status");
+        ha_sub = 1;
+    }
+}
+
+// HA's birth message. The tick does the work - no publishing in a callback.
+void OnMqttData(char topic[], char payload[]) {
+    if (strcmp(payload, "online") == 0) ha_again = 1;
+}
+
+// One number entity: key = id suffix and state topic, cmd = Tasmota command.
+void haNumber(char key[], char name[], char cmd[], int lo, int hi) {
+    sprintf(ha_t, "homeassistant/number/%s_%s/config", ha_id, key);
+    sprintf(ha_buf, "{\"name\":\"%s\",\"uniq_id\":\"%s_%s\"", name, ha_id, key);
+    sprintf(ha_p, ",\"cmd_t\":\"cmnd/%s/%s\"", ha_topic, cmd);
+    strcat(ha_buf, ha_p);
+    sprintf(ha_p, ",\"stat_t\":\"stat/%s/script/%s\"", ha_topic, key);
+    strcat(ha_buf, ha_p);
+    sprintf(ha_p, ",\"min\":%d,\"max\":%d,\"mode\":\"box\",\"unit_of_meas\":\"W\"", lo, hi);
+    strcat(ha_buf, ha_p);
+    // name: only used when HA finds no device with this MAC - otherwise it
+    // falls back to the MQTT entry's title ("Mosquitto broker").
+    sprintf(ha_p, ",\"dev\":{\"name\":\"%s\",\"cns\":[[\"mac\",\"%s\"]]}}", ha_dev, ha_mac);
+    strcat(ha_buf, ha_p);
+    mqttPublish(ha_t, ha_buf, 2);      // rare: logged, helps when HA shows nothing
+}
+
+// The current value.
+void haState(char key[], int v) {
+    sprintf(ha_t, "stat/%s/script/%s", ha_topic, key);
+    sprintf(ha_p, "%d", v);
+    mqttPublish(ha_t, ha_p, 2);
+}

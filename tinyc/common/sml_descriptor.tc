@@ -467,7 +467,7 @@ void sml_descriptor_apply() {
 // onto one, they had outgrown the main page.
 // The caller closes the div, normally through the version footer.
 void sml_panel_open(char icon[], char en[], char de[]) {
-    webSend("<style>body>div{width:480px;max-width:96vw;box-sizing:border-box}.sml-p{max-width:100%;box-sizing:border-box;margin:12px auto;background:#f0f0f0;color:#000;padding:16px;border:2px solid #ccc;border-radius:6px;text-align:left}.sml-p h3{margin:0 0 8px}.sml-p hr{border:0;border-top:1px solid #bbb;margin:12px 0}.sml-p b{display:inline-block;margin-bottom:4px;font-size:13px}.sml-p div{margin:6px 0}.sml-p .hint{font-size:9px;color:#555;line-height:1.4}.sml-p .w{font-size:11px;color:#a00}.sml-p .n{font-size:12px;color:#444}</style>");
+    webSend("<style>body>div{width:480px;max-width:96vw;box-sizing:border-box}.sml-p{max-width:100%;box-sizing:border-box;margin:12px auto;background:#f0f0f0;color:#000;padding:16px;border:2px solid #ccc;border-radius:6px;text-align:left}.sml-p h3{margin:0 0 8px}.sml-p hr{border:0;border-top:1px solid #bbb;margin:12px 0}.sml-p b{display:inline-block;margin-bottom:4px;font-size:13px}.sml-p div{margin:6px 0}.sml-p .hint{font-size:9px;color:#555;line-height:1.4}.sml-p .w{font-size:11px;color:#a00}.sml-p .n{font-size:12px;color:#444}.sml-p div:has(+.lv){display:inline-block}.sml-p .lv{display:inline-block;margin-left:8px;font-size:12px;color:#444}</style>");
     if (ui_de) sprintf(sml_buf, "<div class='sml-p'><h3>%s %s</h3>", icon, de);
     else       sprintf(sml_buf, "<div class='sml-p'><h3>%s %s</h3>", icon, en);
     webSend(sml_buf);
