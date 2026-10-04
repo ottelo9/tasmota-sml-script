@@ -40,8 +40,9 @@ Voraussetzung ist ein Tasmota-Image ab **v15.1.0** (mit `USE_SML_M`, `USE_SML_SC
 
 `label` ist der Anzeigetext im DropDown, `filename` der Pfad relativ zu diesem Ordner.
 `id` ist eine feste Nummer je Eintrag: nie ändern, nie neu vergeben. Ein neuer Zähler bekommt die
-nächste freie Nummer. Solange ältere Firmware die Auswahl noch über die Position speichert, neue
-Einträge **ans Ende** setzen. Eintrag `0` (Keiner/Selbstdefinierter Zähler) lädt nichts herunter und behält die
+nächste freie Nummer. Eintrag mit leerem `filename` = Überschrift (Trennzeile je Hersteller,
+z.B. `── ABB ──`): sichtbar, nicht wählbar. Überschriften haben IDs ab `1000`, ein neuer
+Hersteller bekommt die nächste freie davon. Eintrag `0` (Keiner/Selbstdefinierter Zähler) lädt nichts herunter und behält die
 `/sml_meter.def`, für einen selbst geschriebenen Descriptor. RX/TX und Filter werden nur
 dort eingetragen, wo die Platzhalter `%0rxpin%`, `%0txpin%`, `%0smlf%` stehen.
 
@@ -154,7 +155,7 @@ und im MQTT-JSON, die Script-Variante ist unabhängig von der Index-Zählweise.
 1. `.tas`-Datei im passenden Hersteller-Ordner anlegen (Name = Modellbezeichnung)
 2. Nur die `>M`-Sektion hineinschreiben, mit `#` abschließen
 3. Die Platzhalter `%0rxpin%`, `%0txpin%`, `%0smlf%` verwenden statt fester Werte
-4. Eintrag in `smartmeter.json` ergänzen (alphabetisch einsortieren)
+4. Eintrag in `smartmeter.json` ergänzen (unter der Überschrift des Herstellers alphabetisch einsortieren)
 
 Gerne per Pull Request oder über die
 [Kontaktseite](https://ottelo.jimdofree.com/kontakt) — Rückmeldungen zu funktionierenden

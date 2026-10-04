@@ -513,7 +513,12 @@ void sml_render_settings_panel() {
     // From here on every label reads the same in both languages - one call each.
     uiCheckI(sml_e_filter, varIdx(sml_e_filter), "SML Filter", "sml/#filter");
     webSend("&#x1F4DD; <a href='/ufse?file=/sml_meter.def'>Descriptor</a>");
-    webRepoPulldown(sml_e_meter_sel, "Repo",
+    // Same URL literal twice - deduplicated, costs no extra RAM.
+    if (ui_de) webRepoPulldown(sml_e_meter_sel, "Zähler",
+                    "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
+                    "smartmeter",
+                    "/sml_meter.new");
+    else webRepoPulldown(sml_e_meter_sel, "Meter",
                     "https://raw.githubusercontent.com/ottelo9/tasmota-sml-script/main/script-list-menu/meters/smartmeter.json",
                     "smartmeter",
                     "/sml_meter.new");
