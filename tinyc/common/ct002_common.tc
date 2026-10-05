@@ -562,12 +562,18 @@ void ctBuild(byte btype[], byte bmac[], byte reqctmac[]) {
             if (ct_sph[ct_slot] == 4) vd = ctShare(ct_slot, 4, ct_ptot);
             // The battery adds what it is told to what it already delivers, so
             // capping the value alone would only slow it down. Cap the sum.
+            // Capping the battery's own phase field is not enough: on A/B/C
+            // the firmware regulates on the combined total (field 8) too, so
+            // the cap went unseen there and only phase D was limited. The
+            // response is unicast - cap the total for every battery. The two
+            // foreign phase fields stay untouched: forced negative they would
+            // read as export and could ask for charge.
             if (ct_maxdc > 0) {
                 int lim = ct_maxdc - ct_spwr[ct_slot];
                 if (ct_sph[ct_slot] == 1 && va > lim) va = lim;
                 if (ct_sph[ct_slot] == 2 && vb > lim) vb = lim;
                 if (ct_sph[ct_slot] == 3 && vc > lim) vc = lim;
-                if (ct_sph[ct_slot] == 4 && vd > lim) vd = lim;
+                if (vd > lim) vd = lim;
                 // Held by the limit is not saturated.
                 if (ct_starg[ct_slot] > lim) ct_starg[ct_slot] = lim;
             }
