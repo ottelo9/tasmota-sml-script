@@ -12,7 +12,7 @@
 #include "sml_modbus_common.tc"
 #include "ct002_common.tc"
 
-char sml_vers[] = "05.10.2026";
+char sml_vers[] = "07.10.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 
