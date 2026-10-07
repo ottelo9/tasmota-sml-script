@@ -469,7 +469,11 @@ int ctShare(int idx, int f, int base) {
         float dem = (float)base;
         if (dem < 0.0) dem = 0.0 - dem;
         ct_dem = ct_dem + 0.1 * (dem - ct_dem);         // EMA, meter noise out
-        int need = (int)(ct_dem / (minw * 1.2)) + 1;    // 1.2 = hysteresis
+        // How many of them the demand can keep above their own floor. No "+1"
+        // spare: it split 120 W across two B2500 at 60 W each, under the 80 W
+        // floor, and both stayed asleep - the very thing concentration is for.
+        // The second one joins at 1.2 x 2 x 80 W, the factor being hysteresis.
+        int need = (int)(ct_dem / (minw * 1.2));
         if (need < 1) need = 1;
         if (need > n) need = n;
         int rank = ctRank(idx, f);
@@ -700,6 +704,7 @@ float ct_osc[4];        // oscillation score 0..1
 int   ct_osign[4];      // sign of the last residual
 int   ct_step[4];       // current pacing cap [W]
 int   ct_psign[4];      // sign of the last paced command
+int   ct_stall[4];      // consecutive capped cycles the batteries ignored
 
 // Predictor / pacing constants, at AstraMeter's field-tested values.
 #define CT_TRUST_MIN  0.15
@@ -714,6 +719,8 @@ int   ct_psign[4];      // sign of the last paced command
 #define CT_OSC_DECAY  0.05    // bled off otherwise
 #define CT_OSC_STEP   300.0   // above this it is a load step, not hunting
 #define CT_PACE_MOVE  5.0     // pool movement that counts as "it followed"
+#define CT_PACE_STALL 4       // capped seconds without any answer = stalled
+#define CT_PACE_ACT   80      // smallest command a B2500 can act on at all
 
 // Output the batteries of this loop have already delivered. Phase A/B/C see
 // only their own bucket; the saldierend total sees every battery.
@@ -725,6 +732,22 @@ int ctPool(int ph) {
         if (ct_sused[i] == 1 && ct_spart[i] == 1) s = s + ct_spwr[i];
     }
     return s;
+}
+
+// Is a B2500 listening on this loop? The regulator is per phase and the start
+// floor is per family, so the parts that only make sense for a DC battery ask
+// here instead of applying to everyone. Taken from the type the battery sends
+// with every request (ct_sdc), not from a setting - nothing to configure wrong.
+// Phase D hears every battery, A/B/C only their own bucket.
+int ctHasDC(int ph) {
+    int f = ph + 1;
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        if (ct_sused[i] == 1 && ct_spart[i] == 1 && ct_sdc[i] == 1) {
+            if (ph == 3 || ct_sph[i] == f) return 1;
+        }
+    }
+    return 0;
 }
 
 int ctCtrl(float raw, int ph) {
@@ -830,10 +853,17 @@ int ctCtrl(float raw, int ph) {
     // the batteries demonstrably follow, falls back with the error and resets
     // on a direction reversal.
     //
-    // AstraMeter's stall escape for a B2500 that cannot execute a small
-    // command is not here: this loop serves a whole phase and does not know
-    // which family sits on it. The 80 W start floor for those is handled per
-    // battery in ctShare().
+    // Growth cannot depend on an answer alone, or the cap deadlocks: a battery
+    // that is held - by Max DC, by an empty pack, or because the capped command
+    // sits under its own start floor - never moves the pool, so the cap stays
+    // at the base step and the command never grows enough to be executable.
+    // With step 40 and a B2500 (80 W floor) that is permanent: 40 W is ignored,
+    // nothing follows, 40 W is sent again. So count the capped cycles nothing
+    // answered and open the cap anyway - AstraMeter's stall escape, which it
+    // applies per battery; here it is per phase, as this loop does not know
+    // which family sits on it. The ceiling is lifted to at least the smallest
+    // executable command for the same reason: three times a small step can land
+    // below it.
     if (ct_pace > 0) {
         int cap = ct_step[ph];
         if (cap < ct_pace) cap = ct_pace;
@@ -844,13 +874,29 @@ int ctCtrl(float raw, int ph) {
         if (ap < 0.0) ap = 0.0 - ap;
         if (sg == 0 || sg != ct_psign[ph]) {
             cap = ct_pace;              // reversal - nothing learned carries over
+            ct_stall[ph] = 0;
         } else if (ap > (float)cap) {
-            if (dpool * (float)sg >= CT_PACE_MOVE) cap = cap * 2;
+            if (dpool * (float)sg >= CT_PACE_MOVE) {
+                cap = cap * 2;
+                ct_stall[ph] = 0;
+            } else {
+                ct_stall[ph] = ct_stall[ph] + 1;
+                if (ct_stall[ph] >= CT_PACE_STALL) {
+                    cap = cap * 2;      // stalled - open it without an answer
+                    ct_stall[ph] = 0;
+                }
+            }
         } else {
             cap = (int)ap;              // follow the error back down
             if (cap < ct_pace) cap = ct_pace;
+            ct_stall[ph] = 0;
         }
-        if (cap > ct_pace * 3) cap = ct_pace * 3;
+        int cmax = ct_pace * 3;
+        // Only for a B2500: it cannot act below CT_PACE_ACT at all, so a
+        // ceiling under that is a dead end. A Venus or Jupiter executes any
+        // value - there a small step is a deliberate setting, left alone.
+        if (cmax < CT_PACE_ACT && ctHasDC(ph) == 1) cmax = CT_PACE_ACT;
+        if (cap > cmax) cap = cmax;
         ct_step[ph] = cap;
         ct_psign[ph] = sg;
         if (v > (float)cap) v = (float)cap;
@@ -873,6 +919,7 @@ void ctCtrlReset() {
         ct_dwell[i] = 0;
         ct_step[i]  = 0;
         ct_psign[i] = 0;
+        ct_stall[i] = 0;
     }
     addLog("CT002: re-seed");
 }
