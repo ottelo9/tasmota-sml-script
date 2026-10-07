@@ -1,0 +1,136 @@
+// pv_switch_common.tc — switches another Tasmota device (a smart plug for a
+// pool pump, say) on PV surplus, like the Scripter's option (Op1). Defines no
+// callbacks; the including program calls swTick / swRows / swPanel.
+//
+// Driven by power2, the smoothed grid power: ON below sw_won, OFF above
+// sw_woff (both signed, -300 = 300 W feed-in). A command is sent only on a
+// change, as Tasmota's WebSend to http://<ip>/cm. Deferred: WebSend blocks
+// until the device answers, and tasmDefer runs it with the VM halted.
+// (httpGet from a callback released the VM mid-call while the CT programs'
+// TaskLoop ran - both died with "Bounds error".)
+
+#include "ui_common.tc"
+#include "sml_descriptor.tc"
+
+// ─── Settings ──────────────────────────────────────────────────────────────
+persist int  sw_on;            // 1 = switch the other device
+persist int  sw_won;           // power2 [W] below which it goes on
+persist int  sw_woff;          // power2 [W] above which it goes off
+persist char sw_ip[16];        // its IP; char[16] - see tc_opt_ip
+
+// ─── Edit buffer ───────────────────────────────────────────────────────────
+int  sw_e_on; int sw_e_won; int sw_e_woff;
+char sw_e_ip[16];
+
+// ─── Runtime ───────────────────────────────────────────────────────────────
+int  sw_st;                    // 1 = ON was sent last
+int  sw_tgl;                   // toggle button
+char sw_cmd[48];
+
+void swEditLoad() {
+    sw_e_on = sw_on;
+    sw_e_won = sw_won;
+    sw_e_woff = sw_woff;
+    strcpy(sw_e_ip, sw_ip);
+}
+
+// mode 0 OFF, 1 ON, 2 TOGGLE.
+void swCmd(char ip[], int mode) {
+    if (mode == 0) sprintf(sw_cmd, "WebSend [%s] Power OFF", ip);
+    if (mode == 1) sprintf(sw_cmd, "WebSend [%s] Power ON", ip);
+    if (mode == 2) sprintf(sw_cmd, "WebSend [%s] Power TOGGLE", ip);
+    tasmDefer(sw_cmd);
+    addLog("pvsw: %s", sw_cmd);
+}
+
+// Remembered even if the device did not answer - no retry every second.
+void swSend(int on) {
+    swCmd(sw_ip, on);
+    sw_st = on;
+}
+
+// From EverySecond().
+void swTick() {
+    if (tc_opt_first == 1) {
+        // New install: the Scripter's values, ON below -300 W, OFF above +100 W.
+        if (tc_opt[36] == -32768 && sw_won == 0) sw_won = -300;
+        if (tc_opt[37] == -32768 && sw_woff == 0) sw_woff = 100;
+        sw_on   = tcOptGet(35, sw_on);
+        sw_won  = tcOptGet(36, sw_won);
+        sw_woff = tcOptGet(37, sw_woff);
+        if (tc_opt_ip_has == 1) strcpy(sw_ip, tc_opt_ip);
+        tcOptSet(35, sw_on);
+        tcOptSet(36, sw_won);
+        tcOptSet(37, sw_woff);
+        if (sw_ip[0] != 0) tcOptSetIp(sw_ip);
+        swEditLoad();
+    }
+    if (ui_reloading) swEditLoad();
+    if (ui_applying) {
+        // Moved to another device while ON: release the old one first.
+        if (sw_st == 1 && strcmp(sw_e_ip, sw_ip) != 0) swSend(0);
+        sw_on = sw_e_on;
+        // OFF below ON would switch back and forth every second.
+        if (sw_e_woff < sw_e_won) sw_e_woff = sw_e_won;
+        sw_won = sw_e_won;
+        sw_woff = sw_e_woff;
+        strcpy(sw_ip, sw_e_ip);
+        tcOptSet(35, sw_on);
+        tcOptSet(36, sw_won);
+        tcOptSet(37, sw_woff);
+        tcOptSetIp(sw_ip);
+    }
+    int act = sw_on;
+#ifdef SML_CHART
+    if (sml_pv == 0) act = 0;        // the switch sits under Feed-in
+#endif
+    if (sw_ip[0] == 0 || sml_activ == 0) return;
+    if (act == 0) {
+        if (sw_st == 1) swSend(0);   // unticked while ON
+        return;
+    }
+    if (sw_st == 0) {
+        if (sml_power2 < (float)sw_won) swSend(1);
+        return;
+    }
+    if (sml_power2 > (float)sw_woff) swSend(0);
+}
+
+// From WebCall().
+void swRows() {
+    if (sw_on == 0) return;
+#ifdef SML_CHART
+    if (sml_pv == 0) return;
+#endif
+    if (sw_st == 1) uiText("{s}PV switch{m}ON{e}", "{s}PV-Schalter{m}EIN{e}");
+    else            uiText("{s}PV switch{m}OFF{e}", "{s}PV-Schalter{m}AUS{e}");
+}
+
+// From WebUI(), inside the settings panel. The chart programs call it under
+// their PV heading, only with Feed-in on; the others have no PV heading.
+void swPanel() {
+#ifndef SML_CHART
+    uiHead("&#x2600;&#xFE0F;", "PV", "PV", "sml/#pvswitch");
+#endif
+    if (ui_de) uiCheckI(sw_e_on, varIdx(sw_e_on), "PV-Schalter", "sml/#pvswitch");
+    else       uiCheckI(sw_e_on, varIdx(sw_e_on), "PV switch", "sml/#pvswitch");
+    if (sw_e_on == 0) return;
+
+    // Toggle button: handled while drawing the answer to the click. Left to
+    // the next tick, the answer showed the button still pressed, so the next
+    // click sent 0 - only every second click worked (no refresh after a click).
+    if (sw_tgl == 1) {
+        sw_tgl = 0;
+        if (sw_e_ip[0] != 0) swCmd(sw_e_ip, 2);
+    }
+    webText(sw_e_ip, 16, "IP");
+    if (ui_de) {
+        webNumber(sw_e_won, -30000, 30000, "Ein [W]");
+        webNumber(sw_e_woff, -30000, 30000, "Aus [W]");
+        webButton(sw_tgl, "Umschalten|OK");
+    } else {
+        webNumber(sw_e_won, -30000, 30000, "On [W]");
+        webNumber(sw_e_woff, -30000, 30000, "Off [W]");
+        webButton(sw_tgl, "Toggle|OK");
+    }
+}

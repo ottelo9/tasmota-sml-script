@@ -68,6 +68,7 @@ body.lang-de .en{display:none}
   <a href="#telemetry"><span class="en">Telemetry</span><span class="de">Telemetrie</span></a>
   <a href="#vars">/pwr?v=</a>
   <a href="#modbus">Modbus</a>
+  <a href="#pvswitch"><span class="en">PV switch</span><span class="de">PV-Schalter</span></a>
   <a href="#options"><span class="en">Settings file</span><span class="de">Einstellungsdatei</span></a>
   <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
 </nav>
@@ -103,42 +104,46 @@ body.lang-de .en{display:none}
 <section id="programs">
 <h2><span class="en">Programs</span><span class="de">Programme</span></h2>
 <div class="en">
-<p>Pick one, compile it, upload it into slot&nbsp;0. Modbus is an option inside every one of them.</p>
+<p>Pick one and load it into slot&nbsp;0 &mdash; ready-made, nothing to compile. Modbus is an option inside every one of them.</p>
 <table>
-<tr><th>sml_simple.tc</th><td>Meter only. Smallest program.</td></tr>
-<tr><th>sml_chart.tc</th><td>+ charts and tables, feed-in switchable.</td></tr>
-<tr><th>sml_ct002.tc</th><td>+ Marstek CT002/CT003 emulator (<a href="../ct002/">docs</a>).</td></tr>
-<tr><th>sml_chart_ct002.tc</th><td>Charts + CT002 emulator.</td></tr>
-<tr><th>sml_eco_shelly.tc</th><td>+ EcoTracker / Shelly Pro 3EM emulator (<a href="../eco_shelly/">docs</a>).</td></tr>
-<tr><th>sml_chart_eco_shelly.tc</th><td>Charts + EcoTracker / Shelly emulator.</td></tr>
+<tr><th>SML Simple</th><td>Meter only. Smallest program.</td></tr>
+<tr><th>SML Chart</th><td>+ charts and tables, feed-in switchable.</td></tr>
+<tr><th>SML + Marstek CT002</th><td>+ Marstek CT002/CT003 emulator (<a href="../ct002/">docs</a>).</td></tr>
+<tr><th>SML Chart + Marstek CT002</th><td>Charts + CT002 emulator.</td></tr>
+<tr><th>SML + EcoTracker / Shelly</th><td>+ EcoTracker / Shelly Pro 3EM emulator (<a href="../eco_shelly/">docs</a>).</td></tr>
+<tr><th>SML Chart + EcoTracker / Shelly</th><td>Charts + EcoTracker / Shelly emulator.</td></tr>
 </table>
-<h3>Install</h3>
+<h3 id="install">Install</h3>
 <ol>
-<li>Console: <code>TinyCIde</code>, then open <code>http://&lt;ip&gt;/tc</code>.</li>
-<li>Load the <code>.tc</code> file, <b>Compile</b>, <b>Upload</b> into slot&nbsp;0.</li>
-<li>Tick autoexec, or start it with <code>TinyCRun /&lt;name&gt;.tcb</code>.</li>
+<li>In Tasmota open <b>Tools &rarr; TinyC Console</b>.</li>
+<li>In the <b>Repository</b> box pick <b>SmartMeter/PV/Emulator (ottelo)</b> in the upper list (preselected on my images).</li>
+<li>Pick the program in the list below, leave <b>Slot&nbsp;0</b>, press <b>Download &amp; Load</b>.</li>
+<li>In the slot row switch on <b>A</b> (autostart on boot, green), and start it with &#x25B6; if it is not running yet.</li>
 </ol>
+<p>For experienced users: the sources (<code>.tc</code>) are in the <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc">tinyc</a> folder. Compile them yourself in the TinyC IDE or all at once with <code>bytecode/build.html</code> &mdash; only needed if you change something.</p>
 <p class="warn">Slot&nbsp;0 only for the emulator variants: their HTTP endpoints are <code>webOn</code> handlers, and Tasmota dispatches those to slot&nbsp;0.</p>
-<p>Each program keeps its own settings file. Switching programs means setting the meter up again.</p>
+<p>Meter, pins, language and the other shared settings are kept in <a href="#options"><code>/tc_options.cfg</code></a>, so they survive a program switch.</p>
 </div>
 <div class="de">
-<p>Eines aussuchen, kompilieren, in Slot&nbsp;0 hochladen. Modbus ist in jedem davon als Option enthalten.</p>
+<p>Eines aussuchen und in Slot&nbsp;0 laden &mdash; fertig übersetzt, nichts zu kompilieren. Modbus ist in jedem davon als Option enthalten.</p>
 <table>
-<tr><th>sml_simple.tc</th><td>Nur Zähler. Kleinstes Programm.</td></tr>
-<tr><th>sml_chart.tc</th><td>+ Diagramme und Tabellen, Einspeisung schaltbar.</td></tr>
-<tr><th>sml_ct002.tc</th><td>+ Marstek-CT002/CT003-Emulator (<a href="../ct002/">Doku</a>).</td></tr>
-<tr><th>sml_chart_ct002.tc</th><td>Diagramme + CT002-Emulator.</td></tr>
-<tr><th>sml_eco_shelly.tc</th><td>+ EcoTracker- / Shelly-Pro-3EM-Emulator (<a href="../eco_shelly/">Doku</a>).</td></tr>
-<tr><th>sml_chart_eco_shelly.tc</th><td>Diagramme + EcoTracker- / Shelly-Emulator.</td></tr>
+<tr><th>SML Simple</th><td>Nur Zähler. Kleinstes Programm.</td></tr>
+<tr><th>SML Chart</th><td>+ Diagramme und Tabellen, Einspeisung schaltbar.</td></tr>
+<tr><th>SML + Marstek CT002</th><td>+ Marstek-CT002/CT003-Emulator (<a href="../ct002/">Doku</a>).</td></tr>
+<tr><th>SML Chart + Marstek CT002</th><td>Diagramme + CT002-Emulator.</td></tr>
+<tr><th>SML + EcoTracker / Shelly</th><td>+ EcoTracker- / Shelly-Pro-3EM-Emulator (<a href="../eco_shelly/">Doku</a>).</td></tr>
+<tr><th>SML Chart + EcoTracker / Shelly</th><td>Diagramme + EcoTracker- / Shelly-Emulator.</td></tr>
 </table>
-<h3>Installation</h3>
+<h3 id="installation">Installation</h3>
 <ol>
-<li>Konsole: <code>TinyCIde</code>, dann <code>http://&lt;ip&gt;/tc</code> öffnen.</li>
-<li>Die <code>.tc</code>-Datei laden, <b>Compile</b>, <b>Upload</b> in Slot&nbsp;0.</li>
-<li>Autoexec ankreuzen oder mit <code>TinyCRun /&lt;name&gt;.tcb</code> starten.</li>
+<li>In Tasmota <b>Werkzeuge &rarr; TinyC Console</b> öffnen.</li>
+<li>Im Kasten <b>Repository</b> oben <b>SmartMeter/PV/Emulator (ottelo)</b> wählen (bei meinen Images vorausgewählt).</li>
+<li>In der Liste darunter das Programm wählen, <b>Slot&nbsp;0</b> lassen, <b>Download &amp; Load</b> drücken.</li>
+<li>In der Slot-Zeile <b>A</b> einschalten (Autostart beim Booten, grün) und mit &#x25B6; starten, falls es noch nicht läuft.</li>
 </ol>
+<p>Für Erfahrene: Die Quelltexte (<code>.tc</code>) liegen im Ordner <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc">tinyc</a>. Selbst übersetzen geht in der TinyC-IDE oder alle auf einmal mit <code>bytecode/build.html</code> &mdash; nur nötig, wenn du etwas änderst.</p>
 <p class="warn">Nur Slot&nbsp;0 bei den Emulator-Varianten: deren HTTP-Endpunkte sind <code>webOn</code>-Handler, und die reicht Tasmota an Slot&nbsp;0 weiter.</p>
-<p>Jedes Programm hat seine eigene Einstellungsdatei. Beim Wechsel muss der Zähler neu eingerichtet werden.</p>
+<p>Zähler, Pins, Sprache und die übrigen gemeinsamen Einstellungen liegen in der <a href="#options"><code>/tc_options.cfg</code></a> und bleiben beim Programmwechsel erhalten.</p>
 </div>
 </section>
 
@@ -526,6 +531,43 @@ body.lang-de .en{display:none}
 <p>Alles außerhalb der Tabelle wird sauber beantwortet: falscher Funktionscode gibt Exception&nbsp;<code>01</code>, falsche Adresse Exception&nbsp;<code>02</code>, eine ungerade oder zu große Anzahl Exception&nbsp;<code>03</code>. Quantity&nbsp;1 wird deshalb abgelehnt &mdash; ein halber Float ist kein Wert.</p>
 </div>
 </section>
+<section id="pvswitch">
+<h2><span class="en">PV switch</span><span class="de">PV-Schalter</span></h2>
+<div class="en">
+<p>All programs. Default <span class="sw">OFF</span>. Switches a second Tasmota device on PV surplus &mdash; a smart plug for a pool pump, say. Like option (Op1) of the old scripts. In the chart programs it sits under <a href="#pv">PV</a> and appears once <b>Feed-in</b> is on.</p>
+<table>
+<tr><th>IP</th><td>IP address of the other device.</td></tr>
+<tr><th>On [W]</th><td><b>On</b> when <code>power2</code> drops below this. Negative = feed-in. Default &minus;300: on from 300&nbsp;W feed-in.</td></tr>
+<tr><th>Off [W]</th><td><b>Off</b> when <code>power2</code> rises above this. Default 100: off from 100&nbsp;W import. Never below <i>On</i> &mdash; Save raises it to that.</td></tr>
+</table>
+<p>It works on <code>power2</code>, the smoothed grid power, so a passing cloud does not switch. A command goes out only on a change: <code>Power ON</code> / <code>Power OFF</code> to <code>http://&lt;IP&gt;/cm</code>. The main page shows the state. Unticking it, or a new IP, switches the old device off first.</p>
+<p><b>Toggle</b> switches the other device by hand &mdash; for a test, also before saving. Its state is not read back.</p>
+<h3>The other device</h3>
+<ul>
+<li>Tasmota, reachable from this one. Give it a fixed IP (DHCP reservation in the router).</li>
+<li><b>No web password</b> (<code>WebPassword</code> empty) &mdash; otherwise it rejects the command.</li>
+<li>The load hangs on relay&nbsp;1 (<code>Power</code> = <code>Power1</code>).</li>
+<li>Recommended: <code>PowerOnState 0</code>, so it stays off after a power cut until there is surplus again.</li>
+</ul>
+</div>
+<div class="de">
+<p>Alle Programme. Standard <span class="sw">AUS</span>. Schaltet bei PV-Überschuss ein zweites Tasmota-Gerät &mdash; z.B. eine Steckdose für die Poolpumpe. Wie die Option (Op1) der alten Scripte. In den Diagramm-Programmen steht er unter <a href="#pv">PV</a> und erscheint, sobald <b>Einspeisung</b> an ist.</p>
+<table>
+<tr><th>IP</th><td>IP-Adresse des anderen Geräts.</td></tr>
+<tr><th>Ein [W]</th><td><b>Ein</b>, wenn <code>power2</code> darunter fällt. Negativ = Einspeisung. Standard &minus;300: ein ab 300&nbsp;W Einspeisung.</td></tr>
+<tr><th>Aus [W]</th><td><b>Aus</b>, wenn <code>power2</code> darüber steigt. Standard 100: aus ab 100&nbsp;W Bezug. Nie unter <i>Ein</i> &mdash; Speichern hebt es darauf an.</td></tr>
+</table>
+<p>Grundlage ist <code>power2</code>, die geglättete Netzleistung &mdash; eine vorbeiziehende Wolke schaltet also nicht. Gesendet wird nur bei einem Wechsel: <code>Power ON</code> / <code>Power OFF</code> an <code>http://&lt;IP&gt;/cm</code>. Die Hauptseite zeigt den Zustand. Wird die Option abgewählt oder die IP geändert, wird das alte Gerät vorher ausgeschaltet.</p>
+<p><b>Umschalten</b> schaltet das andere Gerät von Hand um &mdash; zum Testen, auch schon vor dem Speichern. Sein Zustand wird nicht abgefragt.</p>
+<h3>Das andere Gerät</h3>
+<ul>
+<li>Tasmota, von diesem Gerät aus erreichbar. Mit fester IP (DHCP-Reservierung im Router).</li>
+<li><b>Kein Web-Passwort</b> (<code>WebPassword</code> leer) &mdash; sonst lehnt es den Befehl ab.</li>
+<li>Der Verbraucher hängt an Relais&nbsp;1 (<code>Power</code> = <code>Power1</code>).</li>
+<li>Empfohlen: <code>PowerOnState 0</code>, damit es nach einem Stromausfall aus bleibt, bis wieder Überschuss da ist.</li>
+</ul>
+</div>
+</section>
 <section id="options">
 <h2><span class="en">Settings file</span><span class="de">Einstellungsdatei</span></h2>
 <div class="en">
@@ -549,6 +591,7 @@ body.lang-de .en{display:none}
 <tr><th><code>chart_*</code></th><td><code>chart_short</code> is the short-term chart's range in <b>minutes</b> (15, 30, 60, 120, 240) &mdash; minutes rather than a menu position, so the number says what it means. <code>chart_onmain</code> puts the charts on Tasmota's main page.</td></tr>
 <tr><th><code>imp_*</code> / <code>exp_*</code></th><td>The energy baselines in kWh: the zero points day, week, month and year totals are counted from. <code>sml_da</code> is the last-seen day of the month and belongs with them.</td></tr>
 <tr><th><code>sml_bezug</code> / <code>exp_virt</code></th><td>The <a href="#bezug">Import meter</a> switch and its computed export total in kWh.</td></tr>
+<tr><th><code>sw_*</code></th><td>The <a href="#pvswitch">PV switch</a>: on/off, On [W], Off [W], IP.</td></tr>
 </table>
 <h3>Editing by hand</h3>
 <p>Download the file, change it, upload it, <b>then restart the script</b> &mdash; in that order. It is read once at start; a running program holds the values in memory and would write yours back over at the next rollover.</p>
@@ -577,6 +620,7 @@ body.lang-de .en{display:none}
 <tr><th><code>chart_*</code></th><td><code>chart_short</code> ist die Zeitspanne des Kurzzeit-Diagramms in <b>Minuten</b> (15, 30, 60, 120, 240) &mdash; Minuten statt einer Menüposition, damit die Zahl sagt, was sie bedeutet. <code>chart_onmain</code> legt die Diagramme auf Tasmotas Hauptseite.</td></tr>
 <tr><th><code>imp_*</code> / <code>exp_*</code></th><td>Die Basiswerte in kWh: die Nullpunkte, von denen Tages-, Wochen-, Monats- und Jahressumme aus gezählt werden. <code>sml_da</code> ist der zuletzt gesehene Monatstag und gehört dazu.</td></tr>
 <tr><th><code>sml_bezug</code> / <code>exp_virt</code></th><td>Der Schalter <a href="#bezug">Bezugszähler</a> und sein gerechneter Einspeise-Zählerstand in kWh.</td></tr>
+<tr><th><code>sw_*</code></th><td>Der <a href="#pvswitch">PV-Schalter</a>: an/aus, Ein [W], Aus [W], IP.</td></tr>
 </table>
 <h3>Von Hand editieren</h3>
 <p>Datei herunterladen, ändern, hochladen, <b>dann das Script neu starten</b> &mdash; in dieser Reihenfolge. Gelesen wird sie einmal beim Start; ein laufendes Programm hält die Werte im Speicher und schriebe deine Korrektur beim nächsten Umbruch wieder weg.</p>

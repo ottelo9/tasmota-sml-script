@@ -9,8 +9,9 @@
 #include "ui_common.tc"
 #include "sml_descriptor.tc"
 #include "sml_modbus_common.tc"
+#include "pv_switch_common.tc"
 
-char sml_vers[] = "04.10.2026";
+char sml_vers[] = "07.10.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int  sml_sndpwr;         // 1 = publish power2 via MQTT
@@ -39,6 +40,7 @@ void EverySecond() {
     if (ui_applying)  { sml_sndpwr = sml_e_sndpwr; tcOptSet(10, sml_sndpwr); }
     sml_descriptor_apply();
     mbTick();
+    swTick();
 
     if (do_reset) {
         tasmCmd("Sensor53 r", sml_buf);
@@ -84,6 +86,7 @@ void WebCall() {
     }
     sml_phase_rows();
     mbRows();
+    swRows();
 }
 
 void WebUI() {
@@ -91,6 +94,7 @@ void WebUI() {
     if (webPage() != 0) return;
     sml_render_settings_panel();     // opens the panel div
 
+    swPanel();
     uiHead("&#x1F4E1;", "Telemetry", "Telemetrie", "sml/#telemetry");
     if (ui_de) webCheckbox(sml_e_sndpwr, "power2 senden (MQTT)");
     else       webCheckbox(sml_e_sndpwr, "Send power2 (MQTT)");
@@ -135,7 +139,6 @@ int main() {
     webOn(7, "/pwr");
     smlScripterLoad("/sml_meter.def");
 
-    addLog("sml_simple: %s started rx=%d tx=%d meter=%d modbus=%d",
-           sml_vers, sml_rx_pin, sml_tx_pin, sml_meter_sel, mb_on);
+    addLog("start %s", sml_vers);
     return 0;
 }

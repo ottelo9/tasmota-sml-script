@@ -65,10 +65,22 @@ int ui_reloading;            // latched for the current tick
 //
 // Chart data (dval/mval/yval, the sample rings) is NOT here. It belongs to
 // one program's charts, not to the family, and stays in the .pvs.
-int  tc_opt[35];
-int  tc_opt_own[35];
+int  tc_opt[38];
+int  tc_opt_own[38];
 int  tc_opt_dirty;
 byte tc_opt_b[48];
+
+// The one string option: the PV switch's target IP. char[16], because
+// webText() and tasmDefer() read char[] correctly on every firmware.
+char tc_opt_ip[16];
+int  tc_opt_ip_has;
+
+void tcOptSetIp(char v[]) {
+    if (tc_opt_ip_has == 0) tc_opt_dirty = 1;
+    if (strcmp(tc_opt_ip, v) != 0) tc_opt_dirty = 1;
+    strcpy(tc_opt_ip, v);
+    tc_opt_ip_has = 1;
+}
 
 // The energy baselines are kWh, so they need their own float table - atoi()
 // would cut 26714.950 to 26714 and lose 950 Wh at every program change.
@@ -106,11 +118,12 @@ void tcOptSet(int i, int v) {
 
 void tcOptLoad() {
     int i = 0;
-    while (i < 35) {
+    while (i < 38) {
         tc_opt[i] = -32768;
         tc_opt_own[i] = 0;
         i++;
     }
+    tc_opt_ip_has = 0;
     i = 0;
     while (i < 9) {
         tc_optf[i] = 0.0;
@@ -119,7 +132,7 @@ void tcOptLoad() {
     }
     int h = fileOpen("/tc_options.cfg", "r");
     if (h < 0) {
-        addLog("tc_options: none yet");
+        addLog("opt: none");
         return;
     }
     if (fileGetStr(tc_opt_b, h, "@ui_de=",         1, 10) > 0) tc_opt[0]  = atoi(tc_opt_b);
@@ -157,6 +170,10 @@ void tcOptLoad() {
     if (fileGetStr(tc_opt_b, h, "@chart_short=",  1, 10) > 0) tc_opt[30] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@chart_onmain=", 1, 10) > 0) tc_opt[31] = atoi(tc_opt_b);
     if (fileGetStr(tc_opt_b, h, "@sml_bezug=",    1, 10) > 0) tc_opt[32] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sw_on=",        1, 10) > 0) tc_opt[35] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sw_won=",       1, 10) > 0) tc_opt[36] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sw_woff=",      1, 10) > 0) tc_opt[37] = atoi(tc_opt_b);
+    if (fileGetStr(tc_opt_b, h, "@sw_ip=",        1, 10) > 0) { strcpy(tc_opt_ip, tc_opt_b); tc_opt_ip_has = 1; }
     if (fileGetStr(tc_opt_b, h, "@imp_day=",   1, 10) > 0) { tc_optf[0] = atof(tc_opt_b); tc_optf_has[0] = 1; }
     if (fileGetStr(tc_opt_b, h, "@imp_month=", 1, 10) > 0) { tc_optf[1] = atof(tc_opt_b); tc_optf_has[1] = 1; }
     if (fileGetStr(tc_opt_b, h, "@imp_year=",  1, 10) > 0) { tc_optf[2] = atof(tc_opt_b); tc_optf_has[2] = 1; }
@@ -184,7 +201,7 @@ void tcOptWF(int h, char name[], int i) {
 void tcOptSave() {
     int h = fileOpen("/tc_options.cfg", "w");
     if (h < 0) {
-        addLog("tc_options: cannot write");
+        addLog("opt: wr err");
         return;
     }
     strcpy(tc_opt_b, "# tc_options - shared by all programs\n");
@@ -233,6 +250,15 @@ void tcOptSave() {
     // 1 = the meter has no export register; the export total is integrated
     // from negative power instead and kept as exp_virt below.
     tcOptW(h,  "sml_bezug",    32);
+    // PV surplus switch: on/off, power2 [W] below which the other device goes
+    // on and above which it goes off (-300 = 300 W feed-in), its IP.
+    tcOptW(h,  "sw_on",        35);
+    tcOptW(h,  "sw_won",       36);
+    tcOptW(h,  "sw_woff",      37);
+    if (tc_opt_ip_has == 1) {
+        sprintf(tc_opt_b, "@sw_ip=%s\n", tc_opt_ip);
+        fileWrite(h, tc_opt_b, strlen(tc_opt_b));
+    }
     tcOptWF(h, "imp_day",      0);
     tcOptWF(h, "imp_month",    1);
     tcOptWF(h, "imp_year",     2);
@@ -247,7 +273,7 @@ void tcOptSave() {
     // program stopped.
     tcOptWF(h, "exp_virt",     8);
     fileClose(h);
-    addLog("tc_options: written");
+    addLog("opt: wr");
 }
 
 int tc_opt_init;

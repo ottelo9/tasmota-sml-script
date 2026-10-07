@@ -56,7 +56,7 @@ void mbPoll() {
     if (mb_started == 0) {
         if (tcpServer(mb_port) == 0) {
             mb_started = 1;
-            addLog("modbus: port %d", mb_port);
+            addLog("mb: %d", mb_port);
         }
         return;                       // network not up yet — retry next tick
     }
@@ -141,7 +141,7 @@ void mbTick() {
         mb_started = 0;               // mbPoll() re-binds if still enabled
         snapshot(mb_port);
         snapshot(mb_on);
-        addLog("modbus: on=%d port %d", mb_on, mb_port);
+        addLog("mb: on%d %d", mb_on, mb_port);
     }
 }
 

@@ -216,7 +216,7 @@ void sml_chart_save() {
 void sml_chart_export_csv() {
     int h = fileOpen("/sml_chart.csv", "w");
     if (h < 0) {
-        addLog("chart: csv failed");
+        addLog("chart: csv err");
         return;
     }
     byte kopf[96];
@@ -270,7 +270,7 @@ void sml_chart_clear_power() {
     i = 0;
     while (i < 1441) { sml_s24h[i] = 0; i = i + 1; }
     sml_chart_save();
-    addLog("chart: history cleared");
+    addLog("chart: clr");
 }
 
 // Only the short-term ring: a changed time range makes its stored slots mean
@@ -292,7 +292,7 @@ void sml_chart_init_columns() {
     i = 0;
     while (i < 53) { sml_wcon[i] = 0.0; i = i + 1; }
     sml_chart_save();
-    addLog("chart: bars cleared");
+    addLog("chart: clr bars");
 }
 
 // Watts as they go into a packed int16 ring: rounded, and CLAMPED.
@@ -682,7 +682,7 @@ void sml_chart_pv_load() {
 void sml_chart_pv_export_csv() {
     int h = fileOpen("/sml_chart_pv.csv", "w");
     if (h < 0) {
-        addLog("pv: csv failed");
+        addLog("pv: csv err");
         return;
     }
     byte kopf[96];
@@ -935,7 +935,7 @@ void sml_chart_opt_apply() {
     if (m != sml_stmin) {
         sml_stmin = m;
         sml_chart_clear_st();
-        addLog("chart: range %d min", sml_stmin);
+        addLog("chart: %d min", sml_stmin);
     }
     sml_chmain = sml_e_chmain;
     tcOptSet(30, sml_stmin);

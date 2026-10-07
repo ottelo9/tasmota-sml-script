@@ -382,9 +382,9 @@ void sml_descriptor_apply() {
             sml_ph3_was = 0;
             tcOptSet(8, sml_ph3);
             if (empty == 1) {
-                addLog("sml: 3ph off, 4/5/6 = 0");
+                addLog("sml: 3ph off 0");
             } else {
-                addLog("sml: 3ph off, %.0f != %.0f W", sum, tot);
+                addLog("sml: 3ph off %.0f/%.0f", sum, tot);
             }
             saveVars();
         } else {
@@ -410,7 +410,7 @@ void sml_descriptor_apply() {
         sml_bezug_was = sml_bezug;
         sml_bezug_chg = 1;
         sml_virt_ws   = 0.0;
-        addLog("sml: import meter %d", sml_bezug);
+        addLog("sml: imp %d", sml_bezug);
     }
 
     if (changed(sml_drvrows)) {
@@ -540,7 +540,7 @@ void smlPublish(byte topic[], byte payload[]) {
     if (sml_pub_seen == 0 || rc != sml_pub_rc) {
         sml_pub_seen = 1;
         sml_pub_rc = rc;
-        addLog("SML: mqttPublish rc=%d topic=%s", rc, topic);
+        addLog("sml: pub %d %s", rc, topic);
     }
 }
 

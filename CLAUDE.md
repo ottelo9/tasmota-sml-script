@@ -53,7 +53,7 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   named after the `.tcb`). `@name=value` lines; `-32768` = absent; floats
   (energy baselines) in a separate table. A new option needs: a slot in
   `tc_opt[]`, a `tcOptLoad` line, a `tcOptSave` line, `tcOptGet/Set` in the
-  program. **All 35 slots are taken** — the next option must grow the arrays.
+  program. **All 38 slots are taken** — the next option must grow the arrays.
 
   | idx | key | idx | key | idx | key |
   |---|---|---|---|---|---|
@@ -68,7 +68,12 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   | 8 | sml_ph3 | 20 | ct_offset | 32 | sml_bezug |
   | 9 | sml_pv | 21 | ct_port | 33 | ct_sat |
   | 10 | sml_sndpwr | 22 | ct_rssi | 34 | ct_maxdc |
-  | 11 | mb_on | 23 | ct_ttl | | |
+  | 11 | mb_on | 23 | ct_ttl | 35 | sw_on |
+  | | | | | 36 | sw_won |
+  | | | | | 37 | sw_woff |
+
+  One string key outside the table: `@sw_ip=` (`tc_opt_ip`, `char[16]`,
+  `tcOptSetIp`) — the PV switch's target (`pv_switch_common.tc`).
 
   Floats (`tc_optf[]`, 9 slots, all taken): 0 `imp_day`, 1 `imp_month`,
   2 `imp_year`, 3 `exp_day`, 4 `exp_month`, 5 `exp_year`, 6 `imp_week`,
@@ -161,7 +166,7 @@ Control loop ported from AstraMeter (GPL-3.0; credit on page 4),
   share. Batteries on different phases never form a pool — with a netting meter
   they belong on phase D. With saturation detection on, a saturated peer leaves
   the share and the balance average (AstraMeter #679, ceilings there).
-- Last AstraMeter comparison: `33feae9` (2026-10-03). Start the next one there.
+- Last AstraMeter comparison: `934b95b` (2026-10-07). Start the next one there.
 - Source files may be CRLF or LF per file (Git `autocrlf`); patch scripts must
   keep each file's ending.
 

@@ -9,9 +9,10 @@
 
 #include "sml_chart_common.tc"
 #include "sml_modbus_common.tc"
+#include "pv_switch_common.tc"
 #include "eco_shelly_common.tc"
 
-char sml_vers[] = "04.10.2026";
+char sml_vers[] = "07.10.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ void EverySecond() {
     sml_descriptor_apply();
     esTick();
     mbTick();
+    swTick();
 
     if (do_reset) {
         tasmCmd("Sensor53 r", sml_pv_resp);
@@ -157,6 +159,7 @@ void WebCall() {
     uiSep();
     esRows();
     mbRows();
+    swRows();
     uiSep();
     if (sml_chmain == 0) sml_chart_link();   // no link when they are on the page itself
     sml_chart_datetime_rows();
@@ -172,6 +175,7 @@ void WebUI() {
     uiHead("&#x2600;&#xFE0F;", "PV", "PV", "sml/#pv");
     if (ui_de) webCheckbox(sml_e_pv, "Einspeisung");
     else       webCheckbox(sml_e_pv, "Feed-in");
+    if (sml_e_pv) swPanel();         // PV switch, only with Feed-in
 
     uiHead("&#x1F527;", "Telemetry", "Telemetrie", "sml/#telemetry");
     if (ui_de) webCheckbox(sml_e_sndpwr, "power2 + cpwr senden (MQTT)");
@@ -234,7 +238,6 @@ int main() {
     webOn(7, "/pwr");
     smlScripterLoad("/sml_meter.def");
 
-    addLog("sml_chart_eco_shelly: %s started mode=%d pv=%d modbus=%d",
-           sml_vers, es_mode, sml_pv, mb_on);
+    addLog("start %s", sml_vers);
     return 0;
 }

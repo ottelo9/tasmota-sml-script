@@ -10,6 +10,7 @@
 #include "ui_common.tc"
 #include "sml_chart_common.tc"
 #include "sml_modbus_common.tc"
+#include "pv_switch_common.tc"
 #include "ct002_common.tc"
 
 char sml_vers[] = "07.10.2026";
@@ -76,6 +77,7 @@ void EverySecond() {
     sml_descriptor_apply();
     ctTick();
     mbTick();
+    swTick();
 
     if (do_reset) {
         tasmCmd("Sensor53 r", sml_pv_resp);
@@ -163,6 +165,7 @@ void WebCall() {
     uiSep();
     ctRows();
     mbRows();
+    swRows();
     uiSep();
     if (sml_chmain == 0) sml_chart_link();   // no link when they are on the page itself
     sml_chart_datetime_rows();
@@ -184,6 +187,7 @@ void WebUI() {
     uiHead("&#x2600;&#xFE0F;", "PV", "PV", "sml/#pv");
     if (ui_de) webCheckbox(sml_e_pv, "Einspeisung");
     else       webCheckbox(sml_e_pv, "Feed-in");
+    if (sml_e_pv) swPanel();         // PV switch, only with Feed-in
 
     uiHead("&#x1F527;", "Telemetry", "Telemetrie", "sml/#telemetry");
     if (ui_de) webCheckbox(sml_e_sndpwr, "power2 + cpwr senden (MQTT)");
@@ -247,7 +251,6 @@ int main() {
     webOn(7, "/pwr");
     smlScripterLoad("/sml_meter.def");
 
-    addLog("sml_chart_ct002: %s started, %s, port %d, CT MAC '%s'",
-           sml_vers, ct_type, ct_port, ct_mac);
+    addLog("start %s", sml_vers);
     return 0;
 }

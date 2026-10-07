@@ -263,7 +263,7 @@ int ctAlloc(byte macbuf[]) {
             ct_sinsp[i]  = 0;
             ct_slast[i]  = millis();
             strcpy(ct_smac[i], macbuf);
-            addLog("CT002: slot %d new: %s", i, macbuf);
+            addLog("CT: +%d %s", i, macbuf);
             return i;
         }
     }
@@ -283,7 +283,7 @@ void ctAge() {
             }
             if (now - ct_slast[i] > ttl) {
                 ct_sused[i] = 0;
-                addLog("CT002: slot %d (%s) expired", i, ct_smac[i]);
+                addLog("CT: -%d %s", i, ct_smac[i]);
             }
         }
     }
@@ -364,7 +364,7 @@ void ctRotate() {
     if (ct_rotoff >= CT_NSLOT) ct_rotoff = 0;
     int i = 0;
     for (i = 0; i < CT_NSLOT; i = i + 1) ct_sfade[i] = 1.0;   // hand over gently
-    addLog("CT002: rotate %d", ct_rotoff);
+    addLog("CT: rot %d", ct_rotoff);
 }
 
 // Rank of this slot within its bucket, counted from the rotation offset.
@@ -644,8 +644,8 @@ void ctHandle(int n) {
     // Phase changes are worth a line: a battery reporting '0' is still
     // diagnosing which phase it sits on and gets the raw meter (ctBuild).
     if (ct_sph[idx] != f) {
-        if (f == 0) addLog("CT002: %s inspect", ct_qbmac);
-        else        addLog("CT002: %s phase %s", ct_qbmac, ct_qph);
+        if (f == 0) addLog("CT: %s ph?", ct_qbmac);
+        else        addLog("CT: %s ph %s", ct_qbmac, ct_qph);
     }
     // Inspection over: re-seed the regulator, the sweep ran through it.
     // Venus FW 1.50 repeats it every ~35 min. AstraMeter #653.
@@ -921,7 +921,7 @@ void ctCtrlReset() {
         ct_psign[i] = 0;
         ct_stall[i] = 0;
     }
-    addLog("CT002: re-seed");
+    addLog("CT: reseed");
 }
 
 void ctPower() {
@@ -997,10 +997,10 @@ int ctLogin() {
     // The TLS handshake wants one large contiguous block. On a fragmented
     // heap it fails to allocate and httpGet just returns 0, so log what was
     // available - that is the difference between "no network" and "no RAM".
-    addLog("CT002: login %d/%d", tasm_heap, tasm_maxblock);
+    addLog("CT: login %d/%d", tasm_heap, tasm_maxblock);
     int n = httpGet(ct_req, ct_resp);
-    if (n >= 1000) addLog("CT002: reply %d B, truncated", n);
-    else           addLog("CT002: reply %d B", n);
+    if (n >= 1000) addLog("CT: rx %d B cut", n);
+    else           addLog("CT: rx %d B", n);
     if (n <= 0) {
         // BearSSL wants one contiguous 16 kB record buffer. Measured on an
         // ESP32-C3: the handshake went through at ~12.7 kB largest block and
@@ -1061,9 +1061,9 @@ int ctScan() {
                 // the other one.
                 if (found == 0 && strlen(ct_mac) != 12) {
                     strcpy(ct_mac, ct_buf);
-                    addLog("CT002: adopted %s", ct_buf);
+                    addLog("CT: adopt %s", ct_buf);
                 } else {
-                    addLog("CT002: found %s", ct_buf);
+                    addLog("CT: found %s", ct_buf);
                 }
                 found = found + 1;
             }
@@ -1140,13 +1140,17 @@ void ctDoCreate() {
     strcat(ct_req, ct_type);
     strcat(ct_req, "&token=");
     strcat(ct_req, ct_tok);
-    strcat(ct_req, "&access=1&name=CT002&bluetooth_name=MST-SMR_");
+    // The app reads the model from the Bluetooth prefix: MST-TPM_ = CT002,
+    // MST-SMR_ = CT003 (AstraMeter #710). Keyed on ct_type, which is what
+    // type= above sends. Same length either way, the URL budget is unchanged.
+    if (strcmp(ct_type, "HME-3") == 0) strcat(ct_req, "&access=1&name=CT003&bluetooth_name=MST-SMR_");
+    else                               strcat(ct_req, "&access=1&name=CT002&bluetooth_name=MST-TPM_");
     strcat(ct_req, sfx);
     if (strlen(ct_req) + 25 <= 250) strcat(ct_req, "&timeZone=Europe%2FBerlin");
     if (strlen(ct_req) + 12 <= 250) strcat(ct_req, "&version=121");
     if (strlen(ct_req) + 16 <= 250) strcat(ct_req, "&position=%7B%7D");
     int ulen = strlen(ct_req);
-    addLog("CT002: url %d", ulen);
+    addLog("CT: url %d", ulen);
     if (ulen > 250) {
         sprintf(ct_msg, "URL too long (%d)", ulen);
         return;
@@ -1157,8 +1161,8 @@ void ctDoCreate() {
     httpHeader("token", ct_tok);
 
     int rn = httpGet(ct_req, ct_resp);
-    if (rn >= 1000) addLog("CT002: reply %d B, truncated", rn);
-    else            addLog("CT002: reply %d B", rn);
+    if (rn >= 1000) addLog("CT: rx %d B cut", rn);
+    else            addLog("CT: rx %d B", rn);
     if (rn <= 0) {
         sprintf(ct_msg, "No reply (rc=%d)", rn);
         return;
@@ -1179,7 +1183,7 @@ void ctDoCreate() {
     ct_okflag = 1;
     strcpy(ct_msg, "CT created, MAC = ");
     strcat(ct_msg, ct_mac);
-    addLog("CT002: created %s (%s)", nm, ct_type);
+    addLog("CT: new %s %s", nm, ct_type);
 }
 
 
@@ -1270,6 +1274,10 @@ void ctHaTick() {
 void ctTick() {
     ctHaTick();
     if (tc_opt_first == 1) {
+        // New install (no cfg entry yet): start with the recommended values.
+        // 0 stays a valid choice - once saved, the cfg carries it.
+        if (tc_opt[26] == -32768 && ct_trim == 0) ct_trim = 15;
+        if (tc_opt[27] == -32768 && ct_pace == 0) ct_pace = 30;
         ct_kind   = tcOptGet(19, ct_kind);
         ct_offset = tcOptGet(20, ct_offset);
         ct_port   = tcOptGet(21, ct_port);
@@ -1305,7 +1313,7 @@ void ctTick() {
             // Harmless under load, noisy when idle - 300 s keeps recovery.
             udp(8, 1, 300);
             ct_once = 1;
-            addLog("CT002: %s UDP %d MAC %s", ct_type, ct_port, ct_mac);
+            addLog("CT: %s %d %s", ct_type, ct_port, ct_mac);
         }
     }
 
@@ -1317,7 +1325,7 @@ void ctTick() {
     if (strlen(ct_pass) > 0 && ct_busy == 0) {
         if (millis() - ct_pts > 600000) {
             strcpy(ct_pass, "");
-            addLog("CT002: pw cleared");
+            addLog("CT: pw clr");
         }
     }
 }
@@ -1610,7 +1618,7 @@ int ctCmd(char cmd[]) {
         int i = 0;
         for (i = 0; i < CT_NSLOT; i = i + 1) {
             if (ct_sused[i] == 1) {
-                addLog("CT002: slot %d %s ph=%d p=%d part=%d iv=%d",
+                addLog("CT: %d %s ph%d %dW p%d iv%d",
                        i, ct_smac[i], ct_sph[i], ct_spwr[i], ct_spart[i], ct_siv[i]);
             }
         }

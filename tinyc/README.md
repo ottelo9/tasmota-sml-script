@@ -15,7 +15,9 @@ mit TinyC-Unterstützung benötigt (Variante `_tc`), und ein ESP32 — kein ESP8
 
 ### Programme
 
-Eines aussuchen, in Slot 0 laden. Modbus-TCP ist in jedem als Option enthalten.
+Eines aussuchen, in Slot 0 laden — fertig übersetzt über **Werkzeuge → TinyC Console →
+Repository**, dort **SmartMeter/PV/Emulator (ottelo)** wählen. Modbus-TCP ist in jedem als
+Option enthalten.
 
 | Datei | Beschreibung |
 |---|---|
