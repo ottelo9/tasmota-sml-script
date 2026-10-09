@@ -47,7 +47,7 @@ body.lang-de .en{display:none}
 
 <header>
   <h1>Marstek CT002 / CT003 emulator</h1>
-  <p class="sub"><span class="en">TinyC script for Tasmota &middot; turns an ESP32 with a meter reading head into a Marstek CT</span><span class="de">TinyC-Script für Tasmota &middot; macht aus einem ESP32 mit Lesekopf ein Marstek-CT</span></p>
+  <p class="sub"><span class="en">TinyC program for Tasmota &middot; turns your reading head into a Marstek CT</span><span class="de">TinyC-Programm für Tasmota &middot; macht aus deinem Lesekopf ein Marstek-CT</span></p>
   <div class="switch">
     <button data-set="en">English</button>
     <button data-set="de">Deutsch</button>
@@ -71,18 +71,18 @@ body.lang-de .en{display:none}
 <section id="overview">
 <h2><span class="en">Overview</span><span class="de">&Uuml;berblick</span></h2>
 <div class="en">
-<p>The script uses Marstek's native CT protocol on UDP port 12345, so a Venus / Jupiter / B2500 fleet can use your Tasmota device as its emulated CT002/CT003. Grid power comes from your electricity meter, exactly like the Shelly Pro 3EM and EcoTracker emulators &mdash; this is a third method to connect a battery to a emulated meter to enable zero-point feed-in.</p>
-<p>What it adds over the Shelly emulation: <b>coordination between several batteries</b>. Every battery reports its own power and phase, and the answer carries the number of batteries per phase. Each battery divides the phase power by that count as its first step, so two batteries on one phase no longer fight each other. It also supports phase <code>D</code>, where a battery regulates against the sum of all three phases &mdash; usually what you want with a netting meter.</p>
-<p>It runs in relay mode: the grid reading is passed through as measured, and each battery does its own regulation. There is no active steering or load balancing.</p>
-<p><b>Requirements:</b> ESP32 (ESP8266 is not supported), Tasmota with TinyC <b>1.6.64 or newer</b> and <code>USE_SML</code>, and a meter reading head (examples on my <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">blog</a>). <span class="hint">Older firmware refuses to load the program and says so &mdash; it does not fail silently.</span></p>
-<p><b>ESP8266:</b> there is a separate Scripter version for up to 4 Marstek batteries, <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/ESP8266/pvakku-powermeter-emulator">2_CT002_Emulator.tas</a> (by next145), without the control loop described here. It needs the image <a href="https://github.com/ottelo9/tasmota-sml-images">tasmota1m_ct002_ottelo_tas</a> (for an OTA upgrade, you must first use the minimal image), which has the page <b>Marstek CT002</b> (<code>/ctreg</code>, under Tools) for the one-time registration in the Marstek cloud.</p>
+<p>Marstek batteries (Venus, Jupiter, B2500) need a meter to know how much power your house is using right now. Marstek sells a device for this, the CT002 / CT003. This program turns your reading head into such a device: it reads your electricity meter and answers the batteries exactly like a real CT. That way your battery can feed in just as much as your house needs (zero feed-in).</p>
+<p>There are three ways to connect a battery to an emulated meter: Shelly Pro 3EM, EcoTracker and this CT002. The big advantage of the CT002: it <b>coordinates several batteries</b>. Each battery tells the CT its power and its phase, and the CT tells each battery how many batteries share its phase. So two batteries on the same phase do not work against each other. Phase <code>D</code> is also supported: the battery then uses the sum of all three phases, which is usually right with a normal (netting) meter.</p>
+<p>With <b>Active control</b> switched off, the program simply passes the meter value on and each battery regulates itself. With it switched on, the program helps the batteries to regulate more calmly and precisely (see <a href="#battery">Battery</a>).</p>
+<p><b>You need:</b> an ESP32 (not an ESP8266), my Tasmota image with TinyC <b>1.6.64 or newer</b>, and a reading head (examples on my <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">blog</a>). An older firmware refuses to load the program and tells you so.</p>
+<p><b>ESP8266:</b> for this there is a separate script for up to 4 Marstek batteries, <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/ESP8266/pvakku-powermeter-emulator">2_CT002_Emulator.tas</a> (by next145), without the extra control described here. It needs the image <a href="https://github.com/ottelo9/tasmota-sml-images">tasmota1m_ct002_ottelo_tas</a> (for an OTA update, load the minimal image first). It has the page <b>Marstek CT002</b> (<code>/ctreg</code>, under Tools) for registering the CT in the Marstek cloud once.</p>
 </div>
 <div class="de">
-<p>Das Script verwendet Marsteks eigenes CT-Protokoll auf UDP-Port 12345, damit Venus-, Jupiter- oder B2500-Akkus dein Tasmota-Gerät als emulierten CT002/CT003 benutzen können. Die Netzleistung kommt von deinem Zähler, genau wie beim Shelly-Pro-3EM- und EcoTracker-Emulator &mdash; es ist die dritte Möglichkeit eine PV-Batterie mit einem emuliertem Zähler zu verbinden, um die Nulleinspeisung zu realisieren.</p>
-<p>Der Vorteil gegenüber der Shelly-Emulation: <b>Koordination mehrerer Akkus</b>. Jeder Akku meldet seine eigene Leistung und Phase, und die Antwort enthält die Anzahl der Akkus je Phase. Jeder Akku teilt die Leistung als allerersten Schritt durch diese Zahl &mdash; zwei Akkus auf einer Phase schwingen sich damit nicht mehr gegenseitig auf (Regelschwingen). Dazu kommt Phase <code>D</code>, bei der ein Akku gegen die Summe aller drei Phasen regelt; bei einem saldierenden Zähler ist das meist das Richtige.</p>
-<p>Betrieb im Relay-Modus: der Zählerwert wird unverändert durchgereicht, jeder Akku regelt selbst. Es gibt keine aktive Steuerung oder Lastverteilung.</p>
-<p><b>Voraussetzungen:</b> ESP32 (ESP8266 wird nicht unterstützt), Tasmota mit TinyC <b>1.6.64 oder neuer</b> und <code>USE_SML</code> und natürlich ein Lesekopf (Beispiele auf meinem <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">Blog</a>). <span class="hint">Ältere Firmware lädt das Programm nicht und sagt das auch &mdash; sie scheitert nicht still.</span></p>
-<p><b>ESP8266:</b> Dafür gibt es eine eigene Scripter-Fassung für bis zu 4 Marstek-Akkus, <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/ESP8266/pvakku-powermeter-emulator">2_CT002_Emulator.tas</a> (von next145), ohne die hier beschriebene Regelung. Sie braucht das Image <a href="https://github.com/ottelo9/tasmota-sml-images">tasmota1m_ct002_ottelo_tas</a> (für ein OTA Update muss vorher das minimal Image verwendet werden), das die Seite <b>Marstek CT002</b> (<code>/ctreg</code>, unter Werkzeuge) zur einmaligen Anmeldung in der Marstek-Cloud hat.</p>
+<p>Marstek-Akkus (Venus, Jupiter, B2500) brauchen einen Zähler, damit sie wissen, wie viel Strom dein Haus gerade braucht. Marstek verkauft dafür ein eigenes Gerät, das CT002 / CT003. Dieses Programm macht aus deinem Lesekopf so ein Gerät: Es liest deinen Stromzähler aus und antwortet den Akkus genau wie ein echtes CT. So kann dein Akku genau so viel einspeisen, wie dein Haus braucht (Nulleinspeisung).</p>
+<p>Es gibt drei Wege, einen Akku mit einem nachgebildeten Zähler zu verbinden: Shelly Pro 3EM, EcoTracker und dieses CT002. Der große Vorteil des CT002: Es <b>stimmt mehrere Akkus aufeinander ab</b>. Jeder Akku meldet dem CT seine Leistung und seine Phase, und das CT sagt jedem Akku, wie viele Akkus sich seine Phase teilen. So arbeiten zwei Akkus auf derselben Phase nicht mehr gegeneinander. Auch Phase <code>D</code> wird unterstützt: Der Akku nimmt dann die Summe aller drei Phasen, was bei einem normalen (saldierenden) Zähler meistens richtig ist.</p>
+<p>Ist <b>Aktive Regelung</b> aus, gibt das Programm den Zählerwert einfach weiter und jeder Akku regelt selbst. Ist sie an, hilft das Programm den Akkus, ruhiger und genauer zu regeln (siehe <a href="#battery">Akku</a>).</p>
+<p><b>Du brauchst:</b> einen ESP32 (keinen ESP8266), mein Tasmota-Image mit TinyC <b>1.6.64 oder neuer</b> und einen Lesekopf (Beispiele auf meinem <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">Blog</a>). Eine ältere Firmware lädt das Programm nicht und sagt dir das auch.</p>
+<p><b>ESP8266:</b> Dafür gibt es ein eigenes Script für bis zu 4 Marstek-Akkus, <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/ESP8266/pvakku-powermeter-emulator">2_CT002_Emulator.tas</a> (von next145), ohne die hier beschriebene zusätzliche Regelung. Es braucht das Image <a href="https://github.com/ottelo9/tasmota-sml-images">tasmota1m_ct002_ottelo_tas</a> (für ein OTA-Update vorher das Minimal-Image laden). Darin gibt es die Seite <b>Marstek CT002</b> (<code>/ctreg</code>, unter Werkzeuge), um das CT einmalig in der Marstek-Cloud anzumelden.</p>
 </div>
 </section>
 
@@ -90,45 +90,47 @@ body.lang-de .en{display:none}
 <h2><span class="en">Setup</span><span class="de">Einrichtung</span></h2>
 <div class="en">
 <ol>
-<li>Load <b>SML + Marstek CT002</b> (or <b>SML Chart + Marstek CT002</b> for charts) into slot&nbsp;0: <b>Tools &rarr; TinyC Console &rarr; Repository</b>, <b>SmartMeter/PV/Emulator (ottelo)</b> &mdash; step by step under <a href="../sml/#install">Install</a>.</li>
-<li>Switch on autostart (<b>A</b>) in the slot row so it starts on boot.</li>
-<li>Set up the meter under <a href="#meter">Meter</a> first &mdash; without readings the emulator answers with 0&nbsp;W.</li>
-<li>Create the CT in your <a href="#marstek">Marstek account</a> and select it in the app.</li>
+<li>Load <b>SML + Marstek CT002</b> (or <b>SML Chart + Marstek CT002</b> if you want charts) into slot&nbsp;0. How this works is described step by step under <a href="../sml/#install">Install</a>.</li>
+<li>Switch on <b>A</b> in the slot row, so the program starts by itself after a reboot.</li>
+<li>Set up your meter first (see <a href="#meter">Meter</a>). Without meter values the CT reports 0&nbsp;W.</li>
+<li>Create the CT in your <a href="#marstek">Marstek account</a> and select it in the Marstek app.</li>
 </ol>
-<p class="warn">Slot&nbsp;0 only. The <code>/ctreg</code> page is a <code>webOn</code> endpoint, and Tasmota always dispatches those to slot&nbsp;0.</p>
+<p class="warn">Only in slot&nbsp;0. The registration page <code>/ctreg</code> only works there.</p>
 </div>
 <div class="de">
 <ol>
-<li><b>SML + Marstek CT002</b> (oder <b>SML Chart + Marstek CT002</b> mit Diagrammen) in Slot&nbsp;0 laden: <b>Werkzeuge &rarr; TinyC Console &rarr; Repository</b>, <b>SmartMeter/PV/Emulator (ottelo)</b> &mdash; Schritt für Schritt unter <a href="../sml/#installation">Installation</a>.</li>
-<li>In der Slot-Zeile Autostart (<b>A</b>) einschalten, damit es beim Booten startet.</li>
-<li>Zuerst den <a href="#meter">Zähler</a> einrichten; ohne Messwerte antwortet der Emulator mit 0&nbsp;W.</li>
-<li>Das CT im <a href="#marstek">Marstek-Konto</a> anlegen und in der App auswählen.</li>
+<li><b>SML + Marstek CT002</b> (oder <b>SML Chart + Marstek CT002</b>, wenn du Diagramme willst) in Slot&nbsp;0 laden. Wie das geht, steht Schritt für Schritt unter <a href="../sml/#installation">Installation</a>.</li>
+<li>In der Zeile des Slots <b>A</b> einschalten, damit das Programm nach einem Neustart von selbst startet.</li>
+<li>Zuerst deinen Zähler einrichten (siehe <a href="#meter">Zähler</a>). Ohne Zählerwerte meldet das CT 0&nbsp;W.</li>
+<li>Das CT in deinem <a href="#marstek">Marstek-Konto</a> anlegen und in der Marstek-App auswählen.</li>
 </ol>
-<p class="warn">Nur Slot&nbsp;0. Die Seite <code>/ctreg</code> ist ein <code>webOn</code>-Endpunkt, und die reicht Tasmota immer an Slot&nbsp;0 weiter.</p>
+<p class="warn">Nur in Slot&nbsp;0. Die Anmeldeseite <code>/ctreg</code> funktioniert nur dort.</p>
 </div>
 </section>
 
 <section id="ct">
 <h2>CT</h2>
 <div class="en">
+<p>You find all CT and battery settings on their own page: the <b>&#x1F50B; CT</b> button in the Tasmota main menu, or the link at the top of the settings page.</p>
 <table>
-<tr><th>Type</th><td>CT002 sends <code>HME-4</code>, CT003 sends <code>HME-3</code> and four extra energy registers. Takes effect after a restart of the script.</td></tr>
-<tr><th>CT MAC</th><td>12 hex characters, the MAC of the CT in your Marstek account. When set, the emulator only answers requests for that MAC (or the wildcard <code>000000000000</code>). Leave empty and it answers everything &mdash; handy while testing, wrong once several CTs exist.</td></tr>
-<tr><th>Port</th><td>UDP. 12345 in every known firmware. Only change it if you know why.</td></tr>
-<tr><th>RSSI</th><td>Wi-Fi signal strength reported to the battery.</td></tr>
-<tr><th>Timeout [s]</th><td>Seconds after which a offline battery is dropped from the table. <code>0</code> = automatic: about two of its own poll cycles, at least 5&nbsp;s. That mirrors a real CT.</td></tr>
-<tr><th>UDP rx/tx/bad</th><td>Counters below the settings, not a setting: received, answered, and frames rejected by the checksum. <code>bad</code> should stay at 0 &mdash; a rising value means the request did not arrive intact. They used to sit on the main page.</td></tr>
+<tr><th>Type</th><td>CT002 or CT003. Choose the one you created in the app. Takes effect after the program restarts.</td></tr>
+<tr><th>CT MAC</th><td>The MAC address of the CT in your Marstek account (12 characters). It is filled in automatically when you register the CT. With a MAC set, the CT only answers batteries that ask for exactly this CT. Empty means it answers every battery, handy for testing, but wrong as soon as there are several CTs.</td></tr>
+<tr><th>Port</th><td>The network port the batteries talk to. Always 12345. Only change it if you know why.</td></tr>
+<tr><th>RSSI [dBm]</th><td>The Wi-Fi strength the CT reports to the battery. Just leave it.</td></tr>
+<tr><th>Timeout [s]</th><td>After how many seconds a battery that stopped asking is removed from the list. <code>0</code> = automatic (about two of its own polls, at least 5&nbsp;s), like a real CT does it.</td></tr>
 </table>
+<p>Below the settings you see three counters: <b>rx</b> = requests received, <b>tx</b> = answers sent, <b>bad</b> = broken requests. <code>bad</code> should stay at 0.</p>
 </div>
 <div class="de">
+<p>Alle CT- und Akku-Einstellungen findest du auf einer eigenen Seite: Knopf <b>&#x1F50B; CT</b> im Tasmota-Hauptmenü, oder der Link oben auf der Einstellungsseite.</p>
 <table>
-<tr><th>Typ</th><td>CT002 sendet <code>HME-4</code>, CT003 sendet <code>HME-3</code> und vier zusätzliche Energieregister. Wirkt erst nach einem Neustart des Scripts.</td></tr>
-<tr><th>CT MAC</th><td>12 Hex-Zeichen, die MAC des CT im Marstek-Konto. Ist sie gesetzt, antwortet der Emulator nur auf Anfragen für diese MAC (oder die Wildcard <code>000000000000</code>). Leer bedeutet: antwortet auf alles &mdash; praktisch zum Testen, falsch sobald es mehrere CTs gibt.</td></tr>
-<tr><th>Port</th><td>UDP. 12345 in jeder bekannten Firmware. Nur ändern, wenn du weißt warum.</td></tr>
-<tr><th>RSSI</th><td>WLAN-Signalstärke, die dem Akku gemeldet wird.</td></tr>
-<tr><th>Timeout [s]</th><td>Sekunden, nach denen ein Akku, der nicht mehr antwortet, aus der Tabelle fällt. <code>0</code> = automatisch: etwa zwei Abfragezyklen, mindestens 5&nbsp;s. So macht es ein echter CT auch.</td></tr>
-<tr><th>UDP rx/tx/bad</th><td>Zähler unter den Einstellungen, keine Einstellung: empfangen, beantwortet, und wegen Prüfsumme verworfen. <code>bad</code> sollte 0 bleiben &mdash; ein steigender Wert heißt, die Anfrage kam nicht heil an. Früher standen sie auf der Hauptseite.</td></tr>
+<tr><th>Typ</th><td>CT002 oder CT003. Nimm das, was du in der App angelegt hast. Wirkt nach einem Neustart des Programms.</td></tr>
+<tr><th>CT MAC</th><td>Die MAC-Adresse des CT in deinem Marstek-Konto (12 Zeichen). Sie wird bei der Anmeldung des CT automatisch eingetragen. Mit MAC antwortet das CT nur Akkus, die genau nach diesem CT fragen. Leer heißt: Es antwortet jedem Akku. Praktisch zum Testen, aber falsch, sobald es mehrere CTs gibt.</td></tr>
+<tr><th>Port</th><td>Der Netzwerk-Port, über den die Akkus fragen. Immer 12345. Nur ändern, wenn du weißt, warum.</td></tr>
+<tr><th>RSSI [dBm]</th><td>Die WLAN-Stärke, die das CT dem Akku meldet. Einfach so lassen.</td></tr>
+<tr><th>Timeout [s]</th><td>Nach wie vielen Sekunden ein Akku, der nicht mehr fragt, aus der Liste fliegt. <code>0</code> = automatisch (etwa zwei seiner eigenen Abfragen, mindestens 5&nbsp;s), so wie es ein echtes CT macht.</td></tr>
 </table>
+<p>Unter den Einstellungen siehst du drei Zähler: <b>rx</b> = empfangene Anfragen, <b>tx</b> = gesendete Antworten, <b>bad</b> = kaputte Anfragen. <code>bad</code> sollte bei 0 bleiben.</p>
 </div>
 </section>
 
@@ -136,60 +138,56 @@ body.lang-de .en{display:none}
 <h2><span class="en">Battery</span><span class="de">Akku</span></h2>
 <div class="en">
 <table>
-<tr><th>Offset [W]</th><td>Target grid power instead of zero. A small positive value keeps you slightly on the import side so nothing is fed back. Applied <b>per phase</b>, because each battery regulates its own phase &mdash; with three batteries on three phases the household total ends up at three times the value.</td></tr>
-<tr><th>Active control</th><td><span class="sw">OFF</span> relays the meter reading as it is and lets the battery decide. <span class="sw">ON</span> runs the control loop described below. Predictor, damper and freshness check start straight away; the three settings underneath add to them and are off at 0.</td></tr>
-<tr><th>Trim [W]</th><td>Recommended <b>15</b>, preset on a new install. Every Marstek firmware stops a few watts short on the <i>import</i> side: its own input deadband. Household load the battery could cover keeps being bought at the retail tariff. This adds a fixed nudge past that deadband, but only once the grid has held between 0 and 120&nbsp;W of import for six fresh meter readings. The dwell keeps it out of a load step; the upper limit keeps it away from an empty or full battery, where the import is not the firmware's doing.</td></tr>
-<tr><th>Step [W]</th><td>Recommended <b>30</b>, preset on a new install. Caps the size of the correction sent per second, measured from zero &mdash; not the step away from the last reported value, which would trail the battery instead of bounding it. The cap doubles towards three times this value while the batteries demonstrably follow, falls back with the deviation, and returns to the base step the moment the direction reverses. If nothing follows for four seconds &mdash; the battery is held by <b>Max DC</b>, empty, or the value is below what it can act on &mdash; the cap opens anyway, because waiting for an answer that cannot come is a dead end: 40&nbsp;W is ignored, so nothing moves, so 40&nbsp;W is sent again and the battery never starts. On a phase with a B2500 the ceiling is additionally raised to 80&nbsp;W, see <a href="#b2500">the B2500 start floor</a>.</td></tr>
-<tr><th>Min DC [W]</th><td>Default 0 = off, otherwise <b>20</b> or more. A Marstek B2500 switches its inverter off at 0&nbsp;W and falls asleep under high PV surplus. This never reports less than that much import, so the battery keeps discharging and stays awake. <b>It costs exactly that many watts of export while the sun is out</b> &mdash; only worth it for a DC battery that actually falls asleep. AC batteries (Venus) do not need it.</td></tr>
-<tr><th>Max DC [W]</th><td>Default 0 = off. Highest discharge power <b>per battery</b>; the rest of the load comes from the grid. Charging is not affected. See <a href="#homeassistant">Discharge limit</a>, which also has the console command for a temporary change.</td></tr>
-<tr><th>3 phases</th><td><span class="sw">ON</span>: L1/L2/L3 come from the meter individually (not all meter supports this). <span class="sw">OFF</span>: the total goes onto L1 and B/C stay at 0 &mdash; then set every battery to phase A or D, otherwise a battery on B or C would read 0&nbsp;W forever.</td></tr>
+<tr><th>Offset [W]</th><td>The value the battery aims for, instead of exactly 0&nbsp;W. A small positive value (e.g. 20) means you always buy a few watts and never feed in by accident. The offset applies <b>per phase</b>: with three batteries on three phases you end up at three times the value.</td></tr>
+<tr><th>Active control</th><td><span class="sw">OFF</span>: the meter value is passed on unchanged, the battery decides alone. <span class="sw">ON</span>: the program helps with regulating (see below). Recommended.</td></tr>
+<tr><th>Trim [W]</th><td>Recommended <b>15</b> (already set on a new install). Marstek batteries always stop a few watts too early and leave a small import standing. Trim pushes them those last few watts further, but only when things are calm (between 0 and 120&nbsp;W import for a few seconds). 0 = off.</td></tr>
+<tr><th>Step [W]</th><td>Recommended <b>30</b> (already set on a new install). Limits how big a change the battery is told each second. That makes the regulation calmer. When the batteries follow well, the step grows by itself up to three times this value. If a battery does not react at all for four seconds (empty, limited, or the step is too small for it), the limit is opened so it does not get stuck. 0 = off.</td></tr>
+<tr><th>Min DC [W]</th><td>Default 0 = off. Only for a B2500: it switches off at 0&nbsp;W and falls asleep when there is a lot of solar power. With e.g. 20&nbsp;W the CT always reports at least this much import, so the battery keeps running. <b>Costs exactly those watts of feed-in when the sun shines.</b> Venus batteries do not need it.</td></tr>
+<tr><th>Max DC [W]</th><td>Default 0 = off. The most each battery may discharge. The rest comes from the grid. Charging is not limited. You can also change it from Home Assistant, see <a href="#homeassistant">Discharge limit</a>.</td></tr>
 </table>
-<p>Offset and import trim pull in opposite directions on purpose. The offset is the margin <i>you</i> choose and holds at all times; the trim closes the gap the battery firmware leaves once things are calm, and it aims at the offset, not at zero. Setting an offset of 50&nbsp;W and a trim of 15 therefore means: hold 50&nbsp;W of import, and let the trim make sure those 50 are actually reached rather than 65.</p>
-<p>Three further parts always run with active control and have no settings of their own. They follow <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">AstraMeter's CT002 control loop</a> at its field-tested values:</p>
+<p><b>Offset and Trim together:</b> the offset is the margin you want, the trim makes sure that margin is really reached. With an offset of 50 and a trim of 15 you get 50&nbsp;W import, not 65.</p>
+<p><b>What Active control also does</b> (no settings needed, following the proven control of <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">AstraMeter</a>):</p>
 <ul>
-<li>A <b>grid predictor</b> subtracts what the batteries report having already delivered, so a correction still on its way to the meter is not issued a second time. That double issue is the usual cause of hunting.</li>
-<li>An <b>oscillation damper</b> counts how often the correction reverses sign and bleeds up to 95&nbsp;% of the gain while that is happening. A real load step keeps its sign and passes at full strength.</li>
-<li>A <b>freshness check</b> ignores a repeated meter value, so a meter slower than one second is not counted several times over.</li>
+<li>It takes into account what the batteries have already changed but the meter does not show yet. Without this, a correction would be made twice, and the batteries would swing up and down.</li>
+<li>If the corrections keep changing direction, it calms them down. A real change in your consumption still comes through at full strength.</li>
+<li>It ignores a meter value that has not changed since the last time, so a slow meter is not counted twice.</li>
 </ul>
+<p><b>3 phases</b> is set on the main settings page under <a href="../sml/#meter">Meter</a>. Switched off, the whole power goes to L1, and L2/L3 stay at 0. Then set all batteries to phase A or D, otherwise a battery on B or C always sees 0&nbsp;W.</p>
 
-<p>All the settings on this page sit on their own page in the device: the <b>&#x1F50B; CT</b> button in Tasmota's main menu, or the link at the top of the settings page. They outgrew the main page when the control settings arrived.</p>
-
-<h3>Phase selection</h3>
-<p>The phase is set on the battery, in the Marstek app &mdash; not here:</p>
+<h3>Choosing the phase</h3>
+<p>You choose the phase on the battery in the Marstek app, not here:</p>
 <ul>
-<li><code>A</code> / <code>B</code> / <code>C</code>: the battery regulates against that phase and shares it with other batteries on the same phase.</li>
-<li><code>D</code>: combined mode. The battery reads the <b>total</b> of all three phases. With a netting meter this is normally the right choice.</li>
-<li><code>x</code> in the web UI means the battery has not decided yet and is still probing. It changes its own output and watches which phase moves. With a simulator that produces constant values it can never conclude &mdash; give it a real meter, or set the phase manually in the app.</li>
-<li>While a battery is probing, the emulator answers it with the <b>raw</b> meter reading: active control and the offset are bypassed for that battery alone. They would otherwise defeat the diagnosis &mdash; the grid predictor exists precisely to subtract the battery's own output change, so it could open up to 800&nbsp;W and still be shown 0&nbsp;W. The log says <code>inspect</code> when it starts and <code>phase A</code> (or B, C, D) when it is over, followed by <code>re-seed</code>: the control loop starts again from a clean state, since the sweep drove the battery through a kilowatt swing it would otherwise still be carrying. A Venus on firmware 1.50 repeats this inspection about every 35&nbsp;minutes, not only once. Every other battery keeps being steered normally.</li>
+<li><code>A</code> / <code>B</code> / <code>C</code>: the battery regulates on this one phase and shares it with other batteries on the same phase.</li>
+<li><code>D</code>: the battery uses the sum of all three phases. With a normal (netting) meter this is usually the right choice.</li>
+<li><code>x</code> on the web page means: the battery is still searching for its phase. It changes its own power and watches which phase moves. With a simulator that always sends the same values it never finishes; then set the phase in the app.</li>
+<li>While a battery searches, it gets the unchanged meter value without offset and without control, otherwise the search would not work. The log shows <code>ph?</code> when it starts and <code>ph A</code> (or B, C, D) when it is done, then <code>reseed</code>: the control starts fresh. A Venus with firmware 1.50 repeats this search about every 35 minutes. All other batteries keep being controlled normally.</li>
 </ul>
 </div>
 <div class="de">
 <table>
-<tr><th>Offset [W]</th><td>Zielwert am Netz statt null. Ein kleiner positiver Wert hält dich knapp über der Bezugsseite, damit nichts eingespeist wird. Wirkt <b>pro Phase</b>, weil jeder Akku seine eigene Phase regelt &mdash; bei drei Akkus auf drei Phasen liegt der Hausanschluss am Ende beim Dreifachen.</td></tr>
-<tr><th>Aktive Regelung</th><td><span class="sw">AUS</span> reicht den Zählerwert unverändert weiter, der Akku entscheidet selbst. <span class="sw">EIN</span> schaltet die unten beschriebene Regelung ein. Prädiktor, Dämpfung und Frischeprüfung laufen sofort mit; die drei Einstellungen darunter kommen obendrauf und sind bei 0 aus.</td></tr>
-<tr><th>Trim [W]</th><td>Empfohlen <b>15</b>, bei einer Neuinstallation voreingestellt. Jede Marstek-Firmware bleibt ein paar Watt auf der <i>Bezugsseite</i> stehen &mdash; ihr eigenes Totband am Eingang. Haushaltslast, die der Akku decken könnte, wird also weiter zum Arbeitspreis gekauft. Das schiebt mit einem festen Wert über dieses Totband hinweg, aber erst wenn das Netz sechs frische Zählerwerte lang zwischen 0 und 120&nbsp;W Bezug lag. Die Wartezeit hält es aus Lastsprüngen heraus, die Obergrenze von einem leeren oder vollen Akku fern &mdash; dort liegt der Bezug nicht an der Firmware.</td></tr>
-<tr><th>Schritt [W]</th><td>Empfohlen <b>30</b>, bei einer Neuinstallation voreingestellt. Begrenzt die Größe der Korrektur je Sekunde, gemessen ab null &mdash; nicht den Schritt weg vom zuletzt gemeldeten Wert, denn der würde dem Akku hinterherlaufen statt ihn zu begrenzen. Die Grenze verdoppelt sich auf bis zum Dreifachen, solange die Akkus nachweislich folgen, fällt mit der Abweichung zurück und springt bei jedem Richtungswechsel sofort auf den Grundwert. Folgt vier Sekunden lang nichts &mdash; der Akku hängt im <b>Max DC</b>-Limit, ist leer, oder der Wert liegt unter dem, was er ausführen kann &mdash;, dann öffnet sich die Grenze trotzdem; auf eine Antwort zu warten, die nicht kommen kann, ist eine Sackgasse: 40&nbsp;W werden ignoriert, also bewegt sich nichts, also werden wieder 40&nbsp;W gemeldet und der Akku läuft nie an. Auf einer Phase mit einem B2500 wird die Obergrenze zusätzlich auf 80&nbsp;W angehoben, siehe <a href="#b2500">Anlaufschwelle des B2500</a>.</td></tr>
-<tr><th>Min DC [W]</th><td>Standard 0 = aus, sonst <b>20</b> oder mehr. Ein Marstek B2500 schaltet bei 0&nbsp;W seinen Wechselrichter ab und schläft bei viel PV-Überschuss ein. Hier wird nie weniger als dieser Bezug gemeldet, der Akku entlädt also weiter und bleibt wach. <b>Das kostet bei Sonne genau diese Watt an Einspeisung</b> &mdash; lohnt sich nur bei einem DC-Akku, der wirklich einschläft. AC-Akkus (Venus) brauchen es nicht.</td></tr>
-<tr><th>Max DC [W]</th><td>Standard 0 = aus. Höchste Entladeleistung <b>pro Akku</b>; der Rest der Last kommt aus dem Netz. Laden bleibt unberührt. Siehe <a href="#homeassistant">Entladelimit</a>, dort auch das Konsolen-Kommando für eine vorübergehende Änderung.</td></tr>
-<tr><th>3 phases</th><td><span class="sw">EIN</span>: L1/L2/L3 kommen einzeln vom Zähler (nicht alle Stromzähler unterstützten das). <span class="sw">AUS</span>: die Gesamtleistung liegt auf L1, B und C bleiben 0 &mdash; dann alle Akkus auf Phase A oder D stellen, sonst liest ein Akku auf B oder C dauerhaft 0&nbsp;W.</td></tr>
+<tr><th>Offset [W]</th><td>Der Wert, auf den der Akku regelt, statt genau 0&nbsp;W. Ein kleiner positiver Wert (z.B. 20) heißt: Du kaufst immer ein paar Watt und speist nie aus Versehen ein. Der Offset gilt <b>pro Phase</b>: Bei drei Akkus auf drei Phasen landest du beim Dreifachen.</td></tr>
+<tr><th>Aktive Regelung</th><td><span class="sw">AUS</span>: Der Zählerwert wird unverändert weitergegeben, der Akku entscheidet allein. <span class="sw">EIN</span>: Das Programm hilft beim Regeln (siehe unten). Empfohlen.</td></tr>
+<tr><th>Trim [W]</th><td>Empfohlen <b>15</b> (bei einer Neuinstallation schon eingestellt). Marstek-Akkus hören immer ein paar Watt zu früh auf und lassen einen kleinen Bezug stehen. Trim schiebt sie diese letzten Watt weiter, aber nur, wenn es ruhig ist (einige Sekunden zwischen 0 und 120&nbsp;W Bezug). 0 = aus.</td></tr>
+<tr><th>Schritt [W]</th><td>Empfohlen <b>30</b> (bei einer Neuinstallation schon eingestellt). Begrenzt, wie große Änderungen dem Akku pro Sekunde gemeldet werden. Das macht die Regelung ruhiger. Folgen die Akkus gut, wird der Schritt von selbst größer, bis zum Dreifachen. Reagiert ein Akku vier Sekunden lang gar nicht (leer, begrenzt, oder der Schritt ist ihm zu klein), wird die Grenze geöffnet, damit er nicht hängen bleibt. 0 = aus.</td></tr>
+<tr><th>Min DC [W]</th><td>Standard 0 = aus. Nur für einen B2500: Er schaltet bei 0&nbsp;W ab und schläft bei viel Solarstrom ein. Mit z.B. 20&nbsp;W meldet das CT immer mindestens so viel Bezug, damit der Akku weiterläuft. <b>Kostet bei Sonne genau diese Watt an Einspeisung.</b> Venus-Akkus brauchen das nicht.</td></tr>
+<tr><th>Max DC [W]</th><td>Standard 0 = aus. So viel darf jeder Akku höchstens entladen. Den Rest liefert das Netz. Laden wird nicht begrenzt. Du kannst den Wert auch aus Home Assistant ändern, siehe <a href="#homeassistant">Entladelimit</a>.</td></tr>
 </table>
-<p>Offset und Trim ziehen absichtlich in verschiedene Richtungen. Der Offset ist der Abstand, den <i>du</i> willst, und gilt immer; der Trim schließt die Lücke, die die Akku-Firmware lässt, sobald Ruhe herrscht &mdash; und er zielt auf den Offset, nicht auf null. Offset 50&nbsp;W und Trim 15 heißt also: 50&nbsp;W Bezug halten, und der Trim sorgt dafür, dass es wirklich 50 werden und nicht 65.</p>
-<p>Drei weitere Teile laufen bei aktiver Regelung immer mit und haben keine eigene Einstellung. Sie sind der <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">CT002-Regelung von AstraMeter</a> nachempfunden und stehen auf deren erprobten Werten:</p>
+<p><b>Offset und Trim zusammen:</b> Der Offset ist der Abstand, den du willst, der Trim sorgt dafür, dass er auch wirklich erreicht wird. Mit Offset 50 und Trim 15 bekommst du 50&nbsp;W Bezug und nicht 65.</p>
+<p><b>Was die Aktive Regelung außerdem macht</b> (ohne Einstellungen, nach dem bewährten Vorbild von <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">AstraMeter</a>):</p>
 <ul>
-<li>Ein <b>Netz-Prädiktor</b> zieht ab, was die Akkus bereits geliefert melden. Eine Korrektur, die noch auf dem Weg zum Zähler ist, wird so kein zweites Mal ausgegeben &mdash; genau diese Doppelausgabe ist die übliche Ursache fürs Pendeln.</li>
-<li>Eine <b>Schwingungsdämpfung</b> zählt, wie oft die Korrektur ihr Vorzeichen wechselt, und nimmt währenddessen bis zu 95&nbsp;% der Verstärkung weg. Ein echter Lastsprung behält sein Vorzeichen und geht ungebremst durch.</li>
-<li>Eine <b>Frischeprüfung</b> übergeht einen wiederholten Zählerwert, damit ein Zähler, der langsamer als eine Sekunde ist, nicht mehrfach zählt.</li>
+<li>Sie berücksichtigt, was die Akkus schon geändert haben, der Zähler aber noch nicht zeigt. Ohne das würde eine Korrektur doppelt gemacht, und die Akkus würden hoch und runter schwingen.</li>
+<li>Wechseln die Korrekturen ständig die Richtung, bremst sie sie ab. Eine echte Änderung deines Verbrauchs kommt trotzdem voll durch.</li>
+<li>Sie überspringt einen Zählerwert, der sich seit dem letzten Mal nicht geändert hat. So wird ein langsamer Zähler nicht doppelt gezählt.</li>
 </ul>
+<p><b>3 Phasen</b> stellst du auf der Haupt-Einstellungsseite unter <a href="../sml/#meter">Zähler</a> ein. Ist es aus, liegt die ganze Leistung auf L1, und L2/L3 bleiben 0. Stelle dann alle Akkus auf Phase A oder D, sonst sieht ein Akku auf B oder C immer 0&nbsp;W.</p>
 
-<p>Alle Einstellungen dieser Seite liegen im Gerät auf einer eigenen Seite: der Knopf <b>&#x1F50B; CT</b> in Tasmotas Hauptmenü, oder der Link oben auf der Einstellungsseite. Sie sind der Hauptseite entwachsen, als die Regelungsoptionen dazukamen.</p>
-
-<h3>Phasenwahl</h3>
-<p>Die Phase wird am Akku eingestellt, in der Marstek-App &mdash; nicht hier:</p>
+<h3>Phase wählen</h3>
+<p>Die Phase stellst du am Akku in der Marstek-App ein, nicht hier:</p>
 <ul>
-<li><code>A</code> / <code>B</code> / <code>C</code>: der Akku regelt gegen diese Phase und teilt sie sich mit anderen Akkus auf derselben Phase.</li>
-<li><code>D</code>: kombiniert. Der Akku liest die <b>Summe</b> aller drei Phasen. Bei saldierendem Zähler normalerweise die richtige Wahl.</li>
-<li><code>x</code> in der Weboberfläche heißt: der Akku hat sich noch nicht entschieden und sucht. Er ändert dazu seine eigene Leistung und schaut, welche Phase sich mitbewegt. Bei einem Simulator mit konstanten Werten kommt er nie zu einem Schluss &mdash; also echten Zähler anschließen oder die Phase in der App fest vorgeben.</li>
-<li>Solange ein Akku sucht, bekommt er den <b>rohen</b> Zählerwert: aktive Regelung und Offset sind für genau diesen Akku ausgesetzt. Sie würden die Diagnose sonst unmöglich machen &mdash; der Netz-Prädiktor ist ja gerade dazu da, die eigene Leistungsänderung des Akkus herauszurechnen, also könnte er auf 800&nbsp;W aufmachen und würde trotzdem 0&nbsp;W sehen. Im Log steht zu Beginn <code>inspect</code> und am Ende <code>phase A</code> (oder B, C, D), danach <code>re-seed</code>: die Regelung startet neu von einem sauberen Stand, denn der Suchlauf hat den Akku durch einen Kilowatt-Hub gefahren, den sie sonst noch mitschleppen würde. Eine Venus mit Firmware 1.50 wiederholt diese Suche etwa alle 35&nbsp;Minuten, nicht nur einmal. Alle anderen Akkus werden normal weitergeregelt.</li>
+<li><code>A</code> / <code>B</code> / <code>C</code>: Der Akku regelt auf diese eine Phase und teilt sie sich mit anderen Akkus auf derselben Phase.</li>
+<li><code>D</code>: Der Akku nimmt die Summe aller drei Phasen. Bei einem normalen (saldierenden) Zähler meistens die richtige Wahl.</li>
+<li><code>x</code> auf der Webseite heißt: Der Akku sucht noch seine Phase. Er ändert dazu seine eigene Leistung und schaut, welche Phase sich mitbewegt. Mit einem Simulator, der immer dieselben Werte schickt, wird er nie fertig. Stelle die Phase dann in der App fest ein.</li>
+<li>Solange ein Akku sucht, bekommt er den unveränderten Zählerwert, ohne Offset und ohne Regelung, sonst würde die Suche nicht funktionieren. Im Log steht zu Beginn <code>ph?</code> und am Ende <code>ph A</code> (oder B, C, D), danach <code>reseed</code>: Die Regelung fängt frisch an. Eine Venus mit Firmware 1.50 wiederholt diese Suche etwa alle 35 Minuten. Alle anderen Akkus werden normal weitergeregelt.</li>
 </ul>
 </div>
 </section>
@@ -197,124 +195,102 @@ body.lang-de .en{display:none}
 <section id="multi">
 <h2><span class="en">Several batteries</span><span class="de">Mehrere Akkus</span></h2>
 <div class="en">
-<p>All of this only matters with two or more batteries on the same phase. With one battery every setting here can stay off.</p>
-<p class="warn">Fair distribution is a correction, not a refinement. Without it <b>every</b> battery is told the whole deviation of its phase, so two of them each pull the full amount and the pair overshoots by a factor of two. If you run more than one battery, switch it on.</p>
+<p>This section only matters if two or more batteries are on the same phase. With one battery you can leave everything here off.</p>
+<p class="warn">With several batteries, switch on <b>Share the load</b>. Otherwise every battery is told the whole difference of its phase. Two batteries then both deliver the full amount, and together they overshoot by double.</p>
 <table>
-<tr><th>Share the load</th><td>Divides the phase deviation by the number of participating batteries and adds the balance term below. Off = the old behaviour, every battery hears the full value.</td></tr>
-<tr><th>Saturation</th><td>Tracks whether a battery follows what it is told. One that is full, empty or held at an output limit set in its firmware stops moving; its share goes to the others, and it drops out of the balancing average &mdash; otherwise a battery capped at 800&nbsp;W would hold back a 2500&nbsp;W one beside it and leave about 150&nbsp;W of import standing under heavy load. Also suspends the minimum output below, which an empty battery cannot deliver anyway.</td></tr>
+<tr><th>Share the load</th><td>Splits the difference of a phase between the batteries on it and keeps them at a similar level.</td></tr>
+<tr><th>Saturation</th><td>Notices when a battery no longer follows, because it is full, empty, or limited in its own settings. Its share then goes to the others. Without this, a battery limited to 800&nbsp;W would slow down a bigger one next to it.</td></tr>
 </table>
-<p>A deprioritised battery fades out by 15&nbsp;% per cycle instead of dropping to zero at once, so the promoted one has time to ramp and no gap opens at the handover.</p>
 
-<h3 id="b2500">The B2500 start floor</h3>
-<p>A B2500 (device types <code>HMA</code>, <code>HMJ</code>, <code>HMK</code>) feeds a <i>separate</i> inverter and each of its DC channels is a hard on/off below about 40&nbsp;W &mdash; so the unit cannot answer a command under roughly <b>80&nbsp;W</b> at all. Two of them sharing a 100&nbsp;W deviation would each be told 50&nbsp;W and both stay asleep.</p>
-<p>The emulator therefore reads the device type every battery sends with its request and, for that family, does three things by itself &mdash; nothing to set:</p>
+<h3 id="b2500">B2500: at least 80&nbsp;W</h3>
+<p>A B2500 (device types <code>HMA</code>, <code>HMJ</code>, <code>HMK</code>) can not deliver less than about <b>80&nbsp;W</b>. If two of them shared a demand of 100&nbsp;W, each would be told 50&nbsp;W, and both would stay off.</p>
+<p>The CT recognises a B2500 by its device type and handles this by itself, nothing to set:</p>
 <ul>
-<li>Concentrates the load so each active battery gets at least 80&nbsp;W, rather than splitting it below the floor. The number of active ones is the deviation divided by 80&nbsp;W plus 20&nbsp;% hysteresis: a second one joins at about 190&nbsp;W, not before.</li>
-<li>Does not score saturation below that figure. "It did not move" says nothing about a command the hardware cannot execute, and scoring it there is self-reinforcing &mdash; it eventually pushes a healthy battery out of the pool (<a href="https://github.com/tomquist/AstraMeter/issues/624" target="_blank" rel="noopener">AstraMeter issue&nbsp;624</a>).</li>
-<li>Applies the minimum output only here. A Venus or a Jupiter carries its own inverter and cannot fall asleep, so holding it awake would export for nothing.</li>
-<li>Lifts the <b>Step</b> ceiling to 80&nbsp;W on a phase where such a battery listens. A ceiling below the start floor cannot be executed, so the loop would keep sending a value the battery ignores. A Venus or a Jupiter executes any value &mdash; there a small step stays a small step.</li>
+<li>It gives each active B2500 at least 80&nbsp;W instead of splitting the demand too thinly. A second one only joins at about 190&nbsp;W.</li>
+<li>If only one is needed, the active one changes every 15 minutes, so all of them wear evenly. The old one ramps down slowly, so there is no gap at the handover.</li>
+<li>It does not judge a B2500 as "not reacting" below 80&nbsp;W, because it simply can not.</li>
+<li>Min DC only applies to a B2500. A Venus or Jupiter can not fall asleep.</li>
+<li>On a phase with a B2500, <b>Step</b> is at least 80&nbsp;W, otherwise the battery would never start.</li>
 </ul>
 
-<h3>Fixed values</h3>
-<p>Three things were settings and are now constants, at AstraMeter's field-tested values. tomquist advised it himself &mdash; too many knobs make support harder, and these are ones nobody could tune without measurements:</p>
-<table>
-<tr><th>Balance gain</th><td><b>0.2</b>. How hard a battery doing less than its peers is pushed.</td></tr>
-<tr><th>Rotation</th><td><b>900 s</b> between turns at being the active battery, so wear is shared.</td></tr>
-<tr><th>Efficiency threshold</th><td>Gone entirely. For a B2500 the 80&nbsp;W floor above now applies by itself; for an AC battery it was polish.</td></tr>
-</table>
-<h3>Where this comes from, and where it differs</h3>
-<p>The loop follows <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">AstraMeter's CT002 control loop</a>, whose constants are field-tested by many users: deadband 25&nbsp;W, at most 80&nbsp;W of correction per cycle, gain boosted above 150&nbsp;W of imbalance. Those are fixed here rather than exposed.</p>
-<p>Two things are deliberately done differently, both because of open reports there:</p>
-<ul>
-<li><b>No gentle nudges.</b> AstraMeter softens corrections when the imbalance is small. A Marstek HMJ ignores anything under about 10&nbsp;W per channel, so those corrections change nothing while the balancer believes it acted &mdash; in <a href="https://github.com/tomquist/AstraMeter/issues/600" target="_blank" rel="noopener">issue&nbsp;600</a> a battery sat at 4&nbsp;W for hours receiving them. Here: below 25&nbsp;W of imbalance nothing is sent at all, above it at least 20&nbsp;W so the correction clears the battery's own deadband.</li>
-<li><b>Minimum output is per battery.</b> Applied to the phase total it would be halved by the fair split, and half of 20&nbsp;W lands back inside that deadband &mdash; the lock-in described in the same report.</li>
-</ul>
-<p>What is not implemented is AstraMeter's probe handover with a fallback battery and a timeout. The fade above serves the same purpose with a fraction of the state.</p>
+<h3>Background</h3>
+<p>The control follows <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">AstraMeter</a> and uses its proven values. A few things that used to be settings are now fixed, on the advice of AstraMeter's author: too many knobs make it harder, and nobody can set them well without measurements.</p>
+<p>Two things are done differently on purpose, because of open reports there: very small corrections are not sent at all, because a Marstek battery ignores them anyway (<a href="https://github.com/tomquist/AstraMeter/issues/600" target="_blank" rel="noopener">issue&nbsp;600</a>). And Min DC applies to each battery, not to the whole phase (<a href="https://github.com/tomquist/AstraMeter/issues/624" target="_blank" rel="noopener">issue&nbsp;624</a>).</p>
 </div>
 <div class="de">
-<p>Das alles betrifft nur zwei oder mehr Akkus auf derselben Phase. Bei einem einzelnen kann hier alles aus bleiben.</p>
-<p class="warn">Die faire Verteilung ist eine Korrektur, keine Feinabstimmung. Ohne sie bekommt <b>jeder</b> Akku die volle Abweichung seiner Phase gemeldet &mdash; zwei Akkus ziehen also beide den ganzen Betrag und schießen gemeinsam um das Doppelte über. Wer mehr als einen Akku hat, sollte sie einschalten.</p>
+<p>Dieser Abschnitt ist nur wichtig, wenn zwei oder mehr Akkus auf derselben Phase hängen. Bei einem Akku kannst du hier alles ausgeschaltet lassen.</p>
+<p class="warn">Bei mehreren Akkus <b>Last verteilen</b> einschalten. Sonst bekommt jeder Akku den ganzen Unterschied seiner Phase gemeldet. Zwei Akkus liefern dann beide den vollen Betrag und schießen zusammen um das Doppelte übers Ziel.</p>
 <table>
-<tr><th>Last verteilen</th><td>Teilt die Phasenabweichung durch die Zahl der teilnehmenden Akkus und rechnet den Ausgleich unten dazu. Aus = das bisherige Verhalten, jeder Akku hört den vollen Wert.</td></tr>
-<tr><th>Sättigung</th><td>Verfolgt, ob ein Akku dem folgt, was ihm gesagt wird. Einer, der voll, leer oder in seiner Firmware auf eine Höchstleistung begrenzt ist, bewegt sich nicht mehr; sein Anteil geht an die anderen, und beim Ausgleich zählt er nicht mehr mit &mdash; sonst würde ein auf 800&nbsp;W begrenzter Akku einen 2500-W-Akku daneben bremsen, und unter Volllast blieben rund 150&nbsp;W Bezug stehen. Setzt außerdem die Mindestabgabe aus, die ein leerer Akku ohnehin nicht liefern kann.</td></tr>
+<tr><th>Last verteilen</th><td>Teilt den Unterschied einer Phase auf die Akkus darauf auf und hält sie auf ähnlichem Stand.</td></tr>
+<tr><th>Sättigung</th><td>Merkt, wenn ein Akku nicht mehr folgt, weil er voll, leer oder in seinen eigenen Einstellungen begrenzt ist. Sein Anteil geht dann an die anderen. Ohne das würde ein auf 800&nbsp;W begrenzter Akku einen größeren daneben ausbremsen.</td></tr>
 </table>
-<p>Ein zurückgestellter Akku blendet mit 15&nbsp;% je Zyklus aus statt sofort auf null zu fallen &mdash; so hat der übernehmende Zeit hochzufahren und es entsteht keine Lücke.</p>
 
-<h3 id="b2500">Die Anlaufschwelle des B2500</h3>
-<p>Ein B2500 (Gerätetypen <code>HMA</code>, <code>HMJ</code>, <code>HMK</code>) speist einen <i>separaten</i> Wechselrichter, und jeder seiner DC-Kanäle ist unterhalb von etwa 40&nbsp;W ein hartes Ein/Aus &mdash; das Gerät kann einen Befehl unter rund <b>80&nbsp;W</b> also gar nicht ausführen. Teilen sich zwei davon eine Abweichung von 100&nbsp;W, bekommt jeder 50&nbsp;W gesagt und beide bleiben schlafen.</p>
-<p>Der Emulator liest deshalb den Gerätetyp aus, den jeder Akku mit jeder Anfrage mitschickt, und macht für diese Familie drei Dinge von allein &mdash; nichts davon ist einzustellen:</p>
+<h3 id="b2500">B2500: mindestens 80&nbsp;W</h3>
+<p>Ein B2500 (Gerätetypen <code>HMA</code>, <code>HMJ</code>, <code>HMK</code>) kann nicht weniger als etwa <b>80&nbsp;W</b> liefern. Teilen sich zwei davon einen Bedarf von 100&nbsp;W, bekäme jeder 50&nbsp;W gemeldet, und beide blieben aus.</p>
+<p>Das CT erkennt einen B2500 an seinem Gerätetyp und regelt das selbst, du musst nichts einstellen:</p>
 <ul>
-<li>Er bündelt die Last, sodass jeder aktive Akku mindestens 80&nbsp;W bekommt, statt sie unter die Schwelle zu teilen. Die Anzahl der aktiven ergibt sich aus der Abweichung geteilt durch 80&nbsp;W plus 20&nbsp;% Hysterese: der zweite kommt erst bei etwa 190&nbsp;W dazu.</li>
-<li>Er bewertet Sättigung unterhalb dieses Werts nicht. „Hat sich nicht bewegt" sagt nichts über einen Befehl, den die Hardware nicht ausführen kann, und ihn dort zu bewerten ist selbstverstärkend &mdash; am Ende fliegt ein gesunder Akku aus dem Pool (<a href="https://github.com/tomquist/AstraMeter/issues/624" target="_blank" rel="noopener">AstraMeter-Meldung&nbsp;624</a>).</li>
-<li>Er wendet die Mindestabgabe nur hier an. Eine Venus oder ein Jupiter hat einen eigenen Wechselrichter und kann nicht einschlafen &mdash; sie wach zu halten hieße, umsonst einzuspeisen.</li>
-<li>Er hebt die Obergrenze von <b>Schritt</b> auf 80&nbsp;W, wenn auf der Phase so ein Akku mithört. Eine Obergrenze unterhalb der Anlaufschwelle ist nicht ausführbar &mdash; die Regelung würde dauerhaft einen Wert melden, den der Akku ignoriert. Eine Venus oder ein Jupiter führt jeden Wert aus, dort bleibt ein kleiner Schritt ein kleiner Schritt.</li>
+<li>Es gibt jedem aktiven B2500 mindestens 80&nbsp;W, statt den Bedarf zu fein aufzuteilen. Ein zweiter kommt erst bei etwa 190&nbsp;W dazu.</li>
+<li>Wird nur einer gebraucht, wechselt der aktive alle 15 Minuten, damit alle gleich abgenutzt werden. Der alte fährt dabei langsam herunter, so entsteht keine Lücke.</li>
+<li>Es bewertet einen B2500 unter 80&nbsp;W nicht als „reagiert nicht“, weil er das gar nicht kann.</li>
+<li>Min DC gilt nur für einen B2500. Eine Venus oder ein Jupiter kann nicht einschlafen.</li>
+<li>Auf einer Phase mit B2500 ist <b>Schritt</b> mindestens 80&nbsp;W, sonst würde der Akku nie anlaufen.</li>
 </ul>
 
-<h3>Feste Werte</h3>
-<p>Drei Dinge waren einmal Einstellungen und sind jetzt Konstanten, auf AstraMeters erprobten Werten. Tomquist hat selbst dazu geraten &mdash; zu viele Stellschrauben erschweren den Support, und diese hier kann ohne Messungen ohnehin niemand sinnvoll drehen:</p>
-<table>
-<tr><th>Ausgleich</th><td><b>0,2</b>. Wie kräftig ein Akku angeschoben wird, der weniger tut als die anderen.</td></tr>
-<tr><th>Rotation</th><td><b>900 s</b> zwischen den Wechseln, damit der Verschleiß wandert.</td></tr>
-<tr><th>Effizienzschwelle</th><td>Ganz entfallen. Beim B2500 greift die 80-W-Schwelle oben jetzt von selbst, bei AC-Akkus war es Feinschliff.</td></tr>
-</table>
-<h3>Woher das kommt und wo es abweicht</h3>
-<p>Die Regelung ist der <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">CT002-Regelung von AstraMeter</a> nachempfunden, deren Konstanten von vielen Nutzern erprobt sind: Totband 25&nbsp;W, höchstens 80&nbsp;W Korrektur je Zyklus, verstärkt oberhalb von 150&nbsp;W Ungleichgewicht. Die stehen hier fest und sind nicht einstellbar.</p>
-<p>Zwei Dinge sind bewusst anders gelöst, beide wegen dortiger offener Meldungen:</p>
-<ul>
-<li><b>Keine sanften Stupser.</b> AstraMeter mildert Korrekturen bei kleinem Ungleichgewicht ab. Ein Marstek HMJ ignoriert aber alles unter etwa 10&nbsp;W je Kanal, solche Korrekturen bewirken also nichts, während der Regler glaubt, gehandelt zu haben &mdash; in <a href="https://github.com/tomquist/AstraMeter/issues/600" target="_blank" rel="noopener">Meldung&nbsp;600</a> saß ein Akku deshalb stundenlang bei 4&nbsp;W. Hier gilt: unterhalb von 25&nbsp;W Ungleichgewicht gar nichts, darüber mindestens 20&nbsp;W, damit die Korrektur das geräteeigene Totband verlässt.</li>
-<li><b>Die Mindestabgabe wirkt je Akku.</b> Auf die Phasensumme angewandt würde die faire Teilung sie halbieren, und die Hälfte von 20&nbsp;W liegt wieder im Totband &mdash; genau der Verklemmungs-Kreislauf aus derselben Meldung.</li>
-</ul>
-<p>Nicht übernommen ist AstraMeters Probe-Übergabe mit Rückfall-Akku und Zeitgrenze. Das Ausblenden oben erfüllt denselben Zweck mit einem Bruchteil des Zustands.</p>
+<h3>Hintergrund</h3>
+<p>Die Regelung folgt <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">AstraMeter</a> und nutzt dessen bewährte Werte. Ein paar Dinge, die früher einstellbar waren, sind jetzt fest, auf Rat des AstraMeter-Autors: Zu viele Stellschrauben machen es schwerer, und ohne Messungen kann sie niemand gut einstellen.</p>
+<p>Zwei Dinge sind bewusst anders, wegen offener Meldungen dort: Sehr kleine Korrekturen werden gar nicht erst gesendet, weil ein Marstek-Akku sie sowieso ignoriert (<a href="https://github.com/tomquist/AstraMeter/issues/600" target="_blank" rel="noopener">Meldung&nbsp;600</a>). Und Min DC gilt für jeden Akku einzeln, nicht für die ganze Phase (<a href="https://github.com/tomquist/AstraMeter/issues/624" target="_blank" rel="noopener">Meldung&nbsp;624</a>).</p>
 </div>
 </section>
 
 <section id="meter">
 <h2><span class="en">Meter</span><span class="de">Zähler</span></h2>
 <div class="en">
+<p>The meter is set up on the main settings page, the same way as in all my programs. Everything is explained on the <a href="../sml/#meter">SML help page</a>. The short version:</p>
 <table>
-<tr><th>SML active</th><td>Switches the SML driver on. Without it there are no readings and the emulator answers 0&nbsp;W.</td></tr>
-<tr><th>Descriptor</th><td>Picks a meter definition from the script repository and writes it to <code>/sml_meter.def</code>. Use the <b>Descriptor</b> link for manual changes.</td></tr>
-<tr><th>RX / TX pin</th><td>GPIOs of the reading head. Common: RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattwächter), RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
-<tr><th>SML Filter</th><td>Median filter, smooths single outliers. Costs reaction time &mdash; leave it off for zero feed-in, the batteries filter on their own.</td></tr>
+<tr><th>Meter active</th><td>Must be on. Without meter values the CT reports 0&nbsp;W.</td></tr>
+<tr><th>Meter</th><td>Choose your meter from the list.</td></tr>
+<tr><th>RX / TX</th><td>The pins of your reading head. Usually RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattwächter) or RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
+<tr><th>SML Filter</th><td>Smooths single wrong values, but makes the values a bit slower. For zero feed-in it is better to leave it off, the batteries smooth themselves.</td></tr>
 </table>
-<p>Value order matters: <code>1</code> power, <code>2</code> energy import, <code>3</code> energy export, <code>4/5/6</code> the three phase powers. Only meters that publish per-phase values can drive the <b>3 phases</b> option.</p>
+<p>The CT needs value&nbsp;1 = power. For <b>3 phases</b> the meter must also deliver the power of each phase as values 4, 5 and 6.</p>
 </div>
 <div class="de">
+<p>Der Zähler wird auf der Haupt-Einstellungsseite eingerichtet, genau wie in allen meinen Programmen. Alles dazu steht auf der <a href="../sml/#meter">SML-Hilfeseite</a>. Kurz gesagt:</p>
 <table>
-<tr><th>SML active</th><td>Schaltet den SML-Treiber ein. Ohne ihn gibt es keine Messwerte und der Emulator antwortet mit 0&nbsp;W.</td></tr>
-<tr><th>Descriptor</th><td>Wählt eine Zählerdefinition aus dem Script-Repository und schreibt sie nach <code>/sml_meter.def</code>. Für Handarbeit den Link <b>Descriptor</b>.</td></tr>
-<tr><th>RX / TX pin</th><td>GPIOs des Lesekopfs (wo ist die Sende- und Empfangsdiode angeschlossen). Häufig: RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattwächter), RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
-<tr><th>SML Filter</th><td>Median-Filter, glättet einzelne Ausreißer, kostet aber Reaktionszeit &mdash; für Nulleinspeisung besser aus lassen, die Akkus filtern selbst.</td></tr>
+<tr><th>Zähler aktiv</th><td>Muss an sein. Ohne Zählerwerte meldet das CT 0&nbsp;W.</td></tr>
+<tr><th>Zähler</th><td>Deinen Zähler aus der Liste wählen.</td></tr>
+<tr><th>RX / TX</th><td>Die Pins deines Lesekopfs. Meist RX&nbsp;3 / TX&nbsp;1 (Hichi, Stromleser, Wattwächter) oder RX&nbsp;5 / TX&nbsp;4 (bitShake).</td></tr>
+<tr><th>SML Filter</th><td>Glättet einzelne falsche Werte, macht die Werte aber etwas langsamer. Für Nulleinspeisung besser aus lassen, die Akkus glätten selbst.</td></tr>
 </table>
-<p>Die Reihenfolge der Werte zählt: <code>1</code> Leistung, <code>2</code> Bezug, <code>3</code> Einspeisung, <code>4/5/6</code> die drei Phasenleistungen. Nur Zähler, die Einzelphasen liefern, können die Option <b>3 phases</b> bedienen.</p>
+<p>Das CT braucht Wert&nbsp;1 = Leistung. Für <b>3 Phasen</b> muss der Zähler zusätzlich die Leistung jeder Phase als Wert 4, 5 und 6 liefern.</p>
 </div>
 </section>
 
 <section id="telemetry">
 <h2><span class="en">Telemetry</span><span class="de">Telemetrie</span></h2>
 <div class="en">
-<p><b>Send power2 + cpwr (MQTT)</b> publishes two values over MQTT every 5&nbsp;s: <code>power2</code>, the heavily smoothed grid power, and <code>cpwr</code>, what this CT reports to the batteries (offset included). Both are shown below the switch. <code>/pwr</code> serves them as JSON whether the switch is on or not.</p>
+<p><b>Send power2 + cpwr (MQTT)</b> sends two values over MQTT every 5 seconds: <code>power2</code>, the smoothed grid power, and <code>cpwr</code>, what this CT reports to the batteries (with offset). Both are also shown below the switch. <code>/pwr</code> always delivers them, even with the switch off.</p>
 <h3>MQTT</h3>
 <pre><code>stat/&lt;topic&gt;/script/power2
 stat/&lt;topic&gt;/script/cpwr</code></pre>
-<p>Same topics the <code>.tas</code> emulators use, so existing Home Assistant sensors keep working unchanged. In MQTT Explorer: <b>stat &rarr; &lt;topic&gt; &rarr; script &rarr; power2 / cpwr</b>, e.g. <code>stat/tasmota_31F8D4/script/cpwr</code>.</p>
+<p>These are the same topics as in the old scripts, so existing Home Assistant sensors keep working. In MQTT Explorer: <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, for example <code>stat/tasmota_31F8D4/script/cpwr</code>.</p>
 <h3>HTTP</h3>
 <pre><code>http://&lt;ip&gt;/pwr
 {"sml1":-440,"sml2":26714.950,"sml3":659.775,"sml4":-440,"sml5":0,"sml6":0,"power2":-217,"cpwr":-180}</code></pre>
-<p>For a second battery that polls a meter over HTTP (e.g. opendtu-onbattery DPL): enter that URL and use the JSON path <code>power2</code>. No password parameter needed. Always available, independent of the MQTT switch.</p>
-<p><code>power2</code> is an exponential average, <code>0.9&nbsp;&times;&nbsp;old + 0.1&nbsp;&times;&nbsp;reading</code> every 5&nbsp;s &mdash; about a 50&nbsp;s time constant. It is meant for a slow consumer that must not chase every spike; use <code>cpwr</code> or <code>sml1</code> if you want the live value.</p>
+<p>For a second battery that asks for the grid power over the network (e.g. opendtu-onbattery): enter this address and use <code>power2</code>. No password needed.</p>
+<p><code>power2</code> reacts slowly on purpose (it takes about a minute to follow a change). It is meant for something that should not follow every short spike. For the live value use <code>cpwr</code> or <code>sml1</code>.</p>
 </div>
 <div class="de">
-<p><b>power2 + cpwr senden (MQTT)</b> ver&ouml;ffentlicht alle 5&nbsp;s zwei Werte per MQTT: <code>power2</code>, die stark gegl&auml;ttete Netzleistung, und <code>cpwr</code>, das was dieses CT den Akkus meldet (inkl. Offset). Beide stehen unter dem Schalter. <code>/pwr</code> liefert sie als JSON, egal ob der Schalter an ist.</p>
+<p><b>power2 + cpwr senden (MQTT)</b> schickt alle 5 Sekunden zwei Werte per MQTT: <code>power2</code>, die geglättete Netzleistung, und <code>cpwr</code>, das, was dieses CT den Akkus meldet (mit Offset). Beide stehen auch unter dem Schalter. <code>/pwr</code> liefert sie immer, auch wenn der Schalter aus ist.</p>
 <h3>MQTT</h3>
 <pre><code>stat/&lt;topic&gt;/script/power2
 stat/&lt;topic&gt;/script/cpwr</code></pre>
-<p>Dieselben Topics wie in den <code>.tas</code>-Emulatoren, vorhandene Home-Assistant-Sensoren laufen also unver&auml;ndert weiter. Im MQTT Explorer: <b>stat &rarr; &lt;topic&gt; &rarr; script &rarr; power2 / cpwr</b>, z.&nbsp;B. <code>stat/tasmota_31F8D4/script/cpwr</code>.</p>
+<p>Das sind dieselben Topics wie in den alten Scripten, vorhandene Home-Assistant-Sensoren laufen also weiter. Im MQTT Explorer: <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, zum Beispiel <code>stat/tasmota_31F8D4/script/cpwr</code>.</p>
 <h3>HTTP</h3>
 <pre><code>http://&lt;ip&gt;/pwr
 {"sml1":-440,"sml2":26714.950,"sml3":659.775,"sml4":-440,"sml5":0,"sml6":0,"power2":-217,"cpwr":-180}</code></pre>
-<p>F&uuml;r einen zweiten Akku, der einen Z&auml;hler per HTTP abfragt (z.&nbsp;B. opendtu-onbattery DPL): diese URL eintragen und als JSON-Pfad <code>power2</code> verwenden. Ohne Passwort-Parameter. Immer verf&uuml;gbar, unabh&auml;ngig vom MQTT-Schalter.</p>
-<p><code>power2</code> ist ein exponentieller Mittelwert, <code>0,9&nbsp;&times;&nbsp;alt + 0,1&nbsp;&times;&nbsp;Messwert</code> alle 5&nbsp;s &mdash; rund 50&nbsp;s Zeitkonstante. Gedacht f&uuml;r einen tr&auml;gen Verbraucher, der nicht jeder Spitze hinterherlaufen soll; wer den Live-Wert will, nimmt <code>cpwr</code> oder <code>sml1</code>.</p>
+<p>Für einen zweiten Akku, der die Netzleistung übers Netzwerk abfragt (z.B. opendtu-onbattery): diese Adresse eintragen und <code>power2</code> verwenden. Ein Passwort brauchst du nicht.</p>
+<p><code>power2</code> reagiert absichtlich langsam (es braucht etwa eine Minute, um einer Änderung zu folgen). Es ist für etwas gedacht, das nicht jeder kurzen Spitze folgen soll. Für den aktuellen Wert nimm <code>cpwr</code> oder <code>sml1</code>.</p>
 </div>
 </section>
 
@@ -322,10 +298,10 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 <h2>Home Assistant</h2>
 <div class="en">
 <h3>Offset from Home Assistant</h3>
-<p>The console command <code>CTOffset &lt;W&gt;</code> sets the offset while the script runs; <code>CTOffset</code> alone shows it. Over MQTT that is <code>cmnd/&lt;topic&gt;/CTOffset</code>, over HTTP <code>/cm?cmnd=CTOffset%20-50</code>. It answers <code>{"CTOffset":-50}</code>; the current value is also in <code>tele/&lt;topic&gt;/SENSOR</code> as <code>"CT002":{…,"Offset":-50}</code>. At least &minus;200&nbsp;W, no upper limit (the field on the page stops at 200&nbsp;W).</p>
-<p>The value is kept in <b>RAM only</b>, so an automation can change it as often as it likes without wearing out the flash. After a restart the value saved on the page applies again. The field on the page keeps showing the saved value; the value in effect is shown right of it. To keep a value, enter it in the field and press <b>Save</b> &mdash; that also replaces a value set by command.</p>
-<p><b>Automatic:</b> the program announces the offset and Max DC to Home Assistant itself (MQTT discovery). They appear as number entities on the Tasmota device &mdash; nothing to configure. It is announced again whenever Home Assistant restarts. Needs MQTT discovery in Home Assistant (on by default) and the default FullTopic.</p>
-<p>Without discovery: a number entity in <code>configuration.yaml</code> (replace <code>&lt;topic&gt;</code> with the device's MQTT topic):</p>
+<p><b>Automatic:</b> the program registers the offset and Max DC with Home Assistant by itself (MQTT discovery). They appear as number fields on the Tasmota device, you do not have to set anything up. This needs MQTT discovery in Home Assistant (on by default) and Tasmota's standard FullTopic.</p>
+<p>You can also change the offset with the command <code>CTOffset &lt;W&gt;</code>. <code>CTOffset</code> without a value shows the current one. Over MQTT: <code>cmnd/&lt;topic&gt;/CTOffset</code>, over HTTP: <code>/cm?cmnd=CTOffset%20-50</code>. The current value is also in <code>tele/&lt;topic&gt;/SENSOR</code> as <code>"CT002":{…,"Offset":-50}</code>. Lowest value &minus;200&nbsp;W.</p>
+<p>A value set this way is only kept until the next restart. So an automation can change it as often as it likes without wearing out the flash memory. After a restart, the value saved on the page applies again. The field on the page shows the saved value, the value currently in use is shown right next to it. To keep a value, enter it in the field and press <b>Save</b>.</p>
+<p>Without discovery you can create the field yourself in <code>configuration.yaml</code> (replace <code>&lt;topic&gt;</code> with the MQTT topic of your device):</p>
 <pre><code>mqtt:
   number:
     - name: "CT002 Offset"
@@ -341,11 +317,11 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
       step: 5
       mode: box
       unit_of_measurement: "W"</code></pre>
-<p><code>optimistic</code> shows the new value immediately; the <code>SENSOR</code> message corrects it at the next TelePeriod (e.g. after a restart). A meter value with immediate MQTT sends <code>SENSOR</code> messages that carry only that value; the <code>if</code> keeps the current state for those. Without MQTT, the same over HTTP:</p>
+<p>Without MQTT, the same over HTTP:</p>
 <pre><code>rest_command:
   pv_offset:
     url: "http://&lt;ip&gt;/cm?cmnd=CTOffset%20{{ offset }}"</code></pre>
-<p>Then call <code>rest_command.pv_offset</code> with <code>offset: -50</code>. An automation that raises the margin at night:</p>
+<p>Then call <code>rest_command.pv_offset</code> with <code>offset: -50</code>. Example of an automation that sets a bigger margin at night:</p>
 <pre><code>automation:
   - alias: "Offset 50 W at night"
     triggers:
@@ -358,8 +334,8 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
         data:
           value: 50</code></pre>
 <h3>Discharge limit</h3>
-<p><code>CTLimit &lt;W&gt;</code> caps how much each battery discharges; <code>CTLimit 0</code> switches it off, <code>CTLimit</code> alone shows it. Like the offset it is kept in RAM only: after a restart the <b>Max DC</b> value saved on the page applies again. It answers <code>{"CTLimit":100}</code> and appears as <code>"Limit"</code> in the <code>CT002</code> block of <code>SENSOR</code>; while it is active the main page shows a <b>Max DC</b> row.</p>
-<p>A battery adds the reported value to what it already delivers, so cutting the reported value alone would only slow it down. The emulator therefore reports at most <i>limit &minus; the battery&#39;s own current output</i>. With a limit of 100&nbsp;W a battery at 300&nbsp;W is told &minus;200&nbsp;W and comes down, one at 60&nbsp;W may still add 40. The rest of the load comes from the grid. The limit applies <b>per battery</b> and does not touch charging. During phase detection it is suspended like the offset. It works on every phase setting: the cap goes into the battery&#39;s own phase field <i>and</i> into the combined total, because a battery set to A, B or C regulates on the total as well &mdash; before 05.10.2026 only phase <b>D</b> was limited.</p>
+<p><code>CTLimit &lt;W&gt;</code> limits how much each battery may discharge. <code>CTLimit 0</code> switches the limit off, <code>CTLimit</code> alone shows it. Like the offset, it is only kept until the next restart; then the <b>Max DC</b> value saved on the page applies again. While a limit is active, the main page shows a <b>Max DC</b> row.</p>
+<p>The limit applies to each battery separately, works on every phase setting and does not affect charging. While a battery searches for its phase, the limit is paused. The rest of your consumption comes from the grid.</p>
 <pre><code>mqtt:
   number:
     - name: "CT002 Limit"
@@ -375,14 +351,14 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
       step: 10
       mode: box
       unit_of_measurement: "W"</code></pre>
-<p>Setting the limit to <code>0</code> in Home Assistant switches it off; it does not stop the battery. To hold a battery at zero, use 1&nbsp;W.</p>
+<p>A limit of <code>0</code> switches the limit off, it does not stop the battery. To keep a battery at zero, use 1&nbsp;W.</p>
 </div>
 <div class="de">
 <h3>Offset aus Home Assistant</h3>
-<p>Das Konsolen-Kommando <code>CTOffset &lt;W&gt;</code> setzt den Offset im laufenden Betrieb; <code>CTOffset</code> allein zeigt ihn an. Per MQTT ist das <code>cmnd/&lt;topic&gt;/CTOffset</code>, per HTTP <code>/cm?cmnd=CTOffset%20-50</code>. Die Antwort lautet <code>{"CTOffset":-50}</code>; der aktuelle Wert steht außerdem in <code>tele/&lt;topic&gt;/SENSOR</code> als <code>"CT002":{…,"Offset":-50}</code>. Mindestens &minus;200&nbsp;W, nach oben ohne Grenze (das Feld auf der Seite endet bei 200&nbsp;W).</p>
-<p>Der Wert liegt <b>nur im RAM</b>, eine Automation darf ihn also beliebig oft ändern, ohne den Flash abzunutzen. Nach einem Neustart gilt wieder der auf der Seite gespeicherte Wert. Das Feld auf der Seite zeigt weiter den gespeicherten Wert; der gerade gültige steht rechts daneben. Soll ein Wert bleiben, ihn ins Feld eintragen und <b>Speichern</b> drücken &mdash; das ersetzt auch einen per Kommando gesetzten Wert.</p>
-<p><b>Automatisch:</b> Das Programm meldet Offset und Max DC selbst bei Home Assistant an (MQTT-Discovery). Sie erscheinen als Zahlenfelder am Tasmota-Gerät &mdash; nichts einzurichten. Nach jedem Neustart von Home Assistant wird neu angemeldet. Voraussetzung: MQTT-Discovery in Home Assistant (standardmäßig an) und das Standard-FullTopic.</p>
-<p>Ohne Discovery: eine Number-Entität in der <code>configuration.yaml</code> (<code>&lt;topic&gt;</code> durch das MQTT-Topic des Geräts ersetzen):</p>
+<p><b>Automatisch:</b> Das Programm meldet Offset und Max DC selbst bei Home Assistant an (MQTT-Discovery). Sie erscheinen als Zahlenfelder am Tasmota-Gerät, du musst nichts einrichten. Dafür muss in Home Assistant die MQTT-Discovery an sein (ist sie standardmäßig) und Tasmota das Standard-FullTopic nutzen.</p>
+<p>Du kannst den Offset auch mit dem Befehl <code>CTOffset &lt;W&gt;</code> ändern. <code>CTOffset</code> ohne Wert zeigt den aktuellen an. Per MQTT: <code>cmnd/&lt;topic&gt;/CTOffset</code>, per HTTP: <code>/cm?cmnd=CTOffset%20-50</code>. Der aktuelle Wert steht außerdem in <code>tele/&lt;topic&gt;/SENSOR</code> als <code>"CT002":{…,"Offset":-50}</code>. Kleinster Wert &minus;200&nbsp;W.</p>
+<p>Ein so gesetzter Wert gilt nur bis zum nächsten Neustart. Eine Automation darf ihn also beliebig oft ändern, ohne den Flash-Speicher abzunutzen. Nach einem Neustart gilt wieder der auf der Seite gespeicherte Wert. Das Feld auf der Seite zeigt den gespeicherten Wert, rechts daneben steht der gerade benutzte. Soll ein Wert bleiben, trag ihn ins Feld ein und drücke <b>Speichern</b>.</p>
+<p>Ohne Discovery kannst du das Feld selbst in der <code>configuration.yaml</code> anlegen (<code>&lt;topic&gt;</code> durch das MQTT-Topic deines Geräts ersetzen):</p>
 <pre><code>mqtt:
   number:
     - name: "CT002 Offset"
@@ -398,11 +374,11 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
       step: 5
       mode: box
       unit_of_measurement: "W"</code></pre>
-<p><code>optimistic</code> zeigt den neuen Wert sofort; die <code>SENSOR</code>-Meldung korrigiert ihn zur nächsten TelePeriod (z.&nbsp;B. nach einem Neustart). Ein Zählerwert mit sofortigem MQTT schickt <code>SENSOR</code>-Meldungen, die nur diesen Wert enthalten; das <code>if</code> behält für die den aktuellen Stand. Ohne MQTT dasselbe per HTTP:</p>
+<p>Ohne MQTT dasselbe per HTTP:</p>
 <pre><code>rest_command:
   pv_offset:
     url: "http://&lt;ip&gt;/cm?cmnd=CTOffset%20{{ offset }}"</code></pre>
-<p>Dann <code>rest_command.pv_offset</code> mit <code>offset: -50</code> aufrufen. Eine Automation, die nachts den Abstand erhöht:</p>
+<p>Dann <code>rest_command.pv_offset</code> mit <code>offset: -50</code> aufrufen. Beispiel für eine Automation, die nachts einen größeren Abstand einstellt:</p>
 <pre><code>automation:
   - alias: "Offset 50 W at night"
     triggers:
@@ -415,8 +391,8 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
         data:
           value: 50</code></pre>
 <h3>Entladelimit</h3>
-<p><code>CTLimit &lt;W&gt;</code> begrenzt, wie viel jeder Akku entlädt; <code>CTLimit 0</code> schaltet es ab, <code>CTLimit</code> allein zeigt es an. Wie der Offset liegt es nur im RAM: nach einem Neustart gilt wieder der auf der Seite gespeicherte Wert <b>Max DC</b>. Die Antwort lautet <code>{"CTLimit":100}</code>; in <code>SENSOR</code> steht es als <code>"Limit"</code> im Block <code>CT002</code>. Solange es aktiv ist, zeigt die Hauptseite eine Zeile <b>Max DC</b>.</p>
-<p>Ein Akku addiert den gemeldeten Wert zu dem, was er schon liefert &mdash; den gemeldeten Wert nur zu kappen würde ihn also bloß bremsen. Der Emulator meldet deshalb höchstens <i>Limit &minus; aktuelle Leistung des Akkus</i>. Bei 100&nbsp;W Limit bekommt ein Akku mit 300&nbsp;W &minus;200&nbsp;W gemeldet und regelt herunter, einer mit 60&nbsp;W darf noch 40 zulegen. Den Rest der Last deckt das Netz. Das Limit gilt <b>pro Akku</b> und lässt das Laden unberührt. Während der Phasensuche ist es wie der Offset ausgesetzt. Es wirkt bei jeder Phaseneinstellung: Die Begrenzung steht im Feld der eigenen Phase <i>und</i> im Summenwert, denn ein Akku auf A, B oder C regelt auch auf die Summe &mdash; vor dem 05.10.2026 war nur Phase <b>D</b> begrenzt.</p>
+<p><code>CTLimit &lt;W&gt;</code> begrenzt, wie viel jeder Akku entladen darf. <code>CTLimit 0</code> schaltet die Begrenzung aus, <code>CTLimit</code> allein zeigt sie an. Wie der Offset gilt sie nur bis zum nächsten Neustart, danach gilt wieder der auf der Seite gespeicherte Wert <b>Max DC</b>. Solange eine Begrenzung aktiv ist, zeigt die Hauptseite eine Zeile <b>Max DC</b>.</p>
+<p>Die Begrenzung gilt für jeden Akku einzeln, wirkt bei jeder Phaseneinstellung und lässt das Laden in Ruhe. Während ein Akku seine Phase sucht, ist sie ausgesetzt. Den Rest deines Verbrauchs liefert das Netz.</p>
 <pre><code>mqtt:
   number:
     - name: "CT002 Limit"
@@ -432,83 +408,81 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
       step: 10
       mode: box
       unit_of_measurement: "W"</code></pre>
-<p>Limit <code>0</code> in Home Assistant schaltet die Begrenzung ab, es hält den Akku nicht an. Um einen Akku bei null zu halten: 1&nbsp;W.</p>
+<p>Ein Limit von <code>0</code> schaltet die Begrenzung aus, es hält den Akku nicht an. Um einen Akku bei null zu halten, nimm 1&nbsp;W.</p>
 </div>
 </section>
 
 <section id="marstek">
 <h2><span class="en">Marstek account</span><span class="de">Marstek-Konto</span></h2>
 <div class="en">
-<p>A battery only talks to a CT that exists in the owner's Marstek account. The emulator can create such an entry &mdash; a managed device whose id and MAC start with <code>02b250</code>, the same record AstraMeter creates.</p>
+<p>A battery only talks to a CT that exists in your Marstek account. The program can create such a CT in your account for you (the same way AstraMeter does it).</p>
 <ol>
-<li>Press <b>&#x2601;&#xFE0F; Marstek</b> in Tasmota's main menu (opens <code>/ctreg</code>) and enter mail and password.</li>
-<li><b>Log in + check account</b> fetches a token and adopts an existing fake CT if there is one.</li>
-<li>If none was found: <b>Create fake CT</b> and confirm the dialog. The status line updates by itself and turns green on success.</li>
-<li>In the Marstek app refresh the CT list (log out and in if needed), select the new CT, switch the battery to automatic.</li>
+<li>Press <b>&#x2601;&#xFE0F; Marstek</b> in the Tasmota main menu and enter your Marstek e-mail and password.</li>
+<li>Press <b>Log in + check account</b>. If there is already a CT created this way, it is taken over.</li>
+<li>If none was found: press <b>Create fake CT</b> and confirm. The status line turns green when it worked.</li>
+<li>In the Marstek app, refresh the CT list (if needed, log out and in again), select the new CT and set the battery to automatic.</li>
 </ol>
-<p><b>Create</b> is disabled while a CT MAC is set &mdash; <b>Clear CT MAC</b> at the bottom of the same page frees it again. That only clears the MAC on the device; the CT in your Marstek account stays and has to be deleted in the app.</p>
-<h3>Notes</h3>
+<p><b>Create</b> is greyed out while a CT MAC is set. <b>Clear CT MAC</b> at the bottom of the same page clears it. That only clears the MAC on the device. The CT in your Marstek account stays and must be deleted in the app.</p>
+<h3>Good to know</h3>
 <ul>
-<li>The fake CT shows as <b>offline</b> in the app, and its live values stay at <code>--</code>. That is expected and does not affect regulation: the battery reads the CT locally over UDP, while the app's display comes from Marstek's cloud over MQTT, which a fake CT never connects to.</li>
-<li>The <code>setCtReporting</code> HTTP push does <b>not</b> fix that. It was implemented and measured: the endpoint accepts the data (<code>{"code":1,"msg":"success"}</code>), but after 776 accepted reports the app still showed <code>--</code>. It was removed again.</li>
-<li>Create only one fake CT. If several exist, the app may be pointed at a different one than your device answers for.</li>
+<li>The CT shows as <b>offline</b> in the app, and its values show <code>--</code>. That is normal and does not affect the regulation: the battery talks to the CT directly in your home network, while the app gets its display from the Marstek cloud, and the program never connects to that.</li>
+<li>Only create one CT. If there are several, the app may use a different one than your device answers for.</li>
 </ul>
-<p class="warn">The password travels as plain text over your LAN from your browser to the ESP with Tasmota. It is never written to flash, is kept in RAM for 10 minutes so step&nbsp;2 does not need it again, and is discarded after a successful create.</p>
-<p class="warn">Creating the fake CT talks to an undocumented Marstek API with your own account. That may go against Marstek's terms of use &mdash; it is your account and your risk. In the worst case Marstek removes the device or acts against the account.</p>
+<p class="warn">Your password goes unencrypted through your home network from the browser to the device. It is not saved on the device, it is kept in memory for 10 minutes and deleted after the CT has been created.</p>
+<p class="warn">Creating the CT uses an undocumented Marstek interface with your own account. That may be against Marstek's terms of use. It is your account and your risk. In the worst case, Marstek removes the device or takes action against the account.</p>
 </div>
 <div class="de">
-<p>Ein Akku spricht nur mit einem CT, das im Marstek-Konto des Besitzers existiert. Der Emulator kann so einen Eintrag anlegen &mdash; ein verwaltetes Gerät, dessen Id und MAC mit <code>02b250</code> beginnen, derselbe Datensatz, den auch AstraMeter erzeugt.</p>
+<p>Ein Akku spricht nur mit einem CT, das in deinem Marstek-Konto existiert. Das Programm kann so ein CT für dich in deinem Konto anlegen (genau wie AstraMeter es macht).</p>
 <ol>
-<li>Im Hauptmenü von Tasmota auf <b>&#x2601;&#xFE0F; Marstek</b> (öffnet <code>/ctreg</code>), Mail und Passwort eintragen.</li>
-<li><b>Log in + check account</b> holt ein Token und übernimmt ein vorhandenes Fake-CT, falls eines da ist.</li>
-<li>Wurde keines gefunden: <b>Create fake CT</b> und den Dialog bestätigen. Die Statuszeile aktualisiert sich von selbst und wird bei Erfolg grün.</li>
-<li>In der Marstek-App die CT-Liste aktualisieren (notfalls ab- und wieder anmelden), das neue CT auswählen, den Akku auf Automatik stellen.</li>
+<li>Im Tasmota-Hauptmenü auf <b>&#x2601;&#xFE0F; Marstek</b> drücken und deine Marstek-E-Mail und dein Passwort eintragen.</li>
+<li><b>Log in + check account</b> drücken. Gibt es schon ein so angelegtes CT, wird es übernommen.</li>
+<li>Wurde keins gefunden: <b>Create fake CT</b> drücken und bestätigen. Die Statuszeile wird grün, wenn es geklappt hat.</li>
+<li>In der Marstek-App die CT-Liste aktualisieren (notfalls ab- und wieder anmelden), das neue CT auswählen und den Akku auf Automatik stellen.</li>
 </ol>
-<p><b>Create</b> ist gesperrt, solange eine CT-MAC gesetzt ist &mdash; <b>Clear CT MAC</b> unten auf derselben Seite gibt es wieder frei. Das löscht nur die MAC auf dem Gerät; das CT im Marstek-Konto bleibt und muss in der App gelöscht werden.</p>
-<h3>Hinweise</h3>
+<p><b>Create</b> ist ausgegraut, solange eine CT MAC eingetragen ist. <b>Clear CT MAC</b> unten auf derselben Seite löscht sie. Das löscht nur die MAC auf dem Gerät. Das CT in deinem Marstek-Konto bleibt und muss in der App gelöscht werden.</p>
+<h3>Gut zu wissen</h3>
 <ul>
-<li>Das Fake-CT erscheint in der App als <b>offline</b>, seine Live-Werte bleiben auf <code>--</code>. Das ist so erwartet und hat auf die Regelung keinen Einfluss: der Akku liest das CT lokal per UDP, während die Anzeige der App aus Marsteks Cloud per MQTT kommt &mdash; und dorthin verbindet sich ein Fake-CT nie.</li>
-<li>Der <code>setCtReporting</code>-Push ändert daran <b>nichts</b>. Er war eingebaut und wurde gemessen: der Endpunkt nimmt die Daten an (<code>{"code":1,"msg":"success"}</code>), aber nach 776 akzeptierten Reports zeigte die App weiter <code>--</code>. Er wurde wieder entfernt.</li>
-<li>Lege nur ein Fake-CT an. Gibt es mehrere, zeigt die App womöglich auf ein anderes, als dein Gerät bedient.</li>
+<li>Das CT steht in der App auf <b>offline</b>, und seine Werte zeigen <code>--</code>. Das ist normal und stört die Regelung nicht: Der Akku spricht direkt in deinem Heimnetz mit dem CT, die App holt ihre Anzeige aber aus der Marstek-Cloud, und mit der verbindet sich das Programm nie.</li>
+<li>Lege nur ein CT an. Gibt es mehrere, nutzt die App vielleicht ein anderes, als dein Gerät bedient.</li>
 </ul>
-<p class="warn">Das Passwort geht unverschlüsselt durch dein lokales Netzwerk vom Browser an den ESP mit Tasmota. Es wird nicht in den Flash-Speicher geschrieben, bleibt 10 Minuten im Arbeitsspeicher, damit Schritt&nbsp;2 es nicht erneut braucht, und wird nach erfolgreichem Anlegen verworfen.</p>
-<p class="warn">Das Anlegen des Fake-CT spricht eine undokumentierte Marstek-Schnittstelle mit deinem eigenen Konto an. Das kann gegen Marsteks Nutzungsbedingungen verstoßen &mdash; es ist dein Konto und dein Risiko. Im schlimmsten Fall entfernt Marstek das Gerät oder geht gegen das Konto vor.</p>
+<p class="warn">Dein Passwort geht unverschlüsselt durch dein Heimnetz vom Browser zum Gerät. Es wird nicht auf dem Gerät gespeichert, bleibt 10 Minuten im Arbeitsspeicher und wird nach dem Anlegen gelöscht.</p>
+<p class="warn">Das Anlegen nutzt eine nicht offizielle Marstek-Schnittstelle mit deinem eigenen Konto. Das kann gegen die Nutzungsbedingungen von Marstek verstoßen. Es ist dein Konto und dein Risiko. Im schlimmsten Fall entfernt Marstek das Gerät oder geht gegen das Konto vor.</p>
 </div>
 </section>
 
 <section id="console">
-<h2><span class="en">Console commands</span><span class="de">Konsolen-Kommandos</span></h2>
+<h2><span class="en">Console commands</span><span class="de">Konsolen-Befehle</span></h2>
 <pre><code>CTSTAT            rx/tx/bad counters, one log line per battery
 CTCLR             clear the battery table
-CTOFFSET [W]      set the offset now, RAM only (no value = show it)
-CTLIMIT [W]       discharge limit per battery (Max DC), RAM only, 0 = off
-CTMAC &lt;hex12&gt;     set the CT MAC (empty = answer any)
-CTMAIL &lt;address&gt;  set the Marstek account mail
-CTPASS &lt;password&gt; set the password (RAM only)
-CTLOGIN           run step 1
-CTCREATE JA       run step 2 (the JA is the confirmation)</code></pre>
-<div class="en"><p>Log lines are always English, whatever else is on screen &mdash; mixed-language logs make support harder.</p></div>
-<div class="de"><p>Log-Zeilen sind immer englisch, unabhängig vom Rest &mdash; gemischtsprachige Logs machen die Fehlersuche schwerer.</p></div>
+CTOFFSET [W]      set the offset until restart (no value = show it)
+CTLIMIT [W]       discharge limit per battery until restart, 0 = off
+CTMAC &lt;hex12&gt;     set the CT MAC (empty = answer every battery)
+CTMAIL &lt;address&gt;  set the Marstek account e-mail
+CTPASS &lt;password&gt; set the password (not saved)
+CTLOGIN           step 1: log in
+CTCREATE JA       step 2: create the CT (JA confirms)</code></pre>
+<div class="en"><p>Log messages are always in English, so they are easier to compare when you ask for help.</p></div>
+<div class="de"><p>Log-Meldungen sind immer englisch. So lassen sie sich leichter vergleichen, wenn du um Hilfe fragst.</p></div>
 </section>
 
 <section id="trouble">
 <h2><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></h2>
 <div class="en">
 <table>
-<tr><th><code>rx</code> stays 0</th><td>Nothing is arriving. The battery has not been pointed at this CT, or it lost it. Toggle the operating mode in the app (automatic off and on again). A script restart drops the socket for a moment, and the battery does not always come back on its own.</td></tr>
-<tr><th><code>bad</code> counts up</th><td>Packets arrive but fail the checksum. Something on the wire does not match the protocol &mdash; keep the log with <kbd>weblog 4</kbd>.</td></tr>
-<tr><th>Battery shows <code>Ph x</code></th><td>It is still probing its phase. See <a href="#battery">Battery</a>.</td></tr>
-<tr><th>All values 0&nbsp;W</th><td>No meter readings. Check <b>SML active</b>, pins and descriptor under <a href="#meter">Meter</a>.</td></tr>
-<tr><th>App shows <code>--</code></th><td>Expected. See <a href="#marstek">Marstek account</a>.</td></tr>
+<tr><th><code>rx</code> stays 0</th><td>No battery is asking. The battery is not set to this CT, or it lost the connection. In the app, switch the mode (automatic off and on again). After a program restart the battery does not always find the CT again by itself.</td></tr>
+<tr><th><code>bad</code> counts up</th><td>Requests arrive broken. Please save the log with <kbd>weblog 4</kbd> and contact me.</td></tr>
+<tr><th>Battery shows <code>Ph x</code></th><td>It is still searching for its phase. See <a href="#battery">Battery</a>.</td></tr>
+<tr><th>All values 0&nbsp;W</th><td>No meter values. Check <b>Meter active</b>, pins and meter, see <a href="#meter">Meter</a>.</td></tr>
+<tr><th>App shows <code>--</code></th><td>That is normal. See <a href="#marstek">Marstek account</a>.</td></tr>
 </table>
 </div>
 <div class="de">
 <table>
-<tr><th><code>rx</code> bleibt 0</th><td>Es kommt nichts an. Der Akku wurde nicht auf dieses CT gestellt oder hat es verloren. In der App den Betriebsmodus umschalten (Automatik aus und wieder ein). Ein Script-Neustart schließt den Socket kurz, und der Akku findet nicht immer von allein zurück.</td></tr>
-<tr><th><code>bad</code> zählt hoch</th><td>Pakete kommen an, scheitern aber an der Prüfsumme. Auf dem Draht passt etwas nicht zum Protokoll &mdash; Log mit <kbd>weblog 4</kbd> mitschreiben.</td></tr>
+<tr><th><code>rx</code> bleibt 0</th><td>Kein Akku fragt. Der Akku ist nicht auf dieses CT eingestellt oder hat die Verbindung verloren. In der App den Modus umschalten (Automatik aus und wieder ein). Nach einem Neustart des Programms findet der Akku das CT nicht immer von selbst wieder.</td></tr>
+<tr><th><code>bad</code> zählt hoch</th><td>Anfragen kommen kaputt an. Bitte das Log mit <kbd>weblog 4</kbd> sichern und dich bei mir melden.</td></tr>
 <tr><th>Akku zeigt <code>Ph x</code></th><td>Er sucht noch seine Phase. Siehe <a href="#battery">Akku</a>.</td></tr>
-<tr><th>Alle Werte 0&nbsp;W</th><td>Keine Zählerwerte. <b>SML active</b>, Pins und Descriptor unter <a href="#meter">Zähler</a> prüfen.</td></tr>
-<tr><th>App zeigt <code>--</code></th><td>Erwartet. Siehe <a href="#marstek">Marstek-Konto</a>.</td></tr>
+<tr><th>Alle Werte 0&nbsp;W</th><td>Keine Zählerwerte. <b>Zähler aktiv</b>, Pins und Zähler prüfen, siehe <a href="#meter">Zähler</a>.</td></tr>
+<tr><th>App zeigt <code>--</code></th><td>Das ist normal. Siehe <a href="#marstek">Marstek-Konto</a>.</td></tr>
 </table>
 </div>
 </section>

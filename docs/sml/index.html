@@ -77,158 +77,128 @@ body.lang-de .en{display:none}
 <section id="overview">
 <h2><span class="en">Overview</span><span class="de">Überblick</span></h2>
 <div class="en">
-<p>An ESP32 with a reading head sits on your electricity meter and reads it over SML. Every program of this family shares the same meter setup; they differ in what they add on top: charts, a meter emulator for a PV battery, a Modbus slave.</p>
-<p><b>Requirements:</b> ESP32 (no ESP8266), Tasmota with TinyC and <code>USE_SML</code>, and a reading head (examples on my <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">blog</a>).</p>
-<p>Everything is set up on the web page, no code editing. Language, meter, pins and options are stored on the device.</p>
-<p><b>Buttons in Tasmota's main menu.</b> A running program adds its own entries:</p>
+<p>Do you have a newer electricity meter with an optical interface (SML) at home, and would you like to see its values, such as power and consumption (and feed-in), as charts on a nice web page, and record them? Then you are in the right place. With a suitable meter reading head that has a small processor (ESP) built in, and the right software, you can do all of this for little money. You are not tied to any cloud or manufacturer. If you know your way around, you are welcome to adapt the software as you like. But for most people my software already offers every option they need.</p>
+<p>On my two GitHub pages (called repositories) I offer ready-made Tasmota firmware <a href="https://github.com/ottelo9/tasmota-sml-images">images</a> and the matching <a href="https://github.com/ottelo9/tasmota-sml-script">programs (or scripts)</a> for the ESP32 (and ESP8266). If you have already bought a Tasmota reading head, it contains an ESP32 or an ESP8266 (ESP01s), and a Tasmota version is already installed on it. To run my programs or scripts, however, you must put my firmware on the reading head. You can do this over Wi-Fi (OTA) or with a USB cable on your PC. I recommend OTA.</p>
+<p>This page describes my programs for the reading head. They are written in the programming language TinyC, which is why I call them TinyC programs everywhere here. I made them only recently; before, I did everything with Tasmota scripts. TinyC can do much more, so this page only covers the TinyC programs. Basically, I turned all my separate scripts into a few TinyC programs. Before, if you wanted Modbus, you had to take a separate script. Now it is simply an option.</p>
+<p>The TinyC programs need an ESP32. For the ESP8266 there are only the scripts. Examples of suitable reading heads are on my <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">blog</a>.</p>
+<p>Once my image runs on your reading head, you choose and load one of my programs directly in Tasmota on the ESP / reading head. You do not have to upload or paste anything by hand. When the program is running, you select your electricity, water or gas meter. All very easy. All data is stored on the device itself, never in a cloud.</p>
+<p>While the program is running, you see these new buttons in the Tasmota main menu:</p>
 <table>
-<tr><th>&#x2699;&#xFE0F; SML</th><td>All settings. Programs with a battery emulator show <b>&#x2699;&#xFE0F; SML /&#x1F50B;</b> instead.</td></tr>
-<tr><th>&#x2601;&#xFE0F; Marstek</th><td>Only in the CT002 programs: account and CT registration.</td></tr>
-<tr><th>&#x1F4BB; TinyC</th><td>Tasmota's TinyC page &mdash; slots, upload, editor.</td></tr>
+<tr><th>&#x2699;&#xFE0F; SML</th><td>All program settings. With a PV battery emulator the button is called <b>&#x2699;&#xFE0F; SML /&#x1F50B;</b>.</td></tr>
+<tr><th>&#x2601;&#xFE0F; Marstek</th><td>Only in the CT002 emulator programs: register the CT in your Marstek account.</td></tr>
+<tr><th>&#x1F4BB; TinyC</th><td>Opens the TinyC Console: load, start and stop programs.</td></tr>
 </table>
-<p>The charts have a page of their own, reached by the <b>&#x1F4C8;</b> link under the readings on the main page. They are no longer drawn into the main page, which used to make it slow.</p>
+<p>The charts have their own page. You open it with the <b>&#x1F4C8;</b> link below the values on the main page. Or you switch on the option <a href="#charts">Main Charts</a>, and they appear directly on the main page, like before with the scripts.</p>
 </div>
 <div class="de">
-<p>Ein ESP32 mit Lesekopf sitzt am Stromzähler und liest ihn über SML aus. Alle Programme dieser Familie teilen sich die gleiche Zählereinrichtung; sie unterscheiden sich nur in dem, was oben drauf kommt: Diagramme, ein Zähler-Emulator für eine PV-Batterie, ein Modbus-Slave.</p>
-<p><b>Voraussetzungen:</b> ESP32 (kein ESP8266), Tasmota mit TinyC und <code>USE_SML</code> und ein Lesekopf (Beispiele auf meinem <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">Blog</a>).</p>
-<p>Alles wird auf der Weboberfläche eingestellt, nichts im Code. Sprache, Zähler, Pins und Optionen liegen auf dem Gerät.</p>
-<p><b>Buttons in Tasmotas Hauptmenü.</b> Ein laufendes Programm ergänzt eigene Einträge:</p>
+<p>Wenn du zuhause einen neueren Stromzähler mit optischer Schnittstelle hast (SML) und gerne die Werte wie Leistung und Verbrauch (und Einspeisung) grafisch auf einer schönen Webseite dargestellt (und aufgezeichnet) haben willst, dann bist du hier genau richtig. Mit einem passenden Stromzähler-Lesekopf mit eingebautem Prozessor (ESP) und der richtigen Software kannst du das alles für wenig Geld umsetzen. Du bist an keine Cloud und keinen Hersteller gebunden. Wenn du dich auskennst, kannst du die Software auch gerne nach Belieben anpassen. Aber für die meisten bietet meine Software alle Optionen an.</p>
+<p>Auf meinen zwei GitHub-Seiten (nennt sich Repository) biete ich fertige Tasmota-Firmware-<a href="https://github.com/ottelo9/tasmota-sml-images">Images</a> und die passenden <a href="https://github.com/ottelo9/tasmota-sml-script">Programme (oder Scripte)</a> für den ESP32 (und ESP8266) an. Falls du dir bereits einen Tasmota-Lesekopf gekauft hast, dann sitzt in diesem ein ESP32 oder ESP8266 (ESP01s). Auf diesem ist dann bereits eine Tasmota-Version vorinstalliert. Damit du aber meine Programme/Scripte ausführen kannst, brauchst du zwingend meine Firmware auf dem Lesekopf. Das kann entweder über WLAN (OTA) oder über USB-Kabel am PC gemacht werden. Ich empfehle die Variante über OTA.</p>
+<p>Auf dieser Seite geht es um die Beschreibung meiner Programme für den Lesekopf. Die Programme sind in der Programmiersprache TinyC geschrieben, deshalb nenne ich sie hier überall TinyC-Programme. Diese habe ich erst vor kurzem erstellt, vorher hatte ich alles mit Tasmota-Scripten gemacht. TinyC bietet nun viel mehr, deshalb gehe ich hier auch nur noch auf die TinyC-Programme ein. Im Prinzip habe ich alle meine einzelnen Scripte in ein paar TinyC-Programme umgewandelt. Wollte man vorher Modbus haben, musste man ein separates Script nehmen. Das ist nun als Option mit eingeflossen.</p>
+<p>Die TinyC-Programme brauchen einen ESP32. Für den ESP8266 gibt es nur die Scripte. Beispiele für passende Leseköpfe findest du auf meinem <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">Blog</a>.</p>
+<p>Wenn erstmal mein Image auf deinem Lesekopf läuft, kannst du ganz einfach eins meiner Programme direkt auf dem ESP/Lesekopf in Tasmota auswählen und laden. Du musst nichts manuell hochladen oder einfügen. Wenn das Programm dann läuft, wählst du deinen Strom-, Wasser- oder Gaszähler aus. Alles ganz bequem. Alle Daten werden direkt auf dem Gerät gespeichert, nirgends in der Cloud.</p>
+<p>Wenn das Programm läuft, siehst du im Tasmota-Hauptmenü folgende neue Buttons:</p>
 <table>
-<tr><th>&#x2699;&#xFE0F; SML</th><td>Alle Einstellungen. Programme mit Akku-Emulator zeigen stattdessen <b>&#x2699;&#xFE0F; SML /&#x1F50B;</b>.</td></tr>
-<tr><th>&#x2601;&#xFE0F; Marstek</th><td>Nur in den CT002-Programmen: Konto und CT-Registrierung.</td></tr>
-<tr><th>&#x1F4BB; TinyC</th><td>Tasmotas TinyC-Seite &mdash; Slots, Upload, Editor.</td></tr>
+<tr><th>&#x2699;&#xFE0F; SML</th><td>Alle Programm-Einstellungen. Beim PV-Akku-Emulator heißt der Button <b>&#x2699;&#xFE0F; SML /&#x1F50B;</b>.</td></tr>
+<tr><th>&#x2601;&#xFE0F; Marstek</th><td>Nur bei den CT002-Emulator-Programmen: das CT in deinem Marstek-Konto anmelden.</td></tr>
+<tr><th>&#x1F4BB; TinyC</th><td>Öffnet die TinyC Console: Programme laden, starten und stoppen.</td></tr>
 </table>
-<p>Die Diagramme haben eine eigene Seite, erreichbar über das <b>&#x1F4C8;</b> unter den Messwerten auf der Hauptseite. Sie werden nicht mehr in die Hauptseite gezeichnet, was diese früher langsam gemacht hat.</p>
+<p>Die Diagramme haben eine eigene Seite. Du öffnest sie über den Link <b>&#x1F4C8;</b> unter den Werten auf der Hauptseite. Oder du schaltest die Option <a href="#charts">Charts Hauptseite</a> ein, dann erscheinen sie direkt auf der Hauptseite (wie früher bei den Scripten).</p>
 </div>
 </section>
 
 <section id="programs">
 <h2><span class="en">Programs</span><span class="de">Programme</span></h2>
 <div class="en">
-<p>Pick one and load it into slot&nbsp;0 &mdash; ready-made, nothing to compile. Modbus is an option inside every one of them.</p>
+<p>Choose one program and load it into slot&nbsp;0. The programs are ready to use, you do not need to compile anything. Modbus is available in all of them.</p>
 <table>
-<tr><th>SML Simple</th><td>Meter only. Smallest program.</td></tr>
-<tr><th>SML Chart</th><td>+ charts and tables, feed-in switchable.</td></tr>
-<tr><th>SML + Marstek CT002</th><td>+ Marstek CT002/CT003 emulator (<a href="../ct002/">docs</a>).</td></tr>
-<tr><th>SML Chart + Marstek CT002</th><td>Charts + CT002 emulator.</td></tr>
-<tr><th>SML + EcoTracker / Shelly</th><td>+ EcoTracker / Shelly Pro 3EM emulator (<a href="../eco_shelly/">docs</a>).</td></tr>
-<tr><th>SML Chart + EcoTracker / Shelly</th><td>Charts + EcoTracker / Shelly emulator.</td></tr>
+<tr><th>SML Simple</th><td>Reads the meter. The smallest program.</td></tr>
+<tr><th>SML Chart</th><td>Also shows charts and daily, monthly and yearly values. Feed-in can be switched on.</td></tr>
+<tr><th>SML + Marstek CT002</th><td>Also pretends to be a Marstek CT002/CT003 meter for Marstek batteries (<a href="../ct002/">help</a>).</td></tr>
+<tr><th>SML Chart + Marstek CT002</th><td>Charts and CT002 emulator.</td></tr>
+<tr><th>SML + EcoTracker / Shelly</th><td>Also pretends to be an EcoTracker or Shelly Pro 3EM for many other batteries (<a href="../eco_shelly/">help</a>).</td></tr>
+<tr><th>SML Chart + EcoTracker / Shelly</th><td>Charts and EcoTracker / Shelly emulator.</td></tr>
 </table>
 <h3 id="install">Install</h3>
 <ol>
 <li>In Tasmota open <b>Tools &rarr; TinyC Console</b>.</li>
-<li>In the <b>Repository</b> box pick <b>SmartMeter/PV/Emulator (ottelo)</b> in the upper list (preselected on my images).</li>
-<li>Pick the program in the list below, leave <b>Slot&nbsp;0</b>, press <b>Download &amp; Load</b>.</li>
-<li>In the slot row switch on <b>A</b> (autostart on boot, green), and start it with &#x25B6; if it is not running yet.</li>
+<li>In the <b>Repository</b> box, choose <b>SmartMeter/PV/Emulator (ottelo)</b> in the upper list. On my images it is already selected.</li>
+<li>Choose the program in the list below, leave <b>Slot&nbsp;0</b> and press <b>Download &amp; Load</b>.</li>
+<li>In the slot row, switch on <b>A</b> (start automatically after a reboot, turns green). If the program is not running yet, start it with &#x25B6;.</li>
 </ol>
-<p>For experienced users: the sources (<code>.tc</code>) are in the <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc">tinyc</a> folder. Compile them yourself in the TinyC IDE or all at once with <code>bytecode/build.html</code> &mdash; only needed if you change something.</p>
-<p class="warn">Slot&nbsp;0 only for the emulator variants: their HTTP endpoints are <code>webOn</code> handlers, and Tasmota dispatches those to slot&nbsp;0.</p>
-<p>Meter, pins, language and the other shared settings are kept in <a href="#options"><code>/tc_options.cfg</code></a>, so they survive a program switch.</p>
+<p>If you want to change a program yourself: the source code (<code>.tc</code>) is in the <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc">tinyc</a> folder. You can compile it in the TinyC IDE, or all programs at once with <code>bytecode/build.html</code>.</p>
+<p class="warn">The emulator programs only work in slot&nbsp;0. Tasmota sends their web addresses to slot&nbsp;0 only.</p>
+<p>Meter, pins, language and most other settings are kept in a shared <a href="#options">settings file</a>. When you change to another program, they are still there.</p>
 </div>
 <div class="de">
-<p>Eines aussuchen und in Slot&nbsp;0 laden &mdash; fertig übersetzt, nichts zu kompilieren. Modbus ist in jedem davon als Option enthalten.</p>
+<p>Such dir ein Programm aus und lade es in Slot&nbsp;0. Die Programme sind fertig, du musst nichts kompilieren. Modbus ist in allen dabei.</p>
 <table>
-<tr><th>SML Simple</th><td>Nur Zähler. Kleinstes Programm.</td></tr>
-<tr><th>SML Chart</th><td>+ Diagramme und Tabellen, Einspeisung schaltbar.</td></tr>
-<tr><th>SML + Marstek CT002</th><td>+ Marstek-CT002/CT003-Emulator (<a href="../ct002/">Doku</a>).</td></tr>
-<tr><th>SML Chart + Marstek CT002</th><td>Diagramme + CT002-Emulator.</td></tr>
-<tr><th>SML + EcoTracker / Shelly</th><td>+ EcoTracker- / Shelly-Pro-3EM-Emulator (<a href="../eco_shelly/">Doku</a>).</td></tr>
-<tr><th>SML Chart + EcoTracker / Shelly</th><td>Diagramme + EcoTracker- / Shelly-Emulator.</td></tr>
+<tr><th>SML Simple</th><td>Liest den Zähler aus. Das kleinste Programm.</td></tr>
+<tr><th>SML Chart</th><td>Zeigt zusätzlich Diagramme und Tages-, Monats- und Jahreswerte. Einspeisung lässt sich dazuschalten.</td></tr>
+<tr><th>SML + Marstek CT002</th><td>Gibt sich zusätzlich als Marstek-Zähler CT002/CT003 aus, für Marstek-Akkus (<a href="../ct002/">Hilfe</a>).</td></tr>
+<tr><th>SML Chart + Marstek CT002</th><td>Diagramme und CT002-Emulator.</td></tr>
+<tr><th>SML + EcoTracker / Shelly</th><td>Gibt sich zusätzlich als EcoTracker oder Shelly Pro 3EM aus, für viele andere Akkus (<a href="../eco_shelly/">Hilfe</a>).</td></tr>
+<tr><th>SML Chart + EcoTracker / Shelly</th><td>Diagramme und EcoTracker-/Shelly-Emulator.</td></tr>
 </table>
 <h3 id="installation">Installation</h3>
 <ol>
 <li>In Tasmota <b>Werkzeuge &rarr; TinyC Console</b> öffnen.</li>
-<li>Im Kasten <b>Repository</b> oben <b>SmartMeter/PV/Emulator (ottelo)</b> wählen (bei meinen Images vorausgewählt).</li>
-<li>In der Liste darunter das Programm wählen, <b>Slot&nbsp;0</b> lassen, <b>Download &amp; Load</b> drücken.</li>
-<li>In der Slot-Zeile <b>A</b> einschalten (Autostart beim Booten, grün) und mit &#x25B6; starten, falls es noch nicht läuft.</li>
+<li>Im Kasten <b>Repository</b> in der oberen Liste <b>SmartMeter/PV/Emulator (ottelo)</b> auswählen. Bei meinen Images ist das schon ausgewählt.</li>
+<li>In der Liste darunter das Programm auswählen, <b>Slot&nbsp;0</b> stehen lassen und <b>Download &amp; Load</b> drücken.</li>
+<li>In der Zeile des Slots <b>A</b> einschalten (nach einem Neustart automatisch starten, wird grün). Läuft das Programm noch nicht, mit &#x25B6; starten.</li>
 </ol>
-<p>Für Erfahrene: Die Quelltexte (<code>.tc</code>) liegen im Ordner <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc">tinyc</a>. Selbst übersetzen geht in der TinyC-IDE oder alle auf einmal mit <code>bytecode/build.html</code> &mdash; nur nötig, wenn du etwas änderst.</p>
-<p class="warn">Nur Slot&nbsp;0 bei den Emulator-Varianten: deren HTTP-Endpunkte sind <code>webOn</code>-Handler, und die reicht Tasmota an Slot&nbsp;0 weiter.</p>
-<p>Zähler, Pins, Sprache und die übrigen gemeinsamen Einstellungen liegen in der <a href="#options"><code>/tc_options.cfg</code></a> und bleiben beim Programmwechsel erhalten.</p>
+<p>Wenn du ein Programm selbst ändern willst: Der Quellcode (<code>.tc</code>) liegt im Ordner <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc">tinyc</a>. Kompilieren kannst du ihn in der TinyC-IDE oder alle Programme auf einmal mit <code>bytecode/build.html</code>.</p>
+<p class="warn">Die Emulator-Programme funktionieren nur in Slot&nbsp;0. Tasmota leitet ihre Webadressen nur an Slot&nbsp;0 weiter.</p>
+<p>Zähler, Pins, Sprache und die meisten anderen Einstellungen stehen in einer gemeinsamen <a href="#options">Einstellungsdatei</a>. Wechselst du das Programm, sind sie noch da.</p>
 </div>
 </section>
 
 <section id="sleep">
 <h2><span class="en">Power saving</span><span class="de">Energiesparmodus</span></h2>
 <div class="en">
-<p>Tasmota lets the chip doze between loop passes &mdash; <code>Sleep 50</code>, fifty milliseconds, is the default. It saves current, and it costs response time: while the radio sleeps the access point holds packets back until the next wake window.</p>
+<p>Normally Tasmota lets the chip and the Wi-Fi rest for a moment between its tasks (<code>Sleep 50</code>). That saves a little power, but the device answers more slowly. With a weak Wi-Fi signal, a page or a reply can take several seconds.</p>
 <table>
-<tr><th><span class="sw">OFF</span> (default)</th><td><code>Sleep 50</code>. Lower power draw, a cooler chip.</td></tr>
-<tr><th><span class="sw">ON</span></th><td><code>Sleep 0</code>. The loop runs without pause. The web UI, the emulator's UDP replies and the charts all answer sooner.</td></tr>
+<tr><th><span class="sw">OFF</span> (default)</th><td><code>Sleep 50</code>. Uses less power.</td></tr>
+<tr><th><span class="sw">ON</span></th><td><code>Sleep 0</code>. The device never rests. Web page, charts and the answers to the battery come much faster.</td></tr>
 </table>
-<p>Measured on an ESP32-C3 at &minus;87&nbsp;dBm, twenty-five renders of the settings page:</p>
-<table>
-<tr><th></th><td><b>Sleep 50</b></td><td><b>Sleep 0</b></td></tr>
-<tr><th>median</th><td>389 ms</td><td>141 ms</td></tr>
-<tr><th>90th percentile</th><td>2253 ms</td><td>186 ms</td></tr>
-<tr><th>slowest</th><td>3315 ms</td><td>277 ms</td></tr>
-<tr><th>over one second</th><td>6 of 25</td><td>none</td></tr>
-</table>
-<p>The second run was made on a link that had meanwhile got <i>worse</i> (&minus;90&nbsp;dBm), so the seconds-long outliers came from the dozing, not from the radio. The weaker your signal, the more this switch is worth: a sleeping station misses beacons, and the access point buffers for it.</p>
-<h3>What the switch actually does</h3>
-<p>It is not a dial with a sweet spot in between. Tasmota ties the Wi-Fi radio's power saving to the value being zero:</p>
-<pre><code>if (0 == TasmotaGlobal.sleep || wifi_no_sleep) {
-    setSleepMode(WIFI_NONE_SLEEP);    // radio stays on
-} else {
-    setSleepMode(WIFI_MODEM_SLEEP);   // radio dozes between beacons
-}</code></pre>
-<p><code>Sleep 10</code> therefore behaves on the air exactly like <code>Sleep 50</code> &mdash; only the processor's pause per loop gets shorter. There is nothing to tune between the two states, which is why this is a checkbox and not a number field.</p>
+<p>What it made on an ESP32-C3 with weak Wi-Fi (&minus;87&nbsp;dBm), 25 page loads each:</p>
 <table>
 <tr><th></th><td><b>Sleep 50</b></td><td><b>Sleep 0</b></td></tr>
-<tr><th>Power draw</th><td>50&ndash;400 mW, fluctuating</td><td>400 mW, constant</td></tr>
-<tr><th>Wi-Fi radio</th><td>dozes, wakes for beacons</td><td>receiving continuously</td></tr>
+<tr><th>typical</th><td>0.4 s</td><td>0.14 s</td></tr>
+<tr><th>slowest</th><td>3.3 s</td><td>0.28 s</td></tr>
+<tr><th>slower than 1 second</th><td>6 of 25</td><td>none</td></tr>
 </table>
-<p>Measured on an ESP32-C3 reading head. Almost all of it is the radio: the core draws roughly 70&ndash;100 mW when busy, a continuously receiving Wi-Fi 260&ndash;330 mW. The low values are the dozing module, the peaks its wake windows. <code>SetOption127</code> (<code>wifi_no_sleep</code>) does not help here either &mdash; it keeps the radio on without lifting the processor's pause, so you end up at the same 400 mW.</p>
-<p>The difference of about 250 mW is some 2.2 kWh a year &mdash; well under a euro. For a device a battery polls once a second that is the right trade.</p>
+<p>The price: the device uses about 0.25&nbsp;W more, around 2&nbsp;kWh a year. That is well under one euro.</p>
 <h3>Which one for you</h3>
 <table>
-<tr><th>Emulator in use</th><td><span class="sw">ON</span>. The battery polls every second and a late answer costs regulation quality.</td></tr>
-<tr><th>Weak Wi-Fi</th><td><span class="sw">ON</span>. Below about &minus;80&nbsp;dBm power saving and a poor link make each other worse: the station misses beacons, the access point buffers, and what should be 100&ndash;300 ms of waiting became outliers of over three seconds here.</td></tr>
-<tr><th>Meter reading only</th><td><span class="sw">OFF</span>. MQTT every 60 s does not care about two seconds of delay, and the device runs cooler.</td></tr>
+<tr><th>You use a battery emulator</th><td><span class="sw">ON</span>. The battery asks every second. A late answer makes the regulation worse.</td></tr>
+<tr><th>Your Wi-Fi is weak</th><td><span class="sw">ON</span>. Below about &minus;80&nbsp;dBm the power saving makes everything very slow.</td></tr>
+<tr><th>You only read the meter</th><td><span class="sw">OFF</span> is fine. A few seconds of delay do not matter here.</td></tr>
 </table>
-<p>The bigger lever is the aerial, not this switch. At &minus;65&nbsp;dBm <code>Sleep 50</code> would most likely be unremarkable, and an access point near the meter fixes response time and power draw at once.</p>
-<p class="warn">Turning it back off sets <code>Sleep 50</code>, Tasmota's default &mdash; not whatever value stood there before. If you run a custom value, set it again with the <code>Sleep</code> command. The switch acts only on a change you make here &mdash; nothing is sent at start-up, so a <code>Sleep</code> set from the console is left alone. It is also not read back: after setting one from the console, tick the box once so the two agree.</p>
-<p>The cost is real: more current and a warmer chip. On a mains-powered reading head that is usually the right trade; on anything battery-fed it is not.</p>
+<p>Better Wi-Fi helps more than this switch. A repeater or access point near the meter makes the device faster and lets it save power.</p>
+<p class="warn">Switching it off again sets <code>Sleep 50</code>, Tasmota's default. If you used a different value, set it again with the <code>Sleep</code> command. The box only acts when you change it here. A <code>Sleep</code> value set in the console is not touched at start-up.</p>
 </div>
 <div class="de">
-<p>Tasmota lässt den Chip zwischen den Schleifendurchläufen dösen &mdash; <code>Sleep 50</code>, fünfzig Millisekunden, ist der Standard. Das spart Strom und kostet Reaktionszeit: während das Funkmodul schläft, hält der Access Point Pakete bis zum nächsten Aufwachfenster zurück.</p>
+<p>Normalerweise lässt Tasmota den Chip und das WLAN zwischen seinen Aufgaben kurz ruhen (<code>Sleep 50</code>). Das spart etwas Strom, aber das Gerät antwortet langsamer. Bei schwachem WLAN kann eine Seite oder eine Antwort mehrere Sekunden dauern.</p>
 <table>
-<tr><th><span class="sw">AUS</span> (Standard)</th><td><code>Sleep 50</code>. Weniger Stromaufnahme, kühlerer Chip.</td></tr>
-<tr><th><span class="sw">EIN</span></th><td><code>Sleep 0</code>. Die Schleife läuft ohne Pause. Oberfläche, UDP-Antworten des Emulators und Diagramme kommen schneller.</td></tr>
+<tr><th><span class="sw">AUS</span> (Standard)</th><td><code>Sleep 50</code>. Braucht weniger Strom.</td></tr>
+<tr><th><span class="sw">EIN</span></th><td><code>Sleep 0</code>. Das Gerät ruht nie. Webseite, Diagramme und die Antworten an den Akku kommen deutlich schneller.</td></tr>
 </table>
-<p>Gemessen an einem ESP32-C3 bei &minus;87&nbsp;dBm, fünfundzwanzig Aufrufe der Einstellungsseite:</p>
-<table>
-<tr><th></th><td><b>Sleep 50</b></td><td><b>Sleep 0</b></td></tr>
-<tr><th>Median</th><td>389 ms</td><td>141 ms</td></tr>
-<tr><th>90. Perzentil</th><td>2253 ms</td><td>186 ms</td></tr>
-<tr><th>langsamste</th><td>3315 ms</td><td>277 ms</td></tr>
-<tr><th>über eine Sekunde</th><td>6 von 25</td><td>keine</td></tr>
-</table>
-<p>Der zweite Durchlauf entstand auf einer Verbindung, die inzwischen <i>schlechter</i> war (&minus;90&nbsp;dBm) &mdash; die Sekundenausreißer kamen also vom Dösen, nicht vom Funk. Je schwächer dein Signal, desto mehr bringt der Schalter: eine schlafende Station verpasst Beacons, und der Access Point puffert für sie.</p>
-<h3>Was der Schalter wirklich tut</h3>
-<p>Er ist kein Regler mit einem Optimum dazwischen. Tasmota koppelt den Energiesparmodus des Funkmoduls daran, dass der Wert null ist:</p>
-<pre><code>if (0 == TasmotaGlobal.sleep || wifi_no_sleep) {
-    setSleepMode(WIFI_NONE_SLEEP);    // Funk bleibt an
-} else {
-    setSleepMode(WIFI_MODEM_SLEEP);   // Funk döst zwischen Beacons
-}</code></pre>
-<p><code>Sleep 10</code> verhält sich funktechnisch also exakt wie <code>Sleep 50</code> &mdash; nur die Pause des Prozessors je Schleifendurchlauf wird kürzer. Zwischen den beiden Zuständen gibt es nichts zu justieren, deshalb ist das hier ein Häkchen und kein Zahlenfeld.</p>
+<p>So sah das an einem ESP32-C3 mit schwachem WLAN aus (&minus;87&nbsp;dBm), je 25 Seitenaufrufe:</p>
 <table>
 <tr><th></th><td><b>Sleep 50</b></td><td><b>Sleep 0</b></td></tr>
-<tr><th>Leistungsaufnahme</th><td>50&ndash;400 mW, schwankend</td><td>400 mW, konstant</td></tr>
-<tr><th>WLAN-Modul</th><td>döst, wacht zu Beacons auf</td><td>empfängt durchgehend</td></tr>
+<tr><th>typisch</th><td>0,4 s</td><td>0,14 s</td></tr>
+<tr><th>am langsamsten</th><td>3,3 s</td><td>0,28 s</td></tr>
+<tr><th>langsamer als 1 Sekunde</th><td>6 von 25</td><td>keiner</td></tr>
 </table>
-<p>Gemessen an einem ESP32-C3-Lesekopf. Fast alles davon ist das Funkmodul: der Kern zieht aktiv grob 70&ndash;100 mW, ein dauerhaft empfangendes WLAN 260&ndash;330 mW. Die niedrigen Werte sind das dösende Modul, die Spitzen seine Aufwachfenster. <code>SetOption127</code> (<code>wifi_no_sleep</code>) hilft hier ebenfalls nicht &mdash; es hält den Funk an, ohne die Prozessorpause aufzuheben, du landest also bei denselben 400 mW.</p>
-<p>Die Differenz von rund 250 mW sind etwa 2,2 kWh im Jahr &mdash; deutlich unter einem Euro. Für ein Gerät, das ein Akku im Sekundentakt abfragt, ist das der richtige Tausch.</p>
-<h3>Was für dich passt</h3>
+<p>Der Preis: Das Gerät braucht etwa 0,25&nbsp;W mehr, rund 2&nbsp;kWh im Jahr. Das ist deutlich unter einem Euro.</p>
+<h3>Was passt für dich</h3>
 <table>
-<tr><th>Emulator im Einsatz</th><td><span class="sw">EIN</span>. Der Akku fragt im Sekundentakt, und eine späte Antwort kostet Regelgüte.</td></tr>
-<tr><th>Schwaches WLAN</th><td><span class="sw">EIN</span>. Unterhalb von etwa &minus;80&nbsp;dBm verstärken sich Energiesparmodus und schlechte Verbindung gegenseitig: das Modul verpasst Beacons, der Access Point puffert, und aus 100&ndash;300 ms Wartezeit wurden hier Ausreißer von über drei Sekunden.</td></tr>
-<tr><th>Nur Zähler auslesen</th><td><span class="sw">AUS</span>. MQTT alle 60 s stören zwei Sekunden Verzögerung nicht, und das Gerät bleibt kühler.</td></tr>
+<tr><th>Du nutzt einen Akku-Emulator</th><td><span class="sw">EIN</span>. Der Akku fragt jede Sekunde. Eine späte Antwort verschlechtert die Regelung.</td></tr>
+<tr><th>Dein WLAN ist schwach</th><td><span class="sw">EIN</span>. Unter etwa &minus;80&nbsp;dBm macht der Sparmodus alles sehr langsam.</td></tr>
+<tr><th>Du liest nur den Zähler aus</th><td><span class="sw">AUS</span> reicht. Ein paar Sekunden Verzögerung stören hier nicht.</td></tr>
 </table>
-<p>Der größere Hebel ist die Antenne, nicht dieser Schalter. Bei &minus;65&nbsp;dBm wäre <code>Sleep 50</code> sehr wahrscheinlich unauffällig, und ein Access Point in Zählernähe behebt Reaktionszeit und Verbrauch auf einen Schlag.</p>
-<p class="warn">Wieder ausschalten setzt <code>Sleep 50</code>, den Tasmota-Standard &mdash; nicht den Wert, der vorher dort stand. Wer einen eigenen Wert fährt, setzt ihn mit dem Befehl <code>Sleep</code> erneut. Der Schalter wirkt nur auf eine Änderung, die du hier machst &mdash; beim Start wird nichts gesendet, ein von der Konsole gesetzter <code>Sleep</code> bleibt also unangetastet. Gelesen wird er auch nicht: nach einem Konsolenbefehl das Häkchen einmal setzen, damit beide übereinstimmen.</p>
-<p>Der Preis ist real: mehr Strom und ein wärmerer Chip. Bei einem netzgespeisten Lesekopf ist das meist der richtige Tausch, bei allem Batteriebetriebenen nicht.</p>
+<p>Besseres WLAN hilft mehr als dieser Schalter. Ein Repeater oder Access Point in der Nähe des Zählers macht das Gerät schneller und lässt es trotzdem Strom sparen.</p>
+<p class="warn">Schaltest du ihn wieder aus, wird <code>Sleep 50</code> gesetzt, der Tasmota-Standard. Hattest du einen anderen Wert, setze ihn mit dem Befehl <code>Sleep</code> neu. Das Häkchen wirkt nur, wenn du es hier änderst. Ein in der Konsole gesetzter <code>Sleep</code>-Wert wird beim Start nicht verändert.</p>
 </div>
 </section>
 
@@ -236,140 +206,142 @@ body.lang-de .en{display:none}
 <h2><span class="en">Meter</span><span class="de">Zähler</span></h2>
 <h3>Descriptor</h3>
 <div class="en">
-<p>The descriptor tells the SML driver how to read your meter: baud rate, protocol and which OBIS codes go into which value. It lives in <code>/sml_meter.def</code>.</p>
+<p>The descriptor is a small text file that tells Tasmota how to read your meter: speed, protocol and which value is which. It is stored on the device as <code>/sml_meter.def</code>. You normally just pick your meter from the list.</p>
 <table>
-<tr><th>Meter active</th><td>Switches the SML driver on and off (Rule1). Off means no readings at all.</td></tr>
-<tr><th>3 phases</th><td>Default <span class="sw">OFF</span>. Switch it on only if two things are true: your meter really sends power per phase, and the three phases are entered in the descriptor (<code>sml_meter.def</code>). The main page then shows an <b>L1 / L2 / L3</b> row and the emulators report real per-phase values instead of putting everything on L1. Publishing over MQTT does not depend on this option: if the phases are in the descriptor they are published either way &mdash; as zeros if the meter cannot supply them. If they are not in the descriptor, nothing is published, whatever this option says.</td></tr>
-<tr><th>Meter</th><td>Meter-Pulldown with ready-made descriptors from my repository. Picking one downloads it and restarts the driver. <b>None/own meter</b> downloads nothing and keeps your <code>/sml_meter.def</code> &mdash; for a descriptor you write or edit yourself. RX/TX and the filter still go in wherever the file has the placeholders <code>%0rxpin%</code>, <code>%0txpin%</code>, <code>%0smlf%</code>; without them the file stays as it is.</td></tr>
-<tr><th>Descriptor</th><td>The link opens the file editor for hand-tuning. Your meter not in the list? Start from the closest one.</td></tr>
+<tr><th>Meter active</th><td>Switches the meter reading on or off. Off means no values at all.</td></tr>
+<tr><th>3 phases</th><td>Off by default. Only switch it on if your meter really sends the power of each phase <b>and</b> the three phases are in the descriptor. Then the main page shows an <b>L1 / L2 / L3</b> row, and the emulators pass on the real phase values instead of putting everything on L1. If the values do not fit, the program switches it off again and tells you.</td></tr>
+<tr><th>Meter</th><td>List of ready-made descriptors for many meters. Choose yours, and the file is downloaded and the reading restarts. <b>Keiner/Selbstdefinierter Zähler</b> (none / own meter) downloads nothing and keeps your current file, for a descriptor you wrote yourself. RX, TX and the filter are still filled in where the file contains the placeholders <code>%0rxpin%</code>, <code>%0txpin%</code> and <code>%0smlf%</code>.</td></tr>
+<tr><th>Descriptor</th><td>The link opens the file in the editor, if you want to change something. Your meter is not in the list? Start with a similar one.</td></tr>
 </table>
-<p>The first three values are fixed by convention and everything else builds on them: <code>1</code> power&nbsp;[W], <code>2</code> import&nbsp;[kWh], <code>3</code> export&nbsp;[kWh].</p>
+<p>The first three values always have the same meaning, and everything else relies on that: <code>1</code> power&nbsp;[W], <code>2</code> energy bought&nbsp;[kWh], <code>3</code> energy fed in&nbsp;[kWh].</p>
 </div>
 <div class="de">
-<p>Der Descriptor sagt dem SML-Treiber, wie dein Zähler zu lesen ist: Baudrate, Protokoll und welcher OBIS-Code in welchen Wert geht. Er liegt in <code>/sml_meter.def</code>.</p>
+<p>Der Descriptor ist eine kleine Textdatei. Sie sagt Tasmota, wie dein Zähler gelesen wird: Geschwindigkeit, Protokoll und welcher Wert welcher ist. Sie liegt auf dem Gerät als <code>/sml_meter.def</code>. Normalerweise wählst du deinen Zähler einfach aus der Liste.</p>
 <table>
-<tr><th>Zähler aktiv</th><td>Schaltet den SML-Treiber ein und aus (Rule1). Aus heißt: gar keine Messwerte.</td></tr>
-<tr><th>3 Phasen</th><td>Standard <span class="sw">AUS</span>. Nur einschalten, wenn beides zutrifft: der Zähler sendet die Leistung je Phase wirklich, und die drei Phasen sind im Descriptor (<code>sml_meter.def</code>) eingetragen. Dann erscheint auf der Hauptseite eine Zeile <b>L1 / L2 / L3</b>, und die Emulatoren melden echte Phasenwerte statt alles auf L1. Vom Zustand dieser Option unabhängig ist die Veröffentlichung per MQTT: Stehen die Phasen im Descriptor, werden sie so oder so gesendet &mdash; kann der Zähler sie nicht liefern, als Nullen. Fehlen sie im Descriptor, wird gar nichts veröffentlicht, egal wie diese Option steht.</td></tr>
-<tr><th>Zähler</th><td>Zähler-Auswahlliste mit fertigen Descriptoren aus meinem Repository. Eine Auswahl lädt ihn herunter und startet den Treiber neu. <b>Keiner/Selbstdefinierter Zähler</b> lädt nichts herunter und behält deine <code>/sml_meter.def</code> &mdash; für einen Descriptor, den du selbst schreibst oder bearbeitest. RX/TX und Filter werden trotzdem eingetragen, wo die Datei die Platzhalter <code>%0rxpin%</code>, <code>%0txpin%</code>, <code>%0smlf%</code> enthält; ohne sie bleibt die Datei, wie sie ist.</td></tr>
-<tr><th>Descriptor</th><td>Der Link öffnet den Dateieditor zum Anpassen. Zähler nicht in der Liste? Mit dem ähnlichsten anfangen.</td></tr>
+<tr><th>Zähler aktiv</th><td>Schaltet das Auslesen ein oder aus. Aus heißt: gar keine Werte.</td></tr>
+<tr><th>3 Phasen</th><td>Standardmäßig aus. Nur einschalten, wenn dein Zähler die Leistung jeder Phase wirklich sendet <b>und</b> die drei Phasen im Descriptor stehen. Dann zeigt die Hauptseite eine Zeile <b>L1 / L2 / L3</b>, und die Emulatoren geben die echten Phasenwerte weiter, statt alles auf L1 zu legen. Passen die Werte nicht zusammen, schaltet das Programm die Option wieder aus und sagt dir Bescheid.</td></tr>
+<tr><th>Zähler</th><td>Liste mit fertigen Descriptoren für viele Zähler. Wählst du deinen aus, wird die Datei heruntergeladen und das Auslesen neu gestartet. <b>Keiner/Selbstdefinierter Zähler</b> lädt nichts herunter und behält deine jetzige Datei, für einen selbst geschriebenen Descriptor. RX, TX und Filter werden trotzdem eingetragen, wo in der Datei die Platzhalter <code>%0rxpin%</code>, <code>%0txpin%</code> und <code>%0smlf%</code> stehen.</td></tr>
+<tr><th>Descriptor</th><td>Der Link öffnet die Datei im Editor, falls du etwas ändern willst. Dein Zähler fehlt in der Liste? Fang mit einem ähnlichen an.</td></tr>
 </table>
-<p>Die ersten drei Werte sind per Konvention festgelegt, alles andere baut darauf auf: <code>1</code> Leistung&nbsp;[W], <code>2</code> Bezug&nbsp;[kWh], <code>3</code> Einspeisung&nbsp;[kWh].</p>
+<p>Die ersten drei Werte haben immer dieselbe Bedeutung, darauf baut alles auf: <code>1</code> Leistung&nbsp;[W], <code>2</code> Bezug&nbsp;[kWh], <code>3</code> Einspeisung&nbsp;[kWh].</p>
 </div>
 <a id="pins"></a>
 <h3>Pins</h3>
 <div class="en">
-<p>RX is the pin the reading head's data line goes to. TX is only needed for meters that have to be woken up or that expect a request.</p>
+<p>RX is the pin where the data wire of the reading head is connected. TX is only needed for meters that have to be woken up or asked for their data.</p>
 <table>
 <tr><th>RX&nbsp;3 &middot; TX&nbsp;1</th><td>Hichi, Stromleser, LesekopfV32, Wattwächter</td></tr>
 <tr><th>RX&nbsp;5 &middot; TX&nbsp;4</th><td>bitShake</td></tr>
 </table>
-<p>The pulldown only offers pins Tasmota has left free. A pin already assigned in the module configuration will not show up.</p>
-<p>Changing a pin rewrites the descriptor and restarts the driver &mdash; no reboot needed.</p>
+<p>The list only shows pins that are still free in Tasmota. A pin you already used in the module settings does not appear.</p>
+<p>After a pin change the reading restarts by itself. You do not need to reboot.</p>
 </div>
 <div class="de">
-<p>RX ist der Pin, an dem die Datenleitung des Lesekopfs hängt. TX braucht man nur bei Zählern, die geweckt werden müssen oder eine Anforderung erwarten.</p>
+<p>RX ist der Pin, an dem die Datenleitung des Lesekopfs hängt. TX braucht man nur bei Zählern, die erst geweckt oder nach ihren Daten gefragt werden müssen.</p>
 <table>
 <tr><th>RX&nbsp;3 &middot; TX&nbsp;1</th><td>Hichi, Stromleser, LesekopfV32, Wattwächter</td></tr>
 <tr><th>RX&nbsp;5 &middot; TX&nbsp;4</th><td>bitShake</td></tr>
 </table>
-<p>Die Auswahlliste zeigt nur Pins, die Tasmota frei gelassen hat. Ein in der Modulkonfiguration belegter Pin taucht nicht auf.</p>
-<p>Eine Pin-Änderung schreibt den Descriptor neu und startet den Treiber neu &mdash; ohne Neustart des Geräts.</p>
+<p>Die Liste zeigt nur Pins, die in Tasmota noch frei sind. Ein Pin, den du schon in der Modulkonfiguration belegt hast, taucht nicht auf.</p>
+<p>Nach einer Änderung startet das Auslesen von selbst neu. Einen Neustart des Geräts brauchst du nicht.</p>
 </div>
 </section>
 
 <section id="bezug">
 <h2><span class="en">Import meter</span><span class="de">Bezugszähler</span></h2>
 <div class="en">
-<p>Default <span class="sw">OFF</span>. For a meter that has no export register &mdash; no <code>2.8.0</code>, so nothing at value&nbsp;3 &mdash; but whose power goes <b>negative</b> while you feed in. Switched <span class="sw">ON</span>, the script adds up the negative power itself and uses that as the export total. The rows, the charts, <code>/pwr</code>, Modbus and the emulators all read it where they would read value&nbsp;3. Switch <a href="#pv">PV</a> on as well to see the feed-in rows and charts.</p>
+<p>Off by default. This is for meters that only count the energy you buy, not the energy you feed in. You can still tell when you feed in: the power shown is <b>negative</b> then.</p>
+<p>Switched on, the program adds up the negative power itself and uses that as your feed-in meter reading. Main page, charts, <code>/pwr</code>, Modbus and the emulators then show this value as feed-in. To see the feed-in rows and charts, switch on <a href="#pv">PV</a> as well.</p>
 <ul>
-<li>The total starts at 0 and only grows while the program runs. Whatever happens while the device is off or the meter is silent is not counted.</li>
-<li>It is summed every second over the real time between two readings, and is only as accurate as the power value &mdash; good for day and month totals, not a calibrated meter.</li>
-<li>Switching the option on or off restarts today's, this week's, month's and year's feed-in from the new source. Bars already drawn keep their values.</li>
-<li>The total is kept in the program's <code>.pvs</code> and as <code>exp_virt</code> in the <a href="#options">settings file</a>, updated once at midnight, so it survives a program change. At start the higher of the two wins. To carry over the reading of the old Scripter (<code>sml3</code>): stop the program, enter it as <code>@exp_virt=</code>, start again.</li>
+<li>The calculated reading starts at 0. It only counts while the device is running and gets values from the meter.</li>
+<li>It is about as exact as the power value. Good for daily and monthly totals, but not a calibrated meter.</li>
+<li>When you switch the option on or off, today's, this week's, this month's and this year's feed-in start from zero again. Bars already drawn keep their values.</li>
+<li>The reading is saved once a day at midnight and survives a program change. To take over the value from the old Scripter script (<code>sml3</code>): stop the program, enter the value as <code>@exp_virt=</code> in the <a href="#options">settings file</a> and start again.</li>
 </ul>
-<p>Replaces the Scripter script <code>3_SML_Chart_PV_Bezugszaehler.tas</code>. Leave it off if your meter does have an export register &mdash; value&nbsp;3 would then be ignored.</p>
+<p>This replaces the old script <code>3_SML_Chart_PV_Bezugszaehler.tas</code>. If your meter does count the feed-in (value&nbsp;3), leave this off.</p>
 </div>
 <div class="de">
-<p>Standard <span class="sw">AUS</span>. Für einen Zähler ohne Einspeiseregister &mdash; kein <code>2.8.0</code>, also nichts auf Wert&nbsp;3 &mdash;, dessen Leistung beim Einspeisen aber <b>negativ</b> wird. Auf <span class="sw">EIN</span> summiert das Script die negative Leistung selbst auf und nimmt das als Einspeise-Zählerstand. Die Zeilen, die Diagramme, <code>/pwr</code>, Modbus und die Emulatoren lesen ihn dort, wo sie sonst Wert&nbsp;3 lesen. Damit die Einspeise-Zeilen und -Diagramme erscheinen, zusätzlich <a href="#pv">PV</a> einschalten.</p>
+<p>Standardmäßig aus. Das ist für Zähler, die nur den Strom zählen, den du kaufst, nicht den, den du einspeist. Dass du einspeist, sieht man trotzdem: Die Leistung ist dann <b>negativ</b>.</p>
+<p>Eingeschaltet zählt das Programm die negative Leistung selbst zusammen und nimmt das als deinen Einspeise-Zählerstand. Hauptseite, Diagramme, <code>/pwr</code>, Modbus und die Emulatoren zeigen dann diesen Wert als Einspeisung. Damit du die Einspeise-Zeilen und -Diagramme siehst, schalte zusätzlich <a href="#pv">PV</a> ein.</p>
 <ul>
-<li>Der Zählerstand beginnt bei 0 und wächst nur, solange das Programm läuft. Was passiert, während das Gerät aus ist oder der Zähler schweigt, wird nicht gezählt.</li>
-<li>Aufsummiert wird jede Sekunde über die echte Zeit zwischen zwei Messwerten. Genau ist das nur so weit wie der Leistungswert &mdash; gut für Tages- und Monatssummen, kein geeichter Zähler.</li>
-<li>Die Option ein- oder auszuschalten lässt Tages-, Wochen-, Monats- und Jahreseinspeisung neu bei der neuen Quelle beginnen. Bereits gezeichnete Balken behalten ihre Werte.</li>
-<li>Der Zählerstand liegt in der <code>.pvs</code> des Programms und als <code>exp_virt</code> in der <a href="#options">Einstellungsdatei</a>, einmal um Mitternacht aktualisiert &mdash; er übersteht also einen Programmwechsel. Beim Start gilt der höhere der beiden. Den Stand aus dem alten Scripter (<code>sml3</code>) übernehmen: Programm stoppen, als <code>@exp_virt=</code> eintragen, wieder starten.</li>
+<li>Der berechnete Zählerstand beginnt bei 0. Er zählt nur, solange das Gerät läuft und Werte vom Zähler bekommt.</li>
+<li>Er ist ungefähr so genau wie der Leistungswert. Gut für Tages- und Monatssummen, aber kein geeichter Zähler.</li>
+<li>Schaltest du die Option ein oder aus, beginnen die Einspeisung von heute, dieser Woche, diesem Monat und diesem Jahr wieder bei null. Schon gezeichnete Balken bleiben.</li>
+<li>Der Zählerstand wird einmal am Tag um Mitternacht gespeichert und bleibt bei einem Programmwechsel erhalten. Den Wert aus dem alten Scripter-Script (<code>sml3</code>) übernehmen: Programm stoppen, den Wert als <code>@exp_virt=</code> in die <a href="#options">Einstellungsdatei</a> eintragen, wieder starten.</li>
 </ul>
-<p>Ersetzt das Scripter-Script <code>3_SML_Chart_PV_Bezugszaehler.tas</code>. Hat dein Zähler ein Einspeiseregister, bleibt die Option aus &mdash; Wert&nbsp;3 würde sonst ignoriert.</p>
+<p>Das ersetzt das alte Script <code>3_SML_Chart_PV_Bezugszaehler.tas</code>. Zählt dein Zähler die Einspeisung selbst (Wert&nbsp;3), lass die Option aus.</p>
 </div>
 </section>
 
 <section id="gaswater">
 <h2><span class="en">Gas and water meters</span><span class="de">Gas- und Wasserzähler</span></h2>
 <div class="en">
-<p><b>SML Simple</b> and <b>SML Chart</b> only. Instead of the electricity meter, read a gas or water meter with a pulse output (reed contact) &mdash; under <b>General</b> in the meter list: <i>Gaszähler</i> (0.01&nbsp;m³ per pulse) or <i>Wasserzähler</i> (1&nbsp;litre per pulse). Your meter has a different factor? Change <code>@100</code> / <code>@1000</code> in the descriptor: it is the number of pulses per m³.</p>
-<p>The program recognises the meter by the line <code>;kind=gas</code> or <code>;kind=water</code> in the descriptor and switches over by itself:</p>
+<p>Only in <b>SML Simple</b> and <b>SML Chart</b>. Instead of the electricity meter you can read a gas or water meter that gives pulses (for example with a reed contact). In the meter list under <b>Allgemein</b> you find the <i>Gaszähler</i> (0.01&nbsp;m³ per pulse) and the <i>Wasserzähler</i> (1&nbsp;litre per pulse). If your meter is different, change <code>@100</code> or <code>@1000</code> in the descriptor. That number is the number of pulses per m³.</p>
+<p>The program sees the line <code>;kind=gas</code> or <code>;kind=water</code> in the descriptor and switches over by itself:</p>
 <ul>
-<li>Main page: flow (gas m³/h, water l/min) and the reading in m³; day, week, month and year in m³.</li>
-<li>Charts: the flow in the line charts, consumption in m³ in the bars.</li>
-<li>Gone: feed-in, 3 phases, Import meter, PV switch.</li>
+<li>Main page: flow (gas in m³/h, water in l/min), the meter reading, and day, week, month and year, all in m³.</li>
+<li>Charts: the flow in the line charts, the consumption in m³ in the bar charts.</li>
+<li>Hidden: feed-in, 3 phases, import meter, PV switch and power2.</li>
 </ul>
-<p>The flow is computed from the reading: the last step over the time it took, falling while no new pulse comes. A pulse counter's own flow (value&nbsp;1) drops to 0 after 5&nbsp;s without a pulse &mdash; at 0.01&nbsp;m³ per pulse that is below 7.2&nbsp;m³/h, nearly always.</p>
-<p>Set the reading once in the console, in pulses: <code>Sensor53 c1 123456</code> = 1234.56&nbsp;m³ of gas. Your own descriptor works too: value&nbsp;2 the reading in m³, plus the <code>;kind=</code> line. After editing the descriptor by hand, press Save.</p>
-<p class="warn">Changing from an electricity meter: the totals still count from the old meter's kWh readings. Press <a href="#data">Data</a> &rarr; &#x1F522; Reset and &#x1F4CA; Reset once.</p>
+<p>The flow is calculated from the change of the meter reading. If no new pulse comes, it goes down slowly.</p>
+<p>Set the meter reading once in the Tasmota console, in pulses. Example for gas: <code>Sensor53 c1 123456</code> means 1234.56&nbsp;m³. Your own descriptor works too: value&nbsp;2 must be the reading in m³, and the line <code>;kind=</code> must be in the file. After changing the descriptor by hand, press Save once.</p>
+<p class="warn">If you used the device for electricity before, the totals still start from the old kWh reading. Press <a href="#data">Data</a> &rarr; &#x1F522; Reset and &#x1F4CA; Reset once.</p>
 </div>
 <div class="de">
-<p>Nur <b>SML Simple</b> und <b>SML Chart</b>. Statt des Stromzählers einen Gas- oder Wasserzähler mit Impulsausgang (Reedkontakt) auslesen &mdash; in der Zählerliste unter <b>Allgemein</b>: <i>Gaszähler</i> (0,01&nbsp;m³ pro Impuls) oder <i>Wasserzähler</i> (1&nbsp;Liter pro Impuls). Dein Zähler hat einen anderen Faktor? <code>@100</code> / <code>@1000</code> im Descriptor ändern: das ist die Zahl der Impulse pro m³.</p>
-<p>Das Programm erkennt den Zähler an der Zeile <code>;kind=gas</code> bzw. <code>;kind=water</code> im Descriptor und stellt selbst um:</p>
+<p>Nur in <b>SML Simple</b> und <b>SML Chart</b>. Statt des Stromzählers kannst du einen Gas- oder Wasserzähler auslesen, der Impulse abgibt (zum Beispiel über einen Reedkontakt). In der Zählerliste unter <b>Allgemein</b> findest du den <i>Gaszähler</i> (0,01&nbsp;m³ pro Impuls) und den <i>Wasserzähler</i> (1&nbsp;Liter pro Impuls). Ist dein Zähler anders, ändere <code>@100</code> bzw. <code>@1000</code> im Descriptor. Diese Zahl ist die Anzahl der Impulse pro m³.</p>
+<p>Das Programm erkennt die Zeile <code>;kind=gas</code> oder <code>;kind=water</code> im Descriptor und stellt selbst um:</p>
 <ul>
-<li>Hauptseite: Durchfluss (Gas m³/h, Wasser l/min) und Zählerstand in m³; Tag, Woche, Monat und Jahr in m³.</li>
+<li>Hauptseite: Durchfluss (Gas in m³/h, Wasser in l/min), Zählerstand sowie Tag, Woche, Monat und Jahr, alles in m³.</li>
 <li>Diagramme: der Durchfluss in den Liniendiagrammen, der Verbrauch in m³ in den Balken.</li>
-<li>Entfällt: Einspeisung, 3 Phasen, Bezugszähler, PV-Schalter.</li>
+<li>Ausgeblendet: Einspeisung, 3 Phasen, Bezugszähler, PV-Schalter und power2.</li>
 </ul>
-<p>Der Durchfluss wird aus dem Zählerstand berechnet: der letzte Schritt geteilt durch die Zeit dafür, fallend, solange kein neuer Impuls kommt. Der eigene Durchfluss eines Impulszählers (Wert&nbsp;1) fällt nach 5&nbsp;s ohne Impuls auf 0 &mdash; bei 0,01&nbsp;m³ pro Impuls also unter 7,2&nbsp;m³/h, fast immer.</p>
-<p>Zählerstand einmal in der Konsole setzen, in Impulsen: <code>Sensor53 c1 123456</code> = 1234,56&nbsp;m³ Gas. Ein eigener Descriptor geht auch: Wert&nbsp;2 der Zählerstand in m³, dazu die Zeile <code>;kind=</code>. Nach einer Änderung am Descriptor von Hand einmal Speichern drücken.</p>
-<p class="warn">Wechsel vom Stromzähler: Die Summen zählen noch von den kWh-Ständen des alten Zählers. Einmal unter <a href="#data">Daten</a> &#x1F522; Reset und &#x1F4CA; Reset drücken.</p>
+<p>Der Durchfluss wird aus der Änderung des Zählerstands berechnet. Kommt kein neuer Impuls, sinkt er langsam.</p>
+<p>Den Zählerstand setzt du einmal in der Tasmota-Konsole, in Impulsen. Beispiel für Gas: <code>Sensor53 c1 123456</code> bedeutet 1234,56&nbsp;m³. Ein eigener Descriptor geht auch: Wert&nbsp;2 muss der Zählerstand in m³ sein, und die Zeile <code>;kind=</code> muss in der Datei stehen. Nach einer Änderung am Descriptor von Hand einmal Speichern drücken.</p>
+<p class="warn">Hast du das Gerät vorher für Strom benutzt, zählen die Summen noch vom alten kWh-Stand. Drücke einmal unter <a href="#data">Daten</a> &#x1F522; Reset und &#x1F4CA; Reset.</p>
 </div>
 </section>
 
 <section id="filter">
 <h2>Filter</h2>
 <div class="en">
-<p>A median filter over the incoming power values. It throws away single outliers &mdash; the spikes that make a chart unreadable and an emulator regulate against nothing.</p>
-<p>Leave it on unless you need the raw value. It costs a little response time, which matters only for battery regulation.</p>
+<p>Smooths out single wrong values from the meter. Such spikes make the charts hard to read and confuse a battery.</p>
+<p>Leave it on unless you need the raw values. It makes the values a little slower, which only matters for battery regulation.</p>
 </div>
 <div class="de">
-<p>Ein Median-Filter über die eingehenden Leistungswerte. Er wirft einzelne Ausreißer weg &mdash; die Spitzen, die ein Diagramm unlesbar machen und einen Emulator gegen nichts regeln lassen.</p>
-<p>Ruhig anlassen, außer du brauchst den Rohwert. Er kostet etwas Reaktionszeit, was nur bei der Akkuregelung eine Rolle spielt.</p>
+<p>Glättet einzelne falsche Werte vom Zähler weg. Solche Ausreißer machen die Diagramme unleserlich und bringen einen Akku durcheinander.</p>
+<p>Lass ihn an, außer du brauchst die Rohwerte. Er macht die Werte etwas langsamer, was nur bei der Akkuregelung eine Rolle spielt.</p>
 </div>
 </section>
 
 <section id="display">
 <h2><span class="en">SML display</span><span class="de">SML Anzeige</span></h2>
 <div class="en">
-<p>The SML driver can print its own rows on the main page, with the meter name in front of every value. The script prints the same values itself, in your language and without the prefix.</p>
+<p>Tasmota itself can also show the meter values on the main page, with the meter name in front of each value. The program already shows the important values, in your language and without that name.</p>
 <table>
-<tr><th><span class="sw">OFF</span> (default)</th><td>Only the script's rows. Tidier.</td></tr>
-<tr><th><span class="sw">ON</span></th><td>Driver rows as well &mdash; useful while setting up a descriptor, because you see every value it produces, not just the first three.</td></tr>
+<tr><th><span class="sw">OFF</span> (default)</th><td>Only the program's rows. Tidier.</td></tr>
+<tr><th><span class="sw">ON</span></th><td>Tasmota's rows as well. Useful while you set up a descriptor, because you see every value, not only the first three.</td></tr>
 </table>
-<p>The MQTT telemetry (<code>SENSOR</code>) always contains the driver's values, whatever this is set to. Home Assistant is unaffected.</p>
+<p>MQTT (<code>SENSOR</code>) always contains all meter values, no matter what you choose here. Home Assistant is not affected.</p>
 </div>
 <div class="de">
-<p>Der SML-Treiber kann eigene Zeilen auf der Hauptseite ausgeben, mit dem Zählernamen vor jedem Wert. Das Script gibt dieselben Werte selbst aus &mdash; in deiner Sprache und ohne Präfix.</p>
+<p>Tasmota kann die Zählerwerte auch selbst auf der Hauptseite anzeigen, mit dem Zählernamen vor jedem Wert. Das Programm zeigt die wichtigen Werte schon an, in deiner Sprache und ohne diesen Namen.</p>
 <table>
-<tr><th><span class="sw">AUS</span> (Standard)</th><td>Nur die Zeilen des Scripts. Aufgeräumter.</td></tr>
-<tr><th><span class="sw">EIN</span></th><td>Zusätzlich die Treiberzeilen &mdash; praktisch beim Einrichten eines Descriptors, weil du jeden erzeugten Wert siehst, nicht nur die ersten drei.</td></tr>
+<tr><th><span class="sw">AUS</span> (Standard)</th><td>Nur die Zeilen des Programms. Übersichtlicher.</td></tr>
+<tr><th><span class="sw">EIN</span></th><td>Zusätzlich die Zeilen von Tasmota. Praktisch beim Einrichten eines Descriptors, weil du jeden Wert siehst, nicht nur die ersten drei.</td></tr>
 </table>
-<p>Die MQTT-Telemetrie (<code>SENSOR</code>) enthält die Treiberwerte immer, unabhängig von dieser Einstellung. Home Assistant merkt davon nichts.</p>
+<p>MQTT (<code>SENSOR</code>) enthält immer alle Zählerwerte, egal was du hier einstellst. Home Assistant merkt davon nichts.</p>
 </div>
 </section>
 
 <section id="pv">
 <h2>PV</h2>
 <div class="en">
-<p>Only in the chart variants. <span class="sw">OFF</span> shows consumption alone, <span class="sw">ON</span> adds feed-in: the export meter reading, day, week, month and year rows, a daily production chart, and both directions in the week and month charts.</p>
-<p>Switch it on if your meter has a feed-in register (<code>1.8.0</code> and <code>2.8.0</code>) &mdash; or no register but negative power, then together with <a href="#bezug">Import meter</a>. Without solar the extra charts stay at zero.</p>
+<p>Only in the chart programs. <span class="sw">OFF</span> shows only what you buy. <span class="sw">ON</span> also shows what you feed in: the feed-in meter reading, rows for day, week, month and year, a chart of the daily feed-in, and both directions in the week and month charts.</p>
+<p>Switch it on if your meter counts the feed-in (it has <code>1.8.0</code> and <code>2.8.0</code>). If it does not, but the power goes negative when you feed in, also switch on <a href="#bezug">Import meter</a>. Without solar panels the extra charts just stay at zero.</p>
 </div>
 <div class="de">
-<p>Nur in den Diagramm-Varianten. <span class="sw">AUS</span> zeigt nur den Verbrauch, <span class="sw">EIN</span> nimmt die Einspeisung dazu: den Einspeise-Zählerstand, Tages-, Wochen-, Monats- und Jahreszeile, ein Tagesertragsdiagramm und beide Richtungen im Wochen- und Monatsdiagramm.</p>
-<p>Einschalten, wenn dein Zähler ein Einspeiseregister hat (<code>1.8.0</code> und <code>2.8.0</code>) &mdash; oder kein Register, aber negative Leistung, dann zusammen mit <a href="#bezug">Bezugszähler</a>. Ohne PV bleiben die zusätzlichen Diagramme auf null.</p>
+<p>Nur in den Diagramm-Programmen. <span class="sw">AUS</span> zeigt nur, was du kaufst. <span class="sw">EIN</span> zeigt auch, was du einspeist: den Einspeise-Zählerstand, Zeilen für Tag, Woche, Monat und Jahr, ein Diagramm der täglichen Einspeisung und beide Richtungen in den Wochen- und Monatsdiagrammen.</p>
+<p>Schalte es ein, wenn dein Zähler die Einspeisung zählt (er hat <code>1.8.0</code> und <code>2.8.0</code>). Tut er das nicht, wird die Leistung beim Einspeisen aber negativ, schalte zusätzlich <a href="#bezug">Bezugszähler</a> ein. Ohne Solaranlage bleiben die zusätzlichen Diagramme einfach auf null.</p>
 </div>
 </section>
 
@@ -377,39 +349,21 @@ body.lang-de .en{display:none}
 <h2><span class="en">Charts</span><span class="de">Diagramme</span></h2>
 <div class="en">
 <table>
-<tr><th>Short-term</th><td>Time range of the first chart: <b>15 min</b>, <b>30 min</b>, <b>1 h</b>, <b>2 h</b> or <b>4 h</b> (the default). The shorter the range, the finer the resolution &mdash; the chart always holds 180 to 240 points, so 15 minutes stores one every 5 seconds where 4 hours stores one a minute.</td></tr>
-<tr><th>Main Charts</th><td>Off: the charts live on their own page, reached by the &#x1F4C8; link in the value list. On: they are drawn on Tasmota&rsquo;s own main page instead &mdash; under the values and buttons, the way they used to be &mdash; and the link disappears. The separate page stays reachable at <code>/tc_ui?p=2</code> either way.</td></tr>
+<tr><th>Short-term</th><td>The time span of the first chart: <b>15 min</b>, <b>30 min</b>, <b>1 h</b>, <b>2 h</b> or <b>4 h</b> (default). The shorter the span, the more detail: at 15 minutes there is a point every 5 seconds, at 4 hours one per minute.</td></tr>
+<tr><th>Main Charts</th><td>Off: the charts are on their own page, opened with the &#x1F4C8; link. On: they are drawn on the Tasmota main page below the values, and the link disappears. The separate page still works at <code>/tc_ui?p=2</code>.</td></tr>
 </table>
-<table>
-<tr><th>Range</th><th>One point every</th><th>Points</th></tr>
-<tr><td>15 minutes</td><td>5 s</td><td>180</td></tr>
-<tr><td>30 minutes</td><td>10 s</td><td>180</td></tr>
-<tr><td>1 hour</td><td>15 s</td><td>240</td></tr>
-<tr><td>2 hours</td><td>30 s</td><td>240</td></tr>
-<tr><td>4 hours</td><td>60 s</td><td>240</td></tr>
-</table>
-<p class="warn">Changing the range and saving <b>clears this chart</b>. It has to: the stored slots would otherwise be read as a span they were never recorded for. The 24&nbsp;h chart and the bar charts are untouched.</p>
-<p>Each point is the average over its whole slot, so a shorter range is not noisier &mdash; it is genuinely finer. Nothing else changes: the ring is the same one, and a 15-minute chart costs no more memory than a 4-hour one.</p>
-<p><b>Week chart.</b> Calendar weeks 1&ndash;53 (ISO, a week starts Monday 00:00). The current week has a red outline. The weeks still ahead this year are drawn faded: they hold <i>last</i> year's figures until their week comes round again, so the chart always shows the last twelve months.</p>
-<p>The <b>&#x21BB; Auto</b> button above the charts reloads the page every 10 seconds. Google Charts draws once when the page is built and Tasmota&rsquo;s own refresh only touches the value list, so without it a 15-minute chart freezes on screen while the numbers above it keep moving. The setting is remembered by the browser, not by the device, and a reload is skipped while you have a field selected.</p>
+<p class="warn">If you choose a different time span and save, <b>the short-term chart starts empty</b>. The 24&nbsp;h chart and the bar charts are not affected.</p>
+<p><b>Week chart.</b> Shows calendar weeks 1 to 53. A week starts on Monday. The current week has a red border. The weeks still to come this year are drawn pale: they still show last year's values until it is their turn again. So the chart always covers the last twelve months.</p>
+<p>The <b>&#x21BB; Auto</b> button above the charts reloads the page every 10 seconds. Without it the charts stay as they were when you opened the page. Your browser remembers this setting. While you are typing in a field, the page is not reloaded.</p>
 </div>
 <div class="de">
 <table>
-<tr><th>Kurzzeit</th><td>Zeitspanne des ersten Diagramms: <b>15 min</b>, <b>30 min</b>, <b>1 h</b>, <b>2 h</b> oder <b>4 h</b> (Standard). Je kürzer die Spanne, desto feiner die Auflösung &mdash; das Diagramm fasst immer 180 bis 240 Punkte, bei 15 Minuten also alle 5 Sekunden einen, bei 4 Stunden einen je Minute.</td></tr>
-<tr><th>Charts Hauptseite</th><td>Aus: die Diagramme liegen auf einer eigenen Seite, erreichbar über den &#x1F4C8;-Link in der Werteliste. Ein: sie werden auf Tasmotas eigener Hauptseite gezeichnet &mdash; unter den Werten und Knöpfen, so wie früher &mdash; und der Link entfällt. Die eigene Seite bleibt in beiden Fällen unter <code>/tc_ui?p=2</code> erreichbar.</td></tr>
+<tr><th>Kurzzeit</th><td>Die Zeitspanne des ersten Diagramms: <b>15 min</b>, <b>30 min</b>, <b>1 h</b>, <b>2 h</b> oder <b>4 h</b> (Standard). Je kürzer die Spanne, desto genauer: bei 15 Minuten gibt es alle 5 Sekunden einen Punkt, bei 4 Stunden einen pro Minute.</td></tr>
+<tr><th>Charts Hauptseite</th><td>Aus: Die Diagramme liegen auf einer eigenen Seite, die du über den Link &#x1F4C8; öffnest. Ein: Sie werden auf der Tasmota-Hauptseite unter den Werten gezeichnet, und der Link fällt weg. Die eigene Seite geht trotzdem weiter unter <code>/tc_ui?p=2</code>.</td></tr>
 </table>
-<table>
-<tr><th>Spanne</th><th>Ein Punkt alle</th><th>Punkte</th></tr>
-<tr><td>15 Minuten</td><td>5 s</td><td>180</td></tr>
-<tr><td>30 Minuten</td><td>10 s</td><td>180</td></tr>
-<tr><td>1 Stunde</td><td>15 s</td><td>240</td></tr>
-<tr><td>2 Stunden</td><td>30 s</td><td>240</td></tr>
-<tr><td>4 Stunden</td><td>60 s</td><td>240</td></tr>
-</table>
-<p class="warn">Eine andere Spanne zu wählen und zu speichern <b>leert dieses Diagramm</b>. Das muss so sein: die gespeicherten Slots würden sonst als eine Zeitspanne gelesen, für die sie nie aufgezeichnet wurden. Das 24-h-Diagramm und die Balkendiagramme bleiben unberührt.</p>
-<p>Jeder Punkt ist der Mittelwert über seinen ganzen Slot &mdash; eine kürzere Spanne ist also nicht unruhiger, sondern wirklich feiner. Sonst ändert sich nichts: es ist derselbe Ring, und ein 15-Minuten-Diagramm braucht keinen Speicher mehr als ein 4-Stunden-Diagramm.</p>
-<p><b>Wochendiagramm.</b> Kalenderwochen 1&ndash;53 (ISO, eine Woche beginnt Montag 00:00). Die aktuelle Woche ist rot umrandet. Die noch kommenden Wochen dieses Jahres sind blass gezeichnet: Sie tragen die Werte des <i>Vorjahres</i>, bis ihre Woche wieder dran ist &mdash; das Diagramm zeigt so immer die letzten zwölf Monate.</p>
-<p>Der Knopf <b>&#x21BB; Auto</b> über den Diagrammen lädt die Seite alle 10 Sekunden neu. Google Charts zeichnet einmal beim Seitenaufbau, und Tasmotas eigene Aktualisierung fasst nur die Werteliste an &mdash; ohne den Knopf steht ein 15-Minuten-Diagramm also fest, während die Zahlen darüber weiterlaufen. Die Einstellung merkt sich der Browser, nicht das Gerät, und solange ein Feld ausgewählt ist, wird nicht neu geladen.</p>
+<p class="warn">Wählst du eine andere Zeitspanne und speicherst, <b>beginnt das Kurzzeit-Diagramm leer</b>. Das 24-h-Diagramm und die Balkendiagramme bleiben, wie sie sind.</p>
+<p><b>Wochendiagramm.</b> Zeigt die Kalenderwochen 1 bis 53. Eine Woche beginnt am Montag. Die aktuelle Woche ist rot umrandet. Die Wochen, die dieses Jahr noch kommen, sind blass: Sie zeigen noch die Werte vom letzten Jahr, bis sie wieder dran sind. So zeigt das Diagramm immer die letzten zwölf Monate.</p>
+<p>Der Knopf <b>&#x21BB; Auto</b> über den Diagrammen lädt die Seite alle 10 Sekunden neu. Ohne ihn bleiben die Diagramme so, wie sie beim Öffnen der Seite waren. Dein Browser merkt sich die Einstellung. Während du in einem Feld tippst, wird nicht neu geladen.</p>
 </div>
 </section>
 
@@ -417,190 +371,174 @@ body.lang-de .en{display:none}
 <h2><span class="en">Chart data</span><span class="de">Diagrammdaten</span></h2>
 <div class="en">
 <table>
-<tr><th>&#x1F522; Reset</th><td>Restarts the day, week, month and year values from the current meter reading. Do this once after installing, and whenever the counters show nonsense &mdash; a full meter reading instead of a daily figure means the baselines are missing. The charts keep their history.</td></tr>
-<tr><th>&#x1F4C8; Reset</th><td>Empties the short-term and 24&nbsp;h power charts. The values above and the bar charts stay as they are.</td></tr>
-<tr><th>&#x1F4CA; Reset</th><td>Clears the day, week and month columns. The counters keep running. Asks first.</td></tr>
+<tr><th>&#x1F522; Reset</th><td>Starts the values for today, this week, month and year again from the current meter reading. Do this once after installing, and whenever the values look wrong. If you see the whole meter reading instead of today's consumption, this is what you need. The charts keep their history.</td></tr>
+<tr><th>&#x1F4C8; Reset</th><td>Empties the short-term chart and the 24&nbsp;h chart. The values and the bar charts stay.</td></tr>
+<tr><th>&#x1F4CA; Reset</th><td>Deletes the bars for days, weeks and months. The counting goes on.</td></tr>
 </table>
-<p>The <b>&#x1F4BE; CSV</b> button at the bottom of the settings page writes <code>/sml_chart.csv</code>, and <code>/sml_chart_pv.csv</code> as well when the feed-in side is on. It reads only, so it fires without asking. Download the files in Tasmota's <a href="/ufsd">file manager</a>.</p>
-<p>The CSV holds the baselines in line&nbsp;1, then the short-term, 24&nbsp;h, daily, monthly and weekly arrays &mdash; tab separated, one array per line. That is the format to keep a backup in or to open in a spreadsheet.</p>
-<p>The live data lives in the slot's <code>.pvs</code> file, saved by name. A backup is that one file: copy it away, copy it back, restart the slot. <code>/sml_chart.bin</code> is only read once at startup, for importing data from an older version.</p>
-<p>The export also works while the meter is silent &mdash; that is deliberate, since a meter that stopped is exactly when the stored data matters.</p>
-<p class="warn">Charts need the clock. Before the device has NTP time (<code>2020</code>) nothing is recorded.</p>
+<p>All three buttons ask before they delete anything.</p>
+<p>The <b>&#x1F4BE; CSV</b> button at the bottom of the settings page saves the chart data as a table: <code>/sml_chart.csv</code>, and with feed-in also <code>/sml_chart_pv.csv</code>. You can download the files in Tasmota's <a href="/ufsd">file manager</a> and open them in a spreadsheet. This also works when the meter delivers no values.</p>
+<p>The program itself keeps its data in its own <code>.pvs</code> file. For a backup, copy this one file away. To restore it, copy it back and restart the program. The file <code>/sml_chart.bin</code> is only used once, to take over data from an older version.</p>
+<p class="warn">The charts need the correct time. Until the device has fetched the time from the internet, nothing is recorded.</p>
 </div>
 <div class="de">
 <table>
-<tr><th>&#x1F522; Reset</th><td>Lässt Tages-, Wochen-, Monats- und Jahreswert neu beim aktuellen Zählerstand beginnen. Einmal nach der Installation, und immer dann, wenn die Zähler Unsinn zeigen &mdash; ein voller Zählerstand statt eines Tageswerts heißt, die Nullpunkte fehlen. Die Diagramme behalten ihren Verlauf.</td></tr>
-<tr><th>&#x1F4C8; Reset</th><td>Leert das Kurzzeit- und das 24-h-Verlaufsdiagramm. Die Werte darüber und die Balkendiagramme bleiben unberührt.</td></tr>
-<tr><th>&#x1F4CA; Reset</th><td>Löscht die Tages-, Wochen- und Monatsspalten. Die Zähler laufen weiter. Fragt vorher nach.</td></tr>
+<tr><th>&#x1F522; Reset</th><td>Lässt die Werte für heute, diese Woche, diesen Monat und dieses Jahr wieder beim aktuellen Zählerstand beginnen. Mach das einmal nach der Installation und immer dann, wenn die Werte falsch aussehen. Siehst du den ganzen Zählerstand statt des heutigen Verbrauchs, ist das die Lösung. Die Diagramme behalten ihren Verlauf.</td></tr>
+<tr><th>&#x1F4C8; Reset</th><td>Leert das Kurzzeit- und das 24-h-Diagramm. Die Werte und die Balkendiagramme bleiben.</td></tr>
+<tr><th>&#x1F4CA; Reset</th><td>Löscht die Balken für Tage, Wochen und Monate. Gezählt wird weiter.</td></tr>
 </table>
-<p>Der Knopf <b>&#x1F4BE; CSV</b> ganz unten auf der Einstellungsseite schreibt <code>/sml_chart.csv</code>, bei eingeschalteter Einspeiseseite zusätzlich <code>/sml_chart_pv.csv</code>. Er liest nur und fragt deshalb nicht nach. Heruntergeladen werden die Dateien im <a href="/ufsd">Dateimanager</a> von Tasmota.</p>
-<p>Die CSV enthält in Zeile&nbsp;1 die Nullpunkte, danach die Arrays für das Kurzzeit-Diagramm, 24&nbsp;h, Tage, Monate und Wochen &mdash; tabgetrennt, ein Array je Zeile. Das ist das Format für eine Sicherung oder zum Öffnen in der Tabellenkalkulation.</p>
-<p>Die laufenden Daten liegen in der <code>.pvs</code>-Datei des Slots, namensbasiert gespeichert. Eine Sicherung ist genau diese eine Datei: wegkopieren, zurückkopieren, Slot neu starten. <code>/sml_chart.bin</code> wird nur einmal beim Start gelesen, zum Übernehmen von Daten aus einer älteren Version.</p>
-<p>Der Export funktioniert auch, während der Zähler schweigt &mdash; das ist Absicht, denn ein ausgefallener Zähler ist genau der Moment, in dem die gespeicherten Daten zählen.</p>
-<p class="warn">Diagramme brauchen die Uhr. Bevor das Gerät NTP-Zeit hat (<code>2020</code>), wird nichts aufgezeichnet.</p>
+<p>Alle drei Knöpfe fragen nach, bevor sie etwas löschen.</p>
+<p>Der Knopf <b>&#x1F4BE; CSV</b> ganz unten auf der Einstellungsseite speichert die Diagrammdaten als Tabelle: <code>/sml_chart.csv</code>, mit Einspeisung zusätzlich <code>/sml_chart_pv.csv</code>. Herunterladen kannst du sie im <a href="/ufsd">Dateimanager</a> von Tasmota und in einer Tabellenkalkulation öffnen. Das geht auch, wenn der Zähler gerade keine Werte liefert.</p>
+<p>Das Programm selbst speichert seine Daten in seiner eigenen <code>.pvs</code>-Datei. Für eine Sicherung kopierst du diese eine Datei weg. Zum Zurückholen kopierst du sie zurück und startest das Programm neu. Die Datei <code>/sml_chart.bin</code> wird nur einmal gelesen, um Daten aus einer älteren Version zu übernehmen.</p>
+<p class="warn">Die Diagramme brauchen die richtige Uhrzeit. Solange das Gerät die Zeit noch nicht aus dem Internet geholt hat, wird nichts aufgezeichnet.</p>
 </div>
 </section>
 
 <section id="telemetry">
 <h2><span class="en">Telemetry</span><span class="de">Telemetrie</span></h2>
 <div class="en">
-<p><b>Send power2 (MQTT)</b> &mdash; in the emulator variants <b>Send power2 + cpwr (MQTT)</b> &mdash;, default <span class="sw">OFF</span>. Switched <span class="sw">ON</span>, the script publishes a heavily smoothed power value every 5&nbsp;s, in the emulator variants also <code>cpwr</code>. The switch is for MQTT only: <code>/pwr</code> always answers. Below the switch the current <code>power2</code> (and <code>cpwr</code>) are shown, and <b>HTTP API</b> links <code>/pwr</code> and <a href="#vars"><code>/pwr?v=</code></a>.</p>
+<p><b>Send power2 (MQTT)</b> (with an emulator: <b>Send power2 + cpwr (MQTT)</b>) is off by default. Switched on, the program sends a strongly smoothed power value every 5 seconds over MQTT. With an emulator it also sends <code>cpwr</code>, the value the battery gets. The switch is only for MQTT. The web address <code>/pwr</code> always works. Below the switch you see the current values and links to <code>/pwr</code> and <a href="#vars"><code>/pwr?v=</code></a>.</p>
 <h3>MQTT</h3>
 <table>
-<tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Smoothed power [W]. Exponential average, 10&nbsp;% new value per step &mdash; slow on purpose.</td></tr>
-<tr><th><code>stat/&lt;topic&gt;/script/cpwr</code></th><td>Emulator variants only: the value handed to the battery, after offset and shaping.</td></tr>
+<tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Smoothed power [W]. Reacts slowly on purpose.</td></tr>
+<tr><th><code>stat/&lt;topic&gt;/script/cpwr</code></th><td>Only with an emulator: the value the battery gets, including the offset.</td></tr>
 </table>
-<p>In MQTT Explorer or Home Assistant the values sit under <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, e.g. <code>stat/tasmota_31F8D4/script/power2</code>. <code>&lt;topic&gt;</code> is the device&apos;s MQTT topic (Tasmota: Configuration &rarr; MQTT &rarr; Topic).</p>
+<p>In MQTT Explorer or Home Assistant you find the values under <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, for example <code>stat/tasmota_31F8D4/script/power2</code>. <code>&lt;topic&gt;</code> is the MQTT topic of your device (Tasmota: Configuration &rarr; MQTT &rarr; Topic).</p>
 <h3>HTTP <code>/pwr</code></h3>
 <pre><code>{"sml1":-440,"sml2":26714.950,"sml3":659.775,"sml4":-440,"sml5":0,"sml6":0,"power2":-217,"cpwr":-180}</code></pre>
-<p>For a second battery that polls over HTTP instead of listening for a meter &mdash; opendtu-onbattery's dynamic power limiter, for example. Always available, independent of the MQTT switch, without a password.</p>
-<p><code>sml1</code>&ndash;<code>sml6</code> are the meter values; without <a href="#meter">3 phases</a> <code>sml4</code> carries the total power and <code>sml5</code>/<code>sml6</code> are 0. <code>cpwr</code> only in the emulator variants.</p>
-<p>Why smoothed: a battery that follows every spike swings. <code>sml1</code> is the raw value, <code>power2</code> the calm one.</p>
-<p>The current <code>power2</code> (and <code>cpwr</code>) is shown in this section on the settings page, next to the switch that publishes it.</p>
-<p>The publishes carry log level&nbsp;3: the console stays quiet at <code>weblog&nbsp;2</code> and shows them from <code>weblog&nbsp;3</code>, without recompiling. A failed publish is logged once with its return code &mdash; <code>-2</code> means MQTT is switched off on the device (<code>SetOption3</code>).</p>
+<p>Useful for a second battery or control system that asks for the values over the network, for example the dynamic power limiter of opendtu-onbattery. It always works and needs no password.</p>
+<p><code>sml1</code> to <code>sml6</code> are the meter values. Without <a href="#meter">3 phases</a>, <code>sml4</code> is the total power and <code>sml5</code>/<code>sml6</code> are 0. <code>cpwr</code> only appears with an emulator.</p>
+<p>Why smoothed? A battery that follows every short spike starts to swing. <code>sml1</code> is the raw value, <code>power2</code> the calm one.</p>
+<p>The MQTT messages only show up in the console from <code>weblog&nbsp;3</code> on, so the console stays readable. If sending fails, this is logged once. <code>-2</code> means MQTT is switched off on the device.</p>
 </div>
 <div class="de">
-<p><b>power2 senden (MQTT)</b> &mdash; in den Emulator-Varianten <b>power2 + cpwr senden (MQTT)</b> &mdash;, Standard <span class="sw">AUS</span>. Auf <span class="sw">EIN</span> veröffentlicht das Script alle 5&nbsp;s einen stark gemittelten Leistungswert, in den Emulator-Varianten zusätzlich <code>cpwr</code>. Der Schalter gilt nur für MQTT: <code>/pwr</code> antwortet immer. Unter dem Schalter stehen die aktuellen Werte <code>power2</code> (und <code>cpwr</code>), darunter verlinkt <b>HTTP API</b> auf <code>/pwr</code> und auf <a href="#vars"><code>/pwr?v=</code></a>.</p>
+<p><b>power2 senden (MQTT)</b> (mit Emulator: <b>power2 + cpwr senden (MQTT)</b>) ist standardmäßig aus. Eingeschaltet schickt das Programm alle 5 Sekunden einen stark geglätteten Leistungswert per MQTT. Mit Emulator schickt es zusätzlich <code>cpwr</code>, den Wert, den der Akku bekommt. Der Schalter gilt nur für MQTT. Die Webadresse <code>/pwr</code> funktioniert immer. Unter dem Schalter siehst du die aktuellen Werte und Links zu <code>/pwr</code> und <a href="#vars"><code>/pwr?v=</code></a>.</p>
 <h3>MQTT</h3>
 <table>
-<tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Gemittelte Leistung [W]. Exponentieller Mittelwert, 10&nbsp;% neuer Wert pro Schritt &mdash; absichtlich träge.</td></tr>
-<tr><th><code>stat/&lt;topic&gt;/script/cpwr</code></th><td>Nur Emulator-Varianten: der Wert, den der Akku bekommt, nach Offset und Regleroptimierung.</td></tr>
+<tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Geglättete Leistung [W]. Reagiert absichtlich langsam.</td></tr>
+<tr><th><code>stat/&lt;topic&gt;/script/cpwr</code></th><td>Nur mit Emulator: der Wert, den der Akku bekommt, mit Offset.</td></tr>
 </table>
-<p>Im MQTT Explorer bzw. in Home Assistant liegen die Werte unter <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, z.&nbsp;B. <code>stat/tasmota_31F8D4/script/power2</code>. <code>&lt;topic&gt;</code> ist das MQTT-Topic des Geräts (Tasmota: Einstellungen &rarr; MQTT &rarr; Topic).</p>
+<p>Im MQTT Explorer oder in Home Assistant findest du die Werte unter <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, zum Beispiel <code>stat/tasmota_31F8D4/script/power2</code>. <code>&lt;topic&gt;</code> ist das MQTT-Topic deines Geräts (Tasmota: Einstellungen &rarr; MQTT &rarr; Topic).</p>
 <h3>HTTP <code>/pwr</code></h3>
 <pre><code>{"sml1":-440,"sml2":26714.950,"sml3":659.775,"sml4":-440,"sml5":0,"sml6":0,"power2":-217,"cpwr":-180}</code></pre>
-<p>Für einen zweiten Akku, der über HTTP pollt statt auf einen Zähler zu horchen &mdash; zum Beispiel der Dynamic Power Limiter von opendtu-onbattery. Immer verfügbar, unabhängig vom MQTT-Schalter, ohne Passwort.</p>
-<p><code>sml1</code>&ndash;<code>sml6</code> sind die Zählerwerte; ohne <a href="#meter">3 Phasen</a> trägt <code>sml4</code> die Gesamtleistung, <code>sml5</code>/<code>sml6</code> sind 0. <code>cpwr</code> nur in den Emulator-Varianten.</p>
-<p>Warum gemittelt: ein Akku, der jeder Spitze folgt, schwingt. <code>sml1</code> ist der Rohwert, <code>power2</code> der ruhige.</p>
-<p>Der aktuelle Wert <code>power2</code> (und <code>cpwr</code>) steht in diesem Abschnitt auf der Einstellungsseite, neben dem Schalter, der ihn versendet.</p>
-<p>Die Publishes tragen Log-Stufe&nbsp;3: bei <code>weblog&nbsp;2</code> bleibt die Konsole ruhig, ab <code>weblog&nbsp;3</code> werden sie sichtbar, ohne neu zu übersetzen. Ein fehlgeschlagener Publish wird einmal mit Rückgabewert protokolliert &mdash; <code>-2</code> heißt, MQTT ist auf dem Gerät abgeschaltet (<code>SetOption3</code>).</p>
+<p>Praktisch für einen zweiten Akku oder eine Steuerung, die die Werte übers Netzwerk abfragt, zum Beispiel den Dynamic Power Limiter von opendtu-onbattery. Das geht immer und ohne Passwort.</p>
+<p><code>sml1</code> bis <code>sml6</code> sind die Zählerwerte. Ohne <a href="#meter">3 Phasen</a> ist <code>sml4</code> die Gesamtleistung, <code>sml5</code>/<code>sml6</code> sind 0. <code>cpwr</code> gibt es nur mit Emulator.</p>
+<p>Warum geglättet? Ein Akku, der jeder kurzen Spitze folgt, fängt an zu schwingen. <code>sml1</code> ist der Rohwert, <code>power2</code> der ruhige.</p>
+<p>Die MQTT-Nachrichten erscheinen in der Konsole erst ab <code>weblog&nbsp;3</code>, damit die Konsole lesbar bleibt. Klappt das Senden nicht, steht das einmal im Log. <code>-2</code> heißt, MQTT ist auf dem Gerät ausgeschaltet.</p>
 </div>
 </section>
 
 <section id="vars">
 <h2>HTTP <code>/pwr?v=</code></h2>
 <div class="en">
-<p>All programs. Reads chosen values as JSON &mdash; the TinyC counterpart of the Scripter's <code>cm?cmnd=script?dval;dcon</code>, with the same names. Always available, independent of telemetry, without a password. It rides on <code>/pwr</code>: the firmware has room for seven URLs of its own and the family uses all of them.</p>
+<p>All programs. Gets single values as JSON, with the same names as in the old Scripter scripts (<code>cm?cmnd=script?dval;dcon</code>). It always works and needs no password.</p>
 <pre><code>http://&lt;ip&gt;/pwr?v=sml[1];yval;dcon</code></pre>
 <pre><code>{"sml[1]":-3.000,"yval":2140.315,"dcon":[12.410,9.800, ...]}</code></pre>
-<p>Names are separated by <code>;</code>. <code>?v=all</code> returns all of them (without charts: <code>sml1</code>&ndash;<code>sml6</code>, <code>power2</code>, <code>cpwr</code>); <code>/pwr</code> without <code>?v=</code> answers as before. An unknown name answers <code>null</code>.</p>
+<p>Separate several names with <code>;</code>. <code>?v=all</code> gives you all values except the chart data. A name the program does not know gives <code>null</code>.</p>
 <table>
-<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Meter value <i>n</i> from the descriptor. <code>sml[3]</code> is the export total &mdash; computed on an <a href="#bezug">Import meter</a>. Without <a href="#meter">3 phases</a>, <code>sml4</code> is the total power and <code>sml5</code>/<code>sml6</code> are 0.</td></tr>
+<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Meter value number <i>n</i>. <code>sml[3]</code> is the feed-in reading (calculated with <a href="#bezug">Import meter</a>). Without <a href="#meter">3 phases</a>, <code>sml4</code> is the total power and <code>sml5</code>/<code>sml6</code> are 0.</td></tr>
 <tr><th><code>sml</code></th><td>Short for <code>sml1;sml2;sml3;sml4;sml5;sml6</code></td></tr>
 <tr><th><code>power2</code></th><td>Smoothed power [W]</td></tr>
-<tr><th><code>cpwr</code></th><td>Emulator variants only: the value handed to the battery [W], offset included</td></tr>
-<tr><th><code>dval wval mval yval</code></th><td>Chart programs only, like everything below. Import [kWh] this day, week, month, year &mdash; the values on the main page</td></tr>
-<tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Export [kWh], the same periods</td></tr>
-<tr><th><code>dcon wcon mcon</code></th><td>Import bars: 31 days, 53 weeks, 12 months</td></tr>
-<tr><th><code>dprod wprod mprod</code></th><td>Export bars</td></tr>
+<tr><th><code>cpwr</code></th><td>Only with an emulator: the value the battery gets [W]</td></tr>
+<tr><th><code>dval wval mval yval</code></th><td>Only in chart programs, like everything below. Energy bought today, this week, month and year [kWh], as on the main page</td></tr>
+<tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Energy fed in, same periods [kWh]</td></tr>
+<tr><th><code>dcon wcon mcon</code></th><td>Bars for energy bought: 31 days, 53 weeks, 12 months</td></tr>
+<tr><th><code>dprod wprod mprod</code></th><td>Bars for energy fed in</td></tr>
 </table>
-<p>Differences to the Scripter: <code>dval</code>&hellip;<code>yval2</code> are the energy since the zero point, not the zero point (meter reading) itself. <code>mcon</code> holds 12 values, import only &mdash; the Scripter's months 13&ndash;24 are <code>mprod</code>. The answer is a plain object without the Scripter's <code>{"script":{…}}</code> around it. In <code>curl</code> the brackets need <code>-g</code>, or write <code>sml1</code>.</p>
+<p>Differences to the Scripter: <code>dval</code> to <code>yval2</code> give the consumption of the period, not the meter reading at its start. <code>mcon</code> has 12 values; the feed-in months are in <code>mprod</code>. With <code>curl</code>, use <code>-g</code> for the square brackets, or simply write <code>sml1</code>.</p>
 </div>
 <div class="de">
-<p>Alle Programme. Liest ausgewählte Werte als JSON &mdash; das TinyC-Gegenstück zu <code>cm?cmnd=script?dval;dcon</code> aus dem Scripter, mit denselben Namen. Immer verfügbar, unabhängig von der Telemetrie, ohne Passwort. Die Abfrage läuft über <code>/pwr</code>: Die Firmware hat Platz für sieben eigene URLs, und die Familie belegt alle.</p>
+<p>Alle Programme. Holt einzelne Werte als JSON, mit denselben Namen wie in den alten Scripter-Scripten (<code>cm?cmnd=script?dval;dcon</code>). Das geht immer und ohne Passwort.</p>
 <pre><code>http://&lt;ip&gt;/pwr?v=sml[1];yval;dcon</code></pre>
 <pre><code>{"sml[1]":-3.000,"yval":2140.315,"dcon":[12.410,9.800, ...]}</code></pre>
-<p>Namen werden mit <code>;</code> getrennt. <code>?v=all</code> liefert alle (ohne Diagramme: <code>sml1</code>&ndash;<code>sml6</code>, <code>power2</code>, <code>cpwr</code>); <code>/pwr</code> ohne <code>?v=</code> antwortet wie bisher. Ein unbekannter Name liefert <code>null</code>.</p>
+<p>Mehrere Namen trennst du mit <code>;</code>. <code>?v=all</code> liefert alle Werte außer den Diagrammdaten. Ein Name, den das Programm nicht kennt, liefert <code>null</code>.</p>
 <table>
-<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Wert <i>n</i> aus dem Descriptor. <code>sml[3]</code> ist der Einspeise-Zählerstand &mdash; beim <a href="#bezug">Bezugszähler</a> der gerechnete. Ohne <a href="#meter">3 Phasen</a> ist <code>sml4</code> die Gesamtleistung, <code>sml5</code>/<code>sml6</code> sind 0.</td></tr>
+<tr><th><code>sml[n]</code> / <code>smln</code></th><td>Zählerwert Nummer <i>n</i>. <code>sml[3]</code> ist der Einspeise-Zählerstand (beim <a href="#bezug">Bezugszähler</a> der berechnete). Ohne <a href="#meter">3 Phasen</a> ist <code>sml4</code> die Gesamtleistung, <code>sml5</code>/<code>sml6</code> sind 0.</td></tr>
 <tr><th><code>sml</code></th><td>Kurz für <code>sml1;sml2;sml3;sml4;sml5;sml6</code></td></tr>
-<tr><th><code>power2</code></th><td>Gemittelte Leistung [W]</td></tr>
-<tr><th><code>cpwr</code></th><td>Nur Emulator-Varianten: der Wert, den der Akku bekommt [W], inkl. Offset</td></tr>
-<tr><th><code>dval wval mval yval</code></th><td>Nur Diagramm-Programme, wie alles darunter. Bezug [kWh] dieses Tages, dieser Woche, dieses Monats, dieses Jahres &mdash; die Werte der Hauptseite</td></tr>
-<tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Einspeisung [kWh], dieselben Zeiträume</td></tr>
-<tr><th><code>dcon wcon mcon</code></th><td>Balken Bezug: 31 Tage, 53 Wochen, 12 Monate</td></tr>
-<tr><th><code>dprod wprod mprod</code></th><td>Balken Einspeisung</td></tr>
+<tr><th><code>power2</code></th><td>Geglättete Leistung [W]</td></tr>
+<tr><th><code>cpwr</code></th><td>Nur mit Emulator: der Wert, den der Akku bekommt [W]</td></tr>
+<tr><th><code>dval wval mval yval</code></th><td>Nur in Diagramm-Programmen, wie alles darunter. Bezug heute, diese Woche, diesen Monat, dieses Jahr [kWh], wie auf der Hauptseite</td></tr>
+<tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Einspeisung, dieselben Zeiträume [kWh]</td></tr>
+<tr><th><code>dcon wcon mcon</code></th><td>Balken für den Bezug: 31 Tage, 53 Wochen, 12 Monate</td></tr>
+<tr><th><code>dprod wprod mprod</code></th><td>Balken für die Einspeisung</td></tr>
 </table>
-<p>Unterschiede zum Scripter: <code>dval</code>&hellip;<code>yval2</code> sind die Energie seit dem Nullpunkt, nicht der Nullpunkt (Zählerstand) selbst. <code>mcon</code> hat 12 Werte, nur Bezug &mdash; die Monate 13&ndash;24 des Scripters sind hier <code>mprod</code>. Die Antwort ist ein einfaches Objekt, ohne das <code>{"script":{…}}</code> drumherum. In <code>curl</code> brauchen die eckigen Klammern <code>-g</code>, oder man schreibt <code>sml1</code>.</p>
+<p>Unterschiede zum Scripter: <code>dval</code> bis <code>yval2</code> liefern den Verbrauch im Zeitraum, nicht den Zählerstand an seinem Anfang. <code>mcon</code> hat 12 Werte, die Einspeise-Monate stehen in <code>mprod</code>. Bei <code>curl</code> brauchst du für die eckigen Klammern <code>-g</code>, oder du schreibst einfach <code>sml1</code>.</p>
 </div>
 </section>
 
 <section id="modbus">
 <h2>Modbus-TCP</h2>
 <div class="en">
-<p>Default <span class="sw">OFF</span>. Switched <span class="sw">ON</span>, the device is a Modbus-TCP slave (server) and any client can read the meter.</p>
+<p>Off by default. Switched on, other devices can read the meter values over Modbus-TCP, for example an inverter or a home automation system.</p>
 <table>
-<tr><th>Address</th><th>4x reference</th><th><span class="en">Value</span></th><th><span class="en">Unit</span></th></tr>
-<tr><td>0</td><td>40001</td><td><span class="en">Power</span></td><td>W</td></tr>
-<tr><td>2</td><td>40003</td><td><span class="en">Import</span></td><td>kWh</td></tr>
-<tr><td>4</td><td>40005</td><td><span class="en">Export</span></td><td>kWh</td></tr>
+<tr><th>Address</th><th>or written as</th><th>Value</th><th>Unit</th></tr>
+<tr><td>0</td><td>40001</td><td>Power</td><td>W</td></tr>
+<tr><td>2</td><td>40003</td><td>Energy bought</td><td>kWh</td></tr>
+<tr><td>4</td><td>40005</td><td>Energy fed in</td><td>kWh</td></tr>
 </table>
-<p>Two numbering conventions exist for the same registers, which is the usual source of an <code>illegal data address</code>. The left column is the address that goes on the wire; the right one is the 4x notation that counts from 1.</p>
+<p>There are two ways of counting the same addresses. Some programs start at 0, others at 40001. If you get the error <code>illegal data address</code>, try the other column.</p>
+<p>Settings for the client: function code <b>03</b> (Read Holding Registers), <b>2 registers</b> per value, format <b>32-bit float, big-endian</b>. To read all three values at once, read 6 registers starting at address 0.</p>
 <h3>Testing with Modbus Poll</h3>
-<p>Modbus Poll counts <b>from 0</b> unless <i>PLC addresses (base 1)</i> is ticked &mdash; then it shows the 4x references instead.</p>
-<table>
-<tr><th>Function</th><td>03 Read Holding Registers</td></tr>
-<tr><th>Address</th><td><code>0</code> (or <code>40001</code> with PLC addresses)</td></tr>
-<tr><th>Quantity</th><td><code>2</code> for one value, <code>6</code> for all three</td></tr>
-</table>
-<p>The reply arrives as single 16-bit registers. To see a real number, select the <b>two registers that belong to one value</b>, then <i>Format &rarr; 32-bit Float Big-Endian</i>.</p>
-<p>Two registers per value, 32-bit IEEE-754 float, big-endian. Holding registers, <b>FC03 only</b>. Reads must start on a value boundary and cover whole values.</p>
-<p>Port 502 is standard. Change it if something else on the device already uses it. The change takes effect within a second, no reboot.</p>
-<p>Anything outside the map is answered properly: a wrong function code gives exception&nbsp;<code>01</code>, a bad address exception&nbsp;<code>02</code>, and an odd or oversized quantity exception&nbsp;<code>03</code>. A quantity of 1 is therefore refused &mdash; half a float is not a value.</p>
+<p>Address <code>0</code> (or <code>40001</code> if <i>PLC addresses (base 1)</i> is ticked), Quantity <code>2</code> for one value or <code>6</code> for all three. Then select the two registers of one value and choose <i>Format &rarr; 32-bit Float Big-Endian</i> to see the real number.</p>
+<p>Port 502 is the standard. Only change it if something else on the device already uses it. A change works within a second, without a reboot.</p>
 </div>
 <div class="de">
-<p>Standard <span class="sw">AUS</span>. Auf <span class="sw">EIN</span> ist das Gerät ein Modbus-TCP-Slave (Server), und jeder Client kann den Zähler lesen.</p>
+<p>Standardmäßig aus. Eingeschaltet können andere Geräte die Zählerwerte über Modbus-TCP lesen, zum Beispiel ein Wechselrichter oder eine Hausautomation.</p>
 <table>
-<tr><th>Adresse</th><th>4x-Bezeichnung</th><th>Wert</th><th>Einheit</th></tr>
+<tr><th>Adresse</th><th>oder geschrieben als</th><th>Wert</th><th>Einheit</th></tr>
 <tr><td>0</td><td>40001</td><td>Leistung</td><td>W</td></tr>
 <tr><td>2</td><td>40003</td><td>Bezug</td><td>kWh</td></tr>
 <tr><td>4</td><td>40005</td><td>Einspeisung</td><td>kWh</td></tr>
 </table>
-<p>Für dieselben Register gibt es zwei Zählweisen, und daher kommt fast jedes <code>illegal data address</code>. Links steht die Adresse, die auf die Leitung geht, rechts die 4x-Schreibweise, die ab 1 zählt.</p>
+<p>Für dieselben Adressen gibt es zwei Zählweisen. Manche Programme beginnen bei 0, andere bei 40001. Bekommst du den Fehler <code>illegal data address</code>, probier die andere Spalte.</p>
+<p>Einstellungen für die Gegenseite: Funktionscode <b>03</b> (Read Holding Registers), <b>2 Register</b> pro Wert, Format <b>32-Bit-Float, Big-Endian</b>. Alle drei Werte auf einmal: 6 Register ab Adresse 0 lesen.</p>
 <h3>Testen mit Modbus Poll</h3>
-<p>Modbus Poll zählt <b>ab 0</b>, solange <i>PLC addresses (base 1)</i> nicht angehakt ist &mdash; mit Haken zeigt es die 4x-Bezeichnungen.</p>
-<table>
-<tr><th>Function</th><td>03 Read Holding Registers</td></tr>
-<tr><th>Address</th><td><code>0</code> (mit PLC addresses <code>40001</code>)</td></tr>
-<tr><th>Quantity</th><td><code>2</code> für einen Wert, <code>6</code> für alle drei</td></tr>
-</table>
-<p>Die Antwort kommt als einzelne 16-Bit-Register. Damit eine echte Zahl erscheint, die <b>zwei zusammengehörenden Register markieren</b> und dann <i>Format &rarr; 32-Bit Float Big-Endian</i> wählen.</p>
-<p>Zwei Register je Wert, 32-Bit-IEEE-754-Float, big-endian. Holding-Register, <b>nur FC03</b>. Ein Lesezugriff muss auf einer Wertgrenze beginnen und ganze Werte umfassen.</p>
-<p>Port 502 ist Standard. Nur ändern, wenn ihn auf dem Gerät schon etwas anderes benutzt. Die Änderung greift innerhalb einer Sekunde, ohne Neustart.</p>
-<p>Alles außerhalb der Tabelle wird sauber beantwortet: falscher Funktionscode gibt Exception&nbsp;<code>01</code>, falsche Adresse Exception&nbsp;<code>02</code>, eine ungerade oder zu große Anzahl Exception&nbsp;<code>03</code>. Quantity&nbsp;1 wird deshalb abgelehnt &mdash; ein halber Float ist kein Wert.</p>
+<p>Adresse <code>0</code> (oder <code>40001</code>, wenn <i>PLC addresses (base 1)</i> angehakt ist), Quantity <code>2</code> für einen Wert oder <code>6</code> für alle drei. Dann die zwei Register eines Werts markieren und <i>Format &rarr; 32-Bit Float Big-Endian</i> wählen, damit die richtige Zahl erscheint.</p>
+<p>Port 502 ist der Standard. Ändere ihn nur, wenn ihn auf dem Gerät schon etwas anderes benutzt. Eine Änderung wirkt innerhalb einer Sekunde, ohne Neustart.</p>
 </div>
 </section>
+
 <section id="pvswitch">
 <h2><span class="en">PV switch</span><span class="de">PV-Schalter</span></h2>
 <div class="en">
-<p>All programs. Default <span class="sw">OFF</span>. Switches a second Tasmota device on PV surplus &mdash; a smart plug for a pool pump, say. Like option (Op1) of the old scripts. In the chart programs it sits under <a href="#pv">PV</a> and appears once <b>Feed-in</b> is on.</p>
+<p>All programs, off by default. When you have solar power to spare, it switches on a second Tasmota device, for example a smart plug with a pool pump. When the surplus is gone, it switches the device off again. This is the same as option (Op1) of the old scripts. In the chart programs you find it under <a href="#pv">PV</a>, as soon as <b>Feed-in</b> is switched on.</p>
 <table>
 <tr><th>IP</th><td>IP address of the other device.</td></tr>
-<tr><th>On [W]</th><td><b>On</b> when <code>power2</code> drops below this. Negative = feed-in. Default &minus;300: on from 300&nbsp;W feed-in.</td></tr>
-<tr><th>Off [W]</th><td><b>Off</b> when <code>power2</code> rises above this. Default 100: off from 100&nbsp;W import. Never below <i>On</i> &mdash; Save raises it to that.</td></tr>
+<tr><th>On [W]</th><td>Switches <b>on</b> when the power drops below this value. Negative means feed-in. Default &minus;300: on from 300&nbsp;W feed-in.</td></tr>
+<tr><th>Off [W]</th><td>Switches <b>off</b> when the power rises above this value. Default 100: off from 100&nbsp;W bought. It can not be lower than <i>On</i>; Save corrects it if needed.</td></tr>
 </table>
-<p>It works on <code>power2</code>, the smoothed grid power, so a passing cloud does not switch. A command goes out only on a change: <code>Power ON</code> / <code>Power OFF</code> to <code>http://&lt;IP&gt;/cm</code>. The main page shows the state. Unticking it, or a new IP, switches the old device off first.</p>
-<p><b>Toggle</b> switches the other device by hand &mdash; for a test, also before saving. Its state is not read back.</p>
+<p>The switch uses the smoothed power (<code>power2</code>), so a passing cloud does not switch the device. A command is only sent when the state changes. The main page shows whether the device is on or off. If you untick the option or enter another IP, the old device is switched off first.</p>
+<p>The <b>Toggle</b> button switches the other device by hand, for a quick test. It also works before you save. It does not show whether the device is on or off.</p>
 <h3>The other device</h3>
 <ul>
-<li>Tasmota, reachable from this one. Give it a fixed IP (DHCP reservation in the router).</li>
-<li><b>No web password</b> (<code>WebPassword</code> empty) &mdash; otherwise it rejects the command.</li>
-<li>The load hangs on relay&nbsp;1 (<code>Power</code> = <code>Power1</code>).</li>
-<li>Recommended: <code>PowerOnState 0</code>, so it stays off after a power cut until there is surplus again.</li>
+<li>It runs Tasmota and can be reached from this device. Give it a fixed IP address (in your router).</li>
+<li>It must <b>not have a web password</b>, otherwise it refuses the command.</li>
+<li>The appliance is connected to relay&nbsp;1.</li>
+<li>Tip: set <code>PowerOnState 0</code> on it. Then it stays off after a power cut until there is surplus again.</li>
 </ul>
 </div>
 <div class="de">
-<p>Alle Programme. Standard <span class="sw">AUS</span>. Schaltet bei PV-Überschuss ein zweites Tasmota-Gerät &mdash; z.B. eine Steckdose für die Poolpumpe. Wie die Option (Op1) der alten Scripte. In den Diagramm-Programmen steht er unter <a href="#pv">PV</a> und erscheint, sobald <b>Einspeisung</b> an ist.</p>
+<p>Alle Programme, standardmäßig aus. Hast du Solarstrom übrig, schaltet er ein zweites Tasmota-Gerät ein, zum Beispiel eine Steckdose mit Poolpumpe. Ist der Überschuss weg, schaltet er es wieder aus. Das ist dasselbe wie die Option (Op1) der alten Scripte. In den Diagramm-Programmen findest du ihn unter <a href="#pv">PV</a>, sobald <b>Einspeisung</b> eingeschaltet ist.</p>
 <table>
 <tr><th>IP</th><td>IP-Adresse des anderen Geräts.</td></tr>
-<tr><th>Ein [W]</th><td><b>Ein</b>, wenn <code>power2</code> darunter fällt. Negativ = Einspeisung. Standard &minus;300: ein ab 300&nbsp;W Einspeisung.</td></tr>
-<tr><th>Aus [W]</th><td><b>Aus</b>, wenn <code>power2</code> darüber steigt. Standard 100: aus ab 100&nbsp;W Bezug. Nie unter <i>Ein</i> &mdash; Speichern hebt es darauf an.</td></tr>
+<tr><th>Ein [W]</th><td>Schaltet <b>ein</b>, wenn die Leistung unter diesen Wert fällt. Negativ heißt Einspeisung. Standard &minus;300: ein ab 300&nbsp;W Einspeisung.</td></tr>
+<tr><th>Aus [W]</th><td>Schaltet <b>aus</b>, wenn die Leistung über diesen Wert steigt. Standard 100: aus ab 100&nbsp;W Bezug. Der Wert kann nicht kleiner als <i>Ein</i> sein, Speichern korrigiert ihn sonst.</td></tr>
 </table>
-<p>Grundlage ist <code>power2</code>, die geglättete Netzleistung &mdash; eine vorbeiziehende Wolke schaltet also nicht. Gesendet wird nur bei einem Wechsel: <code>Power ON</code> / <code>Power OFF</code> an <code>http://&lt;IP&gt;/cm</code>. Die Hauptseite zeigt den Zustand. Wird die Option abgewählt oder die IP geändert, wird das alte Gerät vorher ausgeschaltet.</p>
-<p><b>Umschalten</b> schaltet das andere Gerät von Hand um &mdash; zum Testen, auch schon vor dem Speichern. Sein Zustand wird nicht abgefragt.</p>
+<p>Der Schalter nutzt die geglättete Leistung (<code>power2</code>). Eine vorbeiziehende Wolke schaltet also nicht. Gesendet wird nur, wenn sich der Zustand ändert. Die Hauptseite zeigt, ob das Gerät ein- oder ausgeschaltet ist. Nimmst du das Häkchen weg oder trägst eine andere IP ein, wird das alte Gerät vorher ausgeschaltet.</p>
+<p>Der Knopf <b>Umschalten</b> schaltet das andere Gerät von Hand um, für einen schnellen Test. Das geht auch schon vor dem Speichern. Ob das Gerät gerade ein oder aus ist, zeigt der Knopf nicht.</p>
 <h3>Das andere Gerät</h3>
 <ul>
-<li>Tasmota, von diesem Gerät aus erreichbar. Mit fester IP (DHCP-Reservierung im Router).</li>
-<li><b>Kein Web-Passwort</b> (<code>WebPassword</code> leer) &mdash; sonst lehnt es den Befehl ab.</li>
-<li>Der Verbraucher hängt an Relais&nbsp;1 (<code>Power</code> = <code>Power1</code>).</li>
-<li>Empfohlen: <code>PowerOnState 0</code>, damit es nach einem Stromausfall aus bleibt, bis wieder Überschuss da ist.</li>
+<li>Es läuft mit Tasmota und ist von diesem Gerät aus erreichbar. Gib ihm eine feste IP-Adresse (im Router).</li>
+<li>Es darf <b>kein Web-Passwort</b> haben, sonst lehnt es den Befehl ab.</li>
+<li>Der Verbraucher hängt an Relais&nbsp;1.</li>
+<li>Tipp: Stelle dort <code>PowerOnState 0</code> ein. Dann bleibt es nach einem Stromausfall aus, bis wieder Überschuss da ist.</li>
 </ul>
 </div>
 </section>
+
 <section id="options">
 <h2><span class="en">Settings file</span><span class="de">Einstellungsdatei</span></h2>
 <div class="en">
-<p>Each program keeps its settings in its own <code>.pvs</code> &mdash; the name is derived from the <code>.tcb</code>, so switching programs used to start from scratch: no meter, no pins, no language, and the day/month/year totals back at zero. <code>/tc_options.cfg</code> sits beside them and is shared by all of them.</p>
+<p>Each program keeps its data in its own file. So that you do not have to set everything up again after changing the program, the shared settings are also kept in <code>/tc_options.cfg</code>. All programs use this file.</p>
 <pre><code># tc_options - shared by all programs
 @ui_de=1
 @sml_meter_sel=89
@@ -612,24 +550,24 @@ body.lang-de .en{display:none}
 @chart_short=240
 @imp_day=26714.950
 @exp_day=659.775</code></pre>
-<p>One <code>@name=value</code> per line. A program reads the keys it knows and <b>carries the rest through untouched</b>, so running <code>sml_simple</code> for a while does not throw away the emulator's settings &mdash; go back and they are still there.</p>
+<p>Each line is <code>@name=value</code>. A program reads the lines it knows and keeps all others as they are. If you run <code>sml_simple</code> for a while, the emulator settings are still there when you change back.</p>
 <table>
 <tr><th><code>ui_*</code></th><td>Language, power saving.</td></tr>
-<tr><th><code>sml_*</code></th><td>Meter, RX/TX pin, filter, phases, driver rows.</td></tr>
+<tr><th><code>sml_*</code></th><td>Meter, RX/TX pin, filter, phases, display.</td></tr>
 <tr><th><code>es_*</code> / <code>ct_*</code> / <code>mb_*</code></th><td>Emulators and Modbus.</td></tr>
-<tr><th><code>chart_*</code></th><td><code>chart_short</code> is the short-term chart's range in <b>minutes</b> (15, 30, 60, 120, 240) &mdash; minutes rather than a menu position, so the number says what it means. <code>chart_onmain</code> puts the charts on Tasmota's main page.</td></tr>
-<tr><th><code>imp_*</code> / <code>exp_*</code></th><td>The energy baselines in kWh: the zero points day, week, month and year totals are counted from. <code>sml_da</code> is the last-seen day of the month and belongs with them.</td></tr>
-<tr><th><code>sml_bezug</code> / <code>exp_virt</code></th><td>The <a href="#bezug">Import meter</a> switch and its computed export total in kWh.</td></tr>
+<tr><th><code>chart_*</code></th><td><code>chart_short</code> is the time span of the short-term chart in minutes (15, 30, 60, 120, 240). <code>chart_onmain</code> puts the charts on the Tasmota main page.</td></tr>
+<tr><th><code>imp_*</code> / <code>exp_*</code></th><td>The meter readings at the start of the day, week, month and year, in kWh. The program uses them to work out your consumption. <code>sml_da</code> belongs to them.</td></tr>
+<tr><th><code>sml_bezug</code> / <code>exp_virt</code></th><td>The <a href="#bezug">Import meter</a> option and its calculated feed-in reading in kWh.</td></tr>
 <tr><th><code>sw_*</code></th><td>The <a href="#pvswitch">PV switch</a>: on/off, On [W], Off [W], IP.</td></tr>
 </table>
-<h3>Editing by hand</h3>
-<p>Download the file, change it, upload it, <b>then restart the script</b> &mdash; in that order. It is read once at start; a running program holds the values in memory and would write yours back over at the next rollover.</p>
-<p>The baselines are what you would correct: set <code>imp_day</code> to the meter reading at midnight and today's consumption is right again.</p>
-<p class="warn">Do not delete the file to "reset" things &mdash; it is rebuilt from whatever the current program has in its own <code>.pvs</code>, which after a program change may be zeros.</p>
-<p>The file is written when something actually changes: once when it is created, on a Save that changed a value, and when a baseline rolls over at midnight. Not on a timer &mdash; roughly one write a day. The Import meter's <code>exp_virt</code> rides along with the midnight write; a program without charts writes it once at midnight.</p>
+<h3>Changing it by hand</h3>
+<p>Download the file, change it, upload it, <b>then restart the program</b>. Keep this order. A running program would otherwise write its own values back over yours.</p>
+<p>Usually you would only correct the start readings. Set <code>imp_day</code> to the meter reading at midnight, and today's consumption is right again.</p>
+<p class="warn">Do not delete the file to reset something. It is written again from the data of the running program, and after a program change that can be zeros.</p>
+<p>The file is only written when something has changed: when you save a setting, and once at midnight. That is about once a day, which is gentle on the flash memory.</p>
 </div>
 <div class="de">
-<p>Jedes Programm hält seine Einstellungen in einer eigenen <code>.pvs</code> &mdash; der Name wird aus der <code>.tcb</code> abgeleitet. Ein Programmwechsel fing deshalb bei null an: kein Zähler, keine Pins, keine Sprache, und die Tages-, Monats- und Jahreswerte zurück auf Anfang. <code>/tc_options.cfg</code> liegt daneben und gehört allen gemeinsam.</p>
+<p>Jedes Programm speichert seine Daten in einer eigenen Datei. Damit du nach einem Programmwechsel nicht alles neu einstellen musst, stehen die gemeinsamen Einstellungen zusätzlich in <code>/tc_options.cfg</code>. Diese Datei nutzen alle Programme.</p>
 <pre><code># tc_options - shared by all programs
 @ui_de=1
 @sml_meter_sel=89
@@ -641,21 +579,21 @@ body.lang-de .en{display:none}
 @chart_short=240
 @imp_day=26714.950
 @exp_day=659.775</code></pre>
-<p>Eine Zeile <code>@name=wert</code> je Eintrag. Ein Programm liest die Schlüssel, die es kennt, und <b>trägt alle anderen unverändert mit</b> &mdash; läuft eine Weile <code>sml_simple</code>, überleben die Emulator-Einstellungen trotzdem und sind beim Zurückwechseln wieder da.</p>
+<p>Jede Zeile hat die Form <code>@name=wert</code>. Ein Programm liest die Zeilen, die es kennt, und lässt alle anderen stehen. Läuft eine Weile <code>sml_simple</code>, sind die Emulator-Einstellungen beim Zurückwechseln noch da.</p>
 <table>
 <tr><th><code>ui_*</code></th><td>Sprache, Energiesparmodus.</td></tr>
-<tr><th><code>sml_*</code></th><td>Zähler, RX-/TX-Pin, Filter, Phasen, Treiberzeilen.</td></tr>
+<tr><th><code>sml_*</code></th><td>Zähler, RX-/TX-Pin, Filter, Phasen, Anzeige.</td></tr>
 <tr><th><code>es_*</code> / <code>ct_*</code> / <code>mb_*</code></th><td>Emulatoren und Modbus.</td></tr>
-<tr><th><code>chart_*</code></th><td><code>chart_short</code> ist die Zeitspanne des Kurzzeit-Diagramms in <b>Minuten</b> (15, 30, 60, 120, 240) &mdash; Minuten statt einer Menüposition, damit die Zahl sagt, was sie bedeutet. <code>chart_onmain</code> legt die Diagramme auf Tasmotas Hauptseite.</td></tr>
-<tr><th><code>imp_*</code> / <code>exp_*</code></th><td>Die Basiswerte in kWh: die Nullpunkte, von denen Tages-, Wochen-, Monats- und Jahressumme aus gezählt werden. <code>sml_da</code> ist der zuletzt gesehene Monatstag und gehört dazu.</td></tr>
-<tr><th><code>sml_bezug</code> / <code>exp_virt</code></th><td>Der Schalter <a href="#bezug">Bezugszähler</a> und sein gerechneter Einspeise-Zählerstand in kWh.</td></tr>
+<tr><th><code>chart_*</code></th><td><code>chart_short</code> ist die Zeitspanne des Kurzzeit-Diagramms in Minuten (15, 30, 60, 120, 240). <code>chart_onmain</code> legt die Diagramme auf die Tasmota-Hauptseite.</td></tr>
+<tr><th><code>imp_*</code> / <code>exp_*</code></th><td>Die Zählerstände am Anfang von Tag, Woche, Monat und Jahr, in kWh. Daraus rechnet das Programm deinen Verbrauch aus. <code>sml_da</code> gehört dazu.</td></tr>
+<tr><th><code>sml_bezug</code> / <code>exp_virt</code></th><td>Die Option <a href="#bezug">Bezugszähler</a> und ihr berechneter Einspeise-Zählerstand in kWh.</td></tr>
 <tr><th><code>sw_*</code></th><td>Der <a href="#pvswitch">PV-Schalter</a>: an/aus, Ein [W], Aus [W], IP.</td></tr>
 </table>
-<h3>Von Hand editieren</h3>
-<p>Datei herunterladen, ändern, hochladen, <b>dann das Script neu starten</b> &mdash; in dieser Reihenfolge. Gelesen wird sie einmal beim Start; ein laufendes Programm hält die Werte im Speicher und schriebe deine Korrektur beim nächsten Umbruch wieder weg.</p>
-<p>Zu korrigieren sind vor allem die Basiswerte: <code>imp_day</code> auf den Zählerstand um Mitternacht gesetzt, und der Tagesverbrauch stimmt wieder.</p>
-<p class="warn">Die Datei nicht löschen, um etwas &bdquo;zurückzusetzen&ldquo; &mdash; sie wird aus dem neu aufgebaut, was das gerade laufende Programm in seiner eigenen <code>.pvs</code> stehen hat, und das können nach einem Programmwechsel Nullen sein.</p>
-<p>Geschrieben wird nur, wenn sich wirklich etwas ändert: einmal beim Anlegen, bei einem Speichern mit geändertem Wert, und wenn um Mitternacht ein Basiswert umspringt. Nicht im Takt &mdash; also etwa einmal am Tag. Das <code>exp_virt</code> des Bezugszählers fährt beim Mitternachts-Schreiben mit; ein Programm ohne Diagramme schreibt es einmal um Mitternacht.</p>
+<h3>Von Hand ändern</h3>
+<p>Datei herunterladen, ändern, hochladen, <b>dann das Programm neu starten</b>. Halte diese Reihenfolge ein. Ein laufendes Programm würde sonst seine eigenen Werte über deine schreiben.</p>
+<p>Meistens korrigiert man nur die Anfangsstände. Setzt du <code>imp_day</code> auf den Zählerstand um Mitternacht, stimmt der heutige Verbrauch wieder.</p>
+<p class="warn">Lösche die Datei nicht, um etwas zurückzusetzen. Sie wird aus den Daten des laufenden Programms neu geschrieben, und das können nach einem Programmwechsel Nullen sein.</p>
+<p>Die Datei wird nur geschrieben, wenn sich etwas geändert hat: wenn du eine Einstellung speicherst, und einmal um Mitternacht. Also etwa einmal am Tag, das schont den Flash-Speicher.</p>
 </div>
 </section>
 
@@ -663,22 +601,22 @@ body.lang-de .en{display:none}
 <h2><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></h2>
 <div class="en">
 <table>
-<tr><th>All values 0</th><td>Check <b>Meter active</b>, then the pins, then the descriptor. <b>SML display</b> on tells you whether the driver is producing anything at all.</td></tr>
-<tr><th>Power has the wrong sign</th><td>Import and export are swapped in the descriptor. Feed-in must be negative.</td></tr>
-<tr><th>Values jump</th><td>Switch the <a href="#filter">filter</a> on. If values still jump around, the reading head is aligned badly with IR diodes of meter.</td></tr>
-<tr><th>Charts stay empty</th><td>No NTP time yet, or the baselines were never initialised. See <a href="#data">chart data</a>.</td></tr>
-<tr><th>Settings lost after reboot</th><td>Settings are written when they change and at program stop. A power cut in between can cost the last change.</td></tr>
-<tr><th>Modbus does not answer</th><td>Check the port, and whether the network was up when the program started. <kbd>weblog 4</kbd> shows the bind.</td></tr>
+<tr><th>All values 0</th><td>Check <b>Meter active</b> first, then the pins, then the descriptor. Switch on <b>SML display</b>: if Tasmota shows no values either, the meter is not being read at all.</td></tr>
+<tr><th>Power has the wrong sign</th><td>Bought and fed-in are swapped in the descriptor. Feed-in must be negative.</td></tr>
+<tr><th>Values jump around</th><td>Switch on the <a href="#filter">filter</a>. If it stays restless, the reading head does not sit straight on the meter's light window.</td></tr>
+<tr><th>Charts stay empty</th><td>The device has no time from the internet yet, or the start readings were never set. See <a href="#data">chart data</a>.</td></tr>
+<tr><th>Settings gone after a reboot</th><td>Settings are saved when you press Save and when the program stops. A power cut right after a change can lose that change.</td></tr>
+<tr><th>Modbus does not answer</th><td>Check the port, and whether the Wi-Fi was already connected when the program started.</td></tr>
 </table>
 </div>
 <div class="de">
 <table>
-<tr><th>Alle Werte 0</th><td>Erst <b>Zähler aktiv</b> prüfen, dann die Pins, dann den Descriptor. <b>Treiberzeilen zeigen</b> an verrät, ob der Treiber überhaupt etwas liefert.</td></tr>
-<tr><th>Leistung mit falschem Vorzeichen</th><td>Bezug und Einspeisung sind im Descriptor vertauscht. Einspeisung muss negativ sein.</td></tr>
-<tr><th>Werte springen</th><td><a href="#filter">Filter</a> einschalten. Bleibt es unruhig, sitzt der Lesekopf schlecht.</td></tr>
-<tr><th>Diagramme bleiben leer</th><td>Noch keine NTP-Zeit, oder die Basiswerte wurden nie initialisiert. Siehe <a href="#data">Diagrammdaten</a>.</td></tr>
-<tr><th>Einstellungen nach Neustart weg</th><td>Einstellungen werden bei Änderung und beim Programmende geschrieben. Ein Stromausfall dazwischen kann die letzte Änderung kosten.</td></tr>
-<tr><th>Modbus antwortet nicht</th><td>Port prüfen und ob das Netzwerk beim Programmstart schon stand. <kbd>weblog 4</kbd> zeigt das Binden.</td></tr>
+<tr><th>Alle Werte 0</th><td>Zuerst <b>Zähler aktiv</b> prüfen, dann die Pins, dann den Descriptor. Schalte <b>SML Anzeige</b> ein: Zeigt auch Tasmota keine Werte, wird der Zähler gar nicht gelesen.</td></tr>
+<tr><th>Leistung hat das falsche Vorzeichen</th><td>Bezug und Einspeisung sind im Descriptor vertauscht. Einspeisung muss negativ sein.</td></tr>
+<tr><th>Werte springen</th><td><a href="#filter">Filter</a> einschalten. Bleibt es unruhig, sitzt der Lesekopf nicht gerade auf dem Lichtfenster des Zählers.</td></tr>
+<tr><th>Diagramme bleiben leer</th><td>Das Gerät hat noch keine Uhrzeit aus dem Internet, oder die Anfangsstände wurden nie gesetzt. Siehe <a href="#data">Diagrammdaten</a>.</td></tr>
+<tr><th>Einstellungen nach Neustart weg</th><td>Gespeichert wird beim Drücken auf Speichern und wenn das Programm stoppt. Ein Stromausfall direkt nach einer Änderung kann diese Änderung kosten.</td></tr>
+<tr><th>Modbus antwortet nicht</th><td>Port prüfen, und ob das WLAN beim Programmstart schon verbunden war.</td></tr>
 </table>
 </div>
 </section>

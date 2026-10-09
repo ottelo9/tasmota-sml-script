@@ -47,7 +47,7 @@ body.lang-de .en{display:none}
 
 <header>
   <h1><span class="en">TinyC <code>.pvs</code> chart editor</span><span class="de">TinyC <code>.pvs</code>-Diagramm-Editor</span></h1>
-  <p class="sub"><span class="en">Look at and edit the persist data of a running TinyC program</span><span class="de">Die persist-Daten eines laufenden TinyC-Programms ansehen und bearbeiten</span></p>
+  <p class="sub"><span class="en">Look at and change the stored data of a TinyC program</span><span class="de">Die gespeicherten Daten eines TinyC-Programms ansehen und ändern</span></p>
   <div class="switch">
     <button data-set="en">English</button>
     <button data-set="de">Deutsch</button>
@@ -56,9 +56,9 @@ body.lang-de .en{display:none}
 
 <nav>
   <a href="#start">Start</a>
-  <a href="#pvs"><span class="en">The .pvs file</span><span class="de">Die .pvs-Datei</span></a>
   <a href="#steps"><span class="en">Editing</span><span class="de">Bearbeiten</span></a>
   <a href="#cfg">tc_options.cfg</a>
+  <a href="#pvs"><span class="en">The .pvs file</span><span class="de">Die .pvs-Datei</span></a>
   <a href="#types"><span class="en">Types</span><span class="de">Typen</span></a>
   <a href="#bin">.bin</a>
   <a href="../">&#8962; <span class="en">All pages</span><span class="de">Alle Seiten</span></a>
@@ -67,34 +67,16 @@ body.lang-de .en{display:none}
 <section id="start">
 <h2>Start</h2>
 <div class="en">
-<p><a href="tinyc_chart_editor.html"><b>&#9654; Open the online editor</b></a> &mdash; or <a href="https://github.com/ottelo9/tasmota-sml-script/blob/main/docs/pvs_editor/tinyc_chart_editor.html">download <code>tinyc_chart_editor.html</code></a> and open it from your own disk. A single HTML file either way: no server, nothing is uploaded. It edits the <code>.pvs</code> of a TinyC slot: the file the running program keeps its <code>persist</code> variables in (<code>/sml_chart.tcb</code> &rarr; <code>/sml_chart.pvs</code>). Chart history, counter zero points, settings &mdash; everything that survives a restart.</p>
-<p>Fetch and put back through the device's file manager, <code>http://&lt;device&gt;/ufsd</code>.</p>
-<p>Moving over from a Tasmota Scripter script? That is the <a href="../converter/"><b>converter</b></a>.</p>
+<p>With this tool you can look at the stored data of a TinyC program and change it, for example a wrong bar in the day chart or a wrong start reading.</p>
+<p><a href="tinyc_chart_editor.html"><b>&#9654; Open the online editor</b></a>, or <a href="https://github.com/ottelo9/tasmota-sml-script/blob/main/docs/pvs_editor/tinyc_chart_editor.html">download <code>tinyc_chart_editor.html</code></a> and open it on your PC. It is a single file. Nothing is uploaded anywhere, everything happens in your browser.</p>
+<p>Each TinyC program keeps its data in a file with the ending <code>.pvs</code> (for <code>/sml_chart.tcb</code> that is <code>/sml_chart.pvs</code>). It contains the chart history, the start readings and the settings, everything that survives a restart. You download and upload it in the file manager of your device: <code>http://&lt;device&gt;/ufsd</code>.</p>
+<p>Coming from an old Scripter script? Then use the <a href="../converter/"><b>converter</b></a>.</p>
 </div>
 <div class="de">
-<p><a href="tinyc_chart_editor.html"><b>&#9654; Online-Editor öffnen</b></a> &mdash; oder <a href="https://github.com/ottelo9/tasmota-sml-script/blob/main/docs/pvs_editor/tinyc_chart_editor.html"><code>tinyc_chart_editor.html</code> herunterladen</a> und lokal öffnen. So oder so eine einzelne HTML-Datei: kein Server, es wird nichts hochgeladen. Bearbeitet wird die <code>.pvs</code> eines TinyC-Slots: die Datei, in der das laufende Programm seine <code>persist</code>-Variablen hält (<code>/sml_chart.tcb</code> &rarr; <code>/sml_chart.pvs</code>). Diagrammverläufe, Zähler-Nullpunkte, Einstellungen &mdash; alles, was den Neustart überlebt.</p>
-<p>Holen und zurückspielen über den Dateimanager des Geräts, <code>http://&lt;geraet&gt;/ufsd</code>.</p>
-<p>Umzug von einem Tasmota-Scripter-Script? Dafür gibt es den <a href="../converter/"><b>Konverter</b></a>.</p>
-</div>
-</section>
-
-<section id="pvs">
-<h2><span class="en">The <code>.pvs</code> file</span><span class="de">Die <code>.pvs</code>-Datei</span></h2>
-<div class="en">
-<p><code>PVS3</code> is what the current compiler writes. Name-keyed and <b>without any checksum</b>:</p>
-<pre><code>'P' 'V' '3'  count:u8
-per entry:   nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</code></pre>
-<p><code>PVS2</code> is the predecessor (<code>'P','V','H'</code>, <code>layout_hash:u32</code>, and <code>index:u16</code> instead of the name). That hash covers the <b>layout</b> &mdash; count, index, slot count &mdash; not the data. Changing values leaves it valid, so the stored hash bytes are simply carried through. Both versions are read and written back in the same version.</p>
-<p>The loader on the device is forgiving: unknown names are skipped, a missing entry keeps its current value, a short entry is restored as far as it goes. A file written here is therefore just as valid as one the device wrote.</p>
-<p><b>Without an edit the output is byte-for-byte identical to the input.</b> Only what you changed is rewritten &mdash; entries the editor does not even know go back out untouched.</p>
-</div>
-<div class="de">
-<p><code>PVS3</code> ist das, was der aktuelle Compiler schreibt. Namensbasiert und <b>ohne Prüfsumme</b>:</p>
-<pre><code>'P' 'V' '3'  count:u8
-je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</code></pre>
-<p><code>PVS2</code> ist der Vorgänger (<code>'P','V','H'</code>, <code>layout_hash:u32</code>, und <code>index:u16</code> statt des Namens). Dieser Hash geht über das <b>Layout</b> &mdash; Anzahl, Index, Slotzahl &mdash; nicht über die Daten. Werte zu ändern lässt ihn gültig, deshalb werden die gespeicherten Hash-Bytes einfach durchgereicht. Beide Versionen werden gelesen und in derselben Version wieder geschrieben.</p>
-<p>Der Loader im Gerät ist nachsichtig: unbekannte Namen werden übersprungen, ein fehlender Eintrag behält seinen aktuellen Wert, ein zu kurzer wird so weit geladen wie er reicht. Eine hier geschriebene Datei ist damit genauso gültig wie eine vom Gerät.</p>
-<p><b>Ohne Änderung ist die Ausgabe Byte für Byte identisch mit der Eingabe.</b> Nur Bearbeitetes wird neu geschrieben &mdash; auch Einträge, die der Editor gar nicht kennt, gehen unverändert wieder hinaus.</p>
+<p>Mit diesem Werkzeug kannst du die gespeicherten Daten eines TinyC-Programms ansehen und ändern, zum Beispiel einen falschen Balken im Tagesdiagramm oder einen falschen Anfangsstand.</p>
+<p><a href="tinyc_chart_editor.html"><b>&#9654; Online-Editor öffnen</b></a>, oder <a href="https://github.com/ottelo9/tasmota-sml-script/blob/main/docs/pvs_editor/tinyc_chart_editor.html"><code>tinyc_chart_editor.html</code> herunterladen</a> und auf deinem PC öffnen. Es ist eine einzelne Datei. Es wird nichts irgendwohin hochgeladen, alles passiert in deinem Browser.</p>
+<p>Jedes TinyC-Programm speichert seine Daten in einer Datei mit der Endung <code>.pvs</code> (zu <code>/sml_chart.tcb</code> gehört <code>/sml_chart.pvs</code>). Darin stehen der Diagrammverlauf, die Anfangsstände und die Einstellungen, also alles, was einen Neustart übersteht. Herunter- und hochladen kannst du sie im Dateimanager deines Geräts: <code>http://&lt;geraet&gt;/ufsd</code>.</p>
+<p>Du kommst von einem alten Scripter-Script? Dann nimm den <a href="../converter/"><b>Konverter</b></a>.</p>
 </div>
 </section>
 
@@ -102,131 +84,145 @@ je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</co
 <h2><span class="en">Editing</span><span class="de">Bearbeiten</span></h2>
 <div class="en">
 <ol>
-<li>Download the <code>.pvs</code> from the device's file manager and drop it in.</li>
-<li>Every entry is listed: series as a chart with a value box, scalars as an input field. Anything changed gets a blue frame. Hovering a chart shows the exact value with its unit.</li>
-<li>Download the <code>.pvs</code> and put it back:
+<li>Download the <code>.pvs</code> in the file manager of your device and drag it into the editor.</li>
+<li>You see all stored values: rows of values as a chart with an input box, single values as an input field. What you changed gets a blue frame. Move the mouse over a chart to see the exact value.</li>
+<li>Download the changed <code>.pvs</code> and put it back:
   <ul>
-  <li>Stop the slot: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; the red &#x25A0;</li>
-  <li>Upload: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload &mdash; same name, same path</li>
-  <li>Start the slot: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; the green &#x25B6;</li>
+  <li>Stop the program: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; the red &#x25A0;</li>
+  <li>Upload: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload, with the same name</li>
+  <li>Start the program again: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; the green &#x25B6;</li>
   </ul>
 </li>
 </ol>
-<p class="warn">The order matters: if the slot is still running while you upload, <code>saveVars()</code> writes its own values over yours when it stops.</p>
-<p class="warn">Changed a counter zero point, the month day or a setting? Those are taken from <code>tc_options.cfg</code> at start-up, not from the <code>.pvs</code> &mdash; upload the <code>tc_options.cfg</code> as well, see <a href="#cfg">below</a>. The editor says so under <i>Save</i>.</p>
-<p>The <code>.pvs</code> is read at start-up and <b>not</b> renamed &mdash; it is the storage, not an import file. The CSV export is for reading only; the device never imports it.</p>
+<p class="warn">Keep this order. If the program is still running, it writes its own values over yours when it stops.</p>
+<p class="warn">Did you change a start reading, the day of the month or a setting? The program takes these from the <code>tc_options.cfg</code> at start-up, not from the <code>.pvs</code>. So upload the <code>tc_options.cfg</code> as well, see <a href="#cfg">below</a>. The editor reminds you of this when saving.</p>
+<p>If you do not change anything, the file stays exactly the same. Values the editor does not know are kept as they are.</p>
 </div>
 <div class="de">
 <ol>
-<li>Die <code>.pvs</code> im Dateimanager des Geräts herunterladen und hier hineinziehen.</li>
-<li>Alle Einträge werden aufgelistet: Reihen als Diagramm mit Wertefeld, Skalare als Eingabefeld. Geändertes ist blau umrandet. Mit der Maus über ein Diagramm zeigt den genauen Wert samt Einheit.</li>
-<li>Die <code>.pvs</code> herunterladen und zurückspielen:
+<li>Die <code>.pvs</code> im Dateimanager deines Geräts herunterladen und in den Editor ziehen.</li>
+<li>Du siehst alle gespeicherten Werte: Wertereihen als Diagramm mit Eingabefeld, einzelne Werte als Eingabefeld. Was du geändert hast, ist blau umrandet. Fährst du mit der Maus über ein Diagramm, siehst du den genauen Wert.</li>
+<li>Die geänderte <code>.pvs</code> herunterladen und zurückspielen:
   <ul>
-  <li>Slot stoppen: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das rote &#x25A0;</li>
-  <li>Hochladen: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload &mdash; gleicher Name, gleicher Pfad</li>
-  <li>Slot starten: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das grüne &#x25B6;</li>
+  <li>Programm stoppen: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das rote &#x25A0;</li>
+  <li>Hochladen: <b>Tools &rsaquo; Manage File system</b> &rsaquo; Upload, mit demselben Namen</li>
+  <li>Programm wieder starten: <b>Tools &rsaquo; TinyC Console</b> &rsaquo; das grüne &#x25B6;</li>
   </ul>
 </li>
 </ol>
-<p class="warn">Die Reihenfolge zählt: läuft der Slot beim Hochladen noch, schreibt <code>saveVars()</code> beim Stoppen seine eigenen Werte über deine.</p>
-<p class="warn">Einen Zähler-Nullpunkt, den Monatstag oder eine Einstellung geändert? Die holt sich das Programm beim Start aus der <code>tc_options.cfg</code>, nicht aus der <code>.pvs</code> &mdash; also die <code>tc_options.cfg</code> mit hochladen, siehe <a href="#cfg">unten</a>. Der Editor weist unter <i>Speichern</i> darauf hin.</p>
-<p>Die <code>.pvs</code> wird beim Start gelesen und <b>nicht</b> umbenannt &mdash; sie ist der Speicher, keine Import-Datei. Die CSV-Ausgabe ist nur zum Nachlesen; das Gerät liest sie nie ein.</p>
+<p class="warn">Halte diese Reihenfolge ein. Läuft das Programm noch, schreibt es beim Stoppen seine eigenen Werte über deine.</p>
+<p class="warn">Hast du einen Anfangsstand, den Monatstag oder eine Einstellung geändert? Die holt sich das Programm beim Start aus der <code>tc_options.cfg</code>, nicht aus der <code>.pvs</code>. Lade also die <code>tc_options.cfg</code> mit hoch, siehe <a href="#cfg">unten</a>. Der Editor erinnert dich beim Speichern daran.</p>
+<p>Änderst du nichts, bleibt die Datei genau gleich. Werte, die der Editor nicht kennt, bleiben unverändert.</p>
 </div>
 </section>
 
 <section id="cfg">
 <h2><code>tc_options.cfg</code></h2>
 <div class="en">
-<p>All TinyC programs share <code>/tc_options.cfg</code>: language, meter, pins, the emulator and CT options &mdash; and the counter zero points. It carries them across a program change, and on the first tick it <b>wins over the <code>.pvs</code></b>:</p>
-<pre><code>sml_dval = tcOptGetF(0, sml_dval);   // sml_chart.tc, first tick</code></pre>
-<p>A value changed only in the <code>.pvs</code> is therefore back to the cfg's one second after the start. That applies to every variable with a key in the file:</p>
+<p>All TinyC programs share the file <code>/tc_options.cfg</code>. It holds the language, meter, pins, emulator settings and the start readings, so they are kept when you change the program. At start-up the program takes these values from <code>tc_options.cfg</code>, <b>not from the <code>.pvs</code></b>. A value you only change in the <code>.pvs</code> is therefore back to the old one a second after the start.</p>
+<p>This concerns these values:</p>
 <table>
 <tr><th><code>.pvs</code></th><th><code>tc_options.cfg</code></th></tr>
 <tr><td><code>sml_dval</code> &middot; <code>sml_mval</code> &middot; <code>sml_yval</code></td><td><code>imp_day</code> &middot; <code>imp_month</code> &middot; <code>imp_year</code></td></tr>
 <tr><td><code>sml_dval2</code> &middot; <code>sml_mval2</code> &middot; <code>sml_yval2</code></td><td><code>exp_day</code> &middot; <code>exp_month</code> &middot; <code>exp_year</code></td></tr>
 <tr><td><code>sml_wval</code> &middot; <code>sml_wval2</code></td><td><code>imp_week</code> &middot; <code>exp_week</code></td></tr>
-<tr><td><code>sml_virt_out</code></td><td><code>exp_virt</code> &mdash; <i>at start the higher of the two wins, not the cfg</i></td></tr>
+<tr><td><code>sml_virt_out</code></td><td><code>exp_virt</code> (here the higher of the two values wins)</td></tr>
 <tr><td><code>sml_stmin</code> &middot; <code>sml_chmain</code></td><td><code>chart_short</code> &middot; <code>chart_onmain</code></td></tr>
 <tr><td><code>sml_da</code>, <code>ui_*</code>, <code>sml_*</code> settings, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td>same name</td></tr>
 </table>
-<p>The editor has its own card for it. Load the device's <code>tc_options.cfg</code> there (or drop it into the load field); the table shows <code>.pvs</code> value and cfg value side by side and marks where they differ. Changing such a variable in the <code>.pvs</code> copies it into the card automatically, or type a new value straight into the card. <b>Download</b> replaces only the changed lines and keeps everything else &mdash; the file also holds the settings of programs that are not running right now. Upload it together with the <code>.pvs</code>, with the slot stopped.</p>
+<p>The editor has its own box for this. Load the <code>tc_options.cfg</code> of your device there. The table shows the value from the <code>.pvs</code> and from the cfg next to each other and marks where they differ. If you change such a value in the <code>.pvs</code>, it is copied into the box automatically, or you type the new value there directly. <b>Download</b> only changes these lines and keeps everything else, including the settings of programs that are not running right now. Upload it together with the <code>.pvs</code>, with the program stopped.</p>
 </div>
 <div class="de">
-<p>Alle TinyC-Programme teilen sich <code>/tc_options.cfg</code>: Sprache, Zähler, Pins, die Emulator- und CT-Optionen &mdash; und die Zähler-Nullpunkte. Sie trägt sie über einen Programmwechsel, und beim ersten Tick <b>gewinnt sie gegen die <code>.pvs</code></b>:</p>
-<pre><code>sml_dval = tcOptGetF(0, sml_dval);   // sml_chart.tc, erster Tick</code></pre>
-<p>Ein Wert, der nur in der <code>.pvs</code> geändert wurde, steht deshalb eine Sekunde nach dem Start wieder auf dem aus der cfg. Das gilt für jede Variable mit einem Schlüssel in der Datei:</p>
+<p>Alle TinyC-Programme teilen sich die Datei <code>/tc_options.cfg</code>. Darin stehen Sprache, Zähler, Pins, Emulator-Einstellungen und die Anfangsstände, damit sie beim Programmwechsel erhalten bleiben. Beim Start nimmt das Programm diese Werte aus der <code>tc_options.cfg</code>, <b>nicht aus der <code>.pvs</code></b>. Ein Wert, den du nur in der <code>.pvs</code> änderst, steht deshalb eine Sekunde nach dem Start wieder auf dem alten.</p>
+<p>Das betrifft diese Werte:</p>
 <table>
 <tr><th><code>.pvs</code></th><th><code>tc_options.cfg</code></th></tr>
 <tr><td><code>sml_dval</code> &middot; <code>sml_mval</code> &middot; <code>sml_yval</code></td><td><code>imp_day</code> &middot; <code>imp_month</code> &middot; <code>imp_year</code></td></tr>
 <tr><td><code>sml_dval2</code> &middot; <code>sml_mval2</code> &middot; <code>sml_yval2</code></td><td><code>exp_day</code> &middot; <code>exp_month</code> &middot; <code>exp_year</code></td></tr>
 <tr><td><code>sml_wval</code> &middot; <code>sml_wval2</code></td><td><code>imp_week</code> &middot; <code>exp_week</code></td></tr>
-<tr><td><code>sml_virt_out</code></td><td><code>exp_virt</code> &mdash; <i>beim Start gilt der höhere der beiden, nicht die cfg</i></td></tr>
+<tr><td><code>sml_virt_out</code></td><td><code>exp_virt</code> (hier gewinnt der höhere der beiden Werte)</td></tr>
 <tr><td><code>sml_stmin</code> &middot; <code>sml_chmain</code></td><td><code>chart_short</code> &middot; <code>chart_onmain</code></td></tr>
 <tr><td><code>sml_da</code>, <code>ui_*</code>, <code>sml_*</code>-Einstellungen, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td>gleicher Name</td></tr>
 </table>
-<p>Der Editor hat dafür eine eigene Karte. Dort die <code>tc_options.cfg</code> des Geräts laden (oder ins Ladefeld ziehen); die Tabelle zeigt <code>.pvs</code>-Wert und cfg-Wert nebeneinander und markiert, wo sie abweichen. Wer so eine Variable in der <code>.pvs</code> ändert, bekommt sie automatisch in die Karte übernommen, oder trägt den neuen Wert direkt dort ein. <b>Herunterladen</b> ersetzt nur die geänderten Zeilen und lässt alles andere stehen &mdash; die Datei enthält auch die Einstellungen von Programmen, die gerade nicht laufen. Zusammen mit der <code>.pvs</code> bei gestopptem Slot hochladen.</p>
+<p>Der Editor hat dafür einen eigenen Kasten. Lade dort die <code>tc_options.cfg</code> deines Geräts. Die Tabelle zeigt den Wert aus der <code>.pvs</code> und aus der cfg nebeneinander und markiert, wo sie sich unterscheiden. Änderst du so einen Wert in der <code>.pvs</code>, wird er automatisch in den Kasten übernommen, oder du trägst den neuen Wert dort direkt ein. <b>Herunterladen</b> ändert nur diese Zeilen und lässt alles andere stehen, auch die Einstellungen von Programmen, die gerade nicht laufen. Zusammen mit der <code>.pvs</code> hochladen, während das Programm gestoppt ist.</p>
+</div>
+</section>
+
+<section id="pvs">
+<h2><span class="en">For experts: the <code>.pvs</code> file</span><span class="de">Für Fortgeschrittene: die <code>.pvs</code>-Datei</span></h2>
+<div class="en">
+<p>The current format <code>PVS3</code> stores every value under its name. There is no checksum:</p>
+<pre><code>'P' 'V' '3'  count:u8
+per entry:   nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</code></pre>
+<p>The older format <code>PVS2</code> (<code>'P','V','H'</code>, <code>layout_hash:u32</code>, a number instead of the name) is also read and written back in the same format. Its hash only covers the layout, not the values, so changing values keeps it valid.</p>
+<p>The device is tolerant when loading: unknown names are skipped, a missing value keeps its current value, a value that is too short is loaded as far as it goes.</p>
+</div>
+<div class="de">
+<p>Das aktuelle Format <code>PVS3</code> speichert jeden Wert unter seinem Namen. Eine Prüfsumme gibt es nicht:</p>
+<pre><code>'P' 'V' '3'  count:u8
+je Eintrag:  nameLen:u8  name:nameLen  slotCount:u16 LE  data:slotCount*4 LE</code></pre>
+<p>Das ältere Format <code>PVS2</code> (<code>'P','V','H'</code>, <code>layout_hash:u32</code>, eine Nummer statt des Namens) wird auch gelesen und im selben Format zurückgeschrieben. Sein Hash umfasst nur den Aufbau, nicht die Werte, Änderungen an Werten lassen ihn also gültig.</p>
+<p>Das Gerät ist beim Laden tolerant: Unbekannte Namen werden übersprungen, ein fehlender Wert behält seinen aktuellen Wert, ein zu kurzer wird so weit geladen, wie er reicht.</p>
 </div>
 </section>
 
 <section id="types">
-<h2><span class="en">Types</span><span class="de">Typen</span></h2>
+<h2><span class="en">For experts: types</span><span class="de">Für Fortgeschrittene: Typen</span></h2>
 <div class="en">
-<p>A slot is always 4 bytes. <b>How</b> to read them is not in the file &mdash; only the program knows. The editor knows the variables of the SML programs:</p>
+<p>Every slot in the file has 4 bytes. How they have to be read is not in the file, only the program knows it. The editor knows the values of the SML programs:</p>
 <table>
 <tr><th>Name</th><th>Type</th><th>Values</th></tr>
 <tr><td><code>sml_s4h</code>, <code>sml_s24h</code></td><td><code>int16</code></td><td>481 / 1441</td></tr>
 <tr><td><code>sml_dcon</code>, <code>sml_dprod</code></td><td><code>float</code></td><td>31 each</td></tr>
 <tr><td><code>sml_mcon</code>, <code>sml_mprod</code></td><td><code>float</code></td><td>12 each</td></tr>
-<tr><td><code>sml_wcon</code>, <code>sml_wprod</code></td><td><code>float</code></td><td>53 each (ISO week 1 = index 0)</td></tr>
+<tr><td><code>sml_wcon</code>, <code>sml_wprod</code></td><td><code>float</code></td><td>53 each (week 1 = index 0)</td></tr>
 <tr><td><code>sml_s4h_pos</code>, <code>sml_s24h_pos</code>, <code>sml_da</code></td><td><code>int32</code></td><td>1</td></tr>
-<tr><td><code>sml_dval</code>, <code>sml_wval</code>, <code>sml_mval</code>, <code>sml_yval</code> and the <code>2</code> twins, <code>sml_virt_out</code></td><td><code>float</code></td><td>1</td></tr>
+<tr><td><code>sml_dval</code>, <code>sml_wval</code>, <code>sml_mval</code>, <code>sml_yval</code> and the same with <code>2</code>, <code>sml_virt_out</code></td><td><code>float</code></td><td>1</td></tr>
 <tr><td><code>sml_stmin</code>, <code>sml_chmain</code>, <code>sml_pv</code>, <code>sml_sndpwr</code>, <code>sml_meter_sel</code> &hellip; <code>ui_*</code>, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td><code>int32</code></td><td>1</td></tr>
 <tr><td><code>ct_mac</code>, <code>ct_mail</code></td><td><code>byte</code></td><td>16 / 64</td></tr>
 </table>
-<p><code>int16</code> is packed: <code>(n+1)/2</code> slots, element <i>i</i> at byte offset <i>i</i>&middot;2. <code>byte</code> packs four: <code>(n+3)/4</code> slots, element <i>i</i> at byte offset <i>i</i>.</p>
-<p>Unknown entries are shown as <code>float</code> &mdash; unless every value would come out as a denormal number (an <code>int</code> 240 read as <code>float32</code> is 3.4e-43), then as <code>int32</code>. The type can be switched per entry, which makes the editor usable for other TinyC programs too.</p>
+<p><code>int16</code> holds two values per slot, <code>byte</code> four.</p>
+<p>Values the editor does not know are shown as <code>float</code>, or as <code>int32</code> if they would make no sense as <code>float</code>. You can change the type for each value, so the editor also works for other TinyC programs.</p>
 </div>
 <div class="de">
-<p>Ein Slot sind immer 4 Bytes. <b>Wie</b> sie zu lesen sind, steht nicht in der Datei &mdash; das weiß nur das Programm. Der Editor kennt die Variablen der SML-Programme:</p>
+<p>Jeder Platz in der Datei hat 4 Bytes. Wie sie gelesen werden müssen, steht nicht in der Datei, das weiß nur das Programm. Der Editor kennt die Werte der SML-Programme:</p>
 <table>
 <tr><th>Name</th><th>Typ</th><th>Werte</th></tr>
 <tr><td><code>sml_s4h</code>, <code>sml_s24h</code></td><td><code>int16</code></td><td>481 / 1441</td></tr>
 <tr><td><code>sml_dcon</code>, <code>sml_dprod</code></td><td><code>float</code></td><td>je 31</td></tr>
 <tr><td><code>sml_mcon</code>, <code>sml_mprod</code></td><td><code>float</code></td><td>je 12</td></tr>
-<tr><td><code>sml_wcon</code>, <code>sml_wprod</code></td><td><code>float</code></td><td>je 53 (ISO-Woche 1 = Index 0)</td></tr>
+<tr><td><code>sml_wcon</code>, <code>sml_wprod</code></td><td><code>float</code></td><td>je 53 (Woche 1 = Index 0)</td></tr>
 <tr><td><code>sml_s4h_pos</code>, <code>sml_s24h_pos</code>, <code>sml_da</code></td><td><code>int32</code></td><td>1</td></tr>
-<tr><td><code>sml_dval</code>, <code>sml_wval</code>, <code>sml_mval</code>, <code>sml_yval</code> und die <code>2</code>-Zwillinge, <code>sml_virt_out</code></td><td><code>float</code></td><td>1</td></tr>
+<tr><td><code>sml_dval</code>, <code>sml_wval</code>, <code>sml_mval</code>, <code>sml_yval</code> und dasselbe mit <code>2</code>, <code>sml_virt_out</code></td><td><code>float</code></td><td>1</td></tr>
 <tr><td><code>sml_stmin</code>, <code>sml_chmain</code>, <code>sml_pv</code>, <code>sml_sndpwr</code>, <code>sml_meter_sel</code> &hellip; <code>ui_*</code>, <code>mb_*</code>, <code>es_*</code>, <code>ct_*</code></td><td><code>int32</code></td><td>1</td></tr>
 <tr><td><code>ct_mac</code>, <code>ct_mail</code></td><td><code>byte</code></td><td>16 / 64</td></tr>
 </table>
-<p><code>int16</code> liegt gepackt: <code>(n+1)/2</code> Slots, Element <i>i</i> an Byte-Offset <i>i</i>&middot;2. <code>byte</code> packt vier: <code>(n+3)/4</code> Slots, Element <i>i</i> an Byte-Offset <i>i</i>.</p>
-<p>Unbekannte Einträge werden als <code>float</code> gezeigt &mdash; außer alle Werte kämen als denormale Zahl heraus (ein <code>int</code> 240 als <code>float32</code> gelesen ist 3.4e-43), dann als <code>int32</code>. Der Typ lässt sich je Eintrag umschalten, damit ist der Editor auch für andere TinyC-Programme brauchbar.</p>
+<p><code>int16</code> hält zwei Werte pro Platz, <code>byte</code> vier.</p>
+<p>Werte, die der Editor nicht kennt, zeigt er als <code>float</code>, oder als <code>int32</code>, wenn sie als <code>float</code> keinen Sinn ergeben würden. Den Typ kannst du für jeden Wert umstellen. So geht der Editor auch für andere TinyC-Programme.</p>
 </div>
 </section>
 
 <section id="bin">
-<h2><span class="en">The <code>.bin</code> &mdash; import only</span><span class="de">Die <code>.bin</code> &mdash; nur zum Importieren</span></h2>
+<h2><span class="en">For experts: the <code>.bin</code> file</span><span class="de">Für Fortgeschrittene: die <code>.bin</code>-Datei</span></h2>
 <div class="en">
-<p>A <code>.bin</code> is read and written as well. It is the <i>import</i> file: raw <code>float32</code> in the order from <code>sml_chart_common.tc</code>, no header.</p>
+<p>The editor can also read and write a <code>.bin</code>. That file is only for importing: the program reads it <b>once</b> at start-up, takes the data over into the <code>.pvs</code> and deletes it. It holds the values as plain <code>float32</code>, without a header:</p>
 <table>
-<tr><th>File</th><th>Contents</th><th>without</th><th>with baselines</th><th>+ weeks</th></tr>
+<tr><th>File</th><th>Contents</th><th>without</th><th>with start readings</th><th>+ weeks</th></tr>
 <tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td>1969</td><td>2023</td></tr>
 <tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td>46</td><td>100</td></tr>
 </table>
-<p>The week block &mdash; <code>sml_wval</code> + <code>sml_wcon[53]</code>, or <code>sml_wval2</code> + <code>sml_wprod[53]</code> &mdash; follows the baselines. The editor writes it when the <code>.pvs</code> holds both parts and the baselines are complete.</p>
-<p>The program reads it <b>once</b> at start-up, writes it into the <code>.pvs</code> and deletes it afterwards. The baseline block is only appended when all of its values are present &mdash; the program reads it whole or not at all.</p>
-<p>For the normal case the <code>.pvs</code> is the better route: it holds <i>all</i> variables, the <code>.bin</code> only these. Either way the baselines also have to go into the <a href="#cfg"><code>tc_options.cfg</code></a> &mdash; loading a <code>.bin</code> with baselines puts them into that card automatically.</p>
+<p>The start readings and the week block are only written when they are complete.</p>
+<p>Normally the <code>.pvs</code> is the better way, because it contains <i>all</i> values. In both cases the start readings must also go into the <a href="#cfg"><code>tc_options.cfg</code></a>. When you load a <code>.bin</code> with start readings, the editor puts them into that box automatically.</p>
 </div>
 <div class="de">
-<p>Eine <code>.bin</code> wird ebenfalls gelesen und geschrieben. Sie ist die <i>Import</i>-Datei: rohe <code>float32</code> in der Reihenfolge aus <code>sml_chart_common.tc</code>, kein Kopf.</p>
+<p>Der Editor kann auch eine <code>.bin</code> lesen und schreiben. Diese Datei ist nur zum Importieren da: Das Programm liest sie beim Start <b>einmal</b>, übernimmt die Daten in die <code>.pvs</code> und löscht sie. Sie enthält die Werte als einfache <code>float32</code>, ohne Kopf:</p>
 <table>
-<tr><th>Datei</th><th>Inhalt</th><th>ohne</th><th>mit Basiswerten</th><th>+ Wochen</th></tr>
+<tr><th>Datei</th><th>Inhalt</th><th>ohne</th><th>mit Anfangsständen</th><th>+ Wochen</th></tr>
 <tr><td><code>sml_chart.bin</code></td><td><code>sml_s4h</code> &middot; <code>sml_s24h</code> &middot; <code>sml_dcon</code> &middot; <code>sml_mcon</code></td><td>1965</td><td>1969</td><td>2023</td></tr>
 <tr><td><code>sml_chart_pv.bin</code></td><td><code>sml_dprod</code> &middot; <code>sml_mprod</code></td><td>43</td><td>46</td><td>100</td></tr>
 </table>
-<p>Der Wochenblock &mdash; <code>sml_wval</code> + <code>sml_wcon[53]</code> bzw. <code>sml_wval2</code> + <code>sml_wprod[53]</code> &mdash; folgt auf die Basiswerte. Der Editor schreibt ihn, wenn die <code>.pvs</code> beide Teile enthält und die Basiswerte vollständig sind.</p>
-<p>Das Programm liest sie beim Start <b>einmal</b>, schreibt sie in die <code>.pvs</code> und löscht sie danach. Der Basiswert-Block wird nur angehängt, wenn alle seine Werte da sind &mdash; das Programm liest ihn ganz oder gar nicht.</p>
-<p>Für den normalen Fall ist die <code>.pvs</code> der bessere Weg: sie enthält <i>alle</i> Variablen, die <code>.bin</code> nur diese. In beiden Fällen müssen die Basiswerte zusätzlich in die <a href="#cfg"><code>tc_options.cfg</code></a> &mdash; wer eine <code>.bin</code> mit Basiswerten lädt, bekommt sie automatisch in diese Karte übernommen.</p>
+<p>Die Anfangsstände und der Wochenblock werden nur geschrieben, wenn sie vollständig sind.</p>
+<p>Normalerweise ist die <code>.pvs</code> der bessere Weg, weil sie <i>alle</i> Werte enthält. In beiden Fällen müssen die Anfangsstände zusätzlich in die <a href="#cfg"><code>tc_options.cfg</code></a>. Lädst du eine <code>.bin</code> mit Anfangsständen, übernimmt der Editor sie automatisch in diesen Kasten.</p>
 </div>
 </section>
 

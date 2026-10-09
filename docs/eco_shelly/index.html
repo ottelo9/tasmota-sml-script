@@ -47,7 +47,7 @@ body.lang-de .en{display:none}
 
 <header>
   <h1>EcoTracker / Shelly Pro 3EM, EM50, EM Gen3 emulator</h1>
-  <p class="sub"><span class="en">TinyC script for Tasmota &middot; your meter, spoken in the dialect a PV battery understands</span><span class="de">TinyC-Script für Tasmota &middot; dein Zähler, in der Sprache die eine PV-Batterie versteht</span></p>
+  <p class="sub"><span class="en">TinyC program for Tasmota &middot; your meter in the language your battery understands</span><span class="de">TinyC-Programm für Tasmota &middot; dein Zähler in der Sprache, die dein Akku versteht</span></p>
   <div class="switch">
     <button data-set="en">English</button>
     <button data-set="de">Deutsch</button>
@@ -68,33 +68,33 @@ body.lang-de .en{display:none}
 <section id="overview">
 <h2><span class="en">Overview</span><span class="de">Überblick</span></h2>
 <div class="en">
-<p>A PV battery needs to know the grid power to hit zero feed-in. Most of them cannot read your meter, but nearly all of them speak to one of a few popular energy meters. This script makes your Tasmota device answer as one of them.</p>
+<p>A home battery needs to know how much power your house is using right now, so it can feed in just that much (zero feed-in). Most batteries can not read your electricity meter themselves. But almost all of them can work with one of a few well-known energy meters. This program makes your reading head pretend to be one of these meters.</p>
 <table>
-<tr><th>EcoTracker</th><td>Simple: one HTTP endpoint with a JSON document. Found over mDNS.</td></tr>
-<tr><th>Shelly Pro 3EM</th><td>Shelly's RPC dialect over HTTP <i>and</i> UDP. What most batteries expect.</td></tr>
-<tr><th>Shelly Pro EM50</th><td>The single-channel Shelly. Same dialect, one power value instead of three phases.</td></tr>
-<tr><th>Shelly EM Gen3</th><td>The current generation. Same dialect again, but it answers three RPCs the others do not have and reports current, voltage, power factor and frequency per phase.</td></tr>
+<tr><th>EcoTracker</th><td>The simplest one. The battery asks the device over the network and gets the values back.</td></tr>
+<tr><th>Shelly Pro 3EM</th><td>The meter most batteries know. Our first choice if you are not sure.</td></tr>
+<tr><th>Shelly Pro EM50</th><td>The Shelly with one channel. Works like the Pro 3EM, but with one power value instead of three phases.</td></tr>
+<tr><th>Shelly EM Gen3</th><td>The newest Shelly generation. Also sends current, voltage, power factor and frequency per phase.</td></tr>
 </table>
-<p>Works with Marstek, Jackery, NOAH, Hoymiles and others. For Marstek there is a third option that coordinates several batteries: the <a href="../ct002/">CT002 emulator</a>.</p>
-<p><b>Requirements:</b> ESP32, Tasmota with TinyC and <code>USE_SML</code>, a reading head. Meter setup is described under <a href="../sml/">SML</a>.</p>
+<p>Works with batteries from Marstek, Jackery, Growatt (NOAH), Hoymiles and others. For Marstek there is a third option that also coordinates several batteries: the <a href="../ct002/">CT002 emulator</a>.</p>
+<p><b>You need:</b> an ESP32, my Tasmota image with TinyC, and a reading head. How to set up the meter is explained on the <a href="../sml/">SML help page</a>.</p>
 </div>
 <div class="de">
-<p>Eine PV-Batterie muss die Netzleistung kennen, um auf Nulleinspeisung zu regeln. Die wenigsten können deinen Zähler lesen, aber fast alle sprechen mit einem von wenigen verbreiteten Energiezählern. Dieses Script lässt dein Tasmota-Gerät als einer davon antworten.</p>
+<p>Ein Stromspeicher muss wissen, wie viel Strom dein Haus gerade braucht, damit er genau so viel einspeisen kann (Nulleinspeisung). Die meisten Akkus können deinen Stromzähler nicht selbst auslesen. Fast alle können aber mit einem von ein paar bekannten Energiezählern zusammenarbeiten. Dieses Programm lässt deinen Lesekopf so tun, als wäre er einer dieser Zähler.</p>
 <table>
-<tr><th>EcoTracker</th><td>Einfach: ein HTTP-Endpunkt mit einem JSON-Dokument. Wird über mDNS gefunden.</td></tr>
-<tr><th>Shelly Pro 3EM</th><td>Shellys RPC-Dialekt über HTTP <i>und</i> UDP. Das, was die meisten Akkus erwarten.</td></tr>
-<tr><th>Shelly Pro EM50</th><td>Der einkanalige Shelly. Gleicher Dialekt, ein Leistungswert statt drei Phasen.</td></tr>
-<tr><th>Shelly EM Gen3</th><td>Die aktuelle Generation. Wieder derselbe Dialekt, beantwortet aber drei RPCs, die die anderen nicht kennen, und meldet Strom, Spannung, Leistungsfaktor und Frequenz je Phase.</td></tr>
+<tr><th>EcoTracker</th><td>Der einfachste. Der Akku fragt das Gerät übers Netzwerk und bekommt die Werte zurück.</td></tr>
+<tr><th>Shelly Pro 3EM</th><td>Der Zähler, den die meisten Akkus kennen. Die erste Wahl, wenn du unsicher bist.</td></tr>
+<tr><th>Shelly Pro EM50</th><td>Der Shelly mit einem Kanal. Funktioniert wie der Pro 3EM, aber mit einem Leistungswert statt drei Phasen.</td></tr>
+<tr><th>Shelly EM Gen3</th><td>Die neueste Shelly-Generation. Schickt zusätzlich Strom, Spannung, Leistungsfaktor und Frequenz je Phase.</td></tr>
 </table>
-<p>Funktioniert mit Marstek, Jackery, NOAH, Hoymiles und anderen. Für Marstek gibt es eine dritte Möglichkeit, die mehrere Akkus koordiniert: den <a href="../ct002/">CT002-Emulator</a>.</p>
-<p><b>Voraussetzungen:</b> ESP32, Tasmota mit TinyC und <code>USE_SML</code>, ein Lesekopf. Die Zählereinrichtung steht unter <a href="../sml/">SML</a>.</p>
+<p>Funktioniert mit Akkus von Marstek, Jackery, Growatt (NOAH), Hoymiles und anderen. Für Marstek gibt es eine dritte Möglichkeit, die zusätzlich mehrere Akkus aufeinander abstimmt: den <a href="../ct002/">CT002-Emulator</a>.</p>
+<p><b>Du brauchst:</b> einen ESP32, mein Tasmota-Image mit TinyC und einen Lesekopf. Wie du den Zähler einrichtest, steht auf der <a href="../sml/">SML-Hilfeseite</a>.</p>
 </div>
 </section>
 
 <section id="tested">
 <h2><span class="en">Tested batteries</span><span class="de">Getestete Akkus</span></h2>
 <div class="en">
-<p>Reported by users, still with the earlier Scripter emulator scripts. The TinyC program speaks the same protocols and does it better, so a battery from this list should run here as well. Feedback with the TinyC program is welcome on <a href="https://github.com/ottelo9/tasmota-sml-script/discussions">GitHub</a> or in the <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/">forum</a>.</p>
+<p>These reports come from users who still used my older emulator scripts. The TinyC program speaks the same language and does it better, so a battery from this list should also work here. Please tell me about your experience with the TinyC program on <a href="https://github.com/ottelo9/tasmota-sml-script/discussions">GitHub</a> or in the <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/">forum</a>.</p>
 <p>&#x2705; works &middot; &#x274C; does not work &middot; &ndash; not tested</p>
 <table>
 <tr><th>Battery</th><th>EcoTracker</th><th>Shelly</th><th>Note</th></tr>
@@ -111,12 +111,12 @@ body.lang-de .en{display:none}
 <tr><td>Minjet</td><td>&ndash;</td><td>&#x2705;</td><td><a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#Kommentare">Blog comments</a></td></tr>
 <tr><td>Jackery Homepower 2000 Ultra</td><td>&ndash;</td><td>&#x274C;</td><td>Shelly impossible; EcoTracker can be tried with the <a href="https://github.com/ottelo9/tasmota-sml-script/issues/24#issuecomment-4447909656">TinyC test</a></td></tr>
 </table>
-<p>Several batteries on one emulator: <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773">3 Marstek (2&times; B2500, 1&times; Venus A) in parallel</a>. For several Marstek batteries the <a href="../ct002/">CT002 emulator</a> is the better choice.</p>
-<p>The battery and the reading head need a good WiFi link. A Marstek Jupiter C Plus with poor reception found the emulator and dropped it again at once. Some batteries also fail when they and the emulator sit on different access points or repeaters.</p>
-<p>If the battery has problems or the web interface feels sluggish, power saving can be switched off. Option <a href="../sml/#sleep">Power saving off</a> (top of the settings page, below the language).</p>
+<p>Several batteries on one emulator also work: <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773">3 Marstek (2&times; B2500, 1&times; Venus A) in parallel</a>. For several Marstek batteries the <a href="../ct002/">CT002 emulator</a> is the better choice.</p>
+<p>Battery and reading head need good Wi-Fi. A Marstek Jupiter C Plus with poor reception found the emulator and lost it again right away. Some batteries also have problems when they and the reading head are connected to different access points or repeaters.</p>
+<p>If the battery has problems or the web page feels slow, switch on <a href="../sml/#sleep">Power saving off</a> (at the top of the settings page, below the language).</p>
 </div>
 <div class="de">
-<p>Von Nutzern gemeldet, noch mit den früheren Scripter-Emulator-Scripten. Das TinyC-Programm spricht dieselben Protokolle und macht es besser &mdash; ein Akku aus dieser Liste sollte also auch hier laufen. Rückmeldungen mit dem TinyC-Programm gern auf <a href="https://github.com/ottelo9/tasmota-sml-script/discussions">GitHub</a> oder im <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/">Forum</a>.</p>
+<p>Diese Rückmeldungen kommen von Nutzern, die noch meine älteren Emulator-Scripte benutzt haben. Das TinyC-Programm spricht dieselbe Sprache und macht es besser. Ein Akku aus dieser Liste sollte also auch hier laufen. Erzähl mir gerne von deinen Erfahrungen mit dem TinyC-Programm auf <a href="https://github.com/ottelo9/tasmota-sml-script/discussions">GitHub</a> oder im <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/">Forum</a>.</p>
 <p>&#x2705; läuft &middot; &#x274C; läuft nicht &middot; &ndash; nicht getestet</p>
 <table>
 <tr><th>Akku</th><th>EcoTracker</th><th>Shelly</th><th>Hinweis</th></tr>
@@ -133,9 +133,9 @@ body.lang-de .en{display:none}
 <tr><td>Minjet</td><td>&ndash;</td><td>&#x2705;</td><td><a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#Kommentare">Blog-Kommentare</a></td></tr>
 <tr><td>Jackery Homepower 2000 Ultra</td><td>&ndash;</td><td>&#x274C;</td><td>Shelly unmöglich; EcoTracker kann mit dem <a href="https://github.com/ottelo9/tasmota-sml-script/issues/24#issuecomment-4447909656">TinyC-Test</a> probiert werden</td></tr>
 </table>
-<p>Mehrere Akkus an einem Emulator: <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773">3 Marstek (2&times; B2500, 1&times; Venus A) parallel</a>. Für mehrere Marstek-Akkus ist der <a href="../ct002/">CT002-Emulator</a> die bessere Wahl.</p>
-<p>Akku und Lesekopf brauchen eine gute WLAN-Verbindung. Ein Marstek Jupiter C Plus mit schlechtem Empfang fand den Emulator und verlor ihn sofort wieder. Manche Akkus scheitern auch, wenn sie und der Emulator an unterschiedlichen Accesspoints bzw. Repeatern hängen.</p>
-<p>Bei Problemen mit dem Akku oder trägem Verhalten der Weboberfläche kann der Energiesparmodus ausgeschaltet werden. Option <a href="../sml/#sleep">Energiesparmodus aus</a> (oben auf der Einstellungsseite, unter der Sprache).</p>
+<p>Mehrere Akkus an einem Emulator gehen auch: <a href="https://www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf/?postID=4673773#post4673773">3 Marstek (2&times; B2500, 1&times; Venus A) parallel</a>. Für mehrere Marstek-Akkus ist der <a href="../ct002/">CT002-Emulator</a> die bessere Wahl.</p>
+<p>Akku und Lesekopf brauchen gutes WLAN. Ein Marstek Jupiter C Plus mit schlechtem Empfang fand den Emulator und verlor ihn gleich wieder. Manche Akkus haben auch Probleme, wenn sie und der Lesekopf an verschiedenen Access Points oder Repeatern hängen.</p>
+<p>Hat der Akku Probleme oder fühlt sich die Webseite langsam an, schalte <a href="../sml/#sleep">Energiesparmodus aus</a> ein (oben auf der Einstellungsseite, unter der Sprache).</p>
 </div>
 </section>
 
@@ -143,23 +143,23 @@ body.lang-de .en{display:none}
 <h2><span class="en">Setup</span><span class="de">Einrichtung</span></h2>
 <div class="en">
 <ol>
-<li>Load <b>SML + EcoTracker / Shelly</b> (or <b>SML Chart + EcoTracker / Shelly</b> for charts) into slot&nbsp;0 and switch on autostart (<b>A</b>): <b>Tools &rarr; TinyC Console &rarr; Repository</b>, <b>SmartMeter/PV/Emulator (ottelo)</b> &mdash; step by step under <a href="../sml/#install">Install</a>.</li>
-<li>Set up the meter first &mdash; without readings the emulator reports 0&nbsp;W and the battery will not do anything sensible.</li>
-<li>Pick the <a href="#mode">mode</a> your battery speaks, then restart the script.</li>
-<li>In the battery's app, search for a meter. It should find the device by itself.</li>
+<li>Load <b>SML + EcoTracker / Shelly</b> (or <b>SML Chart + EcoTracker / Shelly</b> if you want charts) into slot&nbsp;0 and switch on <b>A</b>, so it starts by itself after a reboot. How this works is described step by step under <a href="../sml/#install">Install</a>.</li>
+<li>Set up your meter first. Without meter values the emulator reports 0&nbsp;W, and the battery does nothing useful.</li>
+<li>Choose the <a href="#mode">mode</a> your battery understands, save, and restart the program.</li>
+<li>In your battery's app, search for a meter. It should find the device by itself.</li>
 </ol>
-<p class="warn">Slot&nbsp;0 only. The HTTP endpoints are <code>webOn</code> handlers, and Tasmota dispatches those to slot&nbsp;0.</p>
-<p>Only one emulator per device. Two meters answering on the same network confuse a battery more than none.</p>
+<p class="warn">Only in slot&nbsp;0. Tasmota sends the web addresses the battery asks for to slot&nbsp;0 only.</p>
+<p>Use only one emulator per network for the same battery. Two meters answering at the same time confuse a battery more than none.</p>
 </div>
 <div class="de">
 <ol>
-<li><b>SML + EcoTracker / Shelly</b> (oder <b>SML Chart + EcoTracker / Shelly</b> mit Diagrammen) in Slot&nbsp;0 laden und Autostart (<b>A</b>) einschalten: <b>Werkzeuge &rarr; TinyC Console &rarr; Repository</b>, <b>SmartMeter/PV/Emulator (ottelo)</b> &mdash; Schritt für Schritt unter <a href="../sml/#installation">Installation</a>.</li>
-<li>Zuerst den Zähler einrichten &mdash; ohne Messwerte meldet der Emulator 0&nbsp;W und der Akku tut nichts Sinnvolles.</li>
-<li>Den <a href="#mode">Modus</a> wählen, den dein Akku spricht, dann das Script neu starten.</li>
-<li>In der App des Akkus nach einem Zähler suchen. Er sollte das Gerät von allein finden.</li>
+<li><b>SML + EcoTracker / Shelly</b> (oder <b>SML Chart + EcoTracker / Shelly</b>, wenn du Diagramme willst) in Slot&nbsp;0 laden und <b>A</b> einschalten, damit es nach einem Neustart von selbst startet. Wie das geht, steht Schritt für Schritt unter <a href="../sml/#installation">Installation</a>.</li>
+<li>Zuerst deinen Zähler einrichten. Ohne Zählerwerte meldet der Emulator 0&nbsp;W, und der Akku macht nichts Sinnvolles.</li>
+<li>Den <a href="#mode">Modus</a> wählen, den dein Akku versteht, speichern und das Programm neu starten.</li>
+<li>In der App deines Akkus nach einem Zähler suchen. Er sollte das Gerät von selbst finden.</li>
 </ol>
-<p class="warn">Nur Slot&nbsp;0. Die HTTP-Endpunkte sind <code>webOn</code>-Handler, und die reicht Tasmota an Slot&nbsp;0 weiter.</p>
-<p>Nur ein Emulator pro Gerät. Zwei Zähler, die im selben Netz antworten, verwirren einen Akku mehr als gar keiner.</p>
+<p class="warn">Nur in Slot&nbsp;0. Tasmota leitet die Webadressen, nach denen der Akku fragt, nur an Slot&nbsp;0 weiter.</p>
+<p>Nimm für denselben Akku nur einen Emulator im Netz. Zwei Zähler, die gleichzeitig antworten, verwirren einen Akku mehr als gar keiner.</p>
 </div>
 </section>
 
@@ -167,21 +167,21 @@ body.lang-de .en{display:none}
 <h2><span class="en">Mode</span><span class="de">Modus</span></h2>
 <div class="en">
 <table>
-<tr><th>Mode</th><td>EcoTracker, Shelly Pro 3EM, Pro EM50 or EM Gen3. <b>Takes effect after a restart of the script</b> &mdash; the mDNS name and the UDP socket are claimed once at start.</td></tr>
-<tr><th>UDP port</th><td>Pro 3EM only. 1010 is Shelly's own port. Marstek B2500 expects 2220 &mdash; if the battery does not find the meter, this is the first thing to try. The row is shown in every mode; where the port is not yours to pick it is greyed out &mdash; 2223 for the Pro EM50 and 2222 for the EM Gen3, each of which always binds its own, and nothing for EcoTracker, which uses no UDP at all.</td></tr>
+<tr><th>Mode</th><td>EcoTracker, Shelly Pro 3EM, Pro EM50 or EM Gen3. <b>Only takes effect after restarting the program.</b></td></tr>
+<tr><th>UDP port</th><td>Only for the Pro 3EM: 1010 is the normal Shelly port. A Marstek B2500 expects 2220. If your battery does not find the meter, try this first. For the Pro EM50 (always 2223), the EM Gen3 (always 2222) and the EcoTracker (no UDP) the field is greyed out.</td></tr>
 </table>
-<p>Which one does your battery want? If the manual names a supported meter, follow it. Otherwise start with Shelly Pro 3EM; it is the most widely supported of the three.</p>
-<p class="warn">Pro EM50 mode is the newest and the least tested. <code>EM1.GetStatus</code> &mdash; the call a battery actually polls &mdash; is solid; the full <code>Shelly.GetStatus</code> document is derived from the device's structure rather than from a real EM50. If you own one, a comparison would be welcome.</p>
-<p>EM Gen3 mode follows a <a href="https://github.com/ottelo9/tasmota-sml-script/discussions/76" target="_blank" rel="noopener">Scripter emulation that is already in the field</a> and works with the Marstek app, so its wire format is not guesswork. Three values it reports are fixed rather than measured: 230&nbsp;V, power factor 1 and 50&nbsp;Hz &mdash; an SML meter supplies none of them. The per-phase current is derived from the power at 230&nbsp;V so it stays consistent with the figures next to it.</p>
+<p>Which mode does your battery want? If the manual names a supported meter, take that one. Otherwise start with Shelly Pro 3EM, most batteries know it.</p>
+<p class="warn">The Pro EM50 mode is the newest and the least tested. If you own a real EM50 and can compare, please let me know.</p>
+<p>The EM Gen3 mode follows a <a href="https://github.com/ottelo9/tasmota-sml-script/discussions/76" target="_blank" rel="noopener">script that is already in use</a> and works with the Marstek app. Voltage (230&nbsp;V), power factor (1) and frequency (50&nbsp;Hz) are fixed values, because an electricity meter does not deliver them. The current is calculated from the power.</p>
 </div>
 <div class="de">
 <table>
-<tr><th>Modus</th><td>EcoTracker, Shelly Pro 3EM, Pro EM50 oder EM Gen3. <b>Wirkt erst nach einem Neustart des Scripts</b> &mdash; der mDNS-Name und der UDP-Socket werden einmal beim Start belegt.</td></tr>
-<tr><th>UDP-Port</th><td>Nur beim Pro 3EM. 1010 ist Shellys eigener Port. Der Marstek B2500 erwartet 2220 &mdash; wenn der Akku den Zähler nicht findet, ist das das Erste, was man probiert. Die Zeile steht in jedem Modus da; wo der Port nicht zur Wahl steht, ist sie ausgegraut &mdash; 2223 beim Pro EM50 und 2222 beim EM Gen3, die beide fest auf ihrem liegen, und leer beim EcoTracker, der gar kein UDP nutzt.</td></tr>
+<tr><th>Modus</th><td>EcoTracker, Shelly Pro 3EM, Pro EM50 oder EM Gen3. <b>Wirkt erst nach einem Neustart des Programms.</b></td></tr>
+<tr><th>UDP-Port</th><td>Nur beim Pro 3EM: 1010 ist der normale Shelly-Port. Ein Marstek B2500 erwartet 2220. Findet dein Akku den Zähler nicht, probier das als Erstes. Beim Pro EM50 (immer 2223), beim EM Gen3 (immer 2222) und beim EcoTracker (kein UDP) ist das Feld ausgegraut.</td></tr>
 </table>
-<p>Was will dein Akku? Wenn im Handbuch ein unterstützter Zähler steht, danach richten. Sonst mit Shelly Pro 3EM anfangen; der wird am häufigsten unterstützt.</p>
-<p class="warn">Der Pro-EM50-Modus ist der neueste und am wenigsten erprobte. <code>EM1.GetStatus</code> &mdash; der Aufruf, den ein Akku tatsächlich pollt &mdash; ist sicher; das vollständige <code>Shelly.GetStatus</code> ist aus der Gerätestruktur abgeleitet, nicht an einem echten EM50 gemessen. Wer einen hat: Vergleich willkommen.</p>
-<p>Der EM-Gen3-Modus folgt einer <a href="https://github.com/ottelo9/tasmota-sml-script/discussions/76" target="_blank" rel="noopener">Scripter-Emulation, die bereits im Einsatz ist</a> und mit der Marstek-App funktioniert &mdash; das Drahtformat ist also nicht geraten. Drei Werte meldet er fest statt gemessen: 230&nbsp;V, Leistungsfaktor 1 und 50&nbsp;Hz; ein SML-Zähler liefert nichts davon. Der Strom je Phase wird aus der Leistung bei 230&nbsp;V gerechnet, damit er zu den Zahlen daneben passt.</p>
+<p>Welchen Modus will dein Akku? Steht im Handbuch ein unterstützter Zähler, nimm den. Sonst fang mit Shelly Pro 3EM an, den kennen die meisten Akkus.</p>
+<p class="warn">Der Pro-EM50-Modus ist der neueste und am wenigsten getestete. Hast du einen echten EM50 zum Vergleichen, melde dich gerne.</p>
+<p>Der EM-Gen3-Modus folgt einem <a href="https://github.com/ottelo9/tasmota-sml-script/discussions/76" target="_blank" rel="noopener">Script, das schon im Einsatz ist</a> und mit der Marstek-App funktioniert. Spannung (230&nbsp;V), Leistungsfaktor (1) und Frequenz (50&nbsp;Hz) sind feste Werte, weil ein Stromzähler sie nicht liefert. Der Strom wird aus der Leistung berechnet.</p>
 </div>
 </section>
 
@@ -189,19 +189,19 @@ body.lang-de .en{display:none}
 <h2><span class="en">Battery</span><span class="de">Akku</span></h2>
 <div class="en">
 <table>
-<tr><th>Offset [W]</th><td>Shifts the reported power. A positive value makes the battery aim for that much import instead of exactly zero &mdash; a safety margin against feeding into the grid. Negative aims the other way.</td></tr>
-<tr><th>Regulator tweak</th><td>Shapes the value instead of passing it through: above the offset it is damped to a quarter, below it is exaggerated. The battery then approaches from above carefully and corrects downwards quickly. Helps against oscillation; if your battery already regulates calmly, leave it <span class="sw">OFF</span>.</td></tr>
-<tr><th>Update rate [s]</th><td>How often the value is recalculated. 1&nbsp;s is fine. Slower makes the whole loop calmer at the cost of response time.</td></tr>
-<tr><th>Force sending</th><td>Shelly mode only. Repeats the last answer over UDP even without a request. Some firmwares regulate better with a steady stream; most do not need it.</td></tr>
+<tr><th>Offset [W]</th><td>The value the battery aims for, instead of exactly 0&nbsp;W. A positive value (e.g. 20) means you always buy a few watts, so you do not feed in by accident. A negative value works the other way round.</td></tr>
+<tr><th>Regulator tweak</th><td>Helps a battery that swings up and down. The battery then approaches the target carefully from above and corrects quickly when it goes too far. If your battery already regulates calmly, leave it <span class="sw">OFF</span>.</td></tr>
+<tr><th>Update rate [s]</th><td>How often the value is calculated again. 1&nbsp;s is fine. A slower rate makes everything calmer, but the battery reacts later.</td></tr>
+<tr><th>Force sending</th><td>Only in Shelly mode. Sends the value again and again, even if the battery does not ask. Some batteries regulate better this way, most do not need it.</td></tr>
 </table>
-<p>The <b>To battery</b> row on the main page shows what actually leaves the device, after offset and shaping. Compare it with the raw power to see what the settings do.</p>
-<p>The same value is called <code>cpwr</code> outside the device. With <b>Send power2 + cpwr (MQTT)</b> in the <a href="../sml/#telemetry">telemetry</a> section on, it is published every 5&nbsp;s as <code>stat/&lt;topic&gt;/script/cpwr</code>, next to the smoothed grid power <code>power2</code> &mdash; in MQTT Explorer or Home Assistant under <b>stat &rarr; &lt;topic&gt; &rarr; script</b>. <code>/pwr</code> always carries it as well: <code>{…,"power2":-217,"cpwr":-180}</code>.</p>
-<p>The <b>3 phases</b> option lives in the meter settings, not here &mdash; it says whether your meter delivers per-phase power at all. With it on, the sample payloads below carry three real values instead of zeros in <code>powerPhase2</code>, <code>powerPhase3</code> and <code>b_act_power</code>, <code>c_act_power</code>. The total stays the netted meter value either way &mdash; that is what the battery regulates on.</p>
+<p>The <b>To battery</b> row on the main page shows what the battery really gets, with offset and tweak. Compare it with the power to see what your settings do.</p>
+<p>This value is also called <code>cpwr</code>. With <b>Send power2 + cpwr (MQTT)</b> switched on (see <a href="../sml/#telemetry">Telemetry</a>), it is sent every 5 seconds as <code>stat/&lt;topic&gt;/script/cpwr</code>. In MQTT Explorer or Home Assistant you find it under <b>stat &rarr; &lt;topic&gt; &rarr; script</b>. <code>/pwr</code> always delivers it too: <code>{…,"power2":-217,"cpwr":-180}</code>.</p>
+<p><b>3 phases</b> is set under Meter on the main settings page. Switched on, the battery also gets the power of each phase. The total is always the value of your meter, and that is what the battery regulates on.</p>
 <h3>Offset from Home Assistant</h3>
-<p>The console command <code>PVEmuOffset &lt;W&gt;</code> sets the offset while the script runs; <code>PVEmuOffset</code> alone shows it. Over MQTT that is <code>cmnd/&lt;topic&gt;/PVEmuOffset</code>, over HTTP <code>/cm?cmnd=PVEmuOffset%20-50</code>. It answers <code>{"PVEmuOffset":-50}</code>; the current value is also in <code>tele/&lt;topic&gt;/SENSOR</code> as <code>"PVEmu":{…,"Offset":-50}</code>. At least &minus;200&nbsp;W, no upper limit (the field on the page stops at 200&nbsp;W).</p>
-<p>The value is kept in <b>RAM only</b>, so an automation can change it as often as it likes without wearing out the flash. After a restart the value saved on the page applies again. The field on the page keeps showing the saved value; the value in effect is shown right of it. To keep a value, enter it in the field and press <b>Save</b> &mdash; that also replaces a value set by command.</p>
-<p><b>Automatic:</b> the program announces the offset to Home Assistant itself (MQTT discovery). It appears as number entity on the Tasmota device &mdash; nothing to configure. It is announced again whenever Home Assistant restarts. Needs MQTT discovery in Home Assistant (on by default) and the default FullTopic.</p>
-<p>Without discovery: a number entity in <code>configuration.yaml</code> (replace <code>&lt;topic&gt;</code> with the device's MQTT topic):</p>
+<p><b>Automatic:</b> the program registers the offset with Home Assistant by itself (MQTT discovery). It appears as a number field on the Tasmota device, you do not have to set anything up. This needs MQTT discovery in Home Assistant (on by default) and Tasmota's standard FullTopic.</p>
+<p>You can also change the offset with the command <code>PVEmuOffset &lt;W&gt;</code>. <code>PVEmuOffset</code> without a value shows the current one. Over MQTT: <code>cmnd/&lt;topic&gt;/PVEmuOffset</code>, over HTTP: <code>/cm?cmnd=PVEmuOffset%20-50</code>. The current value is also in <code>tele/&lt;topic&gt;/SENSOR</code> as <code>"PVEmu":{…,"Offset":-50}</code>. Lowest value &minus;200&nbsp;W.</p>
+<p>A value set this way is only kept until the next restart. So an automation can change it as often as it likes without wearing out the flash memory. After a restart, the value saved on the page applies again. The field on the page shows the saved value, the value currently in use is shown right next to it. To keep a value, enter it in the field and press <b>Save</b>.</p>
+<p>Without discovery you can create the field yourself in <code>configuration.yaml</code> (replace <code>&lt;topic&gt;</code> with the MQTT topic of your device):</p>
 <pre><code>mqtt:
   number:
     - name: "PV Offset"
@@ -217,11 +217,11 @@ body.lang-de .en{display:none}
       step: 5
       mode: box
       unit_of_measurement: "W"</code></pre>
-<p><code>optimistic</code> shows the new value immediately; the <code>SENSOR</code> message corrects it at the next TelePeriod (e.g. after a restart). A meter value with immediate MQTT sends <code>SENSOR</code> messages that carry only that value; the <code>if</code> keeps the current state for those. Without MQTT, the same over HTTP:</p>
+<p>Without MQTT, the same over HTTP:</p>
 <pre><code>rest_command:
   pv_offset:
     url: "http://&lt;ip&gt;/cm?cmnd=PVEmuOffset%20{{ offset }}"</code></pre>
-<p>Then call <code>rest_command.pv_offset</code> with <code>offset: -50</code>. An automation that raises the margin at night:</p>
+<p>Then call <code>rest_command.pv_offset</code> with <code>offset: -50</code>. Example of an automation that sets a bigger margin at night:</p>
 <pre><code>automation:
   - alias: "Offset 50 W at night"
     triggers:
@@ -236,19 +236,19 @@ body.lang-de .en{display:none}
 </div>
 <div class="de">
 <table>
-<tr><th>Offset [W]</th><td>Verschiebt die gemeldete Leistung. Ein positiver Wert lässt den Akku auf so viel Bezug statt auf genau null regeln &mdash; ein Sicherheitsabstand gegen Einspeisung. Negativ geht in die andere Richtung.</td></tr>
-<tr><th>Regleroptimierung</th><td>Formt den Wert, statt ihn durchzureichen: oberhalb des Offsets wird er auf ein Viertel gedämpft, unterhalb überzeichnet. Der Akku nähert sich dadurch von oben vorsichtig an und korrigiert nach unten schnell. Hilft gegen Schwingen; wenn dein Akku ohnehin ruhig regelt, auf <span class="sw">AUS</span> lassen.</td></tr>
-<tr><th>Update-Rate [s]</th><td>Wie oft der Wert neu berechnet wird. 1&nbsp;s ist gut. Langsamer beruhigt den ganzen Regelkreis, kostet aber Reaktionszeit.</td></tr>
-<tr><th>Senden erzwingen</th><td>Nur im Shelly-Modus. Wiederholt die letzte Antwort über UDP auch ohne Anfrage. Manche Firmware regelt mit einem stetigen Strom besser; die meisten brauchen es nicht.</td></tr>
+<tr><th>Offset [W]</th><td>Der Wert, auf den der Akku regelt, statt genau 0&nbsp;W. Ein positiver Wert (z.B. 20) heißt: Du kaufst immer ein paar Watt und speist nicht aus Versehen ein. Ein negativer Wert wirkt andersherum.</td></tr>
+<tr><th>Regleroptimierung</th><td>Hilft einem Akku, der hoch und runter schwingt. Der Akku nähert sich dann vorsichtig von oben an und korrigiert schnell, wenn er zu weit geht. Regelt dein Akku schon ruhig, lass sie <span class="sw">AUS</span>.</td></tr>
+<tr><th>Update-Rate [s]</th><td>Wie oft der Wert neu berechnet wird. 1&nbsp;s ist gut. Langsamer macht alles ruhiger, aber der Akku reagiert später.</td></tr>
+<tr><th>Senden erzwingen</th><td>Nur im Shelly-Modus. Schickt den Wert immer wieder, auch wenn der Akku nicht fragt. Manche Akkus regeln so besser, die meisten brauchen das nicht.</td></tr>
 </table>
-<p>Die Zeile <b>An den Akku</b> auf der Hauptseite zeigt, was das Gerät tatsächlich verlässt &mdash; nach Offset und Formung. Im Vergleich mit der Rohleistung sieht man, was die Einstellungen bewirken.</p>
-<p>Außerhalb des Geräts heißt derselbe Wert <code>cpwr</code>. Ist im Abschnitt <a href="../sml/#telemetry">Telemetrie</a> <b>power2 + cpwr senden (MQTT)</b> an, geht er alle 5&nbsp;s als <code>stat/&lt;topic&gt;/script/cpwr</code> raus, neben der gemittelten Netzleistung <code>power2</code> &mdash; im MQTT Explorer bzw. in Home Assistant unter <b>stat &rarr; &lt;topic&gt; &rarr; script</b>. <code>/pwr</code> liefert ihn immer mit: <code>{…,"power2":-217,"cpwr":-180}</code>.</p>
-<p>Die Option <b>3 Phasen</b> steht im Abschnitt Zähler, nicht hier &mdash; sie sagt aus, ob der Zähler überhaupt Werte je Phase liefert. Ist sie an, tragen die Beispiel-Antworten weiter unten drei echte Werte statt Nullen in <code>powerPhase2</code>, <code>powerPhase3</code> sowie <code>b_act_power</code> und <code>c_act_power</code>. Der Gesamtwert bleibt in beiden Fällen der saldierte Zählerwert &mdash; darauf regelt der Akku.</p>
+<p>Die Zeile <b>An den Akku</b> auf der Hauptseite zeigt, was der Akku wirklich bekommt, mit Offset und Regleroptimierung. Vergleich sie mit der Leistung, dann siehst du, was deine Einstellungen bewirken.</p>
+<p>Dieser Wert heißt auch <code>cpwr</code>. Ist <b>power2 + cpwr senden (MQTT)</b> eingeschaltet (siehe <a href="../sml/#telemetry">Telemetrie</a>), wird er alle 5 Sekunden als <code>stat/&lt;topic&gt;/script/cpwr</code> gesendet. Im MQTT Explorer oder in Home Assistant findest du ihn unter <b>stat &rarr; &lt;topic&gt; &rarr; script</b>. <code>/pwr</code> liefert ihn auch immer mit: <code>{…,"power2":-217,"cpwr":-180}</code>.</p>
+<p><b>3 Phasen</b> stellst du auf der Haupt-Einstellungsseite unter Zähler ein. Eingeschaltet bekommt der Akku zusätzlich die Leistung jeder Phase. Die Summe ist immer der Wert deines Zählers, und darauf regelt der Akku.</p>
 <h3>Offset aus Home Assistant</h3>
-<p>Das Konsolen-Kommando <code>PVEmuOffset &lt;W&gt;</code> setzt den Offset im laufenden Betrieb; <code>PVEmuOffset</code> allein zeigt ihn an. Per MQTT ist das <code>cmnd/&lt;topic&gt;/PVEmuOffset</code>, per HTTP <code>/cm?cmnd=PVEmuOffset%20-50</code>. Die Antwort lautet <code>{"PVEmuOffset":-50}</code>; der aktuelle Wert steht außerdem in <code>tele/&lt;topic&gt;/SENSOR</code> als <code>"PVEmu":{…,"Offset":-50}</code>. Mindestens &minus;200&nbsp;W, nach oben ohne Grenze (das Feld auf der Seite endet bei 200&nbsp;W).</p>
-<p>Der Wert liegt <b>nur im RAM</b>, eine Automation darf ihn also beliebig oft ändern, ohne den Flash abzunutzen. Nach einem Neustart gilt wieder der auf der Seite gespeicherte Wert. Das Feld auf der Seite zeigt weiter den gespeicherten Wert; der gerade gültige steht rechts daneben. Soll ein Wert bleiben, ihn ins Feld eintragen und <b>Speichern</b> drücken &mdash; das ersetzt auch einen per Kommando gesetzten Wert.</p>
-<p><b>Automatisch:</b> Das Programm meldet den Offset selbst bei Home Assistant an (MQTT-Discovery). Es erscheint als Zahlenfeld am Tasmota-Gerät &mdash; nichts einzurichten. Nach jedem Neustart von Home Assistant wird neu angemeldet. Voraussetzung: MQTT-Discovery in Home Assistant (standardmäßig an) und das Standard-FullTopic.</p>
-<p>Ohne Discovery: eine Number-Entität in der <code>configuration.yaml</code> (<code>&lt;topic&gt;</code> durch das MQTT-Topic des Geräts ersetzen):</p>
+<p><b>Automatisch:</b> Das Programm meldet den Offset selbst bei Home Assistant an (MQTT-Discovery). Er erscheint als Zahlenfeld am Tasmota-Gerät, du musst nichts einrichten. Dafür muss in Home Assistant die MQTT-Discovery an sein (ist sie standardmäßig) und Tasmota das Standard-FullTopic nutzen.</p>
+<p>Du kannst den Offset auch mit dem Befehl <code>PVEmuOffset &lt;W&gt;</code> ändern. <code>PVEmuOffset</code> ohne Wert zeigt den aktuellen an. Per MQTT: <code>cmnd/&lt;topic&gt;/PVEmuOffset</code>, per HTTP: <code>/cm?cmnd=PVEmuOffset%20-50</code>. Der aktuelle Wert steht außerdem in <code>tele/&lt;topic&gt;/SENSOR</code> als <code>"PVEmu":{…,"Offset":-50}</code>. Kleinster Wert &minus;200&nbsp;W.</p>
+<p>Ein so gesetzter Wert gilt nur bis zum nächsten Neustart. Eine Automation darf ihn also beliebig oft ändern, ohne den Flash-Speicher abzunutzen. Nach einem Neustart gilt wieder der auf der Seite gespeicherte Wert. Das Feld auf der Seite zeigt den gespeicherten Wert, rechts daneben steht der gerade benutzte. Soll ein Wert bleiben, trag ihn ins Feld ein und drücke <b>Speichern</b>.</p>
+<p>Ohne Discovery kannst du das Feld selbst in der <code>configuration.yaml</code> anlegen (<code>&lt;topic&gt;</code> durch das MQTT-Topic deines Geräts ersetzen):</p>
 <pre><code>mqtt:
   number:
     - name: "PV Offset"
@@ -264,11 +264,11 @@ body.lang-de .en{display:none}
       step: 5
       mode: box
       unit_of_measurement: "W"</code></pre>
-<p><code>optimistic</code> zeigt den neuen Wert sofort; die <code>SENSOR</code>-Meldung korrigiert ihn zur nächsten TelePeriod (z.&nbsp;B. nach einem Neustart). Ein Zählerwert mit sofortigem MQTT schickt <code>SENSOR</code>-Meldungen, die nur diesen Wert enthalten; das <code>if</code> behält für die den aktuellen Stand. Ohne MQTT dasselbe per HTTP:</p>
+<p>Ohne MQTT dasselbe per HTTP:</p>
 <pre><code>rest_command:
   pv_offset:
     url: "http://&lt;ip&gt;/cm?cmnd=PVEmuOffset%20{{ offset }}"</code></pre>
-<p>Dann <code>rest_command.pv_offset</code> mit <code>offset: -50</code> aufrufen. Eine Automation, die nachts den Abstand erhöht:</p>
+<p>Dann <code>rest_command.pv_offset</code> mit <code>offset: -50</code> aufrufen. Beispiel für eine Automation, die nachts einen größeren Abstand einstellt:</p>
 <pre><code>automation:
   - alias: "Offset 50 W at night"
     triggers:
@@ -286,70 +286,70 @@ body.lang-de .en{display:none}
 <section id="endpoints">
 <h2><span class="en">Endpoints</span><span class="de">Endpunkte</span></h2>
 <div class="en">
-<p>You can call all of these from a browser to check what the battery sees.</p>
+<p>These are the addresses the battery asks. You can open them in your browser to see what the battery sees.</p>
 <table>
-<tr><th><code>/v1/json</code></th><td>EcoTracker. Power, smoothed power, per-phase power and both energy counters in Wh.</td></tr>
+<tr><th><code>/v1/json</code></th><td>EcoTracker. Power, smoothed power, power per phase and both energy counters in Wh.</td></tr>
 <tr><th><code>/rpc/EM.GetStatus</code></th><td>Shelly. Power per phase and total.</td></tr>
 <tr><th><code>/rpc/Shelly.GetStatus</code></th><td>Shelly. The same plus the energy counters.</td></tr>
-<tr><th><code>/rpc/EM1.GetStatus</code></th><td>Pro EM50 and EM Gen3. The one channel's power.</td></tr>
-<tr><th><code>/rpc/EMData.GetStatus</code></th><td>EM Gen3. The energy counters on their own.</td></tr>
-<tr><th>UDP 1010 / 2220 / 2223 / 2222</th><td>Shelly. The same RPC methods, answer wrapped with the device id. 2223 is the Pro EM50, 2222 the EM Gen3.</td></tr>
+<tr><th><code>/rpc/EM1.GetStatus</code></th><td>Pro EM50 and EM Gen3. The power of the one channel.</td></tr>
+<tr><th><code>/rpc/EMData.GetStatus</code></th><td>EM Gen3. Only the energy counters.</td></tr>
+<tr><th>UDP 1010 / 2220 / 2223 / 2222</th><td>Shelly. The same questions over UDP. 2223 is the Pro EM50, 2222 the EM Gen3.</td></tr>
 </table>
 <pre><code>{"power":-440,"powerAvg":-217,"agePower":1000,
  "powerPhase1":-440,"powerPhase2":0,"powerPhase3":0,
  "energyCounterIn":26714950,"energyCounterOut":659775}</code></pre>
-<p>Power is reported on phase 1 only, all three phases summed. That is what a single-value meter reading gives us, and it is what a battery regulating against the total needs.</p>
-<p>The device announces itself over mDNS as <code>ecotracker-&lt;mac&gt;</code>, <code>shellypro3em-&lt;mac&gt;</code>, <code>shellyproem50-&lt;mac&gt;</code> or <code>shellyemg3-&lt;mac&gt;</code>, using the ESP's own MAC.</p>
+<p>Without <b>3 phases</b> the whole power is on phase 1. That is all a normal meter value gives, and it is exactly what a battery regulating on the total needs.</p>
+<p>In the network the device shows up as <code>ecotracker-&lt;mac&gt;</code>, <code>shellypro3em-&lt;mac&gt;</code>, <code>shellyproem50-&lt;mac&gt;</code> or <code>shellyemg3-&lt;mac&gt;</code>, with the MAC address of your ESP.</p>
 </div>
 <div class="de">
-<p>Alle davon kannst du im Browser aufrufen, um zu sehen, was der Akku sieht.</p>
+<p>Das sind die Adressen, die der Akku abfragt. Du kannst sie im Browser öffnen und siehst, was der Akku sieht.</p>
 <table>
-<tr><th><code>/v1/json</code></th><td>EcoTracker. Leistung, gemittelte Leistung, Leistung je Phase und beide Energiezähler in Wh.</td></tr>
+<tr><th><code>/v1/json</code></th><td>EcoTracker. Leistung, geglättete Leistung, Leistung je Phase und beide Energiezähler in Wh.</td></tr>
 <tr><th><code>/rpc/EM.GetStatus</code></th><td>Shelly. Leistung je Phase und Summe.</td></tr>
 <tr><th><code>/rpc/Shelly.GetStatus</code></th><td>Shelly. Dasselbe plus die Energiezähler.</td></tr>
 <tr><th><code>/rpc/EM1.GetStatus</code></th><td>Pro EM50 und EM Gen3. Die Leistung des einen Kanals.</td></tr>
 <tr><th><code>/rpc/EMData.GetStatus</code></th><td>EM Gen3. Nur die Energiezähler.</td></tr>
-<tr><th>UDP 1010 / 2220 / 2223 / 2222</th><td>Shelly. Dieselben RPC-Methoden, Antwort mit der Geräte-ID umhüllt. 2223 ist der Pro EM50, 2222 der EM Gen3.</td></tr>
+<tr><th>UDP 1010 / 2220 / 2223 / 2222</th><td>Shelly. Dieselben Fragen über UDP. 2223 ist der Pro EM50, 2222 der EM Gen3.</td></tr>
 </table>
 <pre><code>{"power":-440,"powerAvg":-217,"agePower":1000,
  "powerPhase1":-440,"powerPhase2":0,"powerPhase3":0,
  "energyCounterIn":26714950,"energyCounterOut":659775}</code></pre>
-<p>Die Leistung steht komplett auf Phase 1, alle drei Phasen summiert. Mehr gibt ein saldierender Zählerwert nicht her, und genau das braucht ein Akku, der gegen die Summe regelt.</p>
-<p>Das Gerät meldet sich über mDNS als <code>ecotracker-&lt;mac&gt;</code>, <code>shellypro3em-&lt;mac&gt;</code>, <code>shellyproem50-&lt;mac&gt;</code> bzw. <code>shellyemg3-&lt;mac&gt;</code>, mit der eigenen MAC des ESP.</p>
+<p>Ohne <b>3 Phasen</b> liegt die ganze Leistung auf Phase 1. Mehr gibt ein normaler Zählerwert nicht her, und genau das braucht ein Akku, der auf die Summe regelt.</p>
+<p>Im Netzwerk meldet sich das Gerät als <code>ecotracker-&lt;mac&gt;</code>, <code>shellypro3em-&lt;mac&gt;</code>, <code>shellyproem50-&lt;mac&gt;</code> oder <code>shellyemg3-&lt;mac&gt;</code>, mit der MAC-Adresse deines ESP.</p>
 </div>
 </section>
 
 <section id="tester">
 <h2><span class="en">Test tool</span><span class="de">Testprogramm</span></h2>
 <div class="en">
-<p>You do not need a battery to find out whether the emulator answers. <a href="https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1" target="_blank" rel="noopener">Shelly-EcoTracker Tester.ps1</a> is a small Windows program that asks the same questions a battery asks &mdash; right-click, <i>Run with PowerShell</i>.</p>
-<p>Enter the device's IP at the top, then pick two things:</p>
+<p>You can check whether the emulator answers without a battery. <a href="https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1" target="_blank" rel="noopener">Shelly-EcoTracker Tester.ps1</a> is a small Windows program that asks the same questions as a battery. Right-click it and choose <i>Run with PowerShell</i>.</p>
+<p>Enter the IP of your device at the top, then choose:</p>
 <table>
-<tr><th>Device</th><td>Sets the port for you: Pro 3EM 1010, the same with a Marstek B2500 2220, Pro EM50 2223, EM Gen3 2222. EcoTracker speaks no RPC and is answered over HTTP.</td></tr>
-<tr><th>Method</th><td>Fills in the request. The list follows the device &mdash; only the EM Gen3 offers <code>EMData.GetStatus</code>, because only it answers that one.</td></tr>
+<tr><th>Device</th><td>Sets the right port: Pro 3EM 1010, Pro 3EM with Marstek B2500 2220, Pro EM50 2223, EM Gen3 2222. The EcoTracker is asked over HTTP.</td></tr>
+<tr><th>Method</th><td>The question to ask. The list fits the chosen device.</td></tr>
 </table>
-<p>The protocol switch at the very top decides how the request goes out: over <b>UDP</b> as the bare method name, over <b>HTTP</b> as the <code>/rpc/</code> path. The same selection serves both.</p>
-<p>Two more modes are worth knowing:</p>
+<p>The switch at the very top decides whether the question goes out over <b>UDP</b> or <b>HTTP</b>.</p>
+<p>Two more useful functions:</p>
 <ul>
-<li><b>mDNS</b> asks the network which devices announce themselves as a Shelly or an EcoTracker. If the battery's app does not find the emulator, it has to show up here first &mdash; that separates a discovery problem from a data problem.</li>
-<li><b>Ping</b> runs a long-term reachability test with a log file, for a device that drops out now and then.</li>
+<li><b>mDNS</b> shows which devices in your network pretend to be a Shelly or an EcoTracker. If your battery's app does not find the emulator, it must at least show up here.</li>
+<li><b>Ping</b> runs a long test with a log file, for a device that drops out now and then.</li>
 </ul>
-<p class="warn">An answer in the tool proves the emulator works, not that the battery accepts it. If the tool gets valid JSON and the app still finds nothing, the fault is in discovery or in the port &mdash; not in the readings.</p>
+<p class="warn">If the tool gets an answer, the emulator works. That does not mean the battery accepts it. If the tool gets values but the app still finds nothing, the problem is the search in the network or the port, not the values.</p>
 </div>
 <div class="de">
-<p>Ob der Emulator antwortet, lässt sich ohne Akku prüfen. <a href="https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1" target="_blank" rel="noopener">Shelly-EcoTracker Tester.ps1</a> ist ein kleines Windows-Programm, das dieselben Fragen stellt wie ein Akku &mdash; Rechtsklick, <i>Mit PowerShell ausführen</i>.</p>
-<p>Oben die IP des Geräts eintragen, dann zwei Dinge wählen:</p>
+<p>Ob der Emulator antwortet, kannst du auch ohne Akku prüfen. <a href="https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1" target="_blank" rel="noopener">Shelly-EcoTracker Tester.ps1</a> ist ein kleines Windows-Programm, das dieselben Fragen stellt wie ein Akku. Rechtsklick darauf und <i>Mit PowerShell ausführen</i> wählen.</p>
+<p>Oben die IP deines Geräts eintragen, dann wählen:</p>
 <table>
-<tr><th>Gerät</th><td>Setzt den Port für dich: Pro 3EM 1010, derselbe mit einem Marstek B2500 2220, Pro EM50 2223, EM Gen3 2222. Der EcoTracker kennt kein RPC und wird über HTTP gefragt.</td></tr>
-<tr><th>Methode</th><td>Trägt die Anfrage ein. Die Liste richtet sich nach dem Gerät &mdash; nur der EM Gen3 bietet <code>EMData.GetStatus</code> an, weil nur er das beantwortet.</td></tr>
+<tr><th>Gerät</th><td>Setzt den richtigen Port: Pro 3EM 1010, Pro 3EM mit Marstek B2500 2220, Pro EM50 2223, EM Gen3 2222. Der EcoTracker wird über HTTP gefragt.</td></tr>
+<tr><th>Methode</th><td>Die Frage, die gestellt wird. Die Liste passt zum gewählten Gerät.</td></tr>
 </table>
-<p>Der Protokollschalter ganz oben entscheidet, wie die Anfrage rausgeht: über <b>UDP</b> als blanker Methodenname, über <b>HTTP</b> als <code>/rpc/</code>-Pfad. Dieselbe Auswahl bedient also beides.</p>
-<p>Zwei weitere Modi lohnen sich:</p>
+<p>Der Schalter ganz oben entscheidet, ob die Frage über <b>UDP</b> oder <b>HTTP</b> rausgeht.</p>
+<p>Zwei weitere nützliche Funktionen:</p>
 <ul>
-<li><b>mDNS</b> fragt im Netz nach, welche Geräte sich als Shelly oder EcoTracker melden. Findet die App des Akkus den Emulator nicht, muss er hier zuerst auftauchen &mdash; das trennt ein Erkennungsproblem von einem Datenproblem.</li>
-<li><b>Ping</b> läuft als Dauertest mit Protokolldatei, für ein Gerät, das gelegentlich aussetzt.</li>
+<li><b>mDNS</b> zeigt, welche Geräte in deinem Netz sich als Shelly oder EcoTracker ausgeben. Findet die App deines Akkus den Emulator nicht, muss er wenigstens hier auftauchen.</li>
+<li><b>Ping</b> macht einen langen Test mit Logdatei, für ein Gerät, das ab und zu ausfällt.</li>
 </ul>
-<p class="warn">Eine Antwort im Testprogramm beweist, dass der Emulator funktioniert &mdash; nicht, dass der Akku sie annimmt. Kommt dort gültiges JSON und die App findet trotzdem nichts, liegt es an der Erkennung oder am Port, nicht an den Messwerten.</p>
+<p class="warn">Bekommt das Testprogramm eine Antwort, funktioniert der Emulator. Das heißt aber nicht, dass der Akku sie annimmt. Kommen im Testprogramm Werte und die App findet trotzdem nichts, liegt es an der Suche im Netzwerk oder am Port, nicht an den Werten.</p>
 </div>
 </section>
 
@@ -357,20 +357,20 @@ body.lang-de .en{display:none}
 <h2><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></h2>
 <div class="en">
 <table>
-<tr><th>Battery finds nothing</th><td>Wrong mode, or the UDP port. Try 2220 in Pro 3EM mode; the Pro EM50 only ever answers on 2223, the EM Gen3 on 2222. Both must be on the same network segment &mdash; mDNS does not cross subnets or most guest networks.</td></tr>
-<tr><th>Found, but 0&nbsp;W</th><td>No meter readings. Check the meter under <a href="../sml/">SML</a>; the endpoints answer even without them.</td></tr>
-<tr><th>Battery oscillates</th><td>Turn on <b>Regulator tweak</b>, or raise the update rate. An offset of 20&ndash;50&nbsp;W also calms things down.</td></tr>
-<tr><th>Feeds into the grid anyway</th><td>Raise the offset. The battery always lags the meter a little; the offset buys that time back.</td></tr>
-<tr><th>Worked, then stopped</th><td>Restart the script &mdash; the mDNS name is claimed once at start, and Tasmota's own discovery can win the race after a Wi-Fi reconnect.</td></tr>
+<tr><th>Battery finds nothing</th><td>Wrong mode or wrong UDP port. In Pro 3EM mode try 2220. Battery and reading head must be in the same network. Guest networks and separate subnets usually do not work.</td></tr>
+<tr><th>Found, but 0&nbsp;W</th><td>No meter values. Check your meter on the <a href="../sml/">SML help page</a>.</td></tr>
+<tr><th>Battery swings up and down</th><td>Switch on <b>Regulator tweak</b>, or set a slower update rate. An offset of 20&ndash;50&nbsp;W also calms things down.</td></tr>
+<tr><th>Still feeds into the grid</th><td>Raise the offset. The battery always reacts a little later than the meter, the offset makes up for that.</td></tr>
+<tr><th>Worked, then stopped</th><td>Restart the program. After the Wi-Fi reconnects, the device is sometimes no longer found under its meter name.</td></tr>
 </table>
 </div>
 <div class="de">
 <table>
-<tr><th>Akku findet nichts</th><td>Falscher Modus oder falscher UDP-Port. Im Pro-3EM-Modus 2220 probieren; der Pro EM50 antwortet nur auf 2223, der EM Gen3 auf 2222. Beide müssen im selben Netzsegment sein &mdash; mDNS kommt weder über Subnetze noch durch die meisten Gastnetze.</td></tr>
-<tr><th>Gefunden, aber 0&nbsp;W</th><td>Keine Zählerwerte. Zähler unter <a href="../sml/">SML</a> prüfen; die Endpunkte antworten auch ohne.</td></tr>
-<tr><th>Akku schwingt</th><td><b>Regleroptimierung</b> einschalten oder die Update-Rate erhöhen. Ein Offset von 20&ndash;50&nbsp;W beruhigt ebenfalls.</td></tr>
-<tr><th>Speist trotzdem ein</th><td>Offset erhöhen. Der Akku hinkt dem Zähler immer etwas hinterher; der Offset kauft diese Zeit zurück.</td></tr>
-<tr><th>Ging, geht jetzt nicht mehr</th><td>Script neu starten &mdash; der mDNS-Name wird einmal beim Start belegt, und Tasmotas eigene Discovery kann das Rennen nach einem WLAN-Neuaufbau gewinnen.</td></tr>
+<tr><th>Akku findet nichts</th><td>Falscher Modus oder falscher UDP-Port. Im Pro-3EM-Modus 2220 probieren. Akku und Lesekopf müssen im selben Netzwerk sein. Gastnetze und getrennte Teilnetze gehen meistens nicht.</td></tr>
+<tr><th>Gefunden, aber 0&nbsp;W</th><td>Keine Zählerwerte. Prüfe deinen Zähler mit der <a href="../sml/">SML-Hilfeseite</a>.</td></tr>
+<tr><th>Akku schwingt hoch und runter</th><td><b>Regleroptimierung</b> einschalten oder eine langsamere Update-Rate einstellen. Ein Offset von 20&ndash;50&nbsp;W beruhigt auch.</td></tr>
+<tr><th>Speist trotzdem ein</th><td>Offset erhöhen. Der Akku reagiert immer etwas später als der Zähler, der Offset gleicht das aus.</td></tr>
+<tr><th>Ging, geht jetzt nicht mehr</th><td>Programm neu starten. Nach einem WLAN-Neuaufbau wird das Gerät manchmal nicht mehr unter seinem Zählernamen gefunden.</td></tr>
 </table>
 </div>
 </section>
