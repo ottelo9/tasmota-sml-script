@@ -81,6 +81,9 @@ void swTick() {
         tcOptSetIp(sw_ip);
     }
     int act = sw_on;
+#ifdef SML_M3
+    if (sml_kind > 0) act = 0;       // gas/water meter: nothing to switch on
+#endif
 #ifdef SML_CHART
     if (sml_pv == 0) act = 0;        // the switch sits under Feed-in
 #endif
@@ -99,6 +102,9 @@ void swTick() {
 // From WebCall().
 void swRows() {
     if (sw_on == 0) return;
+#ifdef SML_M3
+    if (sml_kind > 0) return;
+#endif
 #ifdef SML_CHART
     if (sml_pv == 0) return;
 #endif
@@ -109,6 +115,9 @@ void swRows() {
 // From WebUI(), inside the settings panel. The chart programs call it under
 // their PV heading, only with Feed-in on; the others have no PV heading.
 void swPanel() {
+#ifdef SML_M3
+    if (sml_kind > 0) return;
+#endif
 #ifndef SML_CHART
     uiHead("&#x2600;&#xFE0F;", "PV", "PV", "sml/#pvswitch");
 #endif

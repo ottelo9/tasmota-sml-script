@@ -1,0 +1,13 @@
+; Wasserzähler mit Impulsgeber, 1 Liter pro Impuls.
+;kind=water
+; Die Zeile ;kind=water stellt die TinyC-Programme sml_simple / sml_chart auf m³ um.
+; Faktor anpassen: @1000 = 1000 Impulse pro m³ (1 l/Imp), 10 l/Imp -> @100.
+; Den Durchfluss (l/min) berechnet das Programm aus dem Zählerstand. Wert 1 ist
+; der grobe Wert des Treibers (0 bei weniger als einem Impuls in 5 s).
+; Zählerstand setzen (Konsole, Wert in Impulsen), z.B. 123,456 m³:
+; Sensor53 c1 123456
+>M 1
++1,%0rxpin%,c,1,-20,Wasser
+1,1-0:1.7.0*255(@1,Durchfluss,l/min,Flow,1
+1,1-0:1.8.0*255(@1000,Wasser,m³,Total,3
+#

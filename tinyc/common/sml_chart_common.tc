@@ -20,6 +20,13 @@
 // export side as floats (0.8 KB). Needs firmware ABI 27 for the packed rings.
 
 #define SML_CHART 1            // smlVars() also asks sml_chart_var()
+
+// Feed-in only exists for an electricity meter; the setting itself stays.
+#ifdef SML_M3
+#define SML_PVON (sml_pv > 0 && sml_kind == 0)
+#else
+#define SML_PVON (sml_pv > 0)
+#endif
 #include "sml_descriptor.tc"
 
 // ── Energy baselines (delta against current SML kWh counter) ────────────────
@@ -313,6 +320,11 @@ int sml_chart_w16(float w) {
 // 5-s tick: feed the 24 h filter, accumulate and push the short-term ring.
 void sml_chart_5s_tick() {
     int p = (int)smlGet(1);             // current power in W (int filter ring)
+    // Gas/water: the flow in hundredths (m³/h or l/min) - int16 holds 0.01 steps
+    // up to 320, and WebChartQ(0.01) turns it back when drawing.
+#ifdef SML_M3
+    if (sml_kind > 0) p = (int)(sml_flow() * 100.0 + 0.5);
+#endif
     sml_s24hf[sml_f24_pos] = p;
     sml_f24_pos = (sml_f24_pos + 1) % 12;
 
@@ -389,20 +401,37 @@ void sml_chart_60s_tick() {
 // totals below so a per-phase row can go between them, where it belongs.
 // The export row only with "Feed-in" on, like the other export rows.
 void sml_chart_render_meter() {
+#ifdef SML_M3
+    if (sml_meter_rows()) return;   // gas/water
+#endif
     if (ui_de) {
         sprintf(sml_buf, "{s}Leistung{m}%.0f W{e}", smlGet(1));      webSend(sml_buf);
         sprintf(sml_buf, "{s}Bezug{m}%.3f kWh{e}", smlGet(2));       webSend(sml_buf);
-        if (sml_pv > 0) { sprintf(sml_buf, "{s}Einspeisung{m}%.3f kWh{e}", SML_PV_TOTAL); webSend(sml_buf); }
+        if (SML_PVON) { sprintf(sml_buf, "{s}Einspeisung{m}%.3f kWh{e}", SML_PV_TOTAL); webSend(sml_buf); }
     } else {
         sprintf(sml_buf, "{s}Power{m}%.0f W{e}", smlGet(1));         webSend(sml_buf);
         sprintf(sml_buf, "{s}Import{m}%.3f kWh{e}", smlGet(2));      webSend(sml_buf);
-        if (sml_pv > 0) { sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", SML_PV_TOTAL); webSend(sml_buf); }
+        if (SML_PVON) { sprintf(sml_buf, "{s}Export{m}%.3f kWh{e}", SML_PV_TOTAL); webSend(sml_buf); }
     }
 }
 
 void sml_chart_render_totals() {
     uiSep();
 
+#ifdef SML_M3
+    float ein = smlGet(2);
+    if (ui_de) {
+        sprintf(sml_buf, "{s}Tagesverbrauch{m}%.2f %s{e}",  ein - sml_dval, sml_unit); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Wochenverbrauch{m}%.2f %s{e}", ein - sml_wval, sml_unit); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Monatsverbrauch{m}%.2f %s{e}", ein - sml_mval, sml_unit); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Jahresverbrauch{m}%.2f %s{e}", ein - sml_yval, sml_unit); webSend(sml_buf);
+    } else {
+        sprintf(sml_buf, "{s}Import day{m}%.2f %s{e}",   ein - sml_dval, sml_unit); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Import week{m}%.2f %s{e}",  ein - sml_wval, sml_unit); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Import month{m}%.2f %s{e}", ein - sml_mval, sml_unit); webSend(sml_buf);
+        sprintf(sml_buf, "{s}Import year{m}%.2f %s{e}",  ein - sml_yval, sml_unit); webSend(sml_buf);
+    }
+#else
     float ein = smlGet(2);
     if (ui_de) {
         sprintf(sml_buf, "{s}Tagesverbrauch{m}%.2f kWh{e}",  ein - sml_dval); webSend(sml_buf);
@@ -415,6 +444,7 @@ void sml_chart_render_totals() {
         sprintf(sml_buf, "{s}Import month{m}%.2f kWh{e}", ein - sml_mval); webSend(sml_buf);
         sprintf(sml_buf, "{s}Import year{m}%.2f kWh{e}",  ein - sml_yval); webSend(sml_buf);
     }
+#endif
 }
 
 // Script JS hook applied to both rolling charts: filled area (better
@@ -467,6 +497,16 @@ void sml_chart_area_st() {
 void sml_chart_render_st() {
     int cnt = sml_st_count();
     WebChartSize(0, 280);   // 0 = card width (see #111)
+#ifdef SML_M3
+    // Gas/water: the flow, stored in hundredths - one title, no range ladder.
+    if (sml_kind > 0) {
+        WebChartQ(0.01, 0.0);
+        if (sml_kind == 1) WebChart(0, "m³/h",  "m³/h",  0x3498db, sml_s4h_pos, cnt, sml_s4h, 2, 1, 0.0, 0.0);
+        else               WebChart(0, "l/min", "l/min", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 2, 1, 0.0, 0.0);
+        sml_chart_area_st();
+        return;
+    }
+#endif
     if (sml_stmin == 15)       WebChart(0, "15 min [W]", "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
     else if (sml_stmin == 30)  WebChart(0, "30 min [W]", "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
     else if (sml_stmin == 60)  WebChart(0, "1 h [W]",    "W", 0x3498db, sml_s4h_pos, cnt, sml_s4h, 0, 1, 0.0, 0.0);
@@ -477,6 +517,15 @@ void sml_chart_render_st() {
 
 void sml_chart_render_24h() {
     WebChartSize(0, 280);   // 0 = card width (see #111)
+#ifdef SML_M3
+    if (sml_kind > 0) {
+        WebChartQ(0.01, 0.0);
+        if (sml_kind == 1) WebChart(0, "24 h [m³/h]",  "m³/h",  0x3498db, sml_s24h_pos, 1440, sml_s24h, 2, 1, 0.0, 0.0);
+        else               WebChart(0, "24 h [l/min]", "l/min", 0x3498db, sml_s24h_pos, 1440, sml_s24h, 2, 1, 0.0, 0.0);
+        sml_chart_area_de();
+        return;
+    }
+#endif
     WebChart(0, "24 h [W]", "W", 0x3498db, sml_s24h_pos, 1440, sml_s24h, 0, 1, 0.0, 0.0);
     sml_chart_area_de();
 }
@@ -554,7 +603,13 @@ void sml_chart_data_panel(int idx_base, int idx_power, int idx_bars) {
 // export side by side, each on its own axis) the week and month charts share.
 // The loader is already on the page from the WebChart line charts above.
 void sml_chart_bar_js() {
-    webSend("<style>.smlc{width:100%;box-sizing:border-box;height:280px}</style><script>function _smlB(i,t,r,o){google.charts.setOnLoadCallback(function(){if(o.d){o.chartArea={left:60,right:60,top:30,height:'70%'};o.legend={position:'top'};o.series={0:{color:'#27ae60',targetAxisIndex:0},1:{color:'#f39c12',targetAxisIndex:1}};o.vAxes={0:{format:'#.## kWh'},1:{format:'#.## kWh'}}}o.title=t;o.chartArea=o.chartArea||{left:50,right:20,top:30,height:'70%'};o.chartArea.backgroundColor='#f0f2f5';o.legend=o.legend||'none';o.vAxis={format:'#.## kWh'};new google.visualization.ColumnChart(document.getElementById(i)).draw(google.visualization.arrayToDataTable(r),o)})}</script>");
+#ifdef SML_M3
+    sprintf(sml_buf, "<script>var U='%s'</script>", sml_unit);
+    webSend(sml_buf);
+#else
+    webSend("<script>var U='kWh'</script>");
+#endif
+    webSend("<style>.smlc{width:100%;box-sizing:border-box;height:280px}</style><script>function _smlB(i,t,r,o){google.charts.setOnLoadCallback(function(){if(o.d){o.chartArea={left:60,right:60,top:30,height:'70%'};o.legend={position:'top'};o.series={0:{color:'#27ae60',targetAxisIndex:0},1:{color:'#f39c12',targetAxisIndex:1}};o.vAxes={0:{format:'#.## '+U},1:{format:'#.## '+U}}}o.title=t;o.chartArea=o.chartArea||{left:50,right:20,top:30,height:'70%'};o.chartArea.backgroundColor='#f0f2f5';o.legend=o.legend||'none';o.vAxis={format:'#.## '+U};new google.visualization.ColumnChart(document.getElementById(i)).draw(google.visualization.arrayToDataTable(r),o)})}</script>");
 }
 
 // Opens one bar chart up to its header row; the caller sends the rows and
@@ -581,8 +636,18 @@ void sml_chart_bar_end(byte opts[]) {
 void sml_chart_render_days() {
     int today = tasm_day;
     if (today < 1) today = 1;
+#ifdef SML_M3
+    byte t[40];
+    byte hd[32];
+    sml_chart_word(t);
+    if (ui_de) strcat(t, " pro Tag");
+    else       strcat(t, " per day");
+    sml_chart_head(hd);
+    sml_chart_bar_open("sml_dch", t, hd);
+#else
     if (ui_de) sml_chart_bar_open("sml_dch", "Bezug pro Tag",  "['','kWh',{role:'style'}]");
     else       sml_chart_bar_open("sml_dch", "Import per day", "['','kWh',{role:'style'}]");
+#endif
     int i = 1;
     while (i <= 31) {
         if (i < today)        sprintf(sml_buf, ",[%d,%.2f,'green']", i, sml_dcon[i - 1]);
@@ -604,8 +669,18 @@ void sml_chart_render_months() {
     if (ui_de) strcpy(mn_names, "Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez");
     else       strcpy(mn_names, "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec");
     byte mn[6];
+#ifdef SML_M3
+    byte t[40];
+    byte hd[32];
+    sml_chart_word(t);
+    if (ui_de) strcat(t, " pro Monat");
+    else       strcat(t, " per month");
+    sml_chart_head(hd);
+    sml_chart_bar_open("sml_mch", t, hd);
+#else
     if (ui_de) sml_chart_bar_open("sml_mch", "Bezug pro Monat",  "['','kWh',{role:'style'}]");
     else       sml_chart_bar_open("sml_mch", "Import per month", "['','kWh',{role:'style'}]");
+#endif
     int i = 1;
     while (i <= 12) {
         strToken(mn, mn_names, '|', i);
@@ -638,6 +713,24 @@ persist float sml_mval2;             // monthly zero point
 persist float sml_yval2;             // yearly zero point
 persist float sml_wval2;             // weekly zero point, Monday 00:00
 persist int   sml_pv;                  // 1 = show feed-in rows and charts
+
+#ifdef SML_M3
+// Bar chart title word: Bezug/Import, or Verbrauch/Consumption for gas/water.
+void sml_chart_word(byte w[]) {
+    if (sml_kind > 0) {
+        if (ui_de) strcpy(w, "Verbrauch");
+        else       strcpy(w, "Consumption");
+    } else {
+        if (ui_de) strcpy(w, "Bezug");
+        else       strcpy(w, "Import");
+    }
+}
+
+// One-series header row, in the meter's unit.
+void sml_chart_head(byte h[]) {
+    sprintf(h, "['','%s',{role:'style'}]", sml_unit);
+}
+#endif
 persist float sml_dprod[31];         // 31 days of production totals
 persist float sml_mprod[12];         // 12 months of production totals
 persist float sml_wprod[53];         // ISO weeks, see sml_wcon
@@ -725,7 +818,11 @@ void sml_chart_pv_init_columns() {
 // MQTT-publishes the smoothed value when sml_sndpwr is enabled.
 void sml_chart_pv_5s_tick() {
     sml_power2 = 0.9 * sml_power2 + 0.1 * smlGet(1);
+#ifdef SML_M3
+    if (sml_sndpwr && sml_kind == 0) {   // gas/water: power2 is no power
+#else
     if (sml_sndpwr) {
+#endif
         sprintf(sml_ftopic, "stat/%s/script/power2", sml_mtopic);
         sprintf(sml_buf, "%d", (int)sml_power2);
         smlPublish(sml_ftopic, sml_buf);
@@ -813,9 +910,22 @@ void sml_chart_render_weeks() {
     int cw = tasm_cw;
     byte st[40];
     byte t[40];
+#ifdef SML_M3
+    byte w[16];
+    sml_chart_word(w);
+    if (SML_PVON) {
+        if (ui_de) strcpy(w, "Bezug/Einsp.");
+        else       strcpy(w, "Import/export");
+    }
+    if (ui_de) sprintf(t, "%s pro Woche (KW %d)", w, cw);
+    else       sprintf(t, "%s per week (week %d)", w, cw);
+    sml_chart_head(st);
+    if (SML_PVON == 0) sml_chart_bar_open("sml_wch", t, st);
+#else
     if (ui_de) sprintf(t, "%s pro Woche (KW %d)", sml_pv > 0 ? "Bezug/Einsp." : "Bezug", cw);
     else       sprintf(t, "%s per week (week %d)", sml_pv > 0 ? "Import/export" : "Import", cw);
     if (sml_pv == 0)  sml_chart_bar_open("sml_wch", t, "['','kWh',{role:'style'}]");
+#endif
     else if (ui_de)   sml_chart_bar_open("sml_wch", t, "['','Bezug',{role:'style'},'Einspeisung',{role:'style'}]");
     else              sml_chart_bar_open("sml_wch", t, "['','Import',{role:'style'},'Export',{role:'style'}]");
     int i = 1;
@@ -824,19 +934,19 @@ void sml_chart_render_weeks() {
         else if (i > cw) strcpy(st, "opacity:0.35");
         else             strcpy(st, "");
         sprintf(sml_buf, ",[%d,%.2f,'%s'", i, sml_wcon[i - 1], st);
-        if (sml_pv > 0) sprintfAppend(sml_buf, ",%.2f,'%s'", sml_wprod[i - 1], st);
+        if (SML_PVON) sprintfAppend(sml_buf, ",%.2f,'%s'", sml_wprod[i - 1], st);
         strcat(sml_buf, "]");
         webSend(sml_buf);
         i = i + 1;
     }
-    if (sml_pv > 0) sml_chart_bar_end("{d:1,hAxis:{ticks:[1,10,20,30,40,53]}}");
+    if (SML_PVON) sml_chart_bar_end("{d:1,hAxis:{ticks:[1,10,20,30,40,53]}}");
     else            sml_chart_bar_end("{series:{0:{color:'#27ae60'}},hAxis:{ticks:[1,10,20,30,40,53]}}");
 }
 
 // Export rows for the main page, day / week / month / year. Shared by every
 // chart program; before, each carried its own copy of the block.
 void sml_chart_pv_render_totals() {
-    if (sml_pv == 0) return;
+    if (SML_PVON == 0) return;
     float eout = SML_PV_TOTAL;
     if (ui_de) {
         sprintf(sml_buf, "{s}Tageseinspeisung{m}%.2f kWh{e}",  eout - sml_dval2); webSend(sml_buf);
@@ -906,9 +1016,9 @@ void sml_chart_render_all() {
     sml_chart_render_st();
     sml_chart_render_24h();
     sml_chart_render_days();
-    if (sml_pv > 0) sml_chart_pv_render_dayprod();
+    if (SML_PVON) sml_chart_pv_render_dayprod();
     sml_chart_render_weeks();
-    if (sml_pv > 0) sml_chart_pv_render_months_dual();
+    if (SML_PVON) sml_chart_pv_render_months_dual();
     else            sml_chart_render_months();
     webSend("</div>");
 }

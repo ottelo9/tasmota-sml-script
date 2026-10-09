@@ -1,0 +1,13 @@
+; Gaszähler mit Impulsgeber (Reedkontakt), 0,01 m³ pro Impuls (z.B. BK-G4).
+;kind=gas
+; Die Zeile ;kind=gas stellt die TinyC-Programme sml_simple / sml_chart auf m³ um.
+; Faktor anpassen: @100 = 100 Impulse pro m³ (0,01 m³/Imp), 0,1 m³/Imp -> @10.
+; Den Durchfluss berechnet das Programm aus dem Zählerstand. Wert 1 ist der grobe
+; Wert des Treibers (0 bei weniger als einem Impuls in 5 s).
+; Zählerstand setzen (Konsole, Wert in Impulsen), z.B. 1234,56 m³:
+; Sensor53 c1 123456
+>M 1
++1,%0rxpin%,c,1,-20,Gas
+1,1-0:1.7.0*255(@1.666667,Durchfluss,m³/h,Flow,2
+1,1-0:1.8.0*255(@100,Gas,m³,Total,2
+#

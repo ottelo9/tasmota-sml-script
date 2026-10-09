@@ -60,6 +60,7 @@ body.lang-de .en{display:none}
   <a href="#sleep"><span class="en">Power saving</span><span class="de">Energiesparmodus</span></a>
   <a href="#meter"><span class="en">Meter</span><span class="de">Zähler</span></a>
   <a href="#bezug"><span class="en">Import meter</span><span class="de">Bezugszähler</span></a>
+  <a href="#gaswater"><span class="en">Gas / water</span><span class="de">Gas / Wasser</span></a>
   <a href="#filter">Filter</a>
   <a href="#display"><span class="en">SML display</span><span class="de">SML Anzeige</span></a>
   <a href="#pv">PV</a>
@@ -297,6 +298,34 @@ body.lang-de .en{display:none}
 <li>Der Zählerstand liegt in der <code>.pvs</code> des Programms und als <code>exp_virt</code> in der <a href="#options">Einstellungsdatei</a>, einmal um Mitternacht aktualisiert &mdash; er übersteht also einen Programmwechsel. Beim Start gilt der höhere der beiden. Den Stand aus dem alten Scripter (<code>sml3</code>) übernehmen: Programm stoppen, als <code>@exp_virt=</code> eintragen, wieder starten.</li>
 </ul>
 <p>Ersetzt das Scripter-Script <code>3_SML_Chart_PV_Bezugszaehler.tas</code>. Hat dein Zähler ein Einspeiseregister, bleibt die Option aus &mdash; Wert&nbsp;3 würde sonst ignoriert.</p>
+</div>
+</section>
+
+<section id="gaswater">
+<h2><span class="en">Gas and water meters</span><span class="de">Gas- und Wasserzähler</span></h2>
+<div class="en">
+<p><b>SML Simple</b> and <b>SML Chart</b> only. Instead of the electricity meter, read a gas or water meter with a pulse output (reed contact) &mdash; under <b>General</b> in the meter list: <i>Gaszähler</i> (0.01&nbsp;m³ per pulse) or <i>Wasserzähler</i> (1&nbsp;litre per pulse). Your meter has a different factor? Change <code>@100</code> / <code>@1000</code> in the descriptor: it is the number of pulses per m³.</p>
+<p>The program recognises the meter by the line <code>;kind=gas</code> or <code>;kind=water</code> in the descriptor and switches over by itself:</p>
+<ul>
+<li>Main page: flow (gas m³/h, water l/min) and the reading in m³; day, week, month and year in m³.</li>
+<li>Charts: the flow in the line charts, consumption in m³ in the bars.</li>
+<li>Gone: feed-in, 3 phases, Import meter, PV switch.</li>
+</ul>
+<p>The flow is computed from the reading: the last step over the time it took, falling while no new pulse comes. A pulse counter's own flow (value&nbsp;1) drops to 0 after 5&nbsp;s without a pulse &mdash; at 0.01&nbsp;m³ per pulse that is below 7.2&nbsp;m³/h, nearly always.</p>
+<p>Set the reading once in the console, in pulses: <code>Sensor53 c1 123456</code> = 1234.56&nbsp;m³ of gas. Your own descriptor works too: value&nbsp;2 the reading in m³, plus the <code>;kind=</code> line. After editing the descriptor by hand, press Save.</p>
+<p class="warn">Changing from an electricity meter: the totals still count from the old meter's kWh readings. Press <a href="#data">Data</a> &rarr; &#x1F522; Reset and &#x1F4CA; Reset once.</p>
+</div>
+<div class="de">
+<p>Nur <b>SML Simple</b> und <b>SML Chart</b>. Statt des Stromzählers einen Gas- oder Wasserzähler mit Impulsausgang (Reedkontakt) auslesen &mdash; in der Zählerliste unter <b>Allgemein</b>: <i>Gaszähler</i> (0,01&nbsp;m³ pro Impuls) oder <i>Wasserzähler</i> (1&nbsp;Liter pro Impuls). Dein Zähler hat einen anderen Faktor? <code>@100</code> / <code>@1000</code> im Descriptor ändern: das ist die Zahl der Impulse pro m³.</p>
+<p>Das Programm erkennt den Zähler an der Zeile <code>;kind=gas</code> bzw. <code>;kind=water</code> im Descriptor und stellt selbst um:</p>
+<ul>
+<li>Hauptseite: Durchfluss (Gas m³/h, Wasser l/min) und Zählerstand in m³; Tag, Woche, Monat und Jahr in m³.</li>
+<li>Diagramme: der Durchfluss in den Liniendiagrammen, der Verbrauch in m³ in den Balken.</li>
+<li>Entfällt: Einspeisung, 3 Phasen, Bezugszähler, PV-Schalter.</li>
+</ul>
+<p>Der Durchfluss wird aus dem Zählerstand berechnet: der letzte Schritt geteilt durch die Zeit dafür, fallend, solange kein neuer Impuls kommt. Der eigene Durchfluss eines Impulszählers (Wert&nbsp;1) fällt nach 5&nbsp;s ohne Impuls auf 0 &mdash; bei 0,01&nbsp;m³ pro Impuls also unter 7,2&nbsp;m³/h, fast immer.</p>
+<p>Zählerstand einmal in der Konsole setzen, in Impulsen: <code>Sensor53 c1 123456</code> = 1234,56&nbsp;m³ Gas. Ein eigener Descriptor geht auch: Wert&nbsp;2 der Zählerstand in m³, dazu die Zeile <code>;kind=</code>. Nach einer Änderung am Descriptor von Hand einmal Speichern drücken.</p>
+<p class="warn">Wechsel vom Stromzähler: Die Summen zählen noch von den kWh-Ständen des alten Zählers. Einmal unter <a href="#data">Daten</a> &#x1F522; Reset und &#x1F4CA; Reset drücken.</p>
 </div>
 </section>
 

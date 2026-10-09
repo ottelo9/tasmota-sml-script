@@ -45,6 +45,8 @@ z.B. `── ABB ──`): sichtbar, nicht wählbar. Überschriften haben IDs ab
 Hersteller bekommt die nächste freie davon. Eintrag `0` (Keiner/Selbstdefinierter Zähler) lädt nichts herunter und behält die
 `/sml_meter.def`, für einen selbst geschriebenen Descriptor. RX/TX und Filter werden nur
 dort eingetragen, wo die Platzhalter `%0rxpin%`, `%0txpin%`, `%0smlf%` stehen.
+Gas- oder Wasserzähler: eine Zeile `;kind=gas` bzw. `;kind=water` im Descriptor stellt die
+TinyC-Programme auf m³ um, Wert 2 ist dann der Zählerstand in m³ (Beispiele in `Allgemein/`).
 
 ---
 

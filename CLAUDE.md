@@ -101,6 +101,16 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   shorthands. Keys are sanitised (letters, digits, `_[]`) before being echoed.
 - Without "3 phases" `sml4` = total power, `sml5`/`sml6` = 0 (`sml_phase()`).
 
+## Gas / water meters
+
+`sml_simple` and `sml_chart` `#define SML_M3`; everything gas/water sits behind
+it, so the emulator programs build as before. A descriptor line `;kind=gas` /
+`;kind=water` sets `sml_kind` (1/2, read at start and on every Save): value 2 is
+the reading in m³, `sml_unit` = `m³`, feed-in/phases/Import meter/PV switch are
+off (`SML_PVON`). The flow is computed from the reading (`sml_flow_tick`), not
+taken from value 1 - a pulse counter's 1.7.0 is 0 below one pulse per 5 s. The
+chart rings then hold the flow ×100 (`WebChartQ(0.01)`).
+
 ## Data
 
 - `.pvs` is **PV3, name-keyed**: a new persist var starts at 0, old data stays;

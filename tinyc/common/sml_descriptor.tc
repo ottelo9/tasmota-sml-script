@@ -77,6 +77,9 @@ void smlDescEditLoad() {
 // The driver answers an index past its last value with value 1 - a descriptor
 // with only power and import (S0) would otherwise report its power as export.
 float sml_export() {
+#ifdef SML_M3
+    if (sml_kind > 0) return 0.0;
+#endif
     if (sml_bezug > 0) return sml_virt_out;
     if (smlGet(0) < 3) return 0.0;
     return smlGet(3);
@@ -118,6 +121,98 @@ byte sml_ftopic[96];       // full MQTT topic - mqttPublish takes it at runtime
 int  sml_pub_rc;           // last mqttPublish result, logged when it changes
 int  sml_pub_seen;
 int  sml_drv_init;              // 0 until the display option was applied once
+
+// ── Gas / water meter ───────────────────────────────────────────────────────
+// A line ;kind=gas or ;kind=water in the descriptor switches to m³: value 2 is
+// the meter reading; feed-in, phases, Import meter and the PV switch are off.
+// The flow is computed from the reading, not taken from value 1: a pulse
+// counter's 1.7.0 drops to 0 after 5 s without a pulse, and at 0.01 m³ per
+// pulse a normal gas flow pulses far less often than that.
+// Only in programs that #define SML_M3 (sml_simple, sml_chart) - the emulator
+// programs need an electricity meter and keep the RAM; sml_kind stays 0 there.
+int   sml_kind;                 // 0 electricity, 1 gas, 2 water
+byte  sml_unit[8];              // unit of the totals: kWh or m³
+#ifdef SML_M3
+float sml_fl;                   // flow [m³/h]
+float sml_fl_v;                 // reading at the last step
+float sml_fl_dv;                // size of that step [m³]
+int   sml_fl_ms;                // millis() of the last step
+int   sml_fl_n;                 // steps seen; the first has no interval
+
+void sml_kind_detect() {
+    sml_kind = 0;
+    int h = fileOpen("/sml_meter.def", "r");
+    if (h >= 0) {
+        if (fileGetStr(sml_buf, h, ";kind=", 1, 10) > 0) {
+            if (strFind(sml_buf, "gas") >= 0)   sml_kind = 1;
+            if (strFind(sml_buf, "water") >= 0) sml_kind = 2;
+        }
+        fileClose(h);
+    }
+    if (sml_kind > 0) strcpy(sml_unit, "m³");
+    else              strcpy(sml_unit, "kWh");
+    sml_fl = 0.0;
+    sml_fl_v = 0.0;
+    sml_fl_n = 0;
+}
+
+// Every second. Flow = the last step over the time it took. Without a new
+// step it can only be lower than one step over the time since - so it decays.
+void sml_flow_tick() {
+    if (sml_kind == 0) return;
+    float v = smlGet(2);
+    if (v <= 0.0) return;
+    int now = millis();
+    if (sml_fl_v == 0.0) {
+        sml_fl_v = v;
+        sml_fl_ms = now;
+        return;
+    }
+    float hrs = (float)(now - sml_fl_ms) / 3600000.0;
+    if (hrs <= 0.0) return;
+    // Set by hand (Sensor53 c1) or a new descriptor: a jump, not a flow. No
+    // meter passes 1 m³ between two ticks one second apart.
+    if (v < sml_fl_v || v - sml_fl_v > 1.0) {
+        sml_fl_v = v;
+        sml_fl_ms = now;
+        sml_fl = 0.0;
+        sml_fl_n = 0;
+        return;
+    }
+    if (v > sml_fl_v) {
+        sml_fl_dv = v - sml_fl_v;
+        if (sml_fl_n > 0) sml_fl = sml_fl_dv / hrs;
+        sml_fl_n = sml_fl_n + 1;
+        sml_fl_v = v;
+        sml_fl_ms = now;
+        return;
+    }
+    float up = sml_fl_dv / hrs;
+    if (sml_fl > up) sml_fl = up;
+}
+
+// In the display unit: m³/h for gas, l/min for water.
+float sml_flow() {
+    if (sml_kind == 2) return sml_fl * 16.66667;
+    return sml_fl;
+}
+
+// The live rows of a gas or water meter. 0 = electricity, the caller draws.
+int sml_meter_rows() {
+    if (sml_kind == 0) return 0;
+    if (sml_kind == 1) sprintf(sml_buf, "{s}%s{m}%.2f m³/h{e}", ui_de ? "Durchfluss" : "Flow", sml_flow());
+    else               sprintf(sml_buf, "{s}%s{m}%.1f l/min{e}", ui_de ? "Durchfluss" : "Flow", sml_flow());
+    webSend(sml_buf);
+    if (sml_kind == 1) sprintf(sml_buf, "{s}Gas{m}%.3f m³{e}", smlGet(2));
+    else               sprintf(sml_buf, "{s}%s{m}%.3f m³{e}", ui_de ? "Wasser" : "Water", smlGet(2));
+    webSend(sml_buf);
+    return 1;
+}
+#else
+void sml_kind_detect() {
+    strcpy(sml_unit, "kWh");
+}
+#endif
 
 // /pwr: one short JSON answer, written as a raw HTTP response so it says
 // application/json - webSend() goes through Tasmota's page path, which
@@ -348,11 +443,15 @@ void sml_descriptor_apply() {
         if (vf > sml_virt_out) sml_virt_out = vf;
         sml_virt_hr = tasm_hour;    // no write at start, only at the next midnight
         smlDescEditLoad();          // widgets start from what is in effect
+        sml_kind_detect();          // gas/water, or kWh
         sml_apply_drvrows();
         snapshot(sml_drvrows);
     }
     if (ui_reloading) smlDescEditLoad();   // drop unsaved edits on a fresh page
     sml_virt_tick();
+#ifdef SML_M3
+    sml_flow_tick();
+#endif
 
     // Runs outside the Save gate: the meter may not have delivered anything
     // yet when the option is switched on, so this waits for the first reading.
@@ -455,6 +554,9 @@ void sml_descriptor_apply() {
     if (meter_changed) {
         smlScripterLoad("/sml_meter.def");
     }
+#ifdef SML_M3
+    sml_kind_detect();              // also after a descriptor edited by hand
+#endif
     // Save always writes: TinyC only auto-saves persist vars at slot-stop, and
     // a main()-only slot stops right after main() - a change made while it runs
     // would otherwise never reach flash.
@@ -491,23 +593,35 @@ void sml_render_settings_panel() {
     uiHead("&#x1F50C;", "Meter", "Zähler", "sml/#meter");
     if (ui_de) {
         webCheckbox(sml_e_activ, "Zähler aktiv");
-        webCheckbox(sml_e_ph3, "3 Phasen");
-        if (sml_ph3_bad == 1) webSend("<div class='w'>&#9888; 4/5/6 sind keine Phasen &ndash; aus.</div>");
-        uiCheckI(sml_e_bezug, varIdx(sml_e_bezug), "Bezugszähler", "sml/#bezug");
-        if (sml_bezug > 0) {
-            sprintf(sml_buf, "<div class='hint'>Einspeisung gerechnet: %.3f kWh</div>", sml_virt_out);
-            webSend(sml_buf);
+#ifdef SML_M3
+        if (sml_kind == 0) {        // gas/water: no phases, no export
+#endif
+            webCheckbox(sml_e_ph3, "3 Phasen");
+            if (sml_ph3_bad == 1) webSend("<div class='w'>&#9888; 4/5/6 sind keine Phasen &ndash; aus.</div>");
+            uiCheckI(sml_e_bezug, varIdx(sml_e_bezug), "Bezugszähler", "sml/#bezug");
+            if (sml_bezug > 0) {
+                sprintf(sml_buf, "<div class='hint'>Einspeisung gerechnet: %.3f kWh</div>", sml_virt_out);
+                webSend(sml_buf);
+            }
+#ifdef SML_M3
         }
+#endif
         uiCheckI(sml_e_drvrows, varIdx(sml_e_drvrows), "SML Anzeige", "sml/#display");
     } else {
         webCheckbox(sml_e_activ, "Meter active");
-        webCheckbox(sml_e_ph3, "3 phases");
-        if (sml_ph3_bad == 1) webSend("<div class='w'>&#9888; 4/5/6 are not phases &ndash; off.</div>");
-        uiCheckI(sml_e_bezug, varIdx(sml_e_bezug), "Import meter", "sml/#bezug");
-        if (sml_bezug > 0) {
-            sprintf(sml_buf, "<div class='hint'>Export computed: %.3f kWh</div>", sml_virt_out);
-            webSend(sml_buf);
+#ifdef SML_M3
+        if (sml_kind == 0) {
+#endif
+            webCheckbox(sml_e_ph3, "3 phases");
+            if (sml_ph3_bad == 1) webSend("<div class='w'>&#9888; 4/5/6 are not phases &ndash; off.</div>");
+            uiCheckI(sml_e_bezug, varIdx(sml_e_bezug), "Import meter", "sml/#bezug");
+            if (sml_bezug > 0) {
+                sprintf(sml_buf, "<div class='hint'>Export computed: %.3f kWh</div>", sml_virt_out);
+                webSend(sml_buf);
+            }
+#ifdef SML_M3
         }
+#endif
         uiCheckI(sml_e_drvrows, varIdx(sml_e_drvrows), "SML display", "sml/#display");
     }
     // From here on every label reads the same in both languages - one call each.
@@ -549,6 +663,9 @@ void smlPublish(byte topic[], byte payload[]) {
 // driver returns 0 for all three and three empty rows would be a lie.
 void sml_phase_rows() {
     if (sml_ph3 == 0) return;
+#ifdef SML_M3
+    if (sml_kind > 0) return;
+#endif
     sprintf(sml_buf, "{s}L1 / L2 / L3{m}%.0f / %.0f / %.0f W{e}", smlGet(4), smlGet(5), smlGet(6));
     webSend(sml_buf);
 }

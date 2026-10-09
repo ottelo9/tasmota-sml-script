@@ -4,6 +4,8 @@
 		{ "id": 1000, "label": "── Allgemein ──", "filename": "" },
 		{ "id": 1, "label": "> Lesekopftest mit Spiegel <", "filename": "_Test/Lesekopftest mit Spiegel.tas" },
 		{ "id": 147, "label": "S0 Zähler (1000Imp/kWh)", "filename": "Allgemein/S0_1000Imp_kWh.tas" },
+		{ "id": 148, "label": "Gaszähler (Impuls, 0,01 m³/Imp)", "filename": "Allgemein/Gas_Impuls.tas" },
+		{ "id": 149, "label": "Wasserzähler (Impuls, 1 l/Imp)", "filename": "Allgemein/Wasser_Impuls.tas" },
 		{ "id": 1001, "label": "── ABB ──", "filename": "" },
 		{ "id": 2, "label": "ABB B-Series (B21, B23) (M-Bus via IR)", "filename": "ABB/ABB B-Series (like B21, B23) (M-Bus over Infrared port).tas" },
 		{ "id": 3, "label": "ABB B23 (MODBus)", "filename": "ABB/ABB B23 (MODBus).tas" },
