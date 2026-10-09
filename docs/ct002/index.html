@@ -334,8 +334,8 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
         data:
           value: 50</code></pre>
 <h3>Discharge limit</h3>
-<p><code>CTLimit &lt;W&gt;</code> limits how much each battery may discharge. <code>CTLimit 0</code> switches the limit off, <code>CTLimit</code> alone shows it. Like the offset, it is only kept until the next restart; then the <b>Max DC</b> value saved on the page applies again. While a limit is active, the main page shows a <b>Max DC</b> row.</p>
-<p>The limit applies to each battery separately, works on every phase setting and does not affect charging. While a battery searches for its phase, the limit is paused. The rest of your consumption comes from the grid.</p>
+<p><code>CTLimit &lt;W&gt;</code> caps how much each battery discharges; <code>CTLimit 0</code> switches it off, <code>CTLimit</code> alone shows it. A negative value turns it into a charge command: <code>CTLimit -300</code> makes each battery charge with at least 300&nbsp;W, from the grid if there is no surplus (only batteries that can charge from AC, e.g. Venus). Like the offset it is kept in RAM only: after a restart the <b>Max DC</b> value saved on the page applies again. It answers <code>{"CTLimit":100}</code> and appears as <code>"Limit"</code> in the <code>CT002</code> block of <code>SENSOR</code>; while it is active the main page shows a <b>Max DC</b> row.</p>
+<p>A battery adds the reported value to what it already delivers, so cutting the reported value alone would only slow it down. The emulator therefore reports at most <i>limit &minus; the battery&#39;s own current output</i>. With a limit of 100&nbsp;W a battery at 300&nbsp;W is told &minus;200&nbsp;W and comes down, one at 60&nbsp;W may still add 40. The rest of the load comes from the grid. The limit applies <b>per battery</b> and does not touch charging. During phase detection it is suspended like the offset. It works on every phase setting: the cap goes into the battery&#39;s own phase field <i>and</i> into the combined total, because a battery set to A, B or C regulates on the total as well &mdash; before 05.10.2026 only phase <b>D</b> was limited.</p>
 <pre><code>mqtt:
   number:
     - name: "CT002 Limit"
@@ -346,7 +346,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
         {% if value_json.CT002 is defined %}{{ value_json.CT002.Limit }}
         {% else %}{{ states('number.ct002_limit') }}{% endif %}
       optimistic: true
-      min: 0
+      min: -2500
       max: 2500
       step: 10
       mode: box
@@ -391,8 +391,8 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
         data:
           value: 50</code></pre>
 <h3>Entladelimit</h3>
-<p><code>CTLimit &lt;W&gt;</code> begrenzt, wie viel jeder Akku entladen darf. <code>CTLimit 0</code> schaltet die Begrenzung aus, <code>CTLimit</code> allein zeigt sie an. Wie der Offset gilt sie nur bis zum nächsten Neustart, danach gilt wieder der auf der Seite gespeicherte Wert <b>Max DC</b>. Solange eine Begrenzung aktiv ist, zeigt die Hauptseite eine Zeile <b>Max DC</b>.</p>
-<p>Die Begrenzung gilt für jeden Akku einzeln, wirkt bei jeder Phaseneinstellung und lässt das Laden in Ruhe. Während ein Akku seine Phase sucht, ist sie ausgesetzt. Den Rest deines Verbrauchs liefert das Netz.</p>
+<p><code>CTLimit &lt;W&gt;</code> begrenzt, wie viel jeder Akku entlädt; <code>CTLimit 0</code> schaltet es ab, <code>CTLimit</code> allein zeigt es an. Ein negativer Wert macht daraus einen Ladebefehl: <code>CTLimit -300</code> lässt jeden Akku mit mindestens 300&nbsp;W laden, ohne Überschuss aus dem Netz (nur Akkus, die über AC laden können, z.&nbsp;B. Venus). Wie der Offset liegt es nur im RAM: nach einem Neustart gilt wieder der auf der Seite gespeicherte Wert <b>Max DC</b>. Die Antwort lautet <code>{"CTLimit":100}</code>; in <code>SENSOR</code> steht es als <code>"Limit"</code> im Block <code>CT002</code>. Solange es aktiv ist, zeigt die Hauptseite eine Zeile <b>Max DC</b>.</p>
+<p>Ein Akku addiert den gemeldeten Wert zu dem, was er schon liefert &mdash; den gemeldeten Wert nur zu kappen würde ihn also bloß bremsen. Der Emulator meldet deshalb höchstens <i>Limit &minus; aktuelle Leistung des Akkus</i>. Bei 100&nbsp;W Limit bekommt ein Akku mit 300&nbsp;W &minus;200&nbsp;W gemeldet und regelt herunter, einer mit 60&nbsp;W darf noch 40 zulegen. Den Rest der Last deckt das Netz. Das Limit gilt <b>pro Akku</b> und lässt das Laden unberührt. Während der Phasensuche ist es wie der Offset ausgesetzt. Es wirkt bei jeder Phaseneinstellung: Die Begrenzung steht im Feld der eigenen Phase <i>und</i> im Summenwert, denn ein Akku auf A, B oder C regelt auch auf die Summe &mdash; vor dem 05.10.2026 war nur Phase <b>D</b> begrenzt.</p>
 <pre><code>mqtt:
   number:
     - name: "CT002 Limit"
@@ -403,7 +403,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
         {% if value_json.CT002 is defined %}{{ value_json.CT002.Limit }}
         {% else %}{{ states('number.ct002_limit') }}{% endif %}
       optimistic: true
-      min: 0
+      min: -2500
       max: 2500
       step: 10
       mode: box
@@ -455,7 +455,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 <pre><code>CTSTAT            rx/tx/bad counters, one log line per battery
 CTCLR             clear the battery table
 CTOFFSET [W]      set the offset until restart (no value = show it)
-CTLIMIT [W]       discharge limit per battery until restart, 0 = off
+CTLIMIT [W]       discharge limit per battery until restart, 0 = off,  &lt;0 = charge
 CTMAC &lt;hex12&gt;     set the CT MAC (empty = answer every battery)
 CTMAIL &lt;address&gt;  set the Marstek account e-mail
 CTPASS &lt;password&gt; set the password (not saved)
