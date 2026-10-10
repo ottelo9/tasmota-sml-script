@@ -572,7 +572,7 @@ void ctBuild(byte btype[], byte bmac[], byte reqctmac[]) {
             // response is unicast - cap the total for every battery. The two
             // foreign phase fields stay untouched: forced negative they would
             // read as export and could ask for charge.
-            if (ct_maxdc > 0) {
+            if (ct_maxdc != 0) {
                 int lim = ct_maxdc - ct_spwr[ct_slot];
                 if (ct_sph[ct_slot] == 1 && va > lim) va = lim;
                 if (ct_sph[ct_slot] == 2 && vb > lim) vb = lim;
@@ -1264,7 +1264,7 @@ void ctHaTick() {
     if (ct_ha_con == 0) { ct_ha_con = 1; ct_ha_step = 0; }
     if (ha_again == 1) { ha_again = 0; ct_ha_step = 0; }
     if (ct_ha_step == 0) { haPrepare(); haNumber("offset", "CT002 Offset", "CTOffset", -2000, 2000); ct_ha_step = 1; return; }
-    if (ct_ha_step == 1) { haNumber("limit", "CT002 Max DC", "CTLimit", 0, 5000); ct_ha_step = 2; return; }
+    if (ct_ha_step == 1) { haNumber("limit", "CT002 Max DC", "CTLimit", -5000, 5000); ct_ha_step = 2; return; }
     if (ct_ha_step == 2) { haState("offset", ct_offset); ct_ha_off = ct_offset; ct_ha_step = 3; return; }
     if (ct_ha_step == 3) { haState("limit", ct_maxdc); ct_ha_lim = ct_maxdc; ct_ha_step = 4; return; }
     if (ct_ha_off != ct_offset) { haState("offset", ct_offset); ct_ha_off = ct_offset; return; }
@@ -1386,11 +1386,11 @@ void ctRows() {
     if (ui_de) {
         sprintf(ct_buf, "{s}Akkus{m}%d{e}", live);            webSend(ct_buf);
         sprintf(ct_buf, "{s}CT meldet{m}%d W{e}", ct_ptot);   webSend(ct_buf);
-        if (ct_maxdc > 0) { sprintf(ct_buf, "{s}Max DC{m}%d W{e}", ct_maxdc); webSend(ct_buf); }
+        if (ct_maxdc != 0) { sprintf(ct_buf, "{s}Max DC{m}%d W{e}", ct_maxdc); webSend(ct_buf); }
     } else {
         sprintf(ct_buf, "{s}Batteries{m}%d{e}", live);        webSend(ct_buf);
         sprintf(ct_buf, "{s}CT sees{m}%d W{e}", ct_ptot);     webSend(ct_buf);
-        if (ct_maxdc > 0) { sprintf(ct_buf, "{s}Max DC{m}%d W{e}", ct_maxdc); webSend(ct_buf); }
+        if (ct_maxdc != 0) { sprintf(ct_buf, "{s}Max DC{m}%d W{e}", ct_maxdc); webSend(ct_buf); }
     }
 }
 
@@ -1433,7 +1433,7 @@ void ctPanel() {
     if (ui_de) webNumber(ct_e_pace, 0, 300, "Schritt [W]");
     else       webNumber(ct_e_pace, 0, 300, "Step [W]");
     webNumber(ct_e_mindc, 0, 200, "Min DC [W]");
-    webNumber(ct_e_maxdc, 0, 5000, "Max DC [W]");
+    webNumber(ct_e_maxdc, -5000, 5000, "Max DC [W]");
     ctLive(ct_maxdc);
 
     uiHead("&#x2696;&#xFE0F;", "Several batteries", "Mehrere Akkus", "ct002/#multi");
@@ -1665,13 +1665,11 @@ int ctCmd(char cmd[]) {
         sprintf(ct_buf, "{\"CTOffset\":%d}", ct_offset);
         responseCmnd(ct_buf);
     } else if (strcmp(cmd, "LIMIT") == 0 || strStartsWith(cmd, "LIMIT ") == 1) {
-        // Maximum discharge per battery, 0 = off. RAM only, like CTOffset;
-        // the field on the page is the saved one.
+        // Maximum output per battery, 0 = off, negative = charge at least
+        // that much. RAM only, like CTOffset; the field on the page is the saved one.
         if (strlen(cmd) > 6) {
             strSub(ct_buf, cmd, 6, 0);
-            int v = atoi(ct_buf);
-            if (v < 0) v = 0;
-            ct_maxdc = v;
+            ct_maxdc = atoi(ct_buf);
         }
         sprintf(ct_buf, "{\"CTLimit\":%d}", ct_maxdc);
         responseCmnd(ct_buf);
