@@ -1,7 +1,6 @@
-## Tasmota TinyC-Programme oder Scripte für Stromzähler Leseköpfe / smarte Steckdosen / Zähler [by ottelo]
-### > Werte grafisch darstellen, Verbraucher steuern, Nulleinspeisung für smarte Akkus realisieren
-Tasmota TinyC Programs or Scripts for Smart Meter Readers / Smart Powerplugs / Meters [by ottelo]  
-Display values graphically, implement zero-feed-in for smart batteries  
+## Tasmota TinyC-Programme (Scripte) - Strom/Gas/Wasser-Zähler oder smarte Steckdosen auslesen [by ottelo]
+### Werte grafisch darstellen, Verbraucher steuern, Nulleinspeisung für smarte Akkus realisieren
+Tasmota TinyC-Programs (scripts) for Smart Meter Readers / Smart Powerplugs [by ottelo]. Display values graphically, implement zero-feed-in for smart batteries  
 
 <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/"><img src="https://img.shields.io/badge/Mein%20Blog%20%E2%80%93%20Infos%2C%20Anleitungen%2C%20Hardware-0A6EBD?style=for-the-badge&logo=readme&logoColor=white" alt="Mein Blog: Ausführliche Infos, Anleitungen, Hardware"></a><br>
 <a href="https://ottelo.jimdofree.com/tasmota-tinyc/"><img src="https://img.shields.io/badge/Mein%20Blog%20%E2%80%93%20TinyC%20Schnellanleitung-2EA043?style=for-the-badge&logo=rocket&logoColor=white" alt="Schnellanleitung TinyC"></a><br>
@@ -10,37 +9,33 @@ Display values graphically, implement zero-feed-in for smart batteries
 <sub>Die Hilfe erreicht ihr auch über das ℹ️ im TinyC-Programm.</sub>
 
 > [!IMPORTANT]
-> Damit die TinyC-Programme / Scripte funktionieren, müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!
+> Damit die TinyC-Programme oder Scripte funktionieren müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!
 
-### TinyC-Programme (löst Script ab!)
-Eine Liste von Programmen findet ihr direkt in Tasmota auf eurem ESP. Ich habe meine bekannten Scripte zu TinyC konvertiert und teilweise auch mehrere Scripte kombiniert. Das alles ist mit TinyC problemlos möglich gewesen. Z.b. ist nun ModbusTCP Slave als Option immer mit drin.  
+### A) TinyC-Programme
+TinyC ist der Nachfolger von Tasmota Script / Berry, ist ca. 10x schneller und bietet viel mehr Möglichkeiten. Es läuft allerdings nur auf dem ESP32. Wenn ihr nicht wechseln oder auf euren ESP8266 bzw. älteren Lesekopf (z.B. HichiV1 ESP01s) verzichten wollt, dann scrollt etwas herunter zu B). Ich würde jedoch jedem empfehlen, auf TinyC umzusteigen.  
+<br>
+Eine Liste von Programmen findet ihr auf meiner [neuen Wiki/Hilfe Seite](https://ottelo9.github.io/tasmota-sml-script/sml/#programs). Ich habe meine bekannten Scripte zu TinyC konvertiert und die Varianten als Optionen inkludiert. Das alles ist mit TinyC problemlos möglich gewesen. Z.b. ist nun ModbusTCP Slave als Option immer mit drin.  
   
 Wenn noch eins meiner Scripte auf eurem ESP/Lesekopf läuft und ihr wechseln wollt, dann könnt ihr die Diagrammdaten/Verbräuche exportieren und dann wieder importieren. [Anleitung und Online-Converter Tool](https://ottelo9.github.io/tasmota-sml-script/converter/).  
 
 1. Die TinyC Programme wählt ihr bequem direkt auf eurem ESP aus via Tools > TinyC Console > Repository Drop Down Menü:
    <img width="300" alt="image" src="https://github.com/user-attachments/assets/822d2298-d81e-44c9-b4f8-45df25e92ccc" />
-3. Oder ladet euch die Programme herunter. Fertige tcb Programme [hier](https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc/bytecode). Sourcecode der Programme [hier](https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc). Die fertigen Programme könnt ihr auf der TinyC Seite manuell hochladen. Den Sourcecode (tc) müsst ihr über die TinyC IDE kompilieren oder via [build.html](https://github.com/ottelo9/tasmota-sml-script/blob/main/tinyc/bytecode/build.html) lokal auf eurem PC.
+3. Oder ladet euch die Programme herunter. Fertige tcb Programme unter [tinyc/bytecode](tinyc/bytecode). Sourcecode der Programme im [tinyc](tinyc) Ordner. Die fertigen Programme könnt ihr auf der TinyC Seite manuell hochladen. Den Sourcecode (tc) müsst ihr über die TinyC IDE kompilieren oder via [build.html](tinyc/bytecode/build.html) lokal auf eurem PC.
 4. Dann starten und den Autostart aktivieren  
    <img width="300" alt="image" src="https://github.com/user-attachments/assets/5ef219fa-0b6b-4bea-bfab-8c40c4f1d073" />
 5. Auf der Hauptseite in den Optionen ⚙️ könnt ihr euren Stromzähler wählen und verschiedene andere Sachen einstellen.
 
 
-### Scriptauswahl
-Scripte für den ESP8266 findet ihr nun in einem extra Ordner, da ich diese nicht mehr weiterentwickeln werde. Alle anderen Scripte aktualisiere ich nun (ab 01.12.2025) nur noch für den ESP32, der einfach mehr Power hat und Tasmota mehr Features dafür bietet.  
+### B) Tasmota Scripte (veraltet)
+Scripte für den kleinen ESP8266 findet ihr in einem extra Ordner. Die größeren/umfangreicheren Scripte für ESP32 liegen im Hauptverzeichnis dieser Repo, spezielle Scripte für PV-Akkus unter [pvakku-powermeter-emulator](pvakku-powermeter-emulator). Die komprimierten Scripte (ohne Kommentare) liegen in [script-list-menu/scripts](script-list-menu/scripts). Diese lädt Tasmota ins Scripteditor Fenster, wenn ihr sie mit dem DropDown Menü ausgewählt habt.
   
-Die Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauches (Leistung [W]). Und zwar fein aufgelöst für die letzten 4 Stunden, grob aufgelöst für die letzten 24 Stunden und dann Tages und Monatsverbräuche [kWh] als Balkendiagramm. 
-Ich habe über die Zeit einige Varianten des Scriptes erstellt, die alle durch unterschiedliche Nutzeranfragen auf meinem Blog entstanden sind.  
+Die Scripte erstellen eine grafische Anzeige (Liniendiagramm) eures Verbrauches (Leistung [W]). Und zwar fein aufgelöst für die letzten 4 Stunden, grob aufgelöst für die letzten 24 Stunden und dann Tages und Monatsverbräuche [kWh] als Balkendiagramm. Ich habe über die Zeit einige Varianten des Scriptes erstellt, die alle durch unterschiedliche Nutzeranfragen auf meinem Blog entstanden sind.  
+Info: Die TinyC-Programme enthalten alle diese Features als wählbare Optionen.  
 
-Scriptauswahl:  
+Scriptauswahl direkt in Tasmota:  
 <img width="300" height="200" alt="image" src="https://github.com/user-attachments/assets/d6c8114e-da35-49ba-9ba2-47df5fd1c3fb" />  
 Stromzähler/Pin-Auswahl:  
 <img width="200" height="300" alt="image" src="https://github.com/user-attachments/assets/308c6d35-80e5-4a78-88da-adc573ad1b8b" />
-
-***ACHTUNG: KRITISCHE ÄNDERUNG AB SCRIPT VERSION 01.12.2025***  
-Diagramm-Daten müssen vor dem Upgrade auf diese Version gesichert werden. Nach dem Update können die Daten wieder importiert werden.  
-Anleitung: https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#14  
-Die Daten werden nun in einer extra Datei „data.csv“ gespeichert und können so jederzeit gesichert werden.  
-Dieses Script ist nur noch für den __ESP32__. Tasmota (ottelo) Image ab v15.1.0 (07.12.2025) notwendig.
 
 **Hauptverzeichnis (ESP32)**
 - `0_SML_Simple`  
@@ -67,23 +62,7 @@ Dieses Script ist nur noch für den __ESP32__. Tasmota (ottelo) Image ab v15.1.0
 - `6_SML_Script_Wasseruhr`  
   Wasseruhr Script mit Diagrammen (Impulse)
 
-**Wie passe ich das Script für meinen Stromzähler an?**  
-Vor Scriptversion 01.12.2025 musste die >M Sektion per Hand an den Zähler angepasst werden (das galt auch für die PINs der IR-Sende/Empfangsdioden des Lesekopfes). Nun kann ein passendes Zählerscript aus einem DropDown Menü ausgewählt werden. 
-Auch die PIN-Auswahl geschieht nun bequem via DropDown. Je nach erkanntem ESP werden mehr oder weniger PINs zum Wählen dargestellt.
-
-**andere-scripte (ESP32)**  
-- `1_Script_DeepSleep`  
-  ESP Tasmota Deepsleep Testscript (nur für ESP32)
-- `2_Script_SML_Simulator`  
-  emuliert ein MT175 Stromzähler, einfach auf einen 2. Lesekopf aufspielen (ESP8266 / ESP32)
-- `3_TemperaturLoggerDS18S20`  
-  Temperatur-Logger (10x DS18S20) für eine Solarthermie-/Heizungsanlage. Benötigt `SetOption64 1` (via Console) und `#define DS18X20_MAX_SENSORS 10` (meine ESP32 oder tasmota1m_energy_ottelo_tas Images).
-
-**ESP8266**  
-Alle Scripte (auch pvakku-powermeter-emulator) in der alten Version für den kleinen ESP8266 und ohne Zähler-DropDown Auswahlmenü. Es sind die gleichen wie aus dem Hauptverzeichnis nur werden diese nicht mehr aktualisiert (eingeforener Versionstand). Die Scripte funktionieren natürlich auch auf einem ESP32. Hier findet ihr auch die pvakku-powermeter-emulator Scripte, die auf dem ESP8266 lauffähig sind. Hier gibt es keine Diagramme, da der ESP zu klein ist. Aber die Emulation läuft ebenfalls einwandfrei!  
-Neu: [Marstek CT002 Emulator](https://github.com/ottelo9/tasmota-sml-script/tree/main/ESP8266/pvakku-powermeter-emulator) für bis zu 4 Marstek-Akkus (`2_CT002_Emulator.tas`, von next145). Dafür das Image **tasmota1m_ct002_ottelo_tas** aus meinem [Image-Repo](https://github.com/ottelo9/tasmota-sml-images) verwenden. Es hat die Seite **Marstek CT002** (`/ctreg`, unter Werkzeuge) zur einmaligen Anmeldung in der Marstek-Cloud.  
-
-### pvakku-powermeter-emulator (ESP32)
+**pvakku-powermeter-emulator (ESP32)**
 Diese Scripte emulieren einen Shelly Pro 3EM oder Ecotracker, die mit smarten Akkus verbunden werden (zur Nulleinspeisung). Das Script ist direkt auf dem Lesekopf lauffähig und übernimmt neben dem Stromzähler auslesen die Emulation.  
 Die Scripte sind bereits von mehreren Nutzern vielfach mit unterschiedlichen Akkus getestet wurden (siehe folgende Liste). Damit der Emulator vom Akku gefunden wird bzw. auch reibungslos läuft, sollte der Akku und der ESP/Lesekopf (auf dem der Emu läuft) eine gute WLAN Verbindung haben. Bei meinem Marstek Jupiter C Plus gabs nämlich Probleme, der Emulator wurde erkannt war aber danach sofort Offline. Der Akku hatte schlechten Empfang (im roten Bereich). Manche andere Akkus möglich es z.B. auch nicht, wenn sie mit unterschiedlichen Accesspoints/Repeatern im WLAN verbunden sind.  
   
@@ -92,7 +71,6 @@ Beispiel mit mehreren Akkus:
 
 Getestete Akkus: [Liste mit getesteten Akkus](https://ottelo9.github.io/tasmota-sml-script/eco_shelly/#tested)  
 
-Scripte:  
 - `1_SML_EcoTrackerEmu_Simple`  
   Sehr kleines und wirklich einfaches Script zum Emulieren eines EcoTracker von everHome.  
   Es hat keine Diagramme sondern zeigt nur das nötigste (Zählerwerte + Tages/Monats/Jahreswerte) an.
@@ -110,70 +88,46 @@ Scripte:
   Wie 1_SML_ShellyEmu_Simple aber Diagrammen (wie 2_SML_Script_Chart_PV).
   Weitere Infos auf meinem [Blog](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#13a) oder im [Forum](www.photovoltaikforum.com/thread/250523-marstek-venus-jupiter-b2500-shelly-pro-3em-emulator-tasmota-lesekopf)!
 
-### Akku Optionen:
-<ins>Offset für Nulleinspeisung [W]:</ins>  
-Sendet die Momentanleistung mit einem Offset an den Akku. Bei 100 W würde die Regelung des Akkus dann versuchen die Nulleinspeisung auf 100 W Netzbezug zu regeln.  
-<ins>Update der Werte verzögern [s]:</ins>  
-Aktualisiert die Momentanleistung, die an den Akku gesendet wird, nur alle x Sekunden. 1 s = Normaleinstellung, also jede Sekunde die Leistung aktualisieren. Diese Einstellung verändert/beeinflusst NICHT das Abruf/Sendeintervall vom/zum Akku!  
-<ins>UDP-Port (Neustart notwendig):</ins>  
-Je nach Akkutyp unterschiedlich. z.B. bei Marstek B2500 = 2220 (je nach Firmwarestand). Standard 1010.  
-<ins>Datenübertragung erzwingen:</ins>  
-EIN = Kann das Regelverhalten bei Akkus verbessern (getestet mit Marstek):  
-Empfohlene Einstellung: AUS und Verwendung der neuen Regleroptimierung (siehe unten)  
-<img width="200" height="100" alt="image" src="https://github.com/user-attachments/assets/9511659b-fe76-4e4e-9013-88f00f3be8e9" />  
-<ins>SML Median Filter aktivieren:</ins> Vergleich (Regleroptimierung=AUS) EIN (links) und AUS (rechts)  
-Empfohlene Einstellung: AUS und Verwendung der neuen Regleroptimierung (siehe unten)  
-<img width="200" height="100" alt="image" src="https://github.com/user-attachments/assets/3d16fd34-7f22-4e33-9448-0e1a6a4458b5" />  
-<ins>Regleroptimierung: (neu ab 02.04.2026)</ins>  
-EIN = Verbessert z.B. bei Marstek Akkus das Regelverhalten. Dem Akku wird ein falscher/kleinerer Verbrauch vorgekaukelt. Der interne Regler im Akku sieht eine kleinere Regelabweichung und versucht diese dann langsam auszuregeln. Getestet mit diversen Marstek Akkus (Jupiter, Venus). Siehe auch die [Diskussion](https://github.com/ottelo9/tasmota-sml-script/discussions/47).  
-<ins>3 Phasen: (neu ab 25.07.2026)</ins>  
-EIN = Wirkleistungen der 3 Phasen werden an den Akku übertragen, somit ist der Betrieb von mehreren Akkus auf unterschiedlichen Phasen möglich. Der einstellbare Offset beeinflusst aber nur die Gesamtleistung, genauso wie die Regleroptimierung. Das ist beim echten Shelly/Ecotracker Standard. Das muss euer Stromzähler aber unterstützten und das Stromzähler Script (meter_sml.def) muss von der Reihenfolge der Werte korrekt eingestellt sein (Beispiel):  
->M 1  
-+1,%0rxpin%,s,%0smlf%,9600,MT175,%0txpin%  
-1,77070100100700ff@1,Leistung,W,Power,16  <- sml[1]  
-1,77070100010800ff@1000,Verbrauch,kWh,ImportActive,2  <- sml[2]  
-1,77070100020800ff@1000,Einspeisung,kWh,ExportActive,2  <- sml[3]  
-1,=h--  
-1,77070100240700ff@1,L1,W,L1,0  <- sml[4]  
-1,77070100380700ff@1,L2,W,L2,0  <- sml[5]  
-1,770701004C0700ff@1,L3,W,L3,0  <- sml[6]  
-#  
-
-### Testtools:
-<b>UDP/HTTP/PING/mDNS Tester</b>  
-Ihr könnt die Emulation mit meinem [PowerScript](https://github.com/ottelo9/tasmota-sml-script/blob/main/pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping, mDNS). Die Vorgabe-Knöpfe nennen jeweils das Gerät: EcoTracker, Shelly Pro 3EM oder Pro EM50:  
-<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
-
-<b>SML Simulator</b>  
-Gemu2015 hat ein [SML Simulator Tool](https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/tinyc/sml_emulator.html) (simuliert einen x-beliebigen Stromzähler) für den Google Chrome Browser erstellt. Zum Simulieren eines Stromzählers wird ein USB Lesekopf am PC benötigt. Das Tool kann auch Zählerscripte (Meter Descriptor) erstellen und auch direkt an Tasmota senden. Wieso Google Chrome Browser? Nur Chrome unterstützt das serielle Interface.  
-<img width="400" height="200" alt="image" src="https://github.com/user-attachments/assets/9a5190da-2e8c-4198-97d0-4152276ad7a1" />
-
+**andere-scripte (ESP32)**  
+- `1_Script_DeepSleep`  
+  ESP Tasmota Deepsleep Testscript (nur für ESP32)
+- `2_Script_SML_Simulator`  
+  emuliert ein MT175 Stromzähler, einfach auf einen 2. Lesekopf aufspielen (ESP8266 / ESP32)
+- `3_TemperaturLoggerDS18S20`  
+  Temperatur-Logger (10x DS18S20) für eine Solarthermie-/Heizungsanlage. Benötigt `SetOption64 1` (via Console) und `#define DS18X20_MAX_SENSORS 10` (meine ESP32 oder tasmota1m_energy_ottelo_tas Images).
 
 **script-list-menu (ESP32)**  
 Hier liegen die Scripte, die via DropDown direkt über Tasmota auswählbar sind.
 - `meters` = "Stromzähler konfigurieren / Daten sichern" Button -> DropDown Menü
 - `scripts` = Tools -> Edit Script DropDown Menü
 
-### Tasmota Image/Firmware
-Die Skripte funktionieren nur, wenn ihr ein speziell angepasstes Tasmota Image (Firmware) verwendet (z.B. mit SML Support). Die Images könnt ihr ebenfalls auf [meiner github Seite](https://github.com/ottelo9/tasmota-sml-images/releases). herunterladen. Wenn ihr sehen möchtet, welche Features ich beim Erstellen der Images verwendet habe oder ihr euer eigenes Image erstellen wollt, dann schaut in die Readme [hier](https://github.com/ottelo9/tasmota-sml-images).
+**ESP8266**  
+Alle Scripte (auch pvakku-powermeter-emulator) in der alten Version für den kleinen ESP8266 und ohne Zähler-DropDown Auswahlmenü. Es sind die gleichen wie aus dem Hauptverzeichnis nur werden diese nicht mehr aktualisiert (eingeforener Versionstand). Die Scripte funktionieren natürlich auch auf einem ESP32. Hier findet ihr auch die pvakku-powermeter-emulator Scripte, die auf dem ESP8266 lauffähig sind. Hier gibt es keine Diagramme, da der ESP zu klein ist. Aber die Emulation läuft ebenfalls einwandfrei!  
+Neu: [Marstek CT002 Emulator](ESP8266/pvakku-powermeter-emulator) für bis zu 4 Marstek-Akkus (`2_CT002_Emulator.tas`, von next145). Dafür das Image **tasmota1m_ct002_ottelo_tas** aus meinem [Image-Repo](https://github.com/ottelo9/tasmota-sml-images) verwenden. Es hat die Seite **Marstek CT002** (`/ctreg`, unter Werkzeuge) zur einmaligen Anmeldung in der Marstek-Cloud.  
 
-### Hardware
-Die Scripte aus dem Hauptmenü bzw. die via DropDown auswählbar sind laufen nur noch auf einem ESP32 mit aktuellem Tasmota Image (ab 15.1.0) das ich ebenfalls hier anbiete.  
-Hast du einen ESP8266 (z.B. im Hichi V1 Lesekopf oder in Sonoff / Gosund Steckdosen verbaut), dann kannst du die Scripte im Ordner ESP8266 verwenden. Dafür muss das Script aber dringend über den externen Script 
-Editor "komprimiert" werden. D.h. es werden alle Kommentare und Leerzeichen entfernt. Der Editor überträgt das Script dann auch gleich.  
+### C) Testtools:
+<b>UDP/HTTP/PING/mDNS Tester</b>  
+Ihr könnt die Emulation mit meinem [PowerScript](pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping, mDNS). Die Vorgabe-Knöpfe nennen jeweils das Gerät: EcoTracker, Shelly Pro 3EM oder Pro EM50:  
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
 
-### Anleitung
-Ein passendes Tasmota Image von mir herunterladen. Dann kann das Script unter Tools -> Edit Script ausgewählt werden. Danach wählt ihr euren Zähler und die PINs (IR-Sende/Empfangsdiode eures Lesekopfes) aus. Die Daten können bequem über den Button initialisiert werden. Wenn Tasmota und das Script läuft und ihr auch eure Zählerwerte (Leistung, Bezug und ggf. Einspeisung) sehen könnt, dann müsst ihr das Script einmal initialisieren, damit die Tages-, Monats-, und Jahreswerte und die Diagramme stimmen. Dazu tippt einfach auf den Button Zählerwerte initialisieren und Reset Balkendiagramme. Alle Werte sind dann auf 0 zurückgesetzt! Wollt ihr die Werte von einem vorherigen ESP oder alten Script übertragen? Dazu habe ich eine sehr [ausführliche Anleitung](https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#14) geschrieben. Wollt ihr Änderungen an dem Zählerscript vornehmen weil was fehlt? Dann klickt auf den Link Stromzähler Script.  
-<img width="400" height="524" alt="image" src="https://github.com/user-attachments/assets/339d57e7-62b6-4624-bae9-d2f7a4d4302f" />
+<b>SML Simulator</b>  
+Gemu2015 hat ein [SML Simulator Tool](https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/tinyc/sml_emulator.html) (simuliert einen x-beliebigen Stromzähler) für den Google Chrome Browser erstellt. Zum Simulieren eines Stromzählers wird ein USB Lesekopf am PC benötigt. Das Tool kann auch Zählerscripte (Meter Descriptor) erstellen und auch direkt an Tasmota senden. Wieso Google Chrome Browser? Nur Chrome unterstützt das serielle Interface.  
+<img width="400" height="200" alt="image" src="https://github.com/user-attachments/assets/9a5190da-2e8c-4198-97d0-4152276ad7a1" />
 
+### D) Tasmota Image/Firmware
+Die TinyC-Programme oder Skripte funktionieren nur, wenn ihr ein speziell angepasstes Tasmota Image (Firmware) verwendet. Die Images könnt ihr ebenfalls auf [meiner github Seite](https://github.com/ottelo9/tasmota-sml-images/releases). herunterladen. Wenn ihr sehen möchtet, welche Features ich beim Erstellen der Images verwendet habe oder ihr euer eigenes Image erstellen wollt, dann schaut in die Readme [hier](https://github.com/ottelo9/tasmota-sml-images).
+
+### E) Anleitung
+Ein passendes Tasmota Image von mir herunterladen (_tc für TinyC oder _tas für Script). Dann kann das Programm unter Tools > TinyC Console > Repository bzw. das Script unter Tools > Edit Script ausgewählt werden. Ist das Programm oder Script geladen, wählt ihr euren Zähler und die PINs (IR-Sende/Empfangsdiode eures Lesekopfes) über die Option im Hauptmenü aus. Wenn alles läuft und ihr auch eure Zählerwerte sehen könnt, dann müsst ihr die Daten einmalig initialisieren, damit die Tages-, Monats-, und Jahreswerte und die Diagramme stimmen. Dazu tippt einfach auf den entsprechenden Button auf der Optionsseite. Alle Werte sind dann auf 0 zurückgesetzt! Wollt ihr von Script > TinyC wechseln und die Daten mitnehmen? Das geht mit dem [Online Converter Tool](https://ottelo9.github.io/tasmota-sml-script/converter/).  
+
+**ESP8266:**  
 Für die "alten" Scripte im ESP8266 Ordner gilt: Skript herunterladen und z.B. mit dem Windows Editor öffnen (öffnen mit). 
 Es gibt auch für die Tasmota Skripte einen speziellen Editor vom Tasmota Script Entwickler [gemu2015](https://github.com/gemu2015) 
 den ihr [hier](https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/scripting/Scripteditor.zip) herunterladen könnt. 
 Dieser kann die Scripte direkt auf euren ESP übertragen und entfernt dabei alle Kommentare und leere Zeilen um Platz zu sparen! 
 Eine genauere Anleitung findet ihr auf meinem Blog oder auch in jedem Script.  
 
-**ESP8266: Die Skripte müssen von euch auf euren Zähler angepasst werden**  
-Die älteren Scripte vor 01.12.2025 sind auch für den ESP8266. Dort könnt ihr euren Zähler nicht via DropDown wählen. Den Zähler müsst ihr im Script editieren.  
+Die älteren Scripte für den ESP8266, dort könnt ihr euren Zähler nicht via DropDown wählen. Den Zähler müsst ihr im Script editieren.  
 Sucht die Zeile  
 `>M 1`
 
@@ -182,12 +136,7 @@ Wenn ihr SML Zeilen entfernt oder hinzufügt, dann müsst ihr auch die Variablen
 
 Wenn Tasmota und das Script läuft und ihr auch eure Zählerwerte (Leistung, Bezug und ggf. Einspeisung) sehen könnt, dann müsst ihr das Script einmal initialisieren, damit die Tages-, Monats-, und Jahreswerte und die Diagramme stimmen. Dazu geht zur Tasmota Console und tippt ein script>=#init. Anschließend sollte alles stimmen.
 
-Wichtig noch die korrekte Uhrzeit (Zeitzone, Winter/Sommer) festlegen (via Console),
-ab Script 18.08.2025 wird dies automatisch beim #init erledigt!
-Backlog0 Timezone 99; TimeStd 0,0,10,1,3,60; TimeDst 0,0,3,1,2,120 <- Europe/Berlin
-Den Befehl müsst ihr ggf. auf euren Ort anpassen! https://tasmotatimezone.com bzw. https://tasmota.github.io/docs/Timezone-Table/
-
-### Home Assistant Tasmota Integration
+### F) Home Assistant Tasmota Integration
 Korrektes Sensor-Mapping: Damit die Tasmota Integration die Werte vom Stromzähler voll automatisch konfiguriert (device_class, state_class, unit) muss in der >M Meter Sektion für jeden Wert ein korrekter Name vergeben werden.  
 
 Beispiel:  
@@ -224,34 +173,6 @@ Wenn ihr euren Zähler über mein Zähler DropDown Menü im Script ausgewählt h
 | **TotalStartTime** | *(None)* | — | — |
 Für weitere siehe [hier](https://github.com/ottelo9/tasmota-sml-script/pull/42#issuecomment-4053749869).  
 
-### Debuggen oder Daten loggen
-Falls ihr vielleicht im Script irgendwas loggen wollt (Zustände oder Werte in eine Datei mit Zeitstempel schreiben), dann gibt es eine schöne einfache Methode via Script. Erstellt dazu einfach ein neuen #Sub, da wo bereits Subs sind, ansonsten ist es egal wo:
-```
-#log(str)
-tmp=fo("log.txt" a)
-if tmp>=0 {
-	res=fw(cts(tstamp 1) tmp)
-	str="\t"+str+"\n"
-	res=fw(str tmp)
-	fc(tmp)
-}
-```
-Ihr braucht dafür zwei neue Variablen, die ihr ganz oben im Script deklarieren müsst, falls sie noch nicht existieren:
-```
-tmp=0
-res=0
-str=""
-```
-Jetzt könnt ihr irgendwo im Script z.B. ein Wert in die Datei "log.txt" schreiben lassen inkl. Zeitstempel:
-```
-str="Leistung: "+s(sml[1])+" W"
-=#log(str)
-oder einfach nur
-=#log(s(sml[1]))
-```
-  
-So sieht das Google Chart Script in Natura aus:  
-<img width="400" height="1950" alt="image" src="https://github.com/user-attachments/assets/d758e131-e4c6-4fdb-96e1-b05acf67c3dc" />
   
 ------------------
 Bedanken möchte ich mich besonders bei [gemu2015](https://github.com/gemu2015), der das Tasmota Scripting und SML entwickelt hat und mir immer sofort bei Problemen geholfen hat. Und natürlich beim restlichen [Tasmota Entwickler-Team](https://tasmota.github.io/docs/About/), für das grandiose Tasmota :).  
