@@ -9,7 +9,8 @@ GitHub Pages). Personal setup, devices and working rules: `CLAUDE.local.md`
 
 | Path | What |
 |---|---|
-| `tinyc/*.tc` | the six programs: `sml_simple`, `sml_chart`, `sml_ct002`, `sml_chart_ct002`, `sml_eco_shelly`, `sml_chart_eco_shelly`; plus `ftp_backup` (own slot, one language, no `sml_vers`; nightly 00:10 copy of `*.pvs`/`*.cfg`/`*.def` via `/ftp.cfg` into `<folder>/<topic>/<weekday 1..7>`, the button into `.../0`) |
+| `tinyc/*.tc` | the six programs: `sml_simple`, `sml_chart`, `sml_ct002`, `sml_chart_ct002`, `sml_eco_shelly`, `sml_chart_eco_shelly`; plus `ftp_backup` (own slot, one language, own `sml_vers` - bumped only when it changes; nightly 00:10 copy of `*.pvs`/`*.cfg`/`*.def` via `/ftp.cfg` into `<folder>/<topic>/<weekday 1..7>`, the button into `.../0`) |
+| `tinyc/other/` | programs outside the repository list (build.html skips subfolders): `cam_dfr1154.tc` = gemu's `webcam_tinyc.tc` (fork 72b55d3c6) cut down to DFR1154, person detection, night vision, alarm pictures, photo buttons; plus MQTT alarm `tele/<topic>/ALARM` ON/OFF and an HA binary-sensor discovery, both retained via `tasmCmd("Publish2 …")` (needs TinyC ≥ 1.6.72). For the image `tasmota32s3_dfr1154`; `.tcb` built by hand with the same IDE |
 | `tinyc/common/` | shared modules, `#include`d by the programs |
 | `tinyc/bytecode/` | built `.tcb`, `build.html` (the compiler), `index.json` (program picker) |
 | `docs/<topic>/index.html` | help pages, `en`/`de` blocks side by side |
@@ -29,6 +30,9 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   files are committed next to the source.
 - Bump `sml_vers` in **all six** programs whenever something ships — it is
   the date, `dd.MM.yyyy`, of the day of the change.
+  build.html turns it into the program's name, `SML Chart [12.10.26]`, in
+  `index.json` and in the .tcb header - the firmware (own patch in the images)
+  shows it in the repository list and the slot rows and flags a newer date.
 - Help pages are bilingual — change both languages together. Behaviour changes
   go into the help page, not into source comments.
 - Do not commit unless asked. Commit messages: German, a title line plus short

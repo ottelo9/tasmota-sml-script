@@ -235,6 +235,13 @@ $('build').onclick = async () => {
     const m = src.match(new RegExp('^[ \t]*//[ \t]*@' + key + ':[ \t]*(.+)$', 'm'));
     return m ? m[1].trim() : '';
   };
+  // Klarname fuer die Liste: @name plus Kurzdatum aus sml_vers, "SML Chart [12.10.26]".
+  // Die Firmware zeigt dann nur noch den Namen (Images-Repo, eigener Patch).
+  const label = src => {
+    const n = pragma(src, 'name');
+    const v = src.match(/^[ \t]*char[ \t]+sml_vers[ \t]*\[[ \t]*\][ \t]*=[ \t]*"(\d{2})\.(\d{2})\.\d{2}(\d{2})"/m);
+    return n && v ? n + ' [' + v[1] + '.' + v[2] + '.' + v[3] + ']' : n;
+  };
 
   const names = Object.keys(progs).sort();
   const rows = [], built = [], meta = [];
@@ -248,11 +255,12 @@ $('build').onclick = async () => {
     if (!/^\s*(?:int|void)\s+main\s*\(/m.test(src)) { skipped++; log('übersprungen (kein main): ' + name); continue; }
     const base = name.replace(/\.tc$/, '');
     try {
-      const r = w.compile(w.resolveIncludes(src, get));
+      // Name mit Datum auch in den Kopf der .tcb: die Firmware zeigt ihn im Slot.
+      const r = w.compile(w.resolveIncludes(src, get), { meta: { name: label(src), info: pragma(src, 'info') } });
       if (r.error) throw new Error(r.error);
       await write(base + '.tcb', r.binary);
       built.push(base + '.tcb');
-      meta.push({ file: base + '.tcb', name: pragma(src, 'name'), info: pragma(src, 'info') });
+      meta.push({ file: base + '.tcb', name: label(src), info: pragma(src, 'info') });
       rows.push('<tr><td>' + name + '</td><td class="num">' + r.binary.length.toLocaleString('de-DE') +
                 '</td><td class="ok">ok</td></tr>');
       log('ok: ' + base + '.tcb (' + r.binary.length + ' B)');

@@ -13,6 +13,8 @@
 // IP, user, password, folder (a file path as in gemu's ftp_log.tc also works,
 // its folder is taken).
 
+char sml_vers[] = "12.10.2026";  // shown in the repository list and the slot
+
 persist int bk_res;            // 0 never, 1 ok, 2 failed
 persist int bk_code;           // last error
 persist int bk_d; persist int bk_m; persist int bk_y;
@@ -166,6 +168,6 @@ void WebCall() {
 }
 
 int main() {
-    addLog("ftpbk: start");
+    addLog("ftpbk: start %s", sml_vers);
     return 0;
 }

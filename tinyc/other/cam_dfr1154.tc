@@ -1,0 +1,757 @@
+// @name: Kamera DFR1154 + MQTT-Alarm
+// ═══════════════════════════════════════════════════════════════════
+// cam_dfr1154.tc — security camera for the DFRobot FireBeetle 2 ESP32-S3
+// AI CAM (DFR1154, OV3660). Cut down from gemu2015's webcam_tinyc.tc
+// (fork 72b55d3c6) to what is used here: MJPEG stream on port 81, motion
+// detection confirmed by person detection (ESP-DL), night vision (IR LEDs,
+// LTR-308), alarm pictures and the photo buttons, plus an MQTT alarm for
+// Home Assistant with its own discovery message.
+//
+// Needs the image tasmota32s3_dfr1154 (tasmota-sml-images), the model as
+// /sd/ped.espdl, and the template with the IR LEDs on Relay1 (GPIO47).
+//
+// MQTT: tele/<topic>/ALARM = ON / OFF, retained. The binary sensor is
+// announced retained on homeassistant/binary_sensor/<mac>_alarm/config and
+// joins the Tasmota device in HA through its MAC.
+//
+// Camera capture runs in TaskLoop (VM task thread) — esp_camera_fb_get()
+// crashes when called from the main thread.
+// ═══════════════════════════════════════════════════════════════════
+
+// Order: pwdn, reset, xclk, sda, scl, d7, d6, d5, d4, d3, d2, d1, d0, vsync, href, pclk
+int campins[] = {-1, -1, 5, 8, 9, 4, 6, 7, 14, 17, 21, 18, 16, 1, 2, 15};
+
+#define PIXFORMAT_JPEG      4
+// ⚠️ The esp32-camera branch in gemu's tree has two more entries than the
+// classic framesize_t (128X128 at 2, 320X320 at 7) — measured on the picture.
+#define FRAMESIZE_UXGA      15
+
+// webPulldown hands back a 0-based INDEX, the sensor wants a FRAMESIZE_*.
+#define RES_COUNT           10
+#define RES_FIRST           6       // index 0 = FRAMESIZE_QVGA 320x240
+#define RES_DEFAULT         4       // index 4 = FRAMESIZE_VGA 640x480
+
+// Sensor parameter IDs for camControl(9, param, value)
+#define CAM_VFLIP           0
+#define CAM_BRIGHTNESS      1
+#define CAM_SATURATION      2
+#define CAM_FRAMESIZE       5
+
+#define OV3660_PID          0x3660
+
+// How often the firmware runs its frame-diff (ms). Each run decodes the JPEG
+// in cam slot 1 to RGB888 in PSRAM, so this is not free.
+#define MOTION_MS           500
+
+// ─── Persistent settings ───
+// 'watch' enables changed()/snapshot()
+persist watch int limit;      // motion threshold, mean |frame difference| x 100
+persist watch int blim;       // discard a reading whose brightness jumped more than this x 100
+persist watch int mrun;       // NEW readings of sustained motion before it counts
+persist watch int pdet;       // 1 = have the neural net confirm the motion first
+persist watch int pthr;       // the net's score threshold x100
+persist watch int spir;       // software motion detector enabled
+persist watch int ufl;        // IR light while taking a picture
+persist watch int npic;       // pictures saved per alarm (1-4)
+persist watch int res;        // resolution, INDEX into the pulldown
+// ─── Night vision ───
+// ⚠️ The four 940 nm IR LEDs sit on GPIO47 = Relay1, and the sensor's AEC sat
+// at both factory ceilings in the dark (exposure 0x0930, gain 0xF8). Raising
+// the exposure limit and keeping the gain low gives the better night picture.
+// The LTR-308 light sensor decides "dark" in the automatic modes.
+persist watch int ir_mode;    // IR light: 0 off, 1 on, 2 automatic (LTR-308)
+persist watch int ir_lux;     // automatic: below this it is "dark" (lux)
+persist watch int nacht;      // night sensor mode: 0 off, 1 on, 2 automatic
+persist watch int nacht_st;   // strength index: 0 x2/8x, 1 x4/8x, 2 x8/16x
+persist int nacht_seen;       // defaults written once (index 0 is a legal value)
+persist int res_seen;         // ⚠️ 1 once `res` was stored: index 0 (QVGA) is a
+                              // legal choice, so 0 cannot mean "unset"
+
+// ─── State ───
+int mot;                // raw motion value from the firmware
+int alarm_active;       // 1 = alarm triggered, wait for motion to stop
+int del_all;            // button: delete all pictures
+int last_hour;          // midnight detection
+int cam_ok;             // camera initialized
+int mbright;            // mean brightness x 100 (camControl 17,1)
+int mjump;              // brightness change against the previous reading
+int last_bri;           // previous brightness reading, -1 = none yet
+int mnet;               // motion with the global light change taken out
+int mpeak;              // highest corrected value since the last settings change
+int last_mot;           // previous raw reading, to spot a NEW measurement
+int mstreak;            // consecutive NEW readings above the threshold
+int veto_count;         // readings thrown away because the light changed
+int mot_on;             // 1 = firmware frame-diff enabled
+int person_pruefen;     // set by EverySecond, worked off in TaskLoop
+int person_n;           // hits in the last run
+int person_score;       // best score x100
+int person_x;
+int person_y;
+int person_w;
+int person_h;
+int person_zuletzt;     // millis() of the last positive run, 0 = never yet
+int person_gesamt;      // counter since start
+int person_ms;          // compute time of the last run
+int frame_count;        // frames captured
+int motion_detect;      // alarms since start
+int doCapture;          // button: capture from web UI
+int doHiRes;            // button: hi-res capture from web UI
+int alarm_pics;         // alarm pictures still to take
+int do_res;             // resolution change requested, carried out in TaskLoop
+int cam_w;              // current width  — see res_masse()
+int cam_h;              // current height
+int ir_soll;            // IR light wanted now (0/1)
+int nacht_soll;         // night sensor settings wanted now (0/1)
+int nacht_ist;          // ... and what is actually applied in the sensor
+int do_nacht;           // apply nacht_soll in TaskLoop (camera access there only)
+int dunkel;             // LTR-308 says dark (with hysteresis)
+float lux;              // last LTR-308 reading
+int ltr_bus;            // I2C bus the LTR-308 answered on, -1 = not found
+char ltr_buf[4];
+int mq_go;              // MQTT (re)connected: announce and send the state
+int mq_state;           // ALARM as last published, -1 = not yet
+
+byte buf[256];
+byte fnam[48];
+byte tmp[64];
+byte mq_topic[72];      // tele/<topic>/ALARM
+byte ha_cmd[480];       // Publish2 <topic> <discovery JSON>
+byte ha_p[160];         // pieces; sprintf output stays below 255
+byte ha_t[64];          // device topic
+byte ha_id[16];         // MAC, lowercase hex - unique id
+byte ha_mac[20];        // MAC as aa:bb:cc:dd:ee:ff - device link
+byte ha_dev[40];        // Tasmota DeviceName
+
+// ═══════════════════════════════════════════════════════════════════
+// Camera
+// ═══════════════════════════════════════════════════════════════════
+int initCamera() {
+    // Start with the STORED resolution, else the sensor says VGA while the
+    // pulldown shows something else.
+    int ok = cameraInit(campins, PIXFORMAT_JPEG, res_framesize(), 12, 0, 0, -1, -1);
+    if (ok != 0) {
+        addLog("TCC: camera init FAILED %d", ok);
+        return -1;
+    }
+    int pid = camControl(8, 0, 0);
+    addLog("TCC: camera initialized, sensor PID 0x%x", pid);
+    if (pid == OV3660_PID) {
+        camControl(9, CAM_VFLIP, 1);
+        camControl(9, CAM_BRIGHTNESS, 1);
+        camControl(9, CAM_SATURATION, -2);
+    }
+    return 0;
+}
+
+// Capture to PSRAM slot (1 = stream, 2 = pictures). TaskLoop only.
+int captureToSlot(int slot) {
+    int size = camControl(10, slot, 0);
+    if (size <= 0) return -1;
+    frame_count = frame_count + 1;
+    return size;
+}
+
+// Width and height of the chosen resolution — the same list as the pulldown.
+// ⚠️ Not camControl(3/4): those selectors belong to Tasmota's webcam driver
+// and answer -1 in this build.
+void res_masse() {
+    int i = res;
+    if (i < 0 || i >= RES_COUNT) i = RES_DEFAULT;
+    if (i == 0) { cam_w = 320;  cam_h = 240; }
+    if (i == 1) { cam_w = 320;  cam_h = 320; }
+    if (i == 2) { cam_w = 400;  cam_h = 296; }
+    if (i == 3) { cam_w = 480;  cam_h = 320; }
+    if (i == 4) { cam_w = 640;  cam_h = 480; }
+    if (i == 5) { cam_w = 800;  cam_h = 600; }
+    if (i == 6) { cam_w = 1024; cam_h = 768; }
+    if (i == 7) { cam_w = 1280; cam_h = 720; }
+    if (i == 8) { cam_w = 1280; cam_h = 1024; }
+    if (i == 9) { cam_w = 1600; cam_h = 1200; }
+}
+
+// ⚠️ Clamped: a stored value out of range would configure the sensor with
+// nonsense, and the camera then delivers nothing.
+int res_framesize() {
+    int i = res;
+    if (i < 0 || i >= RES_COUNT) i = RES_DEFAULT;
+    return RES_FIRST + i;
+}
+
+void log_msg(char msg[]) {
+    char line[128];
+    timeStamp(line);
+    strcat(line, " - ");
+    strcat(line, msg);
+    fileLog("/log.txt", line, 8192);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LTR-308 ambient light sensor (I2C 0x53)
+// Gain 18x, 20 bit / 400 ms: lux = raw / 12 (0.083 lx per count) — fine steps
+// around the ~10 lx where "dark" is decided. ⚠️ One driver per sensor: no
+// other script may read the LTR-308 alongside this one.
+// ═══════════════════════════════════════════════════════════════════
+int ltr_finden() {
+    int bus = 0;
+    while (bus < 2) {
+        i2cSetDevice(0x53, bus);
+        int id = i2cRead8(0x53, 0x06, bus);
+        if (id == 0xB1) {
+            i2cWrite8(0x53, 0x00, 0x10, bus);       // soft reset
+            delay(100);
+            i2cWrite8(0x53, 0x04, 0x03, bus);       // 20 bit / 400 ms, rate 500 ms
+            i2cWrite8(0x53, 0x05, 0x04, bus);       // gain 18x
+            i2cWrite8(0x53, 0x00, 0x02, bus);       // ALS enable
+            addLog("TCC: LTR-308 found on I2C bus %d", bus);
+            return bus;
+        }
+        bus++;
+    }
+    addLog("TCC: no LTR-308 — automatic modes fall back to 'on'");
+    return -1;
+}
+
+// Returns 1 when a fresh reading was taken.
+int ltr_lesen() {
+    if (ltr_bus < 0) return 0;
+    int st = i2cRead8(0x53, 0x07, ltr_bus);
+    if (!(st & 0x08)) return 0;                    // no new data yet
+    if (!i2cRead(0x53, 0x0D, ltr_buf, 3, ltr_bus)) return 0;
+    int raw = (ltr_buf[0] & 0xFF) | ((ltr_buf[1] & 0xFF) << 8) | ((ltr_buf[2] & 0x0F) << 16);
+    lux = (float)raw / 12.0;
+    return 1;
+}
+
+// Night sensor settings — TaskLoop only (camera access).
+// ⚠️ The horizontal stripes in dim light come from the IR LEDs' ripple, made
+// visible by HIGH GAIN. So the gain ceiling stays low and exposure does the
+// work (price: frame rate in the dark). A lower max exposure is only honoured
+// after toggling night mode (aec2) off and on.
+void nacht_anwenden(int an) {
+    if (camControl(8, 0, 0) != OV3660_PID) {
+        nacht_ist = an;
+        return;
+    }
+    if (an) {
+        int gc = 0x80;   int hi = 0x12; int lo = 0x60;    // x2 exposure, 8x gain
+        if (nacht_st == 1) { gc = 0x80;  hi = 0x24; lo = 0x90; }   // x4, 8x
+        if (nacht_st == 2) { gc = 0x100; hi = 0x49; lo = 0x20; }   // x8, 16x
+        camControl(9, 18, gc);
+        camControl(20, 0x3a02, hi); camControl(20, 0x3a03, lo);
+        camControl(20, 0x3a14, hi); camControl(20, 0x3a15, lo);
+    } else {
+        camControl(9, 18, 0xF8);                             // factory 15.5x
+        camControl(20, 0x3a02, 0x09); camControl(20, 0x3a03, 0x30);
+        camControl(20, 0x3a14, 0x09); camControl(20, 0x3a15, 0x30);
+    }
+    camControl(9, 13, 0); delay(300); camControl(9, 13, 1);   // AEC re-converge
+    nacht_ist = an;
+    addLog("TCC: night sensor mode %d (strength %d)", an, nacht_st);
+}
+
+// IR light around a picture. Afterwards the relay goes back to what the
+// night logic wants — never hard off, that overrode the manual switch.
+void flash_on() {
+    if (ufl > 0) {
+        tasm_power = 1;
+        delay(150);
+    }
+}
+
+void flash_off() {
+    if (ufl > 0) tasm_power = ir_soll;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Pictures in /PICS, named 27_2_2026-14_30_05.jpg
+// ═══════════════════════════════════════════════════════════════════
+void save_pic_from_slot(int slot) {
+    sprintf(fnam, "/PICS/%d_%d_%d-%d_%d_%d.jpg", tasm_day, tasm_month, tasm_year, tasm_hour, tasm_minute, tasm_second);
+    int fh = fileOpen(fnam, 'w');
+    if (fh >= 0) {
+        int written = camControl(11, slot, fh);
+        fileClose(fh);
+        addLog("TCC: picture saved, %d bytes", written);
+    } else {
+        addLog("TCC: file io error");
+    }
+}
+
+void del_folder() {
+    log_msg("delete all pictures");
+    char entry[48];
+    char path[80];
+    int dh = fileOpenDir("/PICS");
+    if (dh >= 0) {
+        while (fileReadDir(dh, entry)) {
+            strcpy(path, "/PICS/");
+            strcat(path, entry);
+            fileDelete(path);
+        }
+        fileClose(dh);
+    }
+}
+
+// Deletes the pictures of the day 14 days back (run every midnight).
+void del_old() {
+    char ts[24];
+    timeStamp(ts);
+    timeOffset(ts, -14, 1);
+    char dyear[8];
+    char dmonth[4];
+    char dday[4];
+    char rest[16];
+    strToken(dyear, ts, '-', 1);
+    strToken(dmonth, ts, '-', 2);
+    strToken(rest, ts, '-', 3);
+    strToken(dday, rest, 'T', 1);
+    char cutoff[16];
+    strcpy(cutoff, dday);
+    strcat(cutoff, "_");
+    strcat(cutoff, dmonth);
+    strcat(cutoff, "_");
+    strcat(cutoff, dyear);
+
+    char entry[48];
+    char path[80];
+    char fdate[16];
+    int dh = fileOpenDir("/PICS");
+    if (dh >= 0) {
+        while (fileReadDir(dh, entry)) {
+            strToken(fdate, entry, '-', 1);
+            if (strcmp(fdate, cutoff) == 0) {
+                strcpy(path, "/PICS/");
+                strcat(path, entry);
+                fileDelete(path);
+            }
+        }
+        fileClose(dh);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MQTT / Home Assistant
+// Retained through Publish2 (tasmCmd takes 511 characters since TinyC
+// 1.6.72): HA finds sensor and state after its own restart without help.
+// A retained message is kept by the broker, nothing goes to the flash.
+// Assumes the default FullTopic %prefix%/%topic%/ and LWT Online/Offline.
+// ═══════════════════════════════════════════════════════════════════
+void mq_announce() {
+    tasmInfo(0, ha_t);
+    tasmInfo(4, ha_dev);
+    tasmInfo(1, ha_id);                 // hex without colons
+    strToLower(ha_id);
+    int i = 0;
+    int j = 0;
+    while (i < 12 && ha_id[i] != 0) {
+        if (i > 0 && (i % 2) == 0) {
+            ha_mac[j] = ':';
+            j = j + 1;
+        }
+        ha_mac[j] = ha_id[i];
+        j = j + 1;
+        i = i + 1;
+    }
+    ha_mac[j] = 0;
+    sprintf(mq_topic, "tele/%s/ALARM", ha_t);
+
+    sprintf(ha_cmd, "Publish2 homeassistant/binary_sensor/%s_alarm/config ", ha_id);
+    sprintf(ha_p, "{\"name\":\"Alarm\",\"uniq_id\":\"%s_alarm\",\"stat_t\":\"%s\"", ha_id, mq_topic);
+    strcat(ha_cmd, ha_p);
+    strcat(ha_cmd, ",\"dev_cla\":\"motion\",\"pl_on\":\"ON\",\"pl_off\":\"OFF\"");
+    sprintf(ha_p, ",\"avty_t\":\"tele/%s/LWT\",\"pl_avail\":\"Online\",\"pl_not_avail\":\"Offline\"", ha_t);
+    strcat(ha_cmd, ha_p);
+    // name: only used when HA finds no device with this MAC
+    sprintf(ha_p, ",\"dev\":{\"name\":\"%s\",\"cns\":[[\"mac\",\"%s\"]]}}", ha_dev, ha_mac);
+    strcat(ha_cmd, ha_p);
+    tasmCmd(ha_cmd, tmp);
+}
+
+void mq_alarm(int an) {
+    if (an) sprintf(ha_cmd, "Publish2 %s ON", mq_topic);
+    else    sprintf(ha_cmd, "Publish2 %s OFF", mq_topic);
+    tasmCmd(ha_cmd, tmp);
+    mq_state = an;
+}
+
+// Broker (re)connected. The tick publishes — not from inside the callback.
+void OnMqttConnect() {
+    mq_go = 1;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TaskLoop — VM task: everything that touches the camera
+// ═══════════════════════════════════════════════════════════════════
+void TaskLoop() {
+    if (cam_ok != 1) {
+        delay(100);
+        return;
+    }
+
+    // Arm the firmware frame-diff. Threshold 0: the firmware only MEASURES,
+    // the alarm policy stays here.
+    if (mot_on == 0) {
+        camControl(16, MOTION_MS, 0);
+        mot_on = 1;
+    }
+
+    if (person_pruefen == 1) {
+        person_pruefen = 0;
+        int t = millis();
+        int n = camControl(21, pthr, 0);
+        person_ms = millis() - t;
+        if (n < 0) {
+            person_n = 0;
+            addLog("TCC: person detect error %d", n);
+        } else {
+            person_n = n;
+            if (n > 0) {
+                person_score = camControl(22, 1, 0);
+                person_x = camControl(22, 2, 0);
+                person_y = camControl(22, 3, 0);
+                person_w = camControl(22, 4, 0);
+                person_h = camControl(22, 5, 0);
+                person_zuletzt = millis();
+                person_gesamt = person_gesamt + 1;
+                addLog("TCC: person detected, %d%% at %d,%d (%d ms)",
+                       person_score, person_x, person_y, person_ms);
+            }
+        }
+    }
+
+    // Slot 1 is the stream AND the buffer the firmware detector reads.
+    captureToSlot(1);
+
+    // Alarm pictures, one per pass
+    if (alarm_pics > 0) {
+        alarm_pics = alarm_pics - 1;
+        flash_on();
+        if (captureToSlot(2) > 0) save_pic_from_slot(2);
+        flash_off();
+    }
+
+    if (doCapture == 1) {
+        doCapture = 0;
+        flash_on();
+        if (captureToSlot(2) > 0) save_pic_from_slot(2);
+        flash_off();
+    }
+
+    if (do_nacht == 1) {
+        do_nacht = 0;
+        nacht_anwenden(nacht_soll);
+    }
+
+    // The stream is stopped around a resolution change: it hands out frames
+    // from the buffer that is being resized underneath it.
+    if (do_res == 1) {
+        do_res = 0;
+        camControl(15, 0, 0);                       // stop MJPEG server
+        delay(200);
+        camControl(9, CAM_FRAMESIZE, res_framesize());
+        delay(300);                                 // sensor needs a moment
+        res_masse();
+        camControl(15, 1, 0);
+        camControl(18, 0, 0);                       // reference frame is void now
+        mot_on = 0;                                 // re-arm with the new size
+        mstreak = 0;
+        last_bri = -1;
+        last_mot = -1;
+        addLog("TCC: resolution now %dx%d", cam_w, cam_h);
+    }
+
+    if (doHiRes == 1) {
+        doHiRes = 0;
+        flash_on();
+        camControl(9, CAM_FRAMESIZE, FRAMESIZE_UXGA);
+        delay(500);
+        if (captureToSlot(2) > 0) save_pic_from_slot(2);
+        camControl(9, CAM_FRAMESIZE, res_framesize());   // back to the chosen one
+        flash_off();
+    }
+
+    delay(100);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EverySecond — main thread, light work only
+// ═══════════════════════════════════════════════════════════════════
+void EverySecond() {
+    if (tasm_hour == 0 && last_hour != 0) del_old();
+    last_hour = tasm_hour;
+
+    if (mq_go == 1) {
+        mq_go = 0;
+        mq_announce();
+        if (mq_state < 0) mq_alarm(0); else mq_alarm(mq_state);
+    }
+
+    // camControl 17 only reads two numbers the firmware computed: sel 0 =
+    // mean |difference| x 100 against the previous frame, sel 1 = mean
+    // brightness x 100. Whole-frame averages, no position.
+    int raw = camControl(17, 0, 0);
+    int bri = camControl(17, 1, 0);
+
+    // ⚠️ The detector delivers a reading only every ~3 s (decoding costs), so
+    // the same numbers come back several times. Only a CHANGED reading counts,
+    // else the sustain test and the light correction are void.
+    if (raw != last_mot || bri != mbright) {
+        last_mot = raw;
+        mot = raw;
+        mjump = bri - last_bri;
+        if (mjump < 0) mjump = 0 - mjump;
+        if (last_bri <= 0 || bri == 0) mjump = 0;  // nothing to compare yet
+        last_bri = bri;
+        mbright = bri;
+
+        // ⚠️ Subtract the light change, don't just veto on it: shifting every
+        // pixel by Δ moves the mean difference by |Δ| (auto-exposure hunting).
+        mnet = mot - mjump;
+        if (mnet < 0) mnet = 0;
+        if (mnet > mpeak) mpeak = mnet;
+
+        // Only first-order: a violent light change is still thrown away.
+        if (blim > 0 && mjump > blim) {
+            veto_count = veto_count + 1;
+            mstreak = 0;
+        } else {
+            if (mnet > limit) mstreak = mstreak + 1;
+            else              mstreak = 0;
+        }
+    }
+
+    int bewegung = 0;
+    if (mstreak >= mrun) bewegung = 1;
+
+    // The pixel difference is the TRIGGER (~40 ms, "something changed"), the
+    // net the CONFIRMATION (~470 ms, "a person"). TaskLoop runs it.
+    if (pdet > 0 && bewegung == 1 && alarm_active == 0) person_pruefen = 1;
+
+    int ausloeser = 0;
+    if (spir > 0 && bewegung == 1) {
+        if (pdet > 0) {
+            if (person_n > 0) ausloeser = 1;
+        } else {
+            ausloeser = 1;
+        }
+    }
+
+    // One-shot: fires once, re-arms when clear
+    if (ausloeser == 1) {
+        if (alarm_active == 0) {
+            alarm_active = 1;
+            motion_detect = motion_detect + 1;
+            log_msg("motion alarm");
+            mq_alarm(1);
+            alarm_pics = npic;
+        }
+    } else {
+        if (mq_state == 1) mq_alarm(0);
+        alarm_active = 0;
+    }
+
+    if (del_all > 0) {
+        del_all = 0;
+        del_folder();
+    }
+
+    // ─── Darkness, IR light, night sensor mode ───
+    if (ltr_lesen()) {
+        // Hysteresis: light again only above twice the threshold — the IR
+        // light itself brightens the scene a little.
+        if (dunkel == 0 && lux < (float)ir_lux) dunkel = 1;
+        if (dunkel == 1 && lux > (float)(ir_lux * 2)) dunkel = 0;
+    }
+    int auto_dunkel = dunkel;
+    if (ltr_bus < 0) auto_dunkel = 1;        // no sensor: automatic = on
+    ir_soll = 0;
+    if (ir_mode == 1) ir_soll = 1;
+    if (ir_mode == 2) ir_soll = auto_dunkel;
+    if (tasm_power != ir_soll) tasm_power = ir_soll;
+    nacht_soll = 0;
+    if (nacht == 1) nacht_soll = 1;
+    if (nacht == 2) nacht_soll = auto_dunkel;
+    if (nacht_soll != nacht_ist && do_nacht == 0) do_nacht = 1;
+    if (changed(nacht_st) && nacht_ist == 1) do_nacht = 1;   // new strength now
+
+    if (changed(res)) {
+        snapshot(res);
+        do_res = 1;                 // carried out in TaskLoop
+    }
+    if (changed(limit) || changed(blim) || changed(mrun) || changed(pdet) ||
+        changed(pthr) || changed(spir) || changed(ufl) || changed(npic) ||
+        changed(ir_mode) || changed(ir_lux) || changed(nacht) || changed(nacht_st) ||
+        do_res == 1) {
+        mpeak = 0;                  // tuning restarts with the new settings
+        snapshot(limit); snapshot(blim); snapshot(mrun); snapshot(pdet);
+        snapshot(pthr); snapshot(spir); snapshot(ufl); snapshot(npic);
+        snapshot(ir_mode); snapshot(ir_lux); snapshot(nacht); snapshot(nacht_st);
+        saveVars();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// WebCall — main page rows
+// ═══════════════════════════════════════════════════════════════════
+void WebCall() {
+    webSend("{s}<b style='color:cyan'>Camera</b>{m}{e}");
+    sprintf(buf, "{s}Frames{m}%d{e}", frame_count);
+    webSend(buf);
+    sprintf(buf, "{s}Motion{m}%d net (raw %d, peak %d, limit %d, %d/%d){e}",
+            mnet, mot, mpeak, limit, mstreak, mrun);
+    webSend(buf);
+    sprintf(buf, "{s}Light{m}%d (jump %d){e}", mbright, mjump);
+    webSend(buf);
+    sprintf(buf, "{s}Detected{m}%d (%d ignored, light){e}", motion_detect, veto_count);
+    webSend(buf);
+    if (pdet > 0) {
+        if (person_zuletzt > 0) {
+            int alter = (millis() - person_zuletzt) / 1000;
+            if (alter < 120) {
+                sprintf(buf, "{s}<b style='color:#ff5661'>&#x1F6B6; PERSON</b>{m}"
+                             "<b style='color:#ff5661'>%d s ago &nbsp;%d&#37; &nbsp;%dx%d@%d,%d</b>{e}",
+                        alter, person_score, person_w, person_h, person_x, person_y);
+            } else {
+                if (alter < 3600) sprintf(buf, "{s}Person{m}last seen %d min ago{e}", alter / 60);
+                else              sprintf(buf, "{s}Person{m}last seen %d h ago{e}", alter / 3600);
+            }
+            webSend(buf);
+        } else {
+            webSend("{s}Person{m}none yet{e}");
+        }
+        sprintf(buf, "{s}Person runs{m}%d hits, last %d ms{e}", person_gesamt, person_ms);
+        webSend(buf);
+    }
+    if (ltr_bus >= 0) {
+        sprintf(buf, "{s}Light{m}%.2f lx{e}", lux);
+        webSend(buf);
+    }
+    webSend("{s}Night{m}");
+    if (ir_soll) webSend("IR on"); else webSend("IR off");
+    if (nacht_ist) webSend(" &middot; sensor night{e}"); else webSend(" &middot; sensor day{e}");
+    sprintf(buf, "{s}Heap{m}%d kB{e}", tasm_heap / 1000);
+    webSend(buf);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// WebUI — "Camera Setup" page (the stream is served on port 81)
+// ═══════════════════════════════════════════════════════════════════
+void WebUI() {
+    // ⚠️ The width belongs on body>div: Tasmota's frame grows with its widest
+    // child, and a long pulldown entry pulls the whole page apart.
+    webSend("<style>body>div{width:480px;max-width:96vw;box-sizing:border-box}.cam-p{max-width:100%;box-sizing:border-box;margin:12px auto;background:#f0f0f0;color:#000;padding:16px;border:2px solid #ccc;border-radius:6px;text-align:left}.cam-p h3{margin:0 0 8px}.cam-p hr{border:0;border-top:1px solid #bbb;margin:12px 0}.cam-p b{display:inline-block;margin-bottom:4px;font-size:13px}.cam-p div{margin:6px 0}.cam-p .hint{font-size:9px;color:#555;line-height:1.4}</style>");
+    webSend("<div class='cam-p'><h3>&#x1F4F7; Camera</h3>");
+
+    webSend("<b>&#x1F5BC;&#xFE0F; Picture</b>");
+    webPulldown(res, "Resolution",
+                "QVGA 320x240|320x320|CIF 400x296|HVGA 480x320|VGA 640x480|SVGA 800x600|XGA 1024x768|HD 1280x720|SXGA 1280x1024|UXGA 1600x1200");
+    sprintf(buf, "<div class='hint'>Camera is set to <b>%dx%d</b>. Changing this restarts the stream on port 81 for a moment. For motion detection VGA is plenty.</div>", cam_w, cam_h);
+    webSend(buf);
+
+    webSend("<hr><b>&#x1F6B6; Motion</b>");
+    webCheckbox(spir, "Software motion detector");
+    webNumber(limit, 20, 2000, "Motion threshold");
+    webNumber(blim, 0, 2000, "Ignore above light change (0=off)");
+    webNumber(mrun, 1, 30, "Readings of sustained motion");
+    webCheckbox(pdet, "Confirm with the neural net (person detection)");
+    webNumber(pthr, 10, 95, "Person score threshold (%)");
+    webSend("<div class='hint'>Motion is the mean pixel difference of successive frames &times;100, with the jump of the overall light taken out. The alarm needs it above the threshold for that many <b>new</b> readings. With person detection the net then checks the same frame and the alarm fires only for a person. <b>To tune:</b> leave the scene alone for a few minutes, read <i>peak</i> on the main page and set the threshold above it.</div>");
+
+    webSend("<hr><b>&#x1F6A8; Alarm</b>");
+    webNumber(npic, 1, 4, "Pictures per alarm (1-4)");
+    webCheckbox(ufl, "IR light while taking a picture");
+    webSend("<div class='hint'>MQTT: tele/&lt;topic&gt;/ALARM ON / OFF, found by Home Assistant as a binary sensor of this device. Pictures go to /PICS, deleted after 14 days.</div>");
+
+    webSend("<hr><b>&#x1F319; Night</b>");
+    webPulldown(ir_mode, "IR light (4 x 940 nm)", "Off|On|Automatic");
+    webNumber(ir_lux, 1, 1000, "Automatic: dark below (lux)");
+    webPulldown(nacht, "Night sensor mode", "Off|On|Automatic");
+    webPulldown(nacht_st, "Night strength", "x2 exposure, 8x gain|x4 exposure, 8x gain|x8 exposure, 16x gain");
+    if (ltr_bus >= 0) {
+        sprintf(buf, "<div class='hint'>Light sensor reads <b>%.2f lx</b>", lux);
+        webSend(buf);
+        if (dunkel) webSend(" (dark). "); else webSend(" (light). ");
+        webSend("Automatic = IR light and long exposure only when it is dark, off again above twice the threshold. The gain stays low on purpose: above 16x the IR LEDs' ripple shows as stripes.</div>");
+    } else {
+        webSend("<div class='hint'>No LTR-308 light sensor found &mdash; Automatic behaves like On.</div>");
+    }
+
+    webSend("<hr><b>&#x1F4F8; Now</b>");
+    webButton(doCapture, "Take Picture|saved");
+    webButton(doHiRes, "Hi-Res Capture|saved");
+    webButton(del_all, "Delete all pictures|deleted");
+
+    webSend("<div style='text-align:center;font-size:10px;color:#777;margin-top:10px'><b>cam_dfr1154.tc</b></div></div>");
+}
+
+void OnExit() {
+    camControl(15, 0, 0);      // stop stream server
+    camControl(18, 0, 0);      // free motion buffers
+    camControl(12, 0, 0);      // free all PSRAM slots
+    camControl(13, 0, 0);      // deinit camera
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// main
+// ═══════════════════════════════════════════════════════════════════
+int main() {
+    alarm_active = 1;          // no alarm until the first motion-clear
+    last_hour = -1;
+    last_bri = -1;
+    last_mot = -1;
+    ltr_bus = -1;
+    mq_state = -1;
+
+    if (limit == 0) limit = 400;
+    if (blim == 0) blim = 3000;       // above this the light shift is no longer uniform
+    if (mrun == 0) mrun = 2;
+    if (mrun > 30) mrun = 30;
+    if (pthr == 0) pthr = 50;         // the model's own 0.70 is too strict here
+    if (pthr < 10) pthr = 10;
+    if (pthr > 95) pthr = 95;
+    if (npic == 0) npic = 1;
+    if (npic > 4) npic = 4;
+    if (res_seen == 0) { res = RES_DEFAULT; res_seen = 1; }
+    if (nacht_seen == 0) {
+        ir_mode = 2; ir_lux = 10; nacht = 2; nacht_st = 1;    // automatic, x4/8x
+        nacht_seen = 1;
+    }
+    if (ir_lux < 1) ir_lux = 10;
+
+    // changed() starts clean
+    snapshot(limit); snapshot(blim); snapshot(mrun); snapshot(pdet);
+    snapshot(pthr); snapshot(spir); snapshot(ufl); snapshot(npic); snapshot(res);
+    snapshot(ir_mode); snapshot(ir_lux); snapshot(nacht); snapshot(nacht_st);
+
+    if (!fileExists("/PICS")) fileMkdir("/PICS");
+
+    if (initCamera() != 0) return -1;
+    cam_ok = 1;
+    res_masse();
+
+    // ⚠️ Sleep 0 for a streaming camera (gemu 03.10.2026): with the default
+    // Sleep 50 the radio naps, requests take ~140 ms instead of ~45, and the
+    // stream stalled for 1-1.7 s now and then. Stored by Tasmota itself.
+    tasmCmd("Sleep 0", tmp);
+
+    // ⚠️ The very first frame after init fails (-1), the sensor is settling.
+    int size = captureToSlot(1);
+    if (size < 0) { delay(400); size = captureToSlot(1); }
+    addLog("TCC: camera ready, first frame: %d bytes, heap: %d", size, tasm_heap);
+
+    // ⚠️ The light sensor AFTER the camera: it sits on GPIO 8/9, the camera's
+    // SCCB pins. Probing it first made the first capture fail.
+    ltr_bus = ltr_finden();
+
+    // ⚠️ Without a page label the settings page is unreachable.
+    webPageLabel(0, "Camera Setup");
+
+    // MJPEG stream server on port 81 (waits for WiFi by itself)
+    camControl(15, 1, 0);
+
+    // MQTT may already be up (program restarted): announce at the first tick.
+    if (tasm_mqttcon) mq_go = 1;
+
+    log_msg("camera booted");
+    return 0;
+}
