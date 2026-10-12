@@ -70,6 +70,7 @@ body.lang-de .en{display:none}
   <a href="#vars">/pwr?v=</a>
   <a href="#modbus">Modbus</a>
   <a href="#pvswitch"><span class="en">PV switch</span><span class="de">PV-Schalter</span></a>
+  <a href="#ftp">FTP-Backup</a>
   <a href="#options"><span class="en">Settings file</span><span class="de">Einstellungsdatei</span></a>
   <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
 </nav>
@@ -532,6 +533,90 @@ body.lang-de .en{display:none}
 <li>Der Verbraucher hängt an Relais&nbsp;1.</li>
 <li>Tipp: Stelle dort <code>PowerOnState 0</code> ein. Dann bleibt es nach einem Stromausfall aus, bis wieder Überschuss da ist.</li>
 </ul>
+</div>
+</section>
+
+<section id="ftp">
+<h2>FTP-Backup</h2>
+<div class="en">
+<p>Your counters and chart data live only on the device. If its flash dies, they are gone. The small extra program <b>FTP-Backup</b> copies them to a FRITZ!Box (or any other FTP server, a Synology for example) every night at 00:10, a few minutes after the SML program has written its data. It runs in a second slot next to your SML program, so it only costs RAM on devices that use it.</p>
+<h3>Setting it up (FRITZ!Box)</h3>
+<ol>
+<li>FRITZ!Box: <i>Home Network &rarr; Storage (NAS)</i>: switch on storage and <b>access via FTP</b>.</li>
+<li>FRITZ!Box: <i>System &rarr; FRITZ!Box Users</i>: create a user, for example <code>fritzuser</code>, with <b>access to NAS contents</b> and write permission.</li>
+<li>Create a folder for the backups on the FRITZ!Box, for example <code>Tasmota</code>.</li>
+<li>On the device, create the file <code>/ftp.cfg</code> (<i>Tools &rarr; Manage File system</i>, or the <b>ftp.cfg</b> link on the main page once the program runs). Four lines (<a href="ftp.cfg" download>example</a>):
+<pre>192.168.178.1
+fritzuser
+fritzpassword
+/Tasmota</pre>
+Line 1 is the IP of the FRITZ!Box. Use the number, not <code>fritz.box</code>. Lines 2 and 3 are user and password, line 4 is the folder, as an FTP program (FileZilla, for example) shows it after logging in to the FRITZ!Box.</li>
+<li><i>Tools &rarr; TinyC Console</i>: load <b>FTP-Backup</b> from the repository into a free slot (slot&nbsp;1, for example), switch on autostart and start it.</li>
+<li>Press <b>Backup</b> on the main page to test it.</li>
+</ol>
+<p>The password is stored in plain text in <code>/ftp.cfg</code> on the device. Better give the FRITZ!Box user access to this folder only.</p>
+<h3>On the main page</h3>
+<p>The dot shows how the last backup went: <b style="color:#0c0">&#9679;</b> worked, <b style="color:#e00">&#9679;</b> failed (the number in brackets says why, see below), <b style="color:#fa0">&#9679;</b> running, grey = never run. Next to it are the date and time of the last backup. <b>Backup</b> saves right now, <b>ftp.cfg</b> opens the file in the editor.</p>
+<h3>What is saved</h3>
+<p>Every <code>.pvs</code> (the data of the SML programs), every <code>.cfg</code> (settings, but not <code>ftp.cfg</code> and <code>tinyc.cfg</code>) and every <code>.def</code> (meter descriptor). They go into a subfolder named after the device's MQTT topic, so several devices can share one folder. In there is one folder per weekday, <code>1</code> (Monday) to <code>7</code> (Sunday). So you always have the last seven days, and a broken file does not overwrite the good copy of the day before. The night from Monday to Tuesday lands in <code>2</code>, and holds Monday's data. The <b>Backup</b> button saves into its own folder <code>0</code>, so it never replaces a nightly copy.</p>
+<h3>Restoring</h3>
+<ol>
+<li>Download the files from the FRITZ!Box.</li>
+<li>Stop the SML program in the TinyC Console. (On stop it writes its own <code>.pvs</code>, which would otherwise overwrite yours.)</li>
+<li>Upload the files under <i>Tools &rarr; Manage File system</i>.</li>
+<li>Start the SML program again.</li>
+</ol>
+<h3>Error numbers</h3>
+<table>
+<tr><th>-1</th><td>The FTP server does not answer. Wrong IP, or FTP is switched off.</td></tr>
+<tr><th>-2</th><td>No network.</td></tr>
+<tr><th>-3</th><td>Login refused: wrong user or password.</td></tr>
+<tr><th>-6</th><td>Wrong folder, or the user may not write there.</td></tr>
+<tr><th>-11</th><td><code>/ftp.cfg</code> is missing.</td></tr>
+<tr><th>-12</th><td>Not enough free RAM to start the backup.</td></tr>
+<tr><th>-13</th><td>The backup stopped with an error. The Tasmota log says more (<code>TCC: workerVM</code>).</td></tr>
+</table>
+<p>The exact answer of the server is in the Tasmota log (<code>TCC: ftp &hellip;</code>).</p>
+</div>
+<div class="de">
+<p>Deine Zählerstände und Diagrammdaten liegen nur auf dem Gerät. Geht dessen Flash kaputt, sind sie weg. Das kleine Zusatzprogramm <b>FTP-Backup</b> kopiert sie jede Nacht um 00:10 auf eine FRITZ!Box (oder einen anderen FTP-Server, z.&nbsp;B. eine Synology), ein paar Minuten nachdem das SML-Programm seine Daten geschrieben hat. Es läuft in einem zweiten Slot neben deinem SML-Programm und kostet daher nur auf Geräten RAM, die es nutzen.</p>
+<h3>Einrichten (FRITZ!Box)</h3>
+<ol>
+<li>FRITZ!Box: <i>Heimnetz &rarr; Speicher (NAS)</i>: Speicher und <b>Zugriff über FTP</b> einschalten.</li>
+<li>FRITZ!Box: <i>System &rarr; FRITZ!Box-Benutzer</i>: einen Benutzer anlegen, z.&nbsp;B. <code>fritzuser</code>, mit <b>Zugang zu NAS-Inhalten</b> und Schreibrecht.</li>
+<li>Auf der FRITZ!Box einen Ordner für die Sicherungen anlegen, z.&nbsp;B. <code>Tasmota</code> .</li>
+<li>Auf dem Gerät die Datei <code>/ftp.cfg</code> anlegen (<i>Werkzeuge &rarr; Dateisystem verwalten</i>, oder über den Link <b>ftp.cfg</b> auf der Hauptseite, sobald das Programm läuft). Vier Zeilen (<a href="ftp.cfg" download>Beispiel</a>):
+<pre>192.168.178.1
+fritzuser
+fritzpassword
+/Tasmota</pre>
+Zeile 1 ist die IP der FRITZ!Box. Nimm die Zahl, nicht <code>fritz.box</code>. Zeile 2 und 3 sind Benutzer und Passwort, Zeile 4 ist der Ordner, so wie ihn ein FTP-Programm (z.&nbsp;B. FileZilla) nach der Anmeldung an der FRITZ!Box zeigt.</li>
+<li><i>Werkzeuge &rarr; TinyC Console</i>: <b>FTP-Backup</b> aus dem Repository in einen freien Slot laden (z.&nbsp;B. Slot&nbsp;1), Autostart einschalten und starten.</li>
+<li>Zum Testen auf der Hauptseite <b>Backup</b> drücken.</li>
+</ol>
+<p>Das Passwort steht im Klartext in <code>/ftp.cfg</code> auf dem Gerät. Gib dem FRITZ!Box-Benutzer deshalb am besten nur Zugriff auf diesen Ordner.</p>
+<h3>Auf der Hauptseite</h3>
+<p>Der Punkt zeigt, wie die letzte Sicherung lief: <b style="color:#0c0">&#9679;</b> hat geklappt, <b style="color:#e00">&#9679;</b> fehlgeschlagen (die Zahl in Klammern sagt warum, siehe unten), <b style="color:#fa0">&#9679;</b> läuft gerade, grau = noch nie gelaufen. Daneben stehen Datum und Uhrzeit der letzten Sicherung. <b>Backup</b> sichert sofort, <b>ftp.cfg</b> öffnet die Datei im Editor.</p>
+<h3>Was gesichert wird</h3>
+<p>Jede <code>.pvs</code> (die Daten der SML-Programme), jede <code>.cfg</code> (Einstellungen, aber nicht <code>ftp.cfg</code> und <code>tinyc.cfg</code>) und jede <code>.def</code> (Zählerbeschreibung). Sie landen in einem Unterordner, der so heißt wie das MQTT-Topic des Geräts. So können sich mehrere Geräte einen Ordner teilen. Darin gibt es je Wochentag einen Ordner, <code>1</code> (Montag) bis <code>7</code> (Sonntag). So hast du immer die letzten sieben Tage, und eine kaputte Datei überschreibt nicht die gute Kopie vom Vortag. Die Nacht von Montag auf Dienstag landet in <code>2</code> und enthält die Daten vom Montag. Der Knopf <b>Backup</b> sichert in einen eigenen Ordner <code>0</code> und ersetzt so nie eine nächtliche Kopie.</p>
+<h3>Zurückspielen</h3>
+<ol>
+<li>Die Dateien von der FRITZ!Box herunterladen.</li>
+<li>Das SML-Programm in der TinyC Console stoppen. (Beim Stoppen schreibt es seine eigene <code>.pvs</code>, die sonst deine überschreiben würde.)</li>
+<li>Die Dateien unter <i>Werkzeuge &rarr; Dateisystem verwalten</i> hochladen.</li>
+<li>Das SML-Programm wieder starten.</li>
+</ol>
+<h3>Fehlernummern</h3>
+<table>
+<tr><th>-1</th><td>Der FTP-Server antwortet nicht. IP falsch oder FTP ausgeschaltet.</td></tr>
+<tr><th>-2</th><td>Kein Netz.</td></tr>
+<tr><th>-3</th><td>Anmeldung abgelehnt: Benutzer oder Passwort falsch.</td></tr>
+<tr><th>-6</th><td>Ordner falsch, oder der Benutzer darf dort nicht schreiben.</td></tr>
+<tr><th>-11</th><td><code>/ftp.cfg</code> fehlt.</td></tr>
+<tr><th>-12</th><td>Zu wenig freier RAM, um die Sicherung zu starten.</td></tr>
+<tr><th>-13</th><td>Die Sicherung ist mit einem Fehler abgebrochen. Mehr steht im Tasmota-Log (<code>TCC: workerVM</code>).</td></tr>
+</table>
+<p>Die genaue Antwort des Servers steht im Tasmota-Log (<code>TCC: ftp &hellip;</code>).</p>
 </div>
 </section>
 

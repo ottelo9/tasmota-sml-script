@@ -521,7 +521,7 @@
     <!-- Header -->
     <div class="header">
         <div>
-            <h1>TinyC IDE v1.6.71</h1>
+            <h1>TinyC IDE v1.6.73</h1>
             <!-- Version + heap limit are AUTO-INJECTED by bundle.py
                  from TC_RELEASE / TC_MAX_HEAP in xdrv_124_tinyc_vm.h
                  (user_config_override.h wins for heap). No hand-sync —
@@ -24403,14 +24403,34 @@ void CleanUp() {
                 // List user-facing examples; skip dev/test artifacts (test_*, bug*,
                 // *_diag, *selftest*, *smoke*) so the dropdown stays a real example list.
                 const skip = /^(test_|bug)|(_diag|selftest|smoke)/i;
+                // Same label as the Repository box on the device's /tc page (gemu2015/Sonoff-Tasmota#128):
+                // "Plain name (file)" from `// @name:` via bytecode/index.json, the bare file name where
+                // there is none, and the list sorted by THAT label — not by file name, which made the
+                // alphabet look random as soon as a name started with a different letter.
+                const names = {};
+                try {
+                    const bdir = REPO_EX_DIR.replace(/examples$/, 'bytecode');
+                    const jr = await fetch(`https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/${bdir}/index.json`, { mode: 'cors' });
+                    if (jr.ok) {
+                        const j = await jr.json();
+                        for (const e of ((j && j.programs) || j || [])) {
+                            if (e.file && e.name) names[e.file.replace(/\.tcb$/, '')] = e.name;
+                        }
+                    }
+                } catch (e) { /* offline or no index: the file names still work */ }
+                const labelOf = f => {
+                    const b = f.name.replace(/\.tc$/, '');
+                    return names[b] ? names[b] + ' (' + b + ')' : b;
+                };
                 const tc = files
                     .filter(f => f.type === 'file' && f.name.endsWith('.tc') && !skip.test(f.name))
-                    .sort((a, b) => a.name.localeCompare(b.name));
+                    .map(f => ({ f, label: labelOf(f) }))
+                    .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
                 sel.length = 1;                        // keep the placeholder
-                for (const f of tc) {
+                for (const { f, label } of tc) {
                     const o = document.createElement('option');
                     o.value = f.download_url;          // raw.githubusercontent URL (no API rate limit)
-                    o.textContent = f.name.replace(/\.tc$/, '');
+                    o.textContent = label;
                     sel.appendChild(o);
                 }
                 sel.options[0].textContent = 'Repo Examples (' + tc.length + ')...';

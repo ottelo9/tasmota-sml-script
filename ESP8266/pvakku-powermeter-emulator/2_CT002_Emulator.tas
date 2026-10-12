@@ -1,5 +1,5 @@
 >D 180
-; CT002 Emulator V1.1 für ESP8266 und Tasmota Image von next145 (via KI)
+; CT002 Emulator V1.2 (Relay + Dedupe) für ESP8266 und Tasmota Image von next145 (via KI)
 ; https://github.com/ottelo9/tasmota-sml-script/discussions/79#discussioncomment-18709465
 ; Emuliert einen Marstek CT002 (Smart Meter) für Marstek Akkus (Venus, Jupiter, B2500)
 ; Bis zu 4 Akkus, UDP-Port 12345. Die Akkus fragen den CT002 per UDP ab, das Script
@@ -17,7 +17,7 @@ rx=""
 r=""
 tx=""
 
-; Feld d[1..61]:
+; Feld d[1..65]:
 ; d[1..5]   Anzahl aktiver Akkus je Modus (1=Total/x, 2=A, 3=B, 4=C, 5=D)
 ; d[6..10]  Summe der negativen Leistungen je Modus (Laden)
 ; d[11..15] Summe der positiven Leistungen je Modus (Entladen)
@@ -25,7 +25,8 @@ tx=""
 ;           d[b]=Modus (0=frei), d[b+1]=Leistung, d[b+2]=Teilnahme,
 ;           d[b+3]=letzte Anfrage (upsecs), d[b+4..b+9]=MAC des Akkus
 ; d[56..61] MAC des anfragenden Akkus (6 Bytes)
-M:d=0 61
+; d[62..65] je Slot der zuletzt weitergegebene Zählerwert (Stand von gn)
+M:d=0 65
 
 ; Zähler, Indizes, Zwischenwerte
 i=0
@@ -54,23 +55,23 @@ t=0
 g=0
 ; cl = Länge der CT-MAC
 cl=0
-; mt = Zeitpunkt der letzten Fehlermeldung per MQTT
-mt=-30
+; gn = Nummer des aktuellen Zählerwerts (zählt bei jedem neuen Wert hoch)
+gn=0
+; z = Leistung, die dieser Akku in der Antwort bekommt
+z=0
 
 >B
 ->SetOption57 0
 ->sensor53 r
 smlj=9
 
-; Fehler höchstens alle 30 s per MQTT melden
-#perr
-g=upsecs-mt
-if g>=30 {
-  mt=upsecs
-  =>Publish2 stat/%topic%/CTDiag {"error":"invalid_power","uptime":%0upsecs%}
+>F
+; Neuer Zählerwert da? Dann gn hochzählen und die Statusflags löschen
+if smlv[1]>0 {
+  gn+=1
+  g=smlv[0]
 }
 
->F
 ; ---------------------------------------------------------------------------
 ; Anfrage eines Akkus empfangen und prüfen
 ; Rahmen: SOH STX <Länge> |Feld1|...|FeldN ETX <Prüfsumme 2 Hex>
@@ -142,7 +143,7 @@ if hd(r)!=cs {
 rx=sb(rx j+1 (n-j-4))+"|"
 
 ; ---------------------------------------------------------------------------
-; Felder lesen (ohne Stringkopien)
+; Anfragefelder lesen
 ; ---------------------------------------------------------------------------
 ; Feld 1: Akkutyp (1..10 Zeichen), wird in der Antwort zurückgegeben
 r=st(rx '|' 1)
@@ -211,7 +212,6 @@ if sb(r 0 1)=="-" {
   a=1
 }
 if sl(r)<=a {
-  =#perr
   break
 }
 for i a (sl(r)-1) 1
@@ -226,17 +226,14 @@ for i a (sl(r)-1) 1
   v=v*10+c-48
 next
 if ok==0 {
-  =#perr
   break
 }
 p=v*sg
 ; muss in 16 Bit mit Vorzeichen passen
 if p<-32768 {
-  =#perr
   break
 }
 if p>32767 {
-  =#perr
   break
 }
 
@@ -316,6 +313,12 @@ if k==0 {
 if k==0 {
   break
 }
+; Jedem Akku jeden Zählerwert nur einmal weitergeben, sonst 0
+z=sml[1]
+if d[61+k]==gn {
+  z=0
+}
+d[61+k]=gn
 
 ; Akku im Slot speichern: MAC, Modus, Leistung, Teilnahme, Zeit
 b=16+((k-1)*10)
@@ -362,7 +365,7 @@ for i 1 6 1
   tx+=hn(d[55+i])
 next
 ix=(ix+1)%256
-tx+="|"+s(0sml[1])+"|0|0|"+s(0sml[1])
+tx+="|"+s(0z)+"|0|0|"+s(0z)
 for i 2 5 1
   tx+="|"+s(0d[i])
 next
@@ -419,7 +422,7 @@ if wifis==0 {
 CT Type{m}CT002
 CT MAC{m}%cm%
 Mode A/B/C/D{m}%0d[2]%/%0d[3]%/%0d[4]%/%0d[5]%
-$<small>CT-Emu 03.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
+$<small>CT-Emu 12.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
 
 ; SML Sektion an euren Stromzähler anpassen
 ; Reihenfolge nicht ändern: 1=Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]

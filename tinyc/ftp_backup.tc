@@ -1,0 +1,171 @@
+// @name: FTP-Backup
+// @info: https://ottelo9.github.io/tasmota-sml-script/sml/#ftp
+// ftp_backup.tc — copies the data of the SML programs to an FTP server
+// (FRITZ!NAS, Synology, ...) every night at 00:10 and on the Backup button.
+// Runs in its own slot next to the SML program, so devices without a backup
+// pay no RAM for it. Docs: https://ottelo9.github.io/tasmota-sml-script/sml/#ftp
+//
+// Sends every *.pvs, *.cfg and *.def from the file system (not its own .pvs,
+// ftp.cfg or the firmware's tinyc.cfg) to
+// <folder>/<MQTT topic>/<1..7>/ (weekday of the run, Monday = 1), so a week
+// of copies is kept; the Backup button uses 0 instead.
+// /ftp.cfg, four lines:
+// IP, user, password, folder (a file path as in gemu's ftp_log.tc also works,
+// its folder is taken).
+
+persist int bk_res;            // 0 never, 1 ok, 2 failed
+persist int bk_code;           // last error
+persist int bk_d; persist int bk_m; persist int bk_y;
+persist int bk_hm;             // hhmm
+int bk_go;                     // Backup button
+int bk_now;                    // start at the next tick
+int bk_busy;                   // worker running
+int bk_day;                    // day of the last nightly run
+int bk_man;                    // 1 = started by the button
+int bk_ack;                    // seconds the button still shows the result
+
+void bkLine(byte d[], byte s[], int n) {
+    strToken(d, s, '\n', n);
+    int k = strlen(d);
+    while (k > 0 && (d[k - 1] == '\r' || d[k - 1] == ' ')) { k = k - 1; d[k] = 0; }
+}
+
+int bkWant(byte n[]) {
+    if (strcmp(n, "ftp_backup.pvs") == 0 || strcmp(n, "tinyc.cfg") == 0) return 0;
+    if (strFind(n, ".pvs") > 0) return 1;
+    if (strFind(n, ".def") > 0) return 1;
+    if (strFind(n, ".cfg") > 0 && strcmp(n, "ftp.cfg") != 0) return 1;
+    return 0;
+}
+
+// spawnTask worker: FTP blocks, and here the VM lets go meanwhile. Its own
+// VM needs the firmware fix that lets a worker use arrays > 16 elements
+// (tasmota-sml-images, 12.10.2026) - without it this dies with BOUNDS.
+void bkWork() {
+    byte cfg[240]; byte h[40]; byte u[40]; byte p[40]; byte d[128];
+    byte t[40]; byte n[48]; byte l[52]; byte r[180];
+    int e = -11;
+    int cnt = 0;
+    int f = fileOpen("/ftp.cfg", 0);
+    if (f >= 0) {
+        int k = fileRead(f, cfg, 239);
+        fileClose(f);
+        if (k < 0) k = 0;
+        cfg[k] = 0;
+        bkLine(h, cfg, 1); bkLine(u, cfg, 2); bkLine(p, cfg, 3); bkLine(d, cfg, 4);
+        // A file name at the end (ftp_log.tc style): keep its folder.
+        int s = strlen(d) - 1;
+        if (s > 0 && d[s] == '/') { d[s] = 0; s = s - 1; }
+        while (s > 0 && d[s] != '/') s = s - 1;
+        int j = s;
+        while (d[j] != 0) { if (d[j] == '.') d[s] = 0; j = j + 1; }
+        tasmInfo(0, t);
+        e = ftpOpen(h, u, p);
+        if (e == 0) {
+            ftpMkdir(d);                 // refused if it exists - fine
+            strcat(d, "/");
+            strcat(d, t);
+            ftpMkdir(d);
+            int wd = tasm_wday - 1;      // Tasmota: 1 = Sunday
+            if (wd < 1) wd = 7;
+            if (bk_man == 1) wd = 0;
+            sprintf(n, "/%d", wd);
+            strcat(d, n);
+            ftpMkdir(d);
+            int dh = fileOpenDir("/");
+            if (dh >= 0) {
+                while (e >= 0 && fileReadDir(dh, n)) {
+                    if (bkWant(n)) {
+                        sprintf(l, "/%s", n);
+                        sprintf(r, "%s/%s", d, n);
+                        e = ftpPut(r, l, 0);
+                        if (e >= 0) cnt = cnt + 1;
+                    }
+                }
+                fileClose(dh);
+            }
+            ftpClose();
+        }
+    }
+    bk_d = tasm_day; bk_m = tasm_month; bk_y = tasm_year;
+    bk_hm = tasm_hour * 100 + tasm_minute;
+    if (e >= 0) {
+        bk_res = 1;
+        addLog("ftpbk: %d files", cnt);
+    } else {
+        bk_res = 2;
+        bk_code = e;
+        addLog("ftpbk: err %d", e);
+    }
+    if (bk_man == 1) bk_ack = 5;
+    bk_busy = 0;
+}
+
+void EverySecond() {
+    if (bk_ack > 0) bk_ack = bk_ack - 1;
+    if (bk_busy) {
+        // The worker ends with bk_busy = 0. Gone without it = it crashed.
+        if (taskRunning("bkWork") == 0) {
+            bk_busy = 0;
+            bk_res = 2;
+            bk_code = -13;
+            bk_d = tasm_day; bk_m = tasm_month; bk_y = tasm_year;
+            bk_hm = tasm_hour * 100 + tasm_minute;
+            if (bk_man == 1) bk_ack = 5;
+        }
+        return;
+    }
+    // 00:10: the SML programs write their files at midnight.
+    if (tasm_hour == 0 && tasm_minute == 10 && bk_day != tasm_day && tasm_year > 2020) {
+        bk_day = tasm_day;
+        bk_now = 1;
+        bk_man = 0;
+    }
+    if (bk_now == 0) return;
+    bk_now = 0;
+    bk_busy = 1;
+    if (spawnTask("bkWork", 8) < 0) {
+        bk_busy = 0;
+        bk_res = 2;
+        bk_code = -12;
+    }
+}
+
+void WebCall() {
+    byte b[24];
+    // Handled while drawing: left to the next tick, the answer would still
+    // show the button pressed and the next click would send 0.
+    if (bk_go == 1) {
+        bk_go = 0;
+        if (bk_busy == 0) { bk_now = 1; bk_man = 1; }
+    }
+    if (bk_busy == 1 || bk_now == 1) strcpy(b, "#fa0");
+    else if (bk_res == 1)            strcpy(b, "#0c0");
+    else if (bk_res == 2)            strcpy(b, "#e00");
+    else                             strcpy(b, "#888");
+    byte c[260];
+    if (bk_res == 0) {
+        sprintf(c, "{s}<span style='color:%s'>&#9679;</span> -", b);
+    } else {
+        sprintf(c, "{s}<span style='color:%s'>&#9679;</span> <span style='font-weight:normal;font-size:.85em'>&#x1F552; %02d.%02d.%04d - %02d:%02d</span>", b, bk_d, bk_m, bk_y, bk_hm / 100, bk_hm % 100);
+    }
+    if (bk_res == 2) {
+        sprintf(b, " (%d)", bk_code);
+        strcat(c, b);
+    }
+    strcat(c, "{m}<a href='/ufse?file=/ftp.cfg'>ftp.cfg</a>{e}");
+    webSend(c);
+    // The click itself only flashes a tick; the label shows the run and its
+    // result for a few seconds, so a press is visible.
+    byte lb[24];
+    if (bk_busy == 1 || bk_now == 1)  strcpy(lb, "&#x23F3; Backup");
+    else if (bk_ack > 0 && bk_res == 1) strcpy(lb, "&#x2705; Backup");
+    else if (bk_ack > 0)              strcpy(lb, "&#x274C; Backup");
+    else                              strcpy(lb, "Backup");
+    webButtonV(bk_go, lb);
+}
+
+int main() {
+    addLog("ftpbk: start");
+    return 0;
+}

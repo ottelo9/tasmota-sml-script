@@ -9,7 +9,7 @@ GitHub Pages). Personal setup, devices and working rules: `CLAUDE.local.md`
 
 | Path | What |
 |---|---|
-| `tinyc/*.tc` | the six programs: `sml_simple`, `sml_chart`, `sml_ct002`, `sml_chart_ct002`, `sml_eco_shelly`, `sml_chart_eco_shelly` |
+| `tinyc/*.tc` | the six programs: `sml_simple`, `sml_chart`, `sml_ct002`, `sml_chart_ct002`, `sml_eco_shelly`, `sml_chart_eco_shelly`; plus `ftp_backup` (own slot, one language, no `sml_vers`; nightly 00:10 copy of `*.pvs`/`*.cfg`/`*.def` via `/ftp.cfg` into `<folder>/<topic>/<weekday 1..7>`, the button into `.../0`) |
 | `tinyc/common/` | shared modules, `#include`d by the programs |
 | `tinyc/bytecode/` | built `.tcb`, `build.html` (the compiler), `index.json` (program picker) |
 | `docs/<topic>/index.html` | help pages, `en`/`de` blocks side by side |
