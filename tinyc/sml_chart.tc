@@ -1,5 +1,6 @@
 // @name: SML Chart
 // @info: https://ottelo9.github.io/tasmota-sml-script/sml/
+// @order: 11
 // sml_chart.tc — SML meter with charts and tables, no emulator.
 // PV (feed-in) is a switch, not a separate build: the extra rings cost about
 // 180 bytes, so they are always compiled in and only the display is gated.

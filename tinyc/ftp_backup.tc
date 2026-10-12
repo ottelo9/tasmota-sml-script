@@ -1,5 +1,6 @@
 // @name: FTP-Backup
 // @info: https://ottelo9.github.io/tasmota-sml-script/sml/#ftp
+// @order: 31
 // ftp_backup.tc — copies the data of the SML programs to an FTP server
 // (FRITZ!NAS, Synology, ...) every night at 00:10 and on the Backup button.
 // Runs in its own slot next to the SML program, so devices without a backup

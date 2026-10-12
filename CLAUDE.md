@@ -33,6 +33,9 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   build.html turns it into the program's name, `SML Chart [12.10.26]`, in
   `index.json` and in the .tcb header - the firmware (own patch in the images)
   shows it in the repository list and the slot rows and flags a newer date.
+- List order: `// @order: N` under `@info` (charts 11-13, SML 21-23, FTP-Backup 31);
+  build.html writes index.json in that order with `"ordered":true` and a
+  `{"sep":1}` separator where the tens change.
 - Help pages are bilingual — change both languages together. Behaviour changes
   go into the help page, not into source comments.
 - Do not commit unless asked. Commit messages: German, a title line plus short

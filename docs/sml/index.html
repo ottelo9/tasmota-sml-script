@@ -112,7 +112,7 @@ body.lang-de .en{display:none}
 <div class="en">
 <p>Choose one program and load it into slot&nbsp;0. The programs are ready to use, you do not need to compile anything. Modbus is available in all of them.</p>
 <table>
-<tr><th>SML Simple</th><td>Reads the meter. The smallest program.</td></tr>
+<tr><th>SML (no Charts)</th><td>Reads the meter. The smallest program.</td></tr>
 <tr><th>SML Chart</th><td>Also shows charts and daily, monthly and yearly values. Feed-in can be switched on.</td></tr>
 <tr><th>SML + Marstek CT002</th><td>Also pretends to be a Marstek CT002/CT003 meter for Marstek batteries (<a href="../ct002/">help</a>).</td></tr>
 <tr><th>SML Chart + Marstek CT002</th><td>Charts and CT002 emulator.</td></tr>
@@ -133,7 +133,7 @@ body.lang-de .en{display:none}
 <div class="de">
 <p>Such dir ein Programm aus und lade es in Slot&nbsp;0. Die Programme sind fertig, du musst nichts kompilieren. Modbus ist in allen dabei.</p>
 <table>
-<tr><th>SML Simple</th><td>Liest den Zähler aus. Das kleinste Programm.</td></tr>
+<tr><th>SML (ohne Charts)</th><td>Liest den Zähler aus. Das kleinste Programm.</td></tr>
 <tr><th>SML Chart</th><td>Zeigt zusätzlich Diagramme und Tages-, Monats- und Jahreswerte. Einspeisung lässt sich dazuschalten.</td></tr>
 <tr><th>SML + Marstek CT002</th><td>Gibt sich zusätzlich als Marstek-Zähler CT002/CT003 aus, für Marstek-Akkus (<a href="../ct002/">Hilfe</a>).</td></tr>
 <tr><th>SML Chart + Marstek CT002</th><td>Diagramme und CT002-Emulator.</td></tr>
@@ -277,7 +277,7 @@ body.lang-de .en{display:none}
 <section id="gaswater">
 <h2><span class="en">Gas and water meters</span><span class="de">Gas- und Wasserzähler</span></h2>
 <div class="en">
-<p>Only in <b>SML Simple</b> and <b>SML Chart</b>. Instead of the electricity meter you can read a gas or water meter that gives pulses (for example with a reed contact). In the meter list under <b>Allgemein</b> you find the <i>Gaszähler</i> (0.01&nbsp;m³ per pulse) and the <i>Wasserzähler</i> (1&nbsp;litre per pulse). If your meter is different, change <code>@100</code> or <code>@1000</code> in the descriptor. That number is the number of pulses per m³.</p>
+<p>Only in <b>SML (no Charts)</b> and <b>SML Chart</b>. Instead of the electricity meter you can read a gas or water meter that gives pulses (for example with a reed contact). In the meter list under <b>Allgemein</b> you find the <i>Gaszähler</i> (0.01&nbsp;m³ per pulse) and the <i>Wasserzähler</i> (1&nbsp;litre per pulse). If your meter is different, change <code>@100</code> or <code>@1000</code> in the descriptor. That number is the number of pulses per m³.</p>
 <p>The program sees the line <code>;kind=gas</code> or <code>;kind=water</code> in the descriptor and switches over by itself:</p>
 <ul>
 <li>Main page: flow (gas in m³/h, water in l/min), the meter reading, and day, week, month and year, all in m³.</li>
@@ -289,7 +289,7 @@ body.lang-de .en{display:none}
 <p class="warn">If you used the device for electricity before, the totals still start from the old kWh reading. Press <a href="#data">Data</a> &rarr; &#x1F522; Reset and &#x1F4CA; Reset once.</p>
 </div>
 <div class="de">
-<p>Nur in <b>SML Simple</b> und <b>SML Chart</b>. Statt des Stromzählers kannst du einen Gas- oder Wasserzähler auslesen, der Impulse abgibt (zum Beispiel über einen Reedkontakt). In der Zählerliste unter <b>Allgemein</b> findest du den <i>Gaszähler</i> (0,01&nbsp;m³ pro Impuls) und den <i>Wasserzähler</i> (1&nbsp;Liter pro Impuls). Ist dein Zähler anders, ändere <code>@100</code> bzw. <code>@1000</code> im Descriptor. Diese Zahl ist die Anzahl der Impulse pro m³.</p>
+<p>Nur in <b>SML (ohne Charts)</b> und <b>SML Chart</b>. Statt des Stromzählers kannst du einen Gas- oder Wasserzähler auslesen, der Impulse abgibt (zum Beispiel über einen Reedkontakt). In der Zählerliste unter <b>Allgemein</b> findest du den <i>Gaszähler</i> (0,01&nbsp;m³ pro Impuls) und den <i>Wasserzähler</i> (1&nbsp;Liter pro Impuls). Ist dein Zähler anders, ändere <code>@100</code> bzw. <code>@1000</code> im Descriptor. Diese Zahl ist die Anzahl der Impulse pro m³.</p>
 <p>Das Programm erkennt die Zeile <code>;kind=gas</code> oder <code>;kind=water</code> im Descriptor und stellt selbst um:</p>
 <ul>
 <li>Hauptseite: Durchfluss (Gas in m³/h, Wasser in l/min), Zählerstand sowie Tag, Woche, Monat und Jahr, alles in m³.</li>

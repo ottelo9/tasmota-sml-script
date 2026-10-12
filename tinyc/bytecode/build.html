@@ -260,7 +260,7 @@ $('build').onclick = async () => {
       if (r.error) throw new Error(r.error);
       await write(base + '.tcb', r.binary);
       built.push(base + '.tcb');
-      meta.push({ file: base + '.tcb', name: label(src), info: pragma(src, 'info') });
+      meta.push({ file: base + '.tcb', name: label(src), info: pragma(src, 'info'), order: parseInt(pragma(src, 'order'), 10) || 999 });
       rows.push('<tr><td>' + name + '</td><td class="num">' + r.binary.length.toLocaleString('de-DE') +
                 '</td><td class="ok">ok</td></tr>');
       log('ok: ' + base + '.tcb (' + r.binary.length + ' B)');
@@ -283,13 +283,20 @@ $('build').onclick = async () => {
     // nimmt index.json und faellt auf index.txt zurueck, ältere Firmware kennt
     // nur die alte Datei.
     // Leere Felder bleiben weg statt als "" dazustehen.
-    const eintraege = meta.map(m => {
+    // Reihenfolge aus `// @order: N` (ohne: hinten, nach Name). "ordered" sagt der
+    // Firmware (eigener Patch im Images-Repo), dass sie die Liste nicht sortieren soll.
+    // Wechselt die Zehnerstelle (11-13, 21-23, 31), kommt ein Trennstrich {"sep":1}
+    // dazwischen; aeltere Firmware zeigt ihn als leere Zeile, die IDE uebergeht ihn.
+    meta.sort((a, b) => a.order - b.order || (a.name || a.file).localeCompare(b.name || b.file));
+    const eintraege = [];
+    meta.forEach((m, i) => {
+      if (i > 0 && Math.floor(m.order / 10) !== Math.floor(meta[i - 1].order / 10)) eintraege.push({ sep: 1 });
       const o = { file: m.file };
       if (m.name) o.name = m.name;
       if (m.info) o.info = m.info;
-      return o;
+      eintraege.push(o);
     });
-    await write('index.json', JSON.stringify({ programs: eintraege }, null, 0) + '\n');
+    await write('index.json', JSON.stringify({ ordered: true, programs: eintraege }, null, 0) + '\n');
     log('index.json: ' + eintraege.length + ' Einträge, ' + eintraege.filter(e => e.name).length + ' mit Klarname');
   }
 

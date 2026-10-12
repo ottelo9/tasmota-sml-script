@@ -1,5 +1,6 @@
-// @name: SML Simple
+// @name: SML (no Charts)
 // @info: https://ottelo9.github.io/tasmota-sml-script/sml/
+// @order: 21
 // sml_simple.tc — SML meter readout, no charts, no emulator.
 // Smallest program of the family: pick the meter, read it, hand the values
 // on via MQTT and HTTP. Charts: sml_chart.tc. Emulator: sml_ct002.tc.
