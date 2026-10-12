@@ -545,12 +545,12 @@ body.lang-de .en{display:none}
 <li>FRITZ!Box: <i>Home Network &rarr; Storage (NAS)</i>: switch on storage and <b>access via FTP</b>.</li>
 <li>FRITZ!Box: <i>System &rarr; FRITZ!Box Users</i>: create a user, for example <code>fritzuser</code>, with <b>access to NAS contents</b> and write permission.</li>
 <li>Create a folder for the backups on the FRITZ!Box, for example <code>Tasmota</code>.</li>
-<li>On the device, create the file <code>/ftp.cfg</code> (<i>Tools &rarr; Manage File system</i>, or the <b>ftp.cfg</b> link on the main page once the program runs). Four lines (<a href="ftp.cfg" download>example</a>):
-<pre>192.168.178.1
-fritzuser
-fritzpassword
-/Tasmota</pre>
-Line 1 is the IP of the FRITZ!Box. Use the number, not <code>fritz.box</code>. Lines 2 and 3 are user and password, line 4 is the folder, as an FTP program (FileZilla, for example) shows it after logging in to the FRITZ!Box.</li>
+<li>On the device, create the file <code>/ftp.cfg</code> (<i>Tools &rarr; Manage File system</i>, or the <b>ftp.cfg</b> link on the main page once the program runs). Like this (<a href="ftp.cfg" download>example</a>):
+<pre>HOST=192.168.178.1
+USER=fritzuser
+PW=fritzpassword
+DIR=/Tasmota</pre>
+<code>HOST</code> is the IP of the FRITZ!Box. Use the number, not <code>fritz.box</code>. <code>USER</code> and <code>PW</code> are user and password, <code>DIR</code> is the folder, as an FTP program (FileZilla, for example) shows it after logging in to the FRITZ!Box. Lines starting with <code>//</code> are comments.</li>
 <li><i>Tools &rarr; TinyC Console</i>: load <b>FTP-Backup</b> from the repository into a free slot (slot&nbsp;1, for example), switch on autostart and start it.</li>
 <li>Press <b>Backup</b> on the main page to test it.</li>
 </ol>
@@ -572,7 +572,7 @@ Line 1 is the IP of the FRITZ!Box. Use the number, not <code>fritz.box</code>. L
 <tr><th>-2</th><td>No network.</td></tr>
 <tr><th>-3</th><td>Login refused: wrong user or password.</td></tr>
 <tr><th>-6</th><td>Wrong folder, or the user may not write there.</td></tr>
-<tr><th>-11</th><td><code>/ftp.cfg</code> is missing.</td></tr>
+<tr><th>-11</th><td><code>/ftp.cfg</code> is missing, or has no <code>HOST=</code> line.</td></tr>
 <tr><th>-12</th><td>Not enough free RAM to start the backup.</td></tr>
 <tr><th>-13</th><td>The backup stopped with an error. The Tasmota log says more (<code>TCC: workerVM</code>).</td></tr>
 </table>
@@ -585,12 +585,12 @@ Line 1 is the IP of the FRITZ!Box. Use the number, not <code>fritz.box</code>. L
 <li>FRITZ!Box: <i>Heimnetz &rarr; Speicher (NAS)</i>: Speicher und <b>Zugriff über FTP</b> einschalten.</li>
 <li>FRITZ!Box: <i>System &rarr; FRITZ!Box-Benutzer</i>: einen Benutzer anlegen, z.&nbsp;B. <code>fritzuser</code>, mit <b>Zugang zu NAS-Inhalten</b> und Schreibrecht.</li>
 <li>Auf der FRITZ!Box einen Ordner für die Sicherungen anlegen, z.&nbsp;B. <code>Tasmota</code> .</li>
-<li>Auf dem Gerät die Datei <code>/ftp.cfg</code> anlegen (<i>Werkzeuge &rarr; Dateisystem verwalten</i>, oder über den Link <b>ftp.cfg</b> auf der Hauptseite, sobald das Programm läuft). Vier Zeilen (<a href="ftp.cfg" download>Beispiel</a>):
-<pre>192.168.178.1
-fritzuser
-fritzpassword
-/Tasmota</pre>
-Zeile 1 ist die IP der FRITZ!Box. Nimm die Zahl, nicht <code>fritz.box</code>. Zeile 2 und 3 sind Benutzer und Passwort, Zeile 4 ist der Ordner, so wie ihn ein FTP-Programm (z.&nbsp;B. FileZilla) nach der Anmeldung an der FRITZ!Box zeigt.</li>
+<li>Auf dem Gerät die Datei <code>/ftp.cfg</code> anlegen (<i>Werkzeuge &rarr; Dateisystem verwalten</i>, oder über den Link <b>ftp.cfg</b> auf der Hauptseite, sobald das Programm läuft). So (<a href="ftp.cfg" download>Beispiel</a>):
+<pre>HOST=192.168.178.1
+USER=fritzuser
+PW=fritzpassword
+DIR=/Tasmota</pre>
+<code>HOST</code> ist die IP der FRITZ!Box. Nimm die Zahl, nicht <code>fritz.box</code>. <code>USER</code> und <code>PW</code> sind Benutzer und Passwort, <code>DIR</code> ist der Ordner, so wie ihn ein FTP-Programm (z.&nbsp;B. FileZilla) nach der Anmeldung an der FRITZ!Box zeigt. Zeilen mit <code>//</code> am Anfang sind Kommentare.</li>
 <li><i>Werkzeuge &rarr; TinyC Console</i>: <b>FTP-Backup</b> aus dem Repository in einen freien Slot laden (z.&nbsp;B. Slot&nbsp;1), Autostart einschalten und starten.</li>
 <li>Zum Testen auf der Hauptseite <b>Backup</b> drücken.</li>
 </ol>
@@ -612,7 +612,7 @@ Zeile 1 ist die IP der FRITZ!Box. Nimm die Zahl, nicht <code>fritz.box</code>. Z
 <tr><th>-2</th><td>Kein Netz.</td></tr>
 <tr><th>-3</th><td>Anmeldung abgelehnt: Benutzer oder Passwort falsch.</td></tr>
 <tr><th>-6</th><td>Ordner falsch, oder der Benutzer darf dort nicht schreiben.</td></tr>
-<tr><th>-11</th><td><code>/ftp.cfg</code> fehlt.</td></tr>
+<tr><th>-11</th><td><code>/ftp.cfg</code> fehlt, oder es fehlt die Zeile <code>HOST=</code>.</td></tr>
 <tr><th>-12</th><td>Zu wenig freier RAM, um die Sicherung zu starten.</td></tr>
 <tr><th>-13</th><td>Die Sicherung ist mit einem Fehler abgebrochen. Mehr steht im Tasmota-Log (<code>TCC: workerVM</code>).</td></tr>
 </table>

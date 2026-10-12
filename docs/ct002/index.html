@@ -143,7 +143,7 @@ body.lang-de .en{display:none}
 <tr><th>Trim [W]</th><td>Recommended <b>15</b> (already set on a new install). Marstek batteries always stop a few watts too early and leave a small import standing. Trim pushes them those last few watts further, but only when things are calm (between 0 and 120&nbsp;W import for a few seconds). 0 = off.</td></tr>
 <tr><th>Step [W]</th><td>Recommended <b>30</b> (already set on a new install). Limits how big a change the battery is told each second. That makes the regulation calmer. When the batteries follow well, the step grows by itself up to three times this value. If a battery does not react at all for four seconds (empty, limited, or the step is too small for it), the limit is opened so it does not get stuck. 0 = off.</td></tr>
 <tr><th>Min DC [W]</th><td>Default 0 = off. Only for a B2500: it switches off at 0&nbsp;W and falls asleep when there is a lot of solar power. With e.g. 20&nbsp;W the CT always reports at least this much import, so the battery keeps running. <b>Costs exactly those watts of feed-in when the sun shines.</b> Venus batteries do not need it.</td></tr>
-<tr><th>Max DC [W]</th><td>Default 0 = off. The most each battery may discharge. The rest comes from the grid. Charging is not limited. You can also change it from Home Assistant, see <a href="#homeassistant">Discharge limit</a>.</td></tr>
+<tr><th>Max DC [W]</th><td>Default 0 = off. The most each battery may discharge. The rest comes from the grid. Charging is not limited. A negative value makes each battery charge with at least that much, see <a href="#homeassistant">Discharge limit</a>. You can also change it from Home Assistant, see <a href="#homeassistant">Discharge limit</a>.</td></tr>
 </table>
 <p><b>Offset and Trim together:</b> the offset is the margin you want, the trim makes sure that margin is really reached. With an offset of 50 and a trim of 15 you get 50&nbsp;W import, not 65.</p>
 <p><b>What Active control also does</b> (no settings needed, following the proven control of <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">AstraMeter</a>):</p>
@@ -170,7 +170,7 @@ body.lang-de .en{display:none}
 <tr><th>Trim [W]</th><td>Empfohlen <b>15</b> (bei einer Neuinstallation schon eingestellt). Marstek-Akkus hören immer ein paar Watt zu früh auf und lassen einen kleinen Bezug stehen. Trim schiebt sie diese letzten Watt weiter, aber nur, wenn es ruhig ist (einige Sekunden zwischen 0 und 120&nbsp;W Bezug). 0 = aus.</td></tr>
 <tr><th>Schritt [W]</th><td>Empfohlen <b>30</b> (bei einer Neuinstallation schon eingestellt). Begrenzt, wie große Änderungen dem Akku pro Sekunde gemeldet werden. Das macht die Regelung ruhiger. Folgen die Akkus gut, wird der Schritt von selbst größer, bis zum Dreifachen. Reagiert ein Akku vier Sekunden lang gar nicht (leer, begrenzt, oder der Schritt ist ihm zu klein), wird die Grenze geöffnet, damit er nicht hängen bleibt. 0 = aus.</td></tr>
 <tr><th>Min DC [W]</th><td>Standard 0 = aus. Nur für einen B2500: Er schaltet bei 0&nbsp;W ab und schläft bei viel Solarstrom ein. Mit z.B. 20&nbsp;W meldet das CT immer mindestens so viel Bezug, damit der Akku weiterläuft. <b>Kostet bei Sonne genau diese Watt an Einspeisung.</b> Venus-Akkus brauchen das nicht.</td></tr>
-<tr><th>Max DC [W]</th><td>Standard 0 = aus. So viel darf jeder Akku höchstens entladen. Den Rest liefert das Netz. Laden wird nicht begrenzt. Du kannst den Wert auch aus Home Assistant ändern, siehe <a href="#homeassistant">Entladelimit</a>.</td></tr>
+<tr><th>Max DC [W]</th><td>Standard 0 = aus. So viel darf jeder Akku höchstens entladen. Den Rest liefert das Netz. Laden wird nicht begrenzt. Ein negativer Wert lässt jeden Akku mit mindestens so viel laden, siehe <a href="#homeassistant">Entladelimit</a>. Du kannst den Wert auch aus Home Assistant ändern, siehe <a href="#homeassistant">Entladelimit</a>.</td></tr>
 </table>
 <p><b>Offset und Trim zusammen:</b> Der Offset ist der Abstand, den du willst, der Trim sorgt dafür, dass er auch wirklich erreicht wird. Mit Offset 50 und Trim 15 bekommst du 50&nbsp;W Bezug und nicht 65.</p>
 <p><b>Was die Aktive Regelung außerdem macht</b> (ohne Einstellungen, nach dem bewährten Vorbild von <a href="https://github.com/tomquist/AstraMeter/blob/main/docs/ct002.md" target="_blank" rel="noopener">AstraMeter</a>):</p>
@@ -334,8 +334,8 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
         data:
           value: 50</code></pre>
 <h3>Discharge limit</h3>
-<p><code>CTLimit &lt;W&gt;</code> limits how much each battery may discharge. <code>CTLimit 0</code> switches the limit off, <code>CTLimit</code> alone shows it. Like the offset, it is only kept until the next restart; then the <b>Max DC</b> value saved on the page applies again. While a limit is active, the main page shows a <b>Max DC</b> row.</p>
-<p>The limit applies to each battery separately, works on every phase setting and does not affect charging. While a battery searches for its phase, the limit is paused. The rest of your consumption comes from the grid.</p>
+<p><code>CTLimit &lt;W&gt;</code> limits how much each battery may discharge. <code>CTLimit 0</code> switches the limit off, <code>CTLimit</code> alone shows it. A negative value turns it around: <code>CTLimit -300</code> makes each battery charge with at least 300&nbsp;W, from the grid if there is no surplus. That only works with batteries that can charge from the mains, the Venus for example. A B2500 just stops discharging. Like the offset, it is only kept until the next restart; then the <b>Max DC</b> value saved on the page applies again. While a limit is active, the main page shows a <b>Max DC</b> row.</p>
+<p>The limit applies to each battery separately, works on every phase setting, and a positive limit does not affect charging. While a battery searches for its phase, the limit is paused. The rest of your consumption comes from the grid.</p>
 <pre><code>mqtt:
   number:
     - name: "CT002 Limit"
@@ -346,7 +346,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
         {% if value_json.CT002 is defined %}{{ value_json.CT002.Limit }}
         {% else %}{{ states('number.ct002_limit') }}{% endif %}
       optimistic: true
-      min: 0
+      min: -2500
       max: 2500
       step: 10
       mode: box
@@ -391,8 +391,8 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
         data:
           value: 50</code></pre>
 <h3>Entladelimit</h3>
-<p><code>CTLimit &lt;W&gt;</code> begrenzt, wie viel jeder Akku entladen darf. <code>CTLimit 0</code> schaltet die Begrenzung aus, <code>CTLimit</code> allein zeigt sie an. Wie der Offset gilt sie nur bis zum nächsten Neustart, danach gilt wieder der auf der Seite gespeicherte Wert <b>Max DC</b>. Solange eine Begrenzung aktiv ist, zeigt die Hauptseite eine Zeile <b>Max DC</b>.</p>
-<p>Die Begrenzung gilt für jeden Akku einzeln, wirkt bei jeder Phaseneinstellung und lässt das Laden in Ruhe. Während ein Akku seine Phase sucht, ist sie ausgesetzt. Den Rest deines Verbrauchs liefert das Netz.</p>
+<p><code>CTLimit &lt;W&gt;</code> begrenzt, wie viel jeder Akku entladen darf. <code>CTLimit 0</code> schaltet die Begrenzung aus, <code>CTLimit</code> allein zeigt sie an. Ein negativer Wert dreht es um: <code>CTLimit -300</code> lässt jeden Akku mit mindestens 300&nbsp;W laden, ohne Überschuss aus dem Netz. Das geht nur mit Akkus, die aus dem Netz laden können, zum Beispiel dem Venus. Ein B2500 entlädt dann einfach nicht mehr. Wie der Offset gilt sie nur bis zum nächsten Neustart, danach gilt wieder der auf der Seite gespeicherte Wert <b>Max DC</b>. Solange eine Begrenzung aktiv ist, zeigt die Hauptseite eine Zeile <b>Max DC</b>.</p>
+<p>Die Begrenzung gilt für jeden Akku einzeln, wirkt bei jeder Phaseneinstellung, und ein positiver Wert lässt das Laden in Ruhe. Während ein Akku seine Phase sucht, ist sie ausgesetzt. Den Rest deines Verbrauchs liefert das Netz.</p>
 <pre><code>mqtt:
   number:
     - name: "CT002 Limit"
@@ -403,7 +403,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
         {% if value_json.CT002 is defined %}{{ value_json.CT002.Limit }}
         {% else %}{{ states('number.ct002_limit') }}{% endif %}
       optimistic: true
-      min: 0
+      min: -2500
       max: 2500
       step: 10
       mode: box
@@ -455,7 +455,7 @@ stat/&lt;topic&gt;/script/cpwr</code></pre>
 <pre><code>CTSTAT            rx/tx/bad counters, one log line per battery
 CTCLR             clear the battery table
 CTOFFSET [W]      set the offset until restart (no value = show it)
-CTLIMIT [W]       discharge limit per battery until restart, 0 = off
+CTLIMIT [W]       discharge limit per battery until restart, 0 = off, &lt;0 = charge
 CTMAC &lt;hex12&gt;     set the CT MAC (empty = answer every battery)
 CTMAIL &lt;address&gt;  set the Marstek account e-mail
 CTPASS &lt;password&gt; set the password (not saved)
