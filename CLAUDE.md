@@ -28,8 +28,9 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   Claude runs the same steps in Node (script in `CLAUDE.local.md`). Not gemu's
   `idesrc` - the IDE in this repo decides the compiler version. The `.tcb`
   files are committed next to the source.
-- Bump `sml_vers` in **all six** programs whenever something ships — it is
-  the date, `dd.MM.yyyy`, of the day of the change.
+- Bump `sml_vers` **only in the programs whose code changed** (directly or
+  through a shared module they include) — it is the date, `dd.MM.yyyy`, of
+  the day of the change. A newer date tells users there is an update.
   build.html turns it into the program's name, `SML Chart [12.10.26]`, in
   `index.json` and in the .tcb header - the firmware (own patch in the images)
   shows it in the repository list and the slot rows and flags a newer date.
