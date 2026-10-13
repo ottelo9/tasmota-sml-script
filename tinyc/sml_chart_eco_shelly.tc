@@ -13,7 +13,7 @@
 #include "pv_switch_common.tc"
 #include "eco_shelly_common.tc"
 
-char sml_vers[] = "12.10.2026";
+char sml_vers[] = "13.10.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 

@@ -130,6 +130,8 @@ int  ct_pa; int ct_pb; int ct_pc; int ct_ptot;   // grid power reported to the b
 int  ct_ra; int ct_rb; int ct_rc; int ct_rtot;   // the same, raw - for inspection mode
 int  ct_reset_req;                 // 1 = an inspection ended, re-seed the regulator
 int  ct_idx;                       // response index 0..255, wraps
+int  ct_iprev[8];                  // values behind ct_idx, see ctIdx()
+int  ct_ims;                       // millis() of the last ct_idx step
 
 // Filled by ctAgg(), read by the response builder.
 int  ct_nbA; int ct_nbB; int ct_nbC; int ct_nbD; int ct_live;
@@ -673,7 +675,6 @@ void ctHandle(int n) {
         ct_spart[idx] = 1;                        // absent field means "participating"
     }
 
-    ct_idx = (ct_idx + 1) & 255;
     ct_slot = idx;
     ctBuild(ct_qbtype, ct_qbmac, ct_qmac);
     udp(2, ct_txb);                                // unicast back to the sender
@@ -948,6 +949,29 @@ void ctPower() {
     }
     ct_rtot = (int)smlGet(1);
     ct_ptot = ctCtrl(smlGet(1), 3);    // the saldierend total — phase D reads this
+    ctIdx();
+}
+
+// info_idx steps only when the values change. A battery polls every ~0.6 s,
+// the meter sends every 1-2 s: a repeat under the same index tells it "already
+// seen" instead of being acted on twice (next145, Scripter V1.2e). At least
+// every 10 s, so a steady meter never looks frozen.
+void ctIdx() {
+    int ch = 0;
+    if (ct_iprev[0] != ct_pa)   ch = 1;
+    if (ct_iprev[1] != ct_pb)   ch = 1;
+    if (ct_iprev[2] != ct_pc)   ch = 1;
+    if (ct_iprev[3] != ct_ptot) ch = 1;
+    if (ct_iprev[4] != ct_ra)   ch = 1;
+    if (ct_iprev[5] != ct_rb)   ch = 1;
+    if (ct_iprev[6] != ct_rc)   ch = 1;
+    if (ct_iprev[7] != ct_rtot) ch = 1;
+    if (millis() - ct_ims > 10000) ch = 1;
+    if (ch == 0) return;
+    ct_iprev[0] = ct_pa; ct_iprev[1] = ct_pb; ct_iprev[2] = ct_pc; ct_iprev[3] = ct_ptot;
+    ct_iprev[4] = ct_ra; ct_iprev[5] = ct_rb; ct_iprev[6] = ct_rc; ct_iprev[7] = ct_rtot;
+    ct_idx = (ct_idx + 1) & 255;
+    ct_ims = millis();
 }
 
 // ─── Marstek cloud registration (HTTPS via httpGet + md5) ──────────────────
