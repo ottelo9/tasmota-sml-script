@@ -18,7 +18,7 @@ ends
 1,1-1:1.8.0(@1,Verbrauch,kWh,ImportActive,3
 1,1-1:2.8.0(@1,Einspeisung Gesamt,kWh,ExportActive,3
 1,=h--
-1,1-1:21.7.0(@0.001,Leistung L1,W,Power_L1,3
-1,1-1:41.7.0(@0.001,Leistung L2,W,Power_L2,3
-1,1-1:61.7.0(@0.001,Leistung L3,W,Power_L3,3
+1,1-1:21.7.0(@0.001,Leistung L1,W,Power_L1,16
+1,1-1:41.7.0(@0.001,Leistung L2,W,Power_L2,16
+1,1-1:61.7.0(@0.001,Leistung L3,W,Power_L3,16
 #

@@ -17,9 +17,9 @@ ends
 1,16.7.0(@1000,Leistung,W,Power,16
 1,1.8.0(@1,HT+NT Zählerstand,kWh,ImportActive,3
 1,=h--
-1,36.7.0(@1000,Power_L1,W,P1,2
-1,56.7.0(@1000,Power_L2,W,P2,2
-1,76.7.0(@1000,Power_L3,W,P3,2
+1,36.7.0(@1000,Power_L1,W,P1,16
+1,56.7.0(@1000,Power_L2,W,P2,16
+1,76.7.0(@1000,Power_L3,W,P3,16
 1,=h--
 1,31.7.0(@1,Strom_L1,A,I_L1,2
 1,51.7.0(@1,Strom_L2,A,I_L2,2
