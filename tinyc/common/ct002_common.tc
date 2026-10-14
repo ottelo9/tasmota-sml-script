@@ -1528,9 +1528,11 @@ void ctJson() {
     sprintfAppend(ct_buf, ",\"L3\":{\"Power\":%d},\"Slaves\":%d", ct_pc, live);
     sprintfAppend(ct_buf, ",\"Offset\":{\"Power\":%d},\"Limit\":{\"Power\":%d}", ct_offset, ct_maxdc);
     responseAppend(ct_buf);
-    // One object per battery: "Bat1":{"MAC":..,"Phase":"A","Power":300,"Target":{"Power":-120}}.
+    // Per battery "Bat1":{"MAC":..,"Phase":"A","Power":300} plus "Bat1Target":{"Power":-120}:
     // Power = what it reports delivering (+ = discharge), Target = what it was
-    // last told. Numbered by slot, so a battery keeps its number while it stays.
+    // last told. Target sits beside Bat1, not inside: the integration resolves
+    // only two levels below CT002 and showed {'Power': 90} as text.
+    // Numbered by slot, so a battery keeps its number while it stays.
     for (i = 0; i < CT_NSLOT; i = i + 1) {
         if (ct_sused[i] == 1) {
             strcpy(ct_ph, "0");
@@ -1539,7 +1541,7 @@ void ctJson() {
             if (ct_sph[i] == 3) strcpy(ct_ph, "C");
             if (ct_sph[i] == 4) strcpy(ct_ph, "D");
             sprintf(ct_buf, ",\"Bat%d\":{\"MAC\":\"%s\",\"Phase\":\"%s\"", i + 1, ct_smac[i], ct_ph);
-            sprintfAppend(ct_buf, ",\"Power\":%d,\"Target\":{\"Power\":%d}}", ct_spwr[i], ct_ssent[i]);
+            sprintfAppend(ct_buf, ",\"Power\":%d},\"Bat%dTarget\":{\"Power\":%d}", ct_spwr[i], i + 1, ct_ssent[i]);
             responseAppend(ct_buf);
         }
     }
