@@ -284,7 +284,7 @@ body.lang-de .en{display:none}
 <li>Charts: the flow in the line charts, the consumption in m³ in the bar charts.</li>
 <li>Hidden: feed-in, 3 phases, import meter, PV switch and power2.</li>
 </ul>
-<p>The flow is calculated from the change of the meter reading. If no new pulse comes, it goes down slowly.</p>
+<p>The flow is calculated from the change of the meter reading. If no new pulse comes, it goes down, and once twice the last pulse interval has passed without a pulse it drops to 0.</p>
 <p>Set the meter reading once in the Tasmota console, in pulses. Example for gas: <code>Sensor53 c1 123456</code> means 1234.56&nbsp;m³. Your own descriptor works too: value&nbsp;2 must be the reading in m³, and the line <code>;kind=</code> must be in the file. After changing the descriptor by hand, press Save once.</p>
 <p class="warn">If you used the device for electricity before, the totals still start from the old kWh reading. Press <a href="#data">Data</a> &rarr; &#x1F522; Reset and &#x1F4CA; Reset once.</p>
 </div>
@@ -296,7 +296,7 @@ body.lang-de .en{display:none}
 <li>Diagramme: der Durchfluss in den Liniendiagrammen, der Verbrauch in m³ in den Balken.</li>
 <li>Ausgeblendet: Einspeisung, 3 Phasen, Bezugszähler, PV-Schalter und power2.</li>
 </ul>
-<p>Der Durchfluss wird aus der Änderung des Zählerstands berechnet. Kommt kein neuer Impuls, sinkt er langsam.</p>
+<p>Der Durchfluss wird aus der Änderung des Zählerstands berechnet. Kommt kein neuer Impuls, sinkt er. Ist doppelt so viel Zeit wie zwischen den letzten beiden Impulsen ohne Impuls vergangen, fällt er auf 0.</p>
 <p>Den Zählerstand setzt du einmal in der Tasmota-Konsole, in Impulsen. Beispiel für Gas: <code>Sensor53 c1 123456</code> bedeutet 1234,56&nbsp;m³. Ein eigener Descriptor geht auch: Wert&nbsp;2 muss der Zählerstand in m³ sein, und die Zeile <code>;kind=</code> muss in der Datei stehen. Nach einer Änderung am Descriptor von Hand einmal Speichern drücken.</p>
 <p class="warn">Hast du das Gerät vorher für Strom benutzt, zählen die Summen noch vom alten kWh-Stand. Drücke einmal unter <a href="#data">Daten</a> &#x1F522; Reset und &#x1F4CA; Reset.</p>
 </div>

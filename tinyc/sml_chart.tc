@@ -13,7 +13,7 @@
 #include "sml_modbus_common.tc"
 #include "pv_switch_common.tc"
 
-char sml_vers[] = "12.10.2026";
+char sml_vers[] = "14.10.2026";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 

@@ -136,6 +136,7 @@ byte  sml_unit[8];              // unit of the totals: kWh or m³
 float sml_fl;                   // flow [m³/h]
 float sml_fl_v;                 // reading at the last step
 float sml_fl_dv;                // size of that step [m³]
+float sml_fl_dt;                // time that step took [h]
 int   sml_fl_ms;                // millis() of the last step
 int   sml_fl_n;                 // steps seen; the first has no interval
 
@@ -157,7 +158,9 @@ void sml_kind_detect() {
 }
 
 // Every second. Flow = the last step over the time it took. Without a new
-// step it can only be lower than one step over the time since - so it decays.
+// step it can only be lower than one step over the time since - so it decays,
+// and after twice the last interval without a step it is taken as stopped:
+// the 1/t tail alone took half an hour and never reached 0 (issue #94).
 void sml_flow_tick() {
     if (sml_kind == 0) return;
     float v = smlGet(2);
@@ -182,9 +185,14 @@ void sml_flow_tick() {
     if (v > sml_fl_v) {
         sml_fl_dv = v - sml_fl_v;
         if (sml_fl_n > 0) sml_fl = sml_fl_dv / hrs;
+        sml_fl_dt = hrs;
         sml_fl_n = sml_fl_n + 1;
         sml_fl_v = v;
         sml_fl_ms = now;
+        return;
+    }
+    if (sml_fl_n < 2 || hrs > 2.0 * sml_fl_dt) {
+        sml_fl = 0.0;
         return;
     }
     float up = sml_fl_dv / hrs;
@@ -203,7 +211,7 @@ int sml_meter_rows() {
     if (sml_kind == 1) sprintf(sml_buf, "{s}%s{m}%.2f m³/h{e}", ui_de ? "Durchfluss" : "Flow", sml_flow());
     else               sprintf(sml_buf, "{s}%s{m}%.1f l/min{e}", ui_de ? "Durchfluss" : "Flow", sml_flow());
     webSend(sml_buf);
-    if (sml_kind == 1) sprintf(sml_buf, "{s}Gas{m}%.3f m³{e}", smlGet(2));
+    if (sml_kind == 1) sprintf(sml_buf, "{s}Gas{m}%.2f m³{e}", smlGet(2));
     else               sprintf(sml_buf, "{s}%s{m}%.3f m³{e}", ui_de ? "Wasser" : "Water", smlGet(2));
     webSend(sml_buf);
     return 1;
