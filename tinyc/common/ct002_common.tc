@@ -1519,14 +1519,16 @@ void ctJson() {
     for (i = 0; i < CT_NSLOT; i = i + 1) {
         if (ct_sused[i] == 1) live = live + 1;
     }
-    // "Power", not "Total": Home Assistant's Tasmota integration maps key
-    // names, and "Total" is its energy key - the watts showed up as kWh.
+    // Every watt value sits under the key "Power": Home Assistant's Tasmota
+    // integration gives a unit only to known keys (Power, ActivePower,
+    // PowerTotal - "Total" is its energy key, the watts showed up as kWh).
+    // So "L1":{"Power":90} instead of "L1":90 - HA names it "CT002 L1 Power".
     sprintf(ct_buf, ",\"CT002\":{\"Power\":%d", ct_ptot);
-    sprintfAppend(ct_buf, ",\"L1\":%d,\"L2\":%d,\"L3\":%d", ct_pa, ct_pb, ct_pc);
-    sprintfAppend(ct_buf, ",\"Slaves\":%d,\"Offset\":%d", live, ct_offset);
-    sprintfAppend(ct_buf, ",\"Limit\":%d", ct_maxdc);
+    sprintfAppend(ct_buf, ",\"L1\":{\"Power\":%d},\"L2\":{\"Power\":%d}", ct_pa, ct_pb);
+    sprintfAppend(ct_buf, ",\"L3\":{\"Power\":%d},\"Slaves\":%d", ct_pc, live);
+    sprintfAppend(ct_buf, ",\"Offset\":{\"Power\":%d},\"Limit\":{\"Power\":%d}", ct_offset, ct_maxdc);
     responseAppend(ct_buf);
-    // One object per battery: "Bat1":{"MAC":..,"Phase":"A","Power":300,"Target":-120}.
+    // One object per battery: "Bat1":{"MAC":..,"Phase":"A","Power":300,"Target":{"Power":-120}}.
     // Power = what it reports delivering (+ = discharge), Target = what it was
     // last told. Numbered by slot, so a battery keeps its number while it stays.
     for (i = 0; i < CT_NSLOT; i = i + 1) {
@@ -1537,7 +1539,7 @@ void ctJson() {
             if (ct_sph[i] == 3) strcpy(ct_ph, "C");
             if (ct_sph[i] == 4) strcpy(ct_ph, "D");
             sprintf(ct_buf, ",\"Bat%d\":{\"MAC\":\"%s\",\"Phase\":\"%s\"", i + 1, ct_smac[i], ct_ph);
-            sprintfAppend(ct_buf, ",\"Power\":%d,\"Target\":%d}", ct_spwr[i], ct_ssent[i]);
+            sprintfAppend(ct_buf, ",\"Power\":%d,\"Target\":{\"Power\":%d}}", ct_spwr[i], ct_ssent[i]);
             responseAppend(ct_buf);
         }
     }
