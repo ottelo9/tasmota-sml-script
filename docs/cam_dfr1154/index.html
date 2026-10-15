@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Security camera DFR1154</title>
+<style>
+:root{--bg:#f7f7f8;--fg:#1c1c1e;--mut:#5b5b60;--card:#fff;--line:#dcdce0;--accent:#0a6ebd;--warn:#a3350f;--code:#f0f0f2}
+@media (prefers-color-scheme:dark){
+:root{--bg:#17171a;--fg:#e9e9ec;--mut:#a1a1a8;--card:#1f1f23;--line:#33333a;--accent:#5ab0f0;--warn:#f08a62;--code:#26262b}
+}
+*{box-sizing:border-box}
+body{margin:0;padding:0 16px 64px;background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto}
+header{padding:26px 0 14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+h1{margin:0 0 4px;font-size:22px;line-height:1.25}
+.sub{color:var(--mut);font-size:14px;margin:0}
+.switch{margin-top:14px;display:flex;gap:8px}
+.switch button{font:inherit;font-size:13px;padding:5px 14px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;cursor:pointer}
+.switch button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+nav{margin:0 0 22px;font-size:14px}
+nav a{color:var(--accent);text-decoration:none;margin-right:14px;white-space:nowrap;display:inline-block}
+nav a:hover{text-decoration:underline}
+section{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:0 0 14px;scroll-margin-top:16px}
+section a{color:var(--accent)}
+h2{margin:0 0 10px;font-size:17px}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:20px}
+li{margin:6px 0}
+code,kbd{background:var(--code);padding:1px 5px;border-radius:4px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all}
+pre{background:var(--code);padding:10px 12px;border-radius:6px;overflow-x:auto;margin:10px 0;white-space:pre-wrap;word-break:break-all}
+pre code{background:none;padding:0}
+.warn{border-left:3px solid var(--warn);padding-left:12px;color:var(--warn)}
+footer{color:var(--mut);font-size:13px;text-align:center;margin-top:26px}
+footer a{color:var(--accent)}
+body.lang-en .de{display:none}
+body.lang-de .en{display:none}
+</style>
+</head>
+<body class="lang-en">
+<div class="wrap">
+
+<header>
+  <h1><span class="en">Security camera DFR1154</span><span class="de">Überwachungskamera DFR1154</span></h1>
+  <p class="sub"><span class="en">TinyC program for Tasmota &middot; DFRobot FireBeetle 2 ESP32-S3 AI CAM</span><span class="de">TinyC-Programm für Tasmota &middot; DFRobot FireBeetle 2 ESP32-S3 AI CAM</span></p>
+  <div class="switch">
+    <button data-set="en">English</button>
+    <button data-set="de">Deutsch</button>
+  </div>
+</header>
+
+<nav>
+  <a href="../"><span class="en">&larr; Overview</span><span class="de">&larr; Übersicht</span></a>
+  <a href="#overview"><span class="en">What it does</span><span class="de">Was es kann</span></a>
+  <a href="#hardware">Hardware</a>
+  <a href="#files"><span class="en">Files</span><span class="de">Dateien</span></a>
+  <a href="#setup"><span class="en">Setup</span><span class="de">Einrichtung</span></a>
+  <a href="#settings"><span class="en">Settings and alarm</span><span class="de">Einstellungen und Alarm</span></a>
+  <a href="#sources"><span class="en">Sources</span><span class="de">Quellen</span></a>
+</nav>
+
+<section id="overview">
+<h2><span class="en">What it does</span><span class="de">Was es kann</span></h2>
+<p class="en">TinyC program <code>cam_dfr1154</code> for the DFRobot FireBeetle 2 ESP32-S3 AI CAM: live stream, motion detection (optionally confirmed by a person detector), alarm pictures on the SD card, alarm via MQTT (found by Home Assistant by itself), night vision with IR LEDs and light sensor, and voice output through the speaker.</p>
+<p class="de">TinyC-Programm <code>cam_dfr1154</code> für die DFRobot FireBeetle 2 ESP32-S3 AI CAM: Livebild, Bewegungserkennung (optional mit Personenerkennung bestätigt), Alarmbilder auf der SD-Karte, Alarm per MQTT (Home Assistant findet ihn von selbst), Nachtsicht mit IR-LEDs und Lichtsensor sowie Sprachausgabe über den Lautsprecher.</p>
+</section>
+
+<section id="hardware">
+<h2>Hardware</h2>
+<ul class="en">
+  <li>DFRobot FireBeetle 2 ESP32-S3 AI CAM (<b>DFR1154</b>, OV3660 camera, IR LEDs, LTR-308 light sensor, microphone, SD slot)</li>
+  <li>microSD card (FAT32): pictures, person model, voice files</li>
+  <li>USB-C cable with data lines (for the first flash)</li>
+  <li>optional: speaker on the speaker connector (voice output)</li>
+  <li>optional: MQTT broker / Home Assistant (alarm)</li>
+</ul>
+<ul class="de">
+  <li>DFRobot FireBeetle 2 ESP32-S3 AI CAM (<b>DFR1154</b>, Kamera OV3660, IR-LEDs, Lichtsensor LTR-308, Mikrofon, SD-Slot)</li>
+  <li>microSD-Karte (FAT32): Bilder, Personen-Modell, Stimmdateien</li>
+  <li>USB-C-Kabel mit Datenleitungen (fürs erste Flashen)</li>
+  <li>optional: Lautsprecher am Lautsprecher-Anschluss (Sprachausgabe)</li>
+  <li>optional: MQTT-Broker / Home Assistant (Alarm)</li>
+</ul>
+</section>
+
+<section id="files">
+<h2><span class="en">Files</span><span class="de">Dateien</span></h2>
+<p class="en">All files, already named correctly: <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc/other/cam_dfr1154">tinyc/other/cam_dfr1154</a>. Download from there: <code>cam_dfr1154.tcb</code> (program), <code>I2SAUDIO.cfg</code> (audio pins), <code>ped.espdl</code> (person detection, <a href="https://github.com/espressif/esp-dl">esp-dl</a>), <code>picotts_de-DE_*.bin</code> / <code>picotts_en-US_*.bin</code> (voices, German / English). The firmware and the audio plugin come from their releases (steps 1 and 7).</p>
+<p class="de">Alle Dateien, schon richtig benannt: <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc/other/cam_dfr1154">tinyc/other/cam_dfr1154</a>. Von dort herunterladen: <code>cam_dfr1154.tcb</code> (Programm), <code>I2SAUDIO.cfg</code> (Audio-Pins), <code>ped.espdl</code> (Personenerkennung, <a href="https://github.com/espressif/esp-dl">esp-dl</a>), <code>picotts_de-DE_*.bin</code> / <code>picotts_en-US_*.bin</code> (Stimmen Deutsch / Englisch). Firmware und Audio-Plugin kommen aus ihren Releases (Schritt 1 und 7).</p>
+</section>
+
+<section id="setup">
+<h2><span class="en">Setup</span><span class="de">Einrichtung</span></h2>
+<ol class="en">
+  <li><b>Flash the image.</b> Download <code>tasmota32s3_dfr1154.zip</code> from the <a href="https://github.com/ottelo9/tasmota-sml-images/releases/latest">tasmota-sml-images releases</a> and unpack it. First time via USB: <code>tasmota32s3_dfr1154.factory.bin</code>, e.g. with the <a href="https://tasmota.github.io/install/">Tasmota Web Installer</a> or <code>esptool.py --chip esp32s3 write_flash 0x0 tasmota32s3_dfr1154.factory.bin</code>. If the port does not respond: hold <b>BOOT</b>, press <b>RESET</b>, release both. Later updates: <i>Firmware Upgrade → Start upgrade</i> (the OTA URL is preset).</li>
+  <li><b>WiFi:</b> connect to the camera's access point (<code>tasmota-…</code>), open <code>192.168.4.1</code> and enter your WiFi.</li>
+  <li><b>Template</b>, in <i>Tools → Console</i>, one line at a time (the device restarts):
+<pre><code>Template {"NAME":"DFRWEBCAM","ARCH":"ESP32S3","GPIO":[1,0,0,0,0,0,0,0,641,609,6720,704,736,672,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,224,1],"FLAG":0,"BASE":1}</code></pre>
+<pre><code>Module 0</code></pre>
+  I2C on GPIO 8/9 (light sensor), SD card on GPIO 10–13, Relay1 on GPIO47 = IR LEDs.</li>
+  <li><b>Plugin partition</b> (256 KB, needed for the audio plugin), in the console: <code>chkpt a4</code>. The device restarts.
+  <p class="warn">This erases the flash file system — so do it first.</p></li>
+  <li><b>Insert the SD card.</b> In <i>Tools → Manage File system</i> upload to the SD card (root): <code>ped.espdl</code> and the voice files <code>picotts_de-DE_ta.bin</code>, <code>picotts_de-DE_sg.bin</code> (for English also <code>picotts_en-US_*.bin</code>). Files over 256 KB go via port 83 by themselves.</li>
+  <li><b>Program:</b> <i>Tools → TinyC Console → Upload Program</i>: <code>cam_dfr1154.tcb</code> into slot 0, start it with ▶ and switch on <b>A</b> (autostart).</li>
+  <li><b>Audio:</b> in <i>Manage File system</i> switch to the <b>flash</b> file system and upload <code>I2SAUDIO.cfg</code> (must be <code>/I2SAUDIO.cfg</code>). Then <i>Tools → Plugins directory</i>: upload <a href="https://github.com/gemu2015/Sonoff-Tasmota/releases/download/testing/I2SAUDIO_32.bin">I2SAUDIO_32.bin</a> and tick <b>Autostart plugins at boot</b> — without it the plugin does not start, and nothing tells you. Restart. <code>mdir</code> must list <code>I2SAUDIO</code> with a value in the RAM column.</li>
+  <li><b>Test:</b> the main page shows the <i>Camera</i> block, the live picture and the <i>Camera Setup</i> button. Speech: <code>I2STTS Guten Tag</code>; English: <code>I2STTSLang en-US</code>, then <code>I2STTS Hello</code>.</li>
+</ol>
+<ol class="de">
+  <li><b>Image flashen.</b> <code>tasmota32s3_dfr1154.zip</code> aus den <a href="https://github.com/ottelo9/tasmota-sml-images/releases/latest">tasmota-sml-images Releases</a> laden und entpacken. Erstes Mal per USB: <code>tasmota32s3_dfr1154.factory.bin</code>, z. B. mit dem <a href="https://tasmota.github.io/install/">Tasmota Web Installer</a> oder <code>esptool.py --chip esp32s3 write_flash 0x0 tasmota32s3_dfr1154.factory.bin</code>. Reagiert der Port nicht: <b>BOOT</b> halten, <b>RESET</b> drücken, beide loslassen. Spätere Updates: <i>Firmware Upgrade → Start upgrade</i> (die OTA-URL ist vorbelegt).</li>
+  <li><b>WLAN:</b> mit dem Access Point der Kamera verbinden (<code>tasmota-…</code>), <code>192.168.4.1</code> öffnen und das eigene WLAN eintragen.</li>
+  <li><b>Vorlage</b>, unter <i>Tools → Console</i>, jede Zeile einzeln (das Gerät startet neu):
+<pre><code>Template {"NAME":"DFRWEBCAM","ARCH":"ESP32S3","GPIO":[1,0,0,0,0,0,0,0,641,609,6720,704,736,672,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,224,1],"FLAG":0,"BASE":1}</code></pre>
+<pre><code>Module 0</code></pre>
+  I2C auf GPIO 8/9 (Lichtsensor), SD-Karte auf GPIO 10–13, Relay1 auf GPIO47 = IR-LEDs.</li>
+  <li><b>Plugin-Partition</b> (256 KB, fürs Audio-Plugin), in der Konsole: <code>chkpt a4</code>. Das Gerät startet neu.
+  <p class="warn">Das löscht das Flash-Dateisystem — deshalb als Erstes.</p></li>
+  <li><b>SD-Karte einstecken.</b> Unter <i>Tools → Manage File system</i> auf die SD-Karte (Hauptverzeichnis) hochladen: <code>ped.espdl</code> und die Stimmdateien <code>picotts_de-DE_ta.bin</code>, <code>picotts_de-DE_sg.bin</code> (für Englisch zusätzlich <code>picotts_en-US_*.bin</code>). Dateien über 256 KB laufen dabei von selbst über Port 83.</li>
+  <li><b>Programm:</b> <i>Tools → TinyC Console → Upload Program</i>: <code>cam_dfr1154.tcb</code> in Slot 0, mit ▶ starten und <b>A</b> (Autostart) einschalten.</li>
+  <li><b>Audio:</b> in <i>Manage File system</i> auf das <b>Flash</b>-Dateisystem umschalten und <code>I2SAUDIO.cfg</code> hochladen (muss <code>/I2SAUDIO.cfg</code> heißen). Dann <i>Tools → Plugins directory</i>: <a href="https://github.com/gemu2015/Sonoff-Tasmota/releases/download/testing/I2SAUDIO_32.bin">I2SAUDIO_32.bin</a> hochladen und <b>Autostart plugins at boot</b> anhaken — ohne den Haken startet das Plugin nicht, und es gibt keine Meldung. Neu starten. <code>mdir</code> muss <code>I2SAUDIO</code> mit einem Wert in der RAM-Spalte zeigen.</li>
+  <li><b>Test:</b> Die Hauptseite zeigt den Block <i>Camera</i>, das Livebild und den Button <i>Camera Setup</i>. Sprache: <code>I2STTS Guten Tag</code>; Englisch: <code>I2STTSLang en-US</code>, dann <code>I2STTS Hello</code>.</li>
+</ol>
+</section>
+
+<section id="settings">
+<h2><span class="en">Settings and alarm</span><span class="de">Einstellungen und Alarm</span></h2>
+<ul class="en">
+  <li><b>Camera Setup</b> (button on the main page): resolution (VGA is plenty), motion, alarm, night.</li>
+  <li><b>Motion threshold:</b> leave the scene alone for a few minutes, read <i>peak</i> in the <i>Motion</i> row of the main page and set the threshold above it. Every settings change and every restart resets <i>peak</i>.</li>
+  <li><b>Person detection</b> (needs <code>ped.espdl</code>): the alarm then fires only when the net sees a person — not for shadows, light or pets.</li>
+  <li><b>Alarm:</b> 1–4 pictures to <code>/PICS</code> on the SD card (deleted after 14 days) and MQTT <code>tele/&lt;topic&gt;/ALARM</code> = <code>ON</code> / <code>OFF</code>, retained. Home Assistant finds it as a motion sensor of the Tasmota device.</li>
+  <li><b>Night:</b> <i>Automatic</i> switches the IR LEDs and the long exposure by the light sensor. If the main page shows no lux row, the light sensor was not found (check the template) — <i>Automatic</i> then behaves like <i>On</i>.</li>
+</ul>
+<ul class="de">
+  <li><b>Camera Setup</b> (Button auf der Hauptseite): Auflösung (VGA reicht), Bewegung, Alarm, Nacht.</li>
+  <li><b>Bewegungsschwelle:</b> ein paar Minuten nichts bewegen, auf der Hauptseite in der Zeile <i>Motion</i> den Wert <i>peak</i> ablesen und die Schwelle darüber setzen. Jede Änderung der Einstellungen und jeder Neustart setzen <i>peak</i> zurück.</li>
+  <li><b>Personenerkennung</b> (braucht <code>ped.espdl</code>): Der Alarm kommt dann nur, wenn das Netz einen Menschen erkennt — nicht bei Schatten, Licht oder Haustieren.</li>
+  <li><b>Alarm:</b> 1–4 Bilder nach <code>/PICS</code> auf der SD-Karte (nach 14 Tagen gelöscht) und MQTT <code>tele/&lt;topic&gt;/ALARM</code> = <code>ON</code> / <code>OFF</code>, retained. Home Assistant findet ihn als Bewegungsmelder am Tasmota-Gerät.</li>
+  <li><b>Nacht:</b> <i>Automatic</i> schaltet IR-LEDs und lange Belichtung nach dem Lichtsensor. Zeigt die Hauptseite keine Lux-Zeile, wurde der Lichtsensor nicht gefunden (Vorlage prüfen) — <i>Automatic</i> verhält sich dann wie <i>On</i>.</li>
+</ul>
+</section>
+
+<section id="sources">
+<h2><span class="en">Sources</span><span class="de">Quellen</span></h2>
+<ul class="en">
+  <li>Program: based on <a href="https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/tinyc/examples/webcam_tinyc.tc">webcam_tinyc.tc</a> by gemu2015 (TinyC, camera driver: <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015/Sonoff-Tasmota</a>)</li>
+  <li>Firmware <code>tasmota32s3_dfr1154</code>: <a href="https://github.com/ottelo9/tasmota-sml-images">ottelo9/tasmota-sml-images</a>, built on <a href="https://github.com/arendst/Tasmota">Tasmota</a></li>
+  <li>Template and audio pins: <a href="https://github.com/gemu2015/Sonoff-Tasmota/tree/universal/tasmota/tinyc/dfrobot">tasmota/tinyc/dfrobot</a> (<code>ANLEITUNG.md</code>, <code>I2SAUDIO.cfg</code>)</li>
+  <li>Audio plugin <code>I2SAUDIO_32.bin</code>: <a href="https://github.com/gemu2015/Sonoff-Tasmota/releases/tag/testing">gemu2015 release "testing"</a></li>
+  <li>Voice files (SVOX PicoTTS, renamed): <a href="https://github.com/gemu2015/Sonoff-Tasmota/tree/universal/lib/libesp32_div/pico/lang">lib/libesp32_div/pico/lang</a> — <code>de-DE_ta.bin</code>, <code>de-DE_gl0_sg.bin</code>, <code>en-US_ta.bin</code>, <code>en-US_lh0_sg.bin</code></li>
+  <li>Person model <code>ped.espdl</code> = <code>pedestrian_detect_pico_s8_v1.espdl</code> (s3): <a href="https://github.com/espressif/esp-dl/tree/master/models/pedestrian_detect">espressif/esp-dl</a></li>
+</ul>
+<ul class="de">
+  <li>Programm: basiert auf <a href="https://github.com/gemu2015/Sonoff-Tasmota/blob/universal/tasmota/tinyc/examples/webcam_tinyc.tc">webcam_tinyc.tc</a> von gemu2015 (TinyC, Kameratreiber: <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015/Sonoff-Tasmota</a>)</li>
+  <li>Firmware <code>tasmota32s3_dfr1154</code>: <a href="https://github.com/ottelo9/tasmota-sml-images">ottelo9/tasmota-sml-images</a>, auf Basis von <a href="https://github.com/arendst/Tasmota">Tasmota</a></li>
+  <li>Vorlage und Audio-Pins: <a href="https://github.com/gemu2015/Sonoff-Tasmota/tree/universal/tasmota/tinyc/dfrobot">tasmota/tinyc/dfrobot</a> (<code>ANLEITUNG.md</code>, <code>I2SAUDIO.cfg</code>)</li>
+  <li>Audio-Plugin <code>I2SAUDIO_32.bin</code>: <a href="https://github.com/gemu2015/Sonoff-Tasmota/releases/tag/testing">gemu2015 Release „testing“</a></li>
+  <li>Stimmdateien (SVOX PicoTTS, umbenannt): <a href="https://github.com/gemu2015/Sonoff-Tasmota/tree/universal/lib/libesp32_div/pico/lang">lib/libesp32_div/pico/lang</a> — <code>de-DE_ta.bin</code>, <code>de-DE_gl0_sg.bin</code>, <code>en-US_ta.bin</code>, <code>en-US_lh0_sg.bin</code></li>
+  <li>Personen-Modell <code>ped.espdl</code> = <code>pedestrian_detect_pico_s8_v1.espdl</code> (s3): <a href="https://github.com/espressif/esp-dl/tree/master/models/pedestrian_detect">espressif/esp-dl</a></li>
+</ul>
+</section>
+
+<footer>
+<span class="en">Program and page by <a href="https://ottelo.jimdofree.com/">ottelo</a> with the help of ClaudeAI &middot; based on <code>webcam_tinyc.tc</code> and TinyC by <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a> &middot; person model from <a href="https://github.com/espressif/esp-dl">esp-dl</a></span>
+<span class="de">Programm und Seite von <a href="https://ottelo.jimdofree.com/">ottelo</a> mit Hilfe von ClaudeAI &middot; basiert auf <code>webcam_tinyc.tc</code> und TinyC von <a href="https://github.com/gemu2015/Sonoff-Tasmota">gemu2015</a> &middot; Personen-Modell aus <a href="https://github.com/espressif/esp-dl">esp-dl</a></span>
+</footer>
+
+</div>
+<script>
+(function(){
+  function set(l){
+    document.body.className = 'lang-' + l;
+    document.documentElement.lang = l;
+    var b = document.querySelectorAll('.switch button');
+    for (var i = 0; i < b.length; i++) {
+      if (b[i].getAttribute('data-set') === l) { b[i].classList.add('on'); }
+      else { b[i].classList.remove('on'); }
+    }
+    try { localStorage.setItem('ct002lang', l); } catch (e) {}
+  }
+  var q = location.search.match(/[?&]lang=(de|en)/);
+  var s = null;
+  try { s = localStorage.getItem('ct002lang'); } catch (e) {}
+  var nav = (navigator.language || '').slice(0, 2) === 'de' ? 'de' : 'en';
+  set(q ? q[1] : (s || nav));
+  var b = document.querySelectorAll('.switch button');
+  for (var i = 0; i < b.length; i++) {
+    b[i].addEventListener('click', function(){ set(this.getAttribute('data-set')); });
+  }
+})();
+</script>
+</body>
+</html>

@@ -10,7 +10,7 @@ GitHub Pages). Personal setup, devices and working rules: `CLAUDE.local.md`
 | Path | What |
 |---|---|
 | `tinyc/*.tc` | the six programs: `sml_simple`, `sml_chart`, `sml_ct002`, `sml_chart_ct002`, `sml_eco_shelly`, `sml_chart_eco_shelly`; plus `ftp_backup` (own slot, one language, own `sml_vers` - bumped only when it changes; nightly 00:10 copy of `*.pvs`/`*.cfg`/`*.def` via `/ftp.cfg` into `<folder>/<topic>/<weekday 1..7>`, the button into `.../0`) |
-| `tinyc/other/` | programs outside the repository list (build.html skips subfolders): `cam_dfr1154.tc` = gemu's `webcam_tinyc.tc` (fork 72b55d3c6) cut down to DFR1154, person detection, night vision, alarm pictures, photo buttons; plus MQTT alarm `tele/<topic>/ALARM` ON/OFF and an HA binary-sensor discovery, both retained via `tasmCmd("Publish2 …")` (needs TinyC ≥ 1.6.72). For the image `tasmota32s3_dfr1154`; `.tcb` built by hand with the same IDE |
+| `tinyc/other/` | programs outside the repository list (build.html skips subfolders): `cam_dfr1154/` holds everything the camera needs, already renamed (`.tc`/`.tcb`, `ped.espdl` from esp-dl, `picotts_{de-DE,en-US}_{ta,sg}.bin`, `I2SAUDIO.cfg`; the I2SAUDIO plugin and the firmware are linked, not stored); guide = `docs/cam_dfr1154/index.html`. `cam_dfr1154.tc` = gemu's `webcam_tinyc.tc` (fork 72b55d3c6) cut down to DFR1154, person detection, night vision, alarm pictures, photo buttons; plus MQTT alarm `tele/<topic>/ALARM` ON/OFF and an HA binary-sensor discovery, both retained via `tasmCmd("Publish2 …")` (needs TinyC ≥ 1.6.72). For the image `tasmota32s3_dfr1154`; `.tcb` built by hand with the same IDE |
 | `tinyc/common/` | shared modules, `#include`d by the programs |
 | `tinyc/bytecode/` | built `.tcb`, `build.html` (the compiler), `index.json` (program picker) |
 | `docs/<topic>/index.html` | help pages, `en`/`de` blocks side by side |
@@ -184,7 +184,7 @@ Control loop ported from AstraMeter (GPL-3.0; credit on page 4),
   share. Batteries on different phases never form a pool — with a netting meter
   they belong on phase D. With saturation detection on, a saturated peer leaves
   the share and the balance average (AstraMeter #679, ceilings there).
-- Last AstraMeter comparison: `934b95b` (2026-10-07). Start the next one there.
+- Last AstraMeter comparison: `5561b45` (2026-10-14). Start the next one there.
 - Source files may be CRLF or LF per file (Git `autocrlf`); patch scripts must
   keep each file's ending.
 
