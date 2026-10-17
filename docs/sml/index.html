@@ -539,7 +539,7 @@ body.lang-de .en{display:none}
 <section id="ftp">
 <h2>FTP-Backup</h2>
 <div class="en">
-<p>Your counters and chart data live only on the device. If its flash dies, they are gone. The small extra program <b>FTP-Backup</b> copies them to a FRITZ!Box (or any other FTP server, a Synology for example) every night at 00:10, a few minutes after the SML program has written its data. It runs in a second slot next to your SML program, so it only costs RAM on devices that use it.</p>
+<p>Your counters and chart data live only on the device. If its flash dies, they are gone. The small extra program <b>FTP-Backup</b> copies them to a FRITZ!Box (or any other FTP server, a Synology for example) every night at 00:10, a few minutes after the SML program has written its data. It runs in a second slot next to your SML program, so it only costs RAM on devices that use it. It needs a Tasmota image from 12.10.2026 or newer.</p>
 <h3>Setting it up (FRITZ!Box)</h3>
 <ol>
 <li>FRITZ!Box: <i>Home Network &rarr; Storage (NAS)</i>: switch on storage and <b>access via FTP</b>.</li>
@@ -574,12 +574,12 @@ DIR=/Tasmota</pre>
 <tr><th>-6</th><td>Wrong folder, or the user may not write there.</td></tr>
 <tr><th>-11</th><td><code>/ftp.cfg</code> is missing, or has no <code>HOST=</code> line.</td></tr>
 <tr><th>-12</th><td>Not enough free RAM to start the backup.</td></tr>
-<tr><th>-13</th><td>The backup stopped with an error. The Tasmota log says more (<code>TCC: workerVM</code>).</td></tr>
+<tr><th>-13</th><td>The backup stopped with an error. The Tasmota log says more (<code>TCC: workerVM</code>). With <code>Bounds error</code> and <code>ctx=bkWork</code> in the log, the image is too old (before 12.10.2026): install a newer one.</td></tr>
 </table>
 <p>The exact answer of the server is in the Tasmota log (<code>TCC: ftp &hellip;</code>).</p>
 </div>
 <div class="de">
-<p>Deine Zählerstände und Diagrammdaten liegen nur auf dem Gerät. Geht dessen Flash kaputt, sind sie weg. Das kleine Zusatzprogramm <b>FTP-Backup</b> kopiert sie jede Nacht um 00:10 auf eine FRITZ!Box (oder einen anderen FTP-Server, z.&nbsp;B. eine Synology), ein paar Minuten nachdem das SML-Programm seine Daten geschrieben hat. Es läuft in einem zweiten Slot neben deinem SML-Programm und kostet daher nur auf Geräten RAM, die es nutzen.</p>
+<p>Deine Zählerstände und Diagrammdaten liegen nur auf dem Gerät. Geht dessen Flash kaputt, sind sie weg. Das kleine Zusatzprogramm <b>FTP-Backup</b> kopiert sie jede Nacht um 00:10 auf eine FRITZ!Box (oder einen anderen FTP-Server, z.&nbsp;B. eine Synology), ein paar Minuten nachdem das SML-Programm seine Daten geschrieben hat. Es läuft in einem zweiten Slot neben deinem SML-Programm und kostet daher nur auf Geräten RAM, die es nutzen. Es braucht ein Tasmota-Image vom 12.10.2026 oder neuer.</p>
 <h3>Einrichten (FRITZ!Box)</h3>
 <ol>
 <li>FRITZ!Box: <i>Heimnetz &rarr; Speicher (NAS)</i>: Speicher und <b>Zugriff über FTP</b> einschalten.</li>
@@ -614,7 +614,7 @@ DIR=/Tasmota</pre>
 <tr><th>-6</th><td>Ordner falsch, oder der Benutzer darf dort nicht schreiben.</td></tr>
 <tr><th>-11</th><td><code>/ftp.cfg</code> fehlt, oder es fehlt die Zeile <code>HOST=</code>.</td></tr>
 <tr><th>-12</th><td>Zu wenig freier RAM, um die Sicherung zu starten.</td></tr>
-<tr><th>-13</th><td>Die Sicherung ist mit einem Fehler abgebrochen. Mehr steht im Tasmota-Log (<code>TCC: workerVM</code>).</td></tr>
+<tr><th>-13</th><td>Die Sicherung ist mit einem Fehler abgebrochen. Mehr steht im Tasmota-Log (<code>TCC: workerVM</code>). Steht dort <code>Bounds error</code> und <code>ctx=bkWork</code>, ist das Image zu alt (vor dem 12.10.2026). Spiel ein neueres auf.</td></tr>
 </table>
 <p>Die genaue Antwort des Servers steht im Tasmota-Log (<code>TCC: ftp &hellip;</code>).</p>
 </div>
