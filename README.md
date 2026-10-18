@@ -24,6 +24,7 @@ Wenn noch eins meiner Scripte auf eurem ESP/Lesekopf läuft und ihr wechseln wol
 4. Dann starten und den Autostart aktivieren  
    <img width="300" alt="image" src="https://github.com/user-attachments/assets/5ef219fa-0b6b-4bea-bfab-8c40c4f1d073" />
 5. Auf der Hauptseite in den Optionen ⚙️ könnt ihr euren Stromzähler wählen und verschiedene andere Sachen einstellen.
+6. Updates: In der Slot-Zeile steht hinter dem Programmnamen seine Version. Gibt es im Repository eine neuere, erscheint ein 🔄-Knopf. Ein Klick lädt sie in denselben Slot, Einstellungen und Daten bleiben erhalten (Image ab 18.10.2026).
 
 
 ### B) Tasmota Scripte (veraltet)

@@ -235,12 +235,15 @@ $('build').onclick = async () => {
     const m = src.match(new RegExp('^[ \t]*//[ \t]*@' + key + ':[ \t]*(.+)$', 'm'));
     return m ? m[1].trim() : '';
   };
-  // Klarname fuer die Liste: @name plus Kurzdatum aus sml_vers, "SML Chart [12.10.26]".
-  // Die Firmware zeigt dann nur noch den Namen (Images-Repo, eigener Patch).
-  const label = src => {
-    const n = pragma(src, 'name');
-    const v = src.match(/^[ \t]*char[ \t]+sml_vers[ \t]*\[[ \t]*\][ \t]*=[ \t]*"(\d{2})\.(\d{2})\.\d{2}(\d{2})"/m);
-    return n && v ? n + ' [' + v[1] + '.' + v[2] + '.' + v[3] + ']' : n;
+  // Version "YYYYMMDD_HHMM" fuer den .tcb-Kopf (Tag 3) und index.json: `// @version:`
+  // gewinnt, sonst aus sml_vers ("12.10.2026" oder "12.10.2026 14:30", ohne Zeit 00:00).
+  // Die Firmware zeigt sie im Slot als "12.10.26 14:30" und bietet bei neuerer
+  // Version im Repository den Update-Knopf an.
+  const version = src => {
+    const p = pragma(src, 'version');
+    if (p) return p;
+    const v = src.match(/^[ \t]*char[ \t]+sml_vers[ \t]*\[[ \t]*\][ \t]*=[ \t]*"(\d{2})\.(\d{2})\.(\d{4})(?:[ \t]+(\d{2}):(\d{2}))?"/m);
+    return v ? v[3] + v[2] + v[1] + '_' + (v[4] || '00') + (v[5] || '00') : '';
   };
 
   const names = Object.keys(progs).sort();
@@ -255,12 +258,12 @@ $('build').onclick = async () => {
     if (!/^\s*(?:int|void)\s+main\s*\(/m.test(src)) { skipped++; log('übersprungen (kein main): ' + name); continue; }
     const base = name.replace(/\.tc$/, '');
     try {
-      // Name mit Datum auch in den Kopf der .tcb: die Firmware zeigt ihn im Slot.
-      const r = w.compile(w.resolveIncludes(src, get), { meta: { name: label(src), info: pragma(src, 'info') } });
+      // Name und Version auch in den Kopf der .tcb: die Firmware zeigt beide im Slot.
+      const r = w.compile(w.resolveIncludes(src, get), { meta: { name: pragma(src, 'name'), info: pragma(src, 'info'), version: version(src) } });
       if (r.error) throw new Error(r.error);
       await write(base + '.tcb', r.binary);
       built.push(base + '.tcb');
-      meta.push({ file: base + '.tcb', name: label(src), info: pragma(src, 'info'), order: parseInt(pragma(src, 'order'), 10) || 999 });
+      meta.push({ file: base + '.tcb', name: pragma(src, 'name'), info: pragma(src, 'info'), version: version(src), order: parseInt(pragma(src, 'order'), 10) || 999 });
       rows.push('<tr><td>' + name + '</td><td class="num">' + r.binary.length.toLocaleString('de-DE') +
                 '</td><td class="ok">ok</td></tr>');
       log('ok: ' + base + '.tcb (' + r.binary.length + ' B)');
@@ -294,6 +297,7 @@ $('build').onclick = async () => {
       const o = { file: m.file };
       if (m.name) o.name = m.name;
       if (m.info) o.info = m.info;
+      if (m.version) o.version = m.version;
       eintraege.push(o);
     });
     await write('index.json', JSON.stringify({ ordered: true, programs: eintraege }, null, 0) + '\n');

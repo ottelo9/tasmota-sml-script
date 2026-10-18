@@ -29,11 +29,13 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   `idesrc` - the IDE in this repo decides the compiler version. The `.tcb`
   files are committed next to the source.
 - Bump `sml_vers` **only in the programs whose code changed** (directly or
-  through a shared module they include) — it is the date, `dd.MM.yyyy`, of
-  the day of the change. A newer date tells users there is an update.
-  build.html turns it into the program's name, `SML Chart [12.10.26]`, in
-  `index.json` and in the .tcb header - the firmware (own patch in the images)
-  shows it in the repository list and the slot rows and flags a newer date.
+  through a shared module they include) — it is the date and time of the
+  change, `dd.MM.yyyy HH:MM` (older ones without time count as 00:00).
+  build.html turns it into the version `YYYYMMDD_HHMM` (`// @version:` would
+  win) in `index.json` and in the .tcb header (TLV 3); the name stays the plain
+  `@name`. The firmware (TinyC ≥ 1.6.74) shows `Name 17.10.26 14:30` in the slot
+  row and offers a 🔄 update button when the repository has a newer version.
+  Never the build time: build.html rebuilds every program.
 - List order: `// @order: N` under `@info` (charts 11-13, SML 21-23, FTP-Backup 31);
   build.html writes index.json in that order with `"ordered":true` and a
   `{"sep":1}` separator where the tens change.

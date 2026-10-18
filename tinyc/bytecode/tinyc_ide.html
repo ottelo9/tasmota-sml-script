@@ -4841,6 +4841,7 @@ class CodeGenerator {
         this._syscallOffen = 0;                    // 1 = SYSCALL, 2 = SYSCALL2, Nummer folgt
         this._metaName = '';        // // @name:  -> header TLV 1, see compile()
         this._metaInfo = '';        // // @info:  -> header TLV 2
+        this._metaVersion = '';     // // @version: -> header TLV 3 (YYYYMMDD_HHMM)
         this.code = [];             // bytecode output
         this.constants = [];        // constant pool (strings, large numbers)
         this.globals = new Map();   // name -> { index, type, isArray, arraySize }
@@ -9592,7 +9593,7 @@ class CodeGenerator {
         // TLV rather than fixed fields so more can be added later without
         // tripping older firmware: it reads the tags it knows and skips the rest
         // by `len`.
-        //   u8 tag, u8 len, len bytes UTF-8    tag 1 = name, 2 = info URL
+        //   u8 tag, u8 len, len bytes UTF-8    tag 1 = name, 2 = info URL, 3 = version
         const metaBytes = [];
         const pushMeta = (tag, text, max) => {
             if (!text) return;
@@ -9611,6 +9612,7 @@ class CodeGenerator {
         };
         pushMeta(1, this._metaName, 48);
         pushMeta(2, this._metaInfo, 160);
+        pushMeta(3, this._metaVersion, 24);
         if (metaBytes.length) {
             const hs = HEADER_SIZE_V6 + metaBytes.length;
             header[20] = (hs >> 8) & 0xFF;      // rewrite header_size
@@ -14752,6 +14754,7 @@ class CompilerError extends Error {
 //
 //   // @name: SML Chart CT002
 //   // @info: https://github.com/.../wiki/sml_chart_ct002
+//   // @version: 20261017_1430      (YYYYMMDD_HHMM, set by hand when the program changes -> header TLV 3)
 //
 // ⚠️ The FIRST match wins. compile() sees the source with #includes already
 // substituted, and a block from examples/common/ could carry such a line
@@ -14765,7 +14768,7 @@ function pragmaMeta(source) {
             new RegExp('^[ \t]*//[ \t]*@' + schluessel + ':[ \t]*(.+)$', 'm'));
         return m ? m[1].trim() : '';
     };
-    return { name: hol('name'), info: hol('info') };
+    return { name: hol('name'), info: hol('info'), version: hol('version') };
 }
 
 function compile(source, options = {}) {
@@ -14809,6 +14812,7 @@ function compile(source, options = {}) {
         const codegen = new CodeGenerator(options.targetAbi);
         codegen._metaName = meta.name || '';
         codegen._metaInfo = meta.info || '';
+        codegen._metaVersion = meta.version || '';
         compiled = codegen.compile(ast);
     } catch (e) {
         if (e instanceof CodeGenError) throw new CompilerError('CodeGen', e);
@@ -24404,9 +24408,10 @@ void CleanUp() {
                 // *_diag, *selftest*, *smoke*) so the dropdown stays a real example list.
                 const skip = /^(test_|bug)|(_diag|selftest|smoke)/i;
                 // Same label as the Repository box on the device's /tc page (gemu2015/Sonoff-Tasmota#128):
-                // "Plain name (file)" from `// @name:` via bytecode/index.json, the bare file name where
-                // there is none, and the list sorted by THAT label — not by file name, which made the
-                // alphabet look random as soon as a name started with a different letter.
+                // the plain name from `// @name:` via bytecode/index.json (ottelo's carry the date, "SML Chart
+                // [12.10.26]"; 17.10.2026: name only, no "(file)"), the bare file name where there is none, and
+                // the list sorted by THAT label — not by file name, which made the alphabet look random as soon
+                // as a name started with a different letter.
                 const names = {};
                 try {
                     const bdir = REPO_EX_DIR.replace(/examples$/, 'bytecode');
@@ -24420,7 +24425,7 @@ void CleanUp() {
                 } catch (e) { /* offline or no index: the file names still work */ }
                 const labelOf = f => {
                     const b = f.name.replace(/\.tc$/, '');
-                    return names[b] ? names[b] + ' (' + b + ')' : b;
+                    return names[b] || b;
                 };
                 const tc = files
                     .filter(f => f.type === 'file' && f.name.endsWith('.tc') && !skip.test(f.name))
