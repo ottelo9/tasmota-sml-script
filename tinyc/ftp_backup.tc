@@ -13,7 +13,7 @@
 // /ftp.cfg: HOST=, USER=, PW=, DIR= each on a line of its own, // comments
 // allowed (mi-hol, PR #92). Without HOST= the backup fails with -11.
 
-char sml_vers[] = "12.10.2026";  // shown in the repository list and the slot
+char sml_vers[] = "18.10.2026 13:20";  // build.html: version in the .tcb header and index.json
 
 persist int bk_res;            // 0 never, 1 ok, 2 failed
 persist int bk_code;           // last error
