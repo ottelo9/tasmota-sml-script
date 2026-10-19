@@ -24412,7 +24412,7 @@ void CleanUp() {
                 // [12.10.26]"; 17.10.2026: name only, no "(file)"), the bare file name where there is none, and
                 // the list sorted by THAT label — not by file name, which made the alphabet look random as soon
                 // as a name started with a different letter.
-                const names = {};
+                const names = {}, versions = {};
                 try {
                     const bdir = REPO_EX_DIR.replace(/examples$/, 'bytecode');
                     const jr = await fetch(`https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/${bdir}/index.json`, { mode: 'cors' });
@@ -24420,12 +24420,15 @@ void CleanUp() {
                         const j = await jr.json();
                         for (const e of ((j && j.programs) || j || [])) {
                             if (e.file && e.name) names[e.file.replace(/\.tcb$/, '')] = e.name;
+                            if (e.file && e.version) versions[e.file.replace(/\.tcb$/, '')] = e.version;
                         }
                     }
                 } catch (e) { /* offline or no index: the file names still work */ }
                 const labelOf = f => {
                     const b = f.name.replace(/\.tc$/, '');
-                    return names[b] || b;
+                    // version DATE behind the name when the repository has a "version" (YYYYMMDD_HHMM): "SML Chart · 14.10.26"
+                    const vm = /^(\d\d)(\d\d)(\d\d)(\d\d)_\d{4}$/.exec(versions[b] || '');
+                    return (names[b] || b) + (vm ? ' \u00b7 ' + vm[4] + '.' + vm[3] + '.' + vm[2] : '');
                 };
                 const tc = files
                     .filter(f => f.type === 'file' && f.name.endsWith('.tc') && !skip.test(f.name))
