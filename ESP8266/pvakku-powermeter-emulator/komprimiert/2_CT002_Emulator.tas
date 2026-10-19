@@ -282,7 +282,7 @@ tx+=hn(d[55+i])
 next
 ;Gleicher Messwert behaelt info_idx
 if ig!=gn {
-ix=(ix+1)%256
+ix=ix%255+1
 ig=gn
 }
 tx+="|"+s(0z)+"|0|0|"+s(0z)
@@ -333,7 +333,7 @@ up=udp(0 12345)
 CT Type{m}CT002
 CT MAC{m}%cm%
 Mode A/B/C/D{m}%0d[2]%/%0d[3]%/%0d[4]%/%0d[5]%
-$<small>CT-Emu 13.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
+$<small>CT-Emu 19.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
 
 >M 1
 +1,3,s,0,9600,DTZ541,1

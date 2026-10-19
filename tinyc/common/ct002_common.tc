@@ -134,6 +134,7 @@ int  ct_reset_req;                 // 1 = an inspection ended, re-seed the regul
 int  ct_idx;                       // response index 0..255, wraps
 int  ct_iprev[8];                  // values behind ct_idx, see ctIdx()
 int  ct_ims;                       // millis() of the last ct_idx step
+int  ct_dhold;                     // 1 = a battery detects its phase, A/B/C hold
 
 // Filled by ctAgg(), read by the response builder.
 int  ct_nbA; int ct_nbB; int ct_nbC; int ct_nbD; int ct_live;
@@ -686,6 +687,11 @@ void ctHandle(int n) {
         ct_spart[idx] = 1;                        // absent field means "participating"
     }
 
+    // No meter data yet (boot): a battery detecting its phase would read our
+    // zeros as a move on every loaded phase and store a wrong one. Silence
+    // makes it wait or retry (AstraMeter #735). smlGetV(n) only reads the flag.
+    if (f == 0 && smlGetV(1) == 0) return;
+
     ct_slot = idx;
     ctBuild(ct_qbtype, ct_qbmac, ct_qmac);
     udp(2, ct_txb);                                // unicast back to the sender
@@ -735,13 +741,14 @@ int   ct_stall[4];      // consecutive capped cycles the batteries ignored
 #define CT_PACE_ACT   80      // smallest command a B2500 can act on at all
 
 // Output the batteries of this loop have already delivered. Phase A/B/C see
-// only their own bucket; the saldierend total sees every battery.
+// only their own bucket; the saldierend total sees every steered battery - not
+// one on phase 0, whose output ctPower() already adds back (AstraMeter #735).
 int ctPool(int ph) {
     if (ph < 3) return ctSum(ph + 1);
     int s = 0;
     int i = 0;
     for (i = 0; i < CT_NSLOT; i = i + 1) {
-        if (ct_sused[i] == 1 && ct_spart[i] == 1) s = s + ct_spwr[i];
+        if (ct_sused[i] == 1 && ct_spart[i] == 1 && ct_sph[i] != 0) s = s + ct_spwr[i];
     }
     return s;
 }
@@ -937,29 +944,52 @@ void ctCtrlReset() {
 }
 
 void ctPower() {
+    // A battery on phase 0 is detecting its phase: it steps its output by up
+    // to 2000 W and watches which phase follows. The others must not cancel
+    // that step (AstraMeter #735). The total gets its output added back; A/B/C
+    // cannot, its phase is unknown - they hold while it probes, then re-seed.
+    // Only while it reports output: one stuck in detection (a Venus E Mini
+    // sends 1 W throughout) must not freeze A/B/C for good.
+    int probe = 0;
+    int ndet = 0;
+    int i = 0;
+    for (i = 0; i < CT_NSLOT; i = i + 1) {
+        if (ct_sused[i] == 1 && ct_sph[i] == 0) {
+            probe = probe + ct_spwr[i];
+            if (ct_spwr[i] > 50 || ct_spwr[i] < -50) ndet = ndet + 1;
+        }
+    }
+    if (ndet == 0 && ct_dhold == 1) ct_reset_req = 1;
+    ct_dhold = 0;
+    if (ndet > 0) ct_dhold = 1;
     if (ct_reset_req == 1) {
         ct_reset_req = 0;
         ctCtrlReset();
     }
+    float tot = smlGet(1) + probe;
     if (sml_ph3 == 1) {
         ct_ra = (int)smlGet(4);
         ct_rb = (int)smlGet(5);
         ct_rc = (int)smlGet(6);
-        ct_pa = ctCtrl(smlGet(4), 0);
-        ct_pb = ctCtrl(smlGet(5), 1);
-        ct_pc = ctCtrl(smlGet(6), 2);
+        if (ct_dhold == 1) {
+            ct_pa = 0; ct_pb = 0; ct_pc = 0;      // 0 = keep the current output
+        } else {
+            ct_pa = ctCtrl(smlGet(4), 0);
+            ct_pb = ctCtrl(smlGet(5), 1);
+            ct_pc = ctCtrl(smlGet(6), 2);
+        }
     } else {
         // Single-value meter: everything on L1, like the Shelly emulation.
         // Set every battery to phase A (or all to D, which reads the total).
         ct_ra = (int)smlGet(1);
         ct_rb = 0;
         ct_rc = 0;
-        ct_pa = ctCtrl(smlGet(1), 0);
+        ct_pa = ctCtrl(tot, 0);            // L1 is the total: add back like D
         ct_pb = 0;
         ct_pc = 0;
     }
     ct_rtot = (int)smlGet(1);
-    ct_ptot = ctCtrl(smlGet(1), 3);    // the saldierend total — phase D reads this
+    ct_ptot = ctCtrl(tot, 3);          // the saldierend total — phase D reads this
     ctIdx();
 }
 
@@ -981,7 +1011,8 @@ void ctIdx() {
     if (ch == 0) return;
     ct_iprev[0] = ct_pa; ct_iprev[1] = ct_pb; ct_iprev[2] = ct_pc; ct_iprev[3] = ct_ptot;
     ct_iprev[4] = ct_ra; ct_iprev[5] = ct_rb; ct_iprev[6] = ct_rc; ct_iprev[7] = ct_rtot;
-    ct_idx = (ct_idx + 1) & 255;
+    // 1..255: a repeated 0 counts as new every time (AstraMeter #735 docs).
+    ct_idx = ct_idx % 255 + 1;
     ct_ims = millis();
 }
 

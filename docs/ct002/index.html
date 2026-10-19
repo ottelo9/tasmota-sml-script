@@ -160,7 +160,9 @@ body.lang-de .en{display:none}
 <li><code>A</code> / <code>B</code> / <code>C</code>: the battery regulates on this one phase and shares it with other batteries on the same phase.</li>
 <li><code>D</code>: the battery uses the sum of all three phases. With a normal (netting) meter this is usually the right choice.</li>
 <li><code>x</code> on the web page means: the battery is still searching for its phase. It changes its own power and watches which phase moves. With a simulator that always sends the same values it never finishes; then set the phase in the app.</li>
-<li>While a battery searches, it gets the unchanged meter value without offset and without control, otherwise the search would not work. The log shows <code>ph?</code> when it starts and <code>ph A</code> (or B, C, D) when it is done, then <code>reseed</code>: the control starts fresh. A Venus with firmware 1.50 repeats this search about every 35 minutes. All other batteries keep being controlled normally.</li>
+<li>While a battery searches, it gets the unchanged meter value without offset and without control, otherwise the search would not work. The log shows <code>ph?</code> when it starts and <code>ph A</code> (or B, C, D) when it is done, then <code>reseed</code>: the control starts fresh. A Venus with firmware 1.50 repeats this search about every 35 minutes.</li>
+<li>The other batteries must not cancel out the search step. On <code>D</code> they are controlled as if the searching battery were not there. On <code>A</code>/<code>B</code>/<code>C</code> they hold their output while the searching battery is pushing power, because nobody knows yet which phase it is on. That takes at most about 40 seconds.</li>
+<li>Right after a restart, before the meter has sent its first value, a searching battery gets no answer. It waits and tries again instead of storing a wrong phase.</li>
 </ul>
 </div>
 <div class="de">
@@ -187,7 +189,9 @@ body.lang-de .en{display:none}
 <li><code>A</code> / <code>B</code> / <code>C</code>: Der Akku regelt auf diese eine Phase und teilt sie sich mit anderen Akkus auf derselben Phase.</li>
 <li><code>D</code>: Der Akku nimmt die Summe aller drei Phasen. Bei einem normalen (saldierenden) Zähler meistens die richtige Wahl.</li>
 <li><code>x</code> auf der Webseite heißt: Der Akku sucht noch seine Phase. Er ändert dazu seine eigene Leistung und schaut, welche Phase sich mitbewegt. Mit einem Simulator, der immer dieselben Werte schickt, wird er nie fertig. Stelle die Phase dann in der App fest ein.</li>
-<li>Solange ein Akku sucht, bekommt er den unveränderten Zählerwert, ohne Offset und ohne Regelung, sonst würde die Suche nicht funktionieren. Im Log steht zu Beginn <code>ph?</code> und am Ende <code>ph A</code> (oder B, C, D), danach <code>reseed</code>: Die Regelung fängt frisch an. Eine Venus mit Firmware 1.50 wiederholt diese Suche etwa alle 35 Minuten. Alle anderen Akkus werden normal weitergeregelt.</li>
+<li>Solange ein Akku sucht, bekommt er den unveränderten Zählerwert, ohne Offset und ohne Regelung, sonst würde die Suche nicht funktionieren. Im Log steht zu Beginn <code>ph?</code> und am Ende <code>ph A</code> (oder B, C, D), danach <code>reseed</code>: Die Regelung fängt frisch an. Eine Venus mit Firmware 1.50 wiederholt diese Suche etwa alle 35 Minuten.</li>
+<li>Die anderen Akkus dürfen den Suchschritt nicht wegregeln. Auf <code>D</code> werden sie geregelt, als wäre der suchende Akku nicht da. Auf <code>A</code>/<code>B</code>/<code>C</code> halten sie ihre Leistung, solange der suchende Akku Leistung schiebt, denn auf welcher Phase er hängt, weiß noch keiner. Das dauert höchstens etwa 40 Sekunden.</li>
+<li>Direkt nach einem Neustart, bevor der Zähler seinen ersten Wert geliefert hat, bekommt ein suchender Akku keine Antwort. Er wartet und versucht es erneut, statt eine falsche Phase zu speichern.</li>
 </ul>
 </div>
 </section>

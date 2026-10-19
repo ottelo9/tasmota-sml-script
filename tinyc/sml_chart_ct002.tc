@@ -14,7 +14,7 @@
 #include "pv_switch_common.tc"
 #include "ct002_common.tc"
 
-char sml_vers[] = "18.10.2026 13:20";
+char sml_vers[] = "19.10.2026 17:55";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 

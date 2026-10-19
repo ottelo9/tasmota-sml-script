@@ -366,8 +366,9 @@ next
 ; Laufende Nummer nur bei einem neuen Zählerwert erhöhen. Der Akku fragt
 ; alle 0,6 s, der Zähler liefert nur alle 1-2 s: gleicher Wert mit gleicher
 ; Nummer = "schon bekommen", der Akku regelt ihn nicht doppelt aus.
+; Nur 1..255: eine wiederholte 0 zählt beim Akku jedes Mal als neu.
 if ig!=gn {
-  ix=(ix+1)%256
+  ix=ix%255+1
   ig=gn
 }
 tx+="|"+s(0z)+"|0|0|"+s(0z)
@@ -427,7 +428,7 @@ if wifis==0 {
 CT Type{m}CT002
 CT MAC{m}%cm%
 Mode A/B/C/D{m}%0d[2]%/%0d[3]%/%0d[4]%/%0d[5]%
-$<small>CT-Emu 13.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
+$<small>CT-Emu 19.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
 
 ; SML Sektion an euren Stromzähler anpassen
 ; Reihenfolge nicht ändern: 1=Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]
