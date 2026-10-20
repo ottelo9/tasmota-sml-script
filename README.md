@@ -104,11 +104,11 @@ Hier liegen die Scripte, die via DropDown direkt über Tasmota auswählbar sind.
 
 **ESP8266**  
 Alle Scripte (auch pvakku-powermeter-emulator) in der alten Version für den kleinen ESP8266 und ohne Zähler-DropDown Auswahlmenü. Es sind die gleichen wie aus dem Hauptverzeichnis nur werden diese nicht mehr aktualisiert (eingeforener Versionstand). Die Scripte funktionieren natürlich auch auf einem ESP32. Hier findet ihr auch die pvakku-powermeter-emulator Scripte, die auf dem ESP8266 lauffähig sind. Hier gibt es keine Diagramme, da der ESP zu klein ist. Aber die Emulation läuft ebenfalls einwandfrei!  
-Neu: [Marstek CT002 Emulator](ESP8266/pvakku-powermeter-emulator) für bis zu 4 Marstek-Akkus (`2_CT002_Emulator.tas`, von next145). Dafür das Image **tasmota1m_ct002_ottelo_tas** aus meinem [Image-Repo](https://github.com/ottelo9/tasmota-sml-images) verwenden. Es hat die Seite **Marstek CT002** (`/ctreg`, unter Werkzeuge) zur einmaligen Anmeldung in der Marstek-Cloud.  
+Neu: [Marstek CT002 Emulator](ESP8266/pvakku-powermeter-emulator) für bis zu 4 Marstek-Akkus (`2_CT002_Emulator.tas`, von next145). Dafür das Image **tasmota1m_ct002_ottelo_tas** aus meinem [Image-Repo](https://github.com/ottelo9/tasmota-sml-images) verwenden. Es hat die Seite **Marstek CT002** (`/ctreg`, unter Tools) zur einmaligen Anmeldung in der Marstek-Cloud.  
 
 ### C) Testtools:
 <b>UDP/HTTP/PING/mDNS Tester</b>  
-Ihr könnt die Emulation mit meinem [PowerScript](pvakku-powermeter-emulator/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping, mDNS). Die Vorgabe-Knöpfe nennen jeweils das Gerät: EcoTracker, Shelly Pro 3EM oder Pro EM50:  
+Ihr könnt die Emulation mit meinem [PowerScript](test-tools/Shelly-EcoTracker%20Tester.ps1) Tool testen (UDP, HTTP Get, Ping, mDNS). Die Vorgabe-Knöpfe nennen jeweils das Gerät: EcoTracker, Shelly Pro 3EM oder Pro EM50:  
 <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/c70370f6-00c6-4fc8-bef0-9253bf2b6ece" />
 
 <b>SML Simulator</b>  

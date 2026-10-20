@@ -9,13 +9,14 @@ GitHub Pages). Personal setup, devices and working rules: `CLAUDE.local.md`
 
 | Path | What |
 |---|---|
-| `tinyc/*.tc` | the six programs: `sml_simple`, `sml_chart`, `sml_ct002`, `sml_chart_ct002`, `sml_eco_shelly`, `sml_chart_eco_shelly`; plus `ftp_backup` (own slot, one language, own `sml_vers` - bumped only when it changes; nightly 00:10 copy of `*.pvs`/`*.cfg`/`*.def` via `/ftp.cfg` into `<folder>/<topic>/<weekday 1..7>`, the button into `.../0`) |
+| `tinyc/*.tc` | the six programs: `sml_simple`, `sml_chart`, `sml_ct002`, `sml_chart_ct002`, `sml_eco_shelly`, `sml_chart_eco_shelly`; plus `ftp_backup` (own slot, one language, own `sml_vers` - bumped only when it changes; nightly 00:10 copy of `*.pvs`/`*.cfg`/`*.def` via `/ftp.cfg` into `<folder>/<topic>/<weekday 1..7>`, the button into `.../0`); and `mqtt_push` (own slot, one language: publishes a user JSON with `%sml1%`..`%sml6%` / `%-smlN%` to a user topic, `/mqtt_push.cfg` with `TOPIC=`/`JSON=`/`EVERY=`/`SMOOTH=` (s, exponential), re-read every 60 s; reads `smlGet()` directly, no data from the SML program; go-e PV surplus, images issue #67) |
 | `tinyc/other/` | programs outside the repository list (build.html skips subfolders): `cam_dfr1154/` holds everything the camera needs, already renamed (`.tc`/`.tcb`, `ped.espdl` from esp-dl, `picotts_{de-DE,en-US}_{ta,sg}.bin`, `I2SAUDIO.cfg`; the I2SAUDIO plugin and the firmware are linked, not stored); guide = `docs/cam_dfr1154/index.html`. `cam_dfr1154.tc` = gemu's `webcam_tinyc.tc` (fork 72b55d3c6) cut down to DFR1154, person detection, night vision, alarm pictures, photo buttons; plus MQTT alarm `tele/<topic>/ALARM` ON/OFF and an HA binary-sensor discovery, both retained via `tasmCmd("Publish2 …")` (needs TinyC ≥ 1.6.72). For the image `tasmota32s3_dfr1154`; `.tcb` built by hand with the same IDE |
 | `tinyc/common/` | shared modules, `#include`d by the programs |
 | `tinyc/bytecode/` | built `.tcb`, `build.html` (the compiler), `index.json` (program picker) |
 | `docs/<topic>/index.html` | help pages, `en`/`de` blocks side by side |
 | `script-list-menu/meters/` | SML descriptors (`.tas`) and `smartmeter.json` for the repo pulldown |
-| `pvakku-powermeter-emulator/` | `Shelly-EcoTracker Tester.ps1` |
+| `pvakku-powermeter-emulator/` | ESP32 Scripter scripts with Shelly/EcoTracker emulator (`.tas`) |
+| `test-tools/` | PowerShell testers: `Shelly-EcoTracker Tester.ps1` (UDP/HTTP/Ping/mDNS against the emulators) |
 
 Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
 `sml_modbus_common`, `ct002_common`, `eco_shelly_common` each include `ui_common`.
@@ -36,7 +37,7 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   `@name`. The firmware (TinyC ≥ 1.6.74) shows `Name 17.10.26 14:30` in the slot
   row and offers a 🔄 update button when the repository has a newer version.
   Never the build time: build.html rebuilds every program.
-- List order: `// @order: N` under `@info` (charts 11-13, SML 21-23, FTP-Backup 31);
+- List order: `// @order: N` under `@info` (charts 11-13, SML 21-23, FTP-Backup 31, MQTT-Push 32);
   build.html writes index.json in that order with `"ordered":true` and a
   `{"sep":1}` separator where the tens change.
 - Help pages are bilingual — change both languages together. Behaviour changes
@@ -130,6 +131,18 @@ chart rings then hold the flow ×100 (`WebChartQ(0.01)`).
   float32: `sml_chart.bin` 1965 (s4h 481, s24h 1441, dcon 31, mcon 12)
   / +4 baselines = 1969 / +wval + wcon 53 = 2023; `sml_chart_pv.bin` 43 / 46
   / 100 the same way. Each block only if present.
+- Start check (`sml_chart_fix()`, first 60 s tick, import and export side):
+  zero points above the reading or more than 1000/day below it are rebuilt
+  from the bars (day = reading - today's bar if `sml_da` is today, month/week
+  from the day bars, year from the month bars); `sml_fix` shows
+  "Summen korrigiert" (help `#fix`) until midnight. Before changing anything
+  it copies the own .pvs (`SML_PVS`, set per program before the include) to
+  `SML_BAK` and `/tc_options.cfg` to `/tc_options.bak`. Only impossible values
+  count, so a manual reset survives - never compare zero points with the
+  bars, they differ after every reset.
+- Midnight: the old day/week/month slot is closed with the old zero points
+  BEFORE they roll; the export side keeps its own last day (`sml_pv_dlast`) -
+  `sml_da` is already 1 there on the 1st.
 - Weeks are ISO (`tasm_cw`), index 0 = week 1, new week on Monday 00:00
   (`tasm_wday == 2`). `sml_wval == 0` at first start falls back to `sml_dval`.
 - Editor (`docs/pvs_editor/tinyc_chart_editor.html`) and converter

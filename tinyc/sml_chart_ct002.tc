@@ -9,12 +9,14 @@
 // there - Tasmota dispatches every webOn to slot 0), USE_SML.
 
 #include "ui_common.tc"
+#define SML_PVS "/sml_chart_ct002.pvs"   // own .pvs, backed up before a correction
+#define SML_BAK "/sml_chart_ct002.bak"
 #include "sml_chart_common.tc"
 #include "sml_modbus_common.tc"
 #include "pv_switch_common.tc"
 #include "ct002_common.tc"
 
-char sml_vers[] = "19.10.2026 17:55";
+char sml_vers[] = "20.10.2026 19:08";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 

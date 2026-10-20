@@ -1,4 +1,5 @@
 ftp_backup.tcb
+mqtt_push.tcb
 sml_chart.tcb
 sml_chart_ct002.tcb
 sml_chart_eco_shelly.tcb

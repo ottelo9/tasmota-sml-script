@@ -71,6 +71,7 @@ body.lang-de .en{display:none}
   <a href="#modbus">Modbus</a>
   <a href="#pvswitch"><span class="en">PV switch</span><span class="de">PV-Schalter</span></a>
   <a href="#ftp">FTP-Backup</a>
+  <a href="#mqttpush">MQTT-Push</a>
   <a href="#options"><span class="en">Settings file</span><span class="de">Einstellungsdatei</span></a>
   <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
 </nav>
@@ -143,7 +144,7 @@ body.lang-de .en{display:none}
 </table>
 <h3 id="installation">Installation</h3>
 <ol>
-<li>In Tasmota <b>Werkzeuge &rarr; TinyC Console</b> öffnen.</li>
+<li>In Tasmota <b>Tools &rarr; TinyC Console</b> öffnen.</li>
 <li>Im Kasten <b>Repository</b> in der oberen Liste <b>SmartMeter/PV/Emulator (ottelo)</b> auswählen. Bei meinen Images ist das schon ausgewählt.</li>
 <li>In der Liste darunter das Programm auswählen, <b>Slot&nbsp;0</b> stehen lassen und <b>Download &amp; Load</b> drücken.</li>
 <li>In der Zeile des Slots <b>A</b> einschalten (nach einem Neustart automatisch starten, wird grün). Läuft das Programm noch nicht, mit &#x25B6; starten.</li>
@@ -396,6 +397,18 @@ body.lang-de .en{display:none}
 </div>
 </section>
 
+<section id="fix">
+<h2><span class="en">&#x26A0;&#xFE0F; Totals corrected</span><span class="de">&#x26A0;&#xFE0F; Summen korrigiert</span></h2>
+<div class="en">
+<p>Today, this week, month and year are counted from a starting value each: the meter reading at midnight, on Monday, on the 1st and on 1 January. When the program starts, it checks these starting values. If one of them cannot be right, for example because it is higher than the meter reading, or because today would already be more than 1000&nbsp;kWh, the program works them out again from the bars: today from today's bar, the month from the day bars since the 1st, the week from the days since Monday, the year from the month bars. Then the note <b>Totals corrected</b> appears on the main page until midnight. Before it changes anything, the program copies its data file and the settings file as they were: <code>/sml_chart.bak</code> (or <code>sml_chart_ct002.bak</code>, <code>sml_chart_eco_shelly.bak</code>) and <code>/tc_options.bak</code>. To go back, rename them to <code>.pvs</code> / <code>.cfg</code>, stop the program, upload them and start it again.</p>
+<p>This happens after a meter change, or when a <code>.pvs</code> or <code>tc_options.cfg</code> from another device or an older state was copied back. Before, one huge bar for today made all the other bars look empty. If the corrected totals still look wrong, press &#x1F522;&nbsp;Reset (<a href="#data">chart data</a>). A reset you did yourself is never undone by this check.</p>
+</div>
+<div class="de">
+<p>Heute, diese Woche, dieser Monat und dieses Jahr zählen jeweils ab einem Startwert: dem Zählerstand um Mitternacht, am Montag, am 1. und am 1. Januar. Beim Start prüft das Programm diese Startwerte. Kann einer davon nicht stimmen, weil er z.&nbsp;B. über dem Zählerstand liegt oder heute schon mehr als 1000&nbsp;kWh wären, rechnet das Programm sie aus den Balken neu aus: heute aus dem heutigen Balken, den Monat aus den Tagesbalken seit dem 1., die Woche aus den Tagen seit Montag, das Jahr aus den Monatsbalken. Dann steht auf der Hauptseite bis Mitternacht der Hinweis <b>Summen korrigiert</b>. Bevor es etwas ändert, kopiert das Programm seine Datendatei und die Einstellungsdatei so, wie sie waren: <code>/sml_chart.bak</code> (bzw. <code>sml_chart_ct002.bak</code>, <code>sml_chart_eco_shelly.bak</code>) und <code>/tc_options.bak</code>. Willst du zurück, benenn sie in <code>.pvs</code> bzw. <code>.cfg</code> um, stopp das Programm, lade sie hoch und starte es wieder.</p>
+<p>Das passiert nach einem Zählertausch, oder wenn eine <code>.pvs</code> oder <code>tc_options.cfg</code> von einem anderen Gerät oder einem älteren Stand zurückkopiert wurde. Vorher hat ein riesiger Balken für heute alle anderen Balken leer aussehen lassen. Sehen die korrigierten Summen trotzdem falsch aus, drück &#x1F522;&nbsp;Reset (<a href="#data">Diagrammdaten</a>). Einen Reset, den du selbst gemacht hast, macht diese Prüfung nie rückgängig.</p>
+</div>
+</section>
+
 <section id="telemetry">
 <h2><span class="en">Telemetry</span><span class="de">Telemetrie</span></h2>
 <div class="en">
@@ -587,13 +600,13 @@ DIR=/Tasmota</pre>
 <li>FRITZ!Box: <i>Heimnetz &rarr; Speicher (NAS)</i>: Speicher und <b>Zugriff über FTP</b> einschalten.</li>
 <li>FRITZ!Box: <i>System &rarr; FRITZ!Box-Benutzer</i>: einen Benutzer anlegen, z.&nbsp;B. <code>fritzuser</code>, mit <b>Zugang zu NAS-Inhalten</b> und Schreibrecht.</li>
 <li>Auf der FRITZ!Box einen Ordner für die Sicherungen anlegen, z.&nbsp;B. <code>Tasmota</code> .</li>
-<li>Auf dem Gerät die Datei <code>/ftp.cfg</code> anlegen (<i>Werkzeuge &rarr; Dateisystem verwalten</i>, oder über den Link <b>ftp.cfg</b> auf der Hauptseite, sobald das Programm läuft). So (<a href="ftp.cfg" download>Beispiel</a>):
+<li>Auf dem Gerät die Datei <code>/ftp.cfg</code> anlegen (<i>Tools &rarr; Manage File system</i>, oder über den Link <b>ftp.cfg</b> auf der Hauptseite, sobald das Programm läuft). So (<a href="ftp.cfg" download>Beispiel</a>):
 <pre>HOST=192.168.178.1
 USER=fritzuser
 PW=fritzpassword
 DIR=/Tasmota</pre>
 <code>HOST</code> ist die IP der FRITZ!Box. Nimm die Zahl, nicht <code>fritz.box</code>. <code>USER</code> und <code>PW</code> sind Benutzer und Passwort, <code>DIR</code> ist der Ordner, so wie ihn ein FTP-Programm (z.&nbsp;B. FileZilla) nach der Anmeldung an der FRITZ!Box zeigt. Zeilen mit <code>//</code> am Anfang sind Kommentare.</li>
-<li><i>Werkzeuge &rarr; TinyC Console</i>: <b>FTP-Backup</b> aus dem Repository in einen freien Slot laden (z.&nbsp;B. Slot&nbsp;1), Autostart einschalten und starten.</li>
+<li><i>Tools &rarr; TinyC Console</i>: <b>FTP-Backup</b> aus dem Repository in einen freien Slot laden (z.&nbsp;B. Slot&nbsp;1), Autostart einschalten und starten.</li>
 <li>Zum Testen auf der Hauptseite <b>Backup</b> drücken.</li>
 </ol>
 <p>Das Passwort steht im Klartext in <code>/ftp.cfg</code> auf dem Gerät. Gib dem FRITZ!Box-Benutzer deshalb am besten nur Zugriff auf diesen Ordner.</p>
@@ -605,7 +618,7 @@ DIR=/Tasmota</pre>
 <ol>
 <li>Die Dateien von der FRITZ!Box herunterladen.</li>
 <li>Das SML-Programm in der TinyC Console stoppen. (Beim Stoppen schreibt es seine eigene <code>.pvs</code>, die sonst deine überschreiben würde.)</li>
-<li>Die Dateien unter <i>Werkzeuge &rarr; Dateisystem verwalten</i> hochladen.</li>
+<li>Die Dateien unter <i>Tools &rarr; Manage File system</i> hochladen.</li>
 <li>Das SML-Programm wieder starten.</li>
 </ol>
 <h3>Fehlernummern</h3>
@@ -619,6 +632,66 @@ DIR=/Tasmota</pre>
 <tr><th>-13</th><td>Die Sicherung ist mit einem Fehler abgebrochen. Mehr steht im Tasmota-Log (<code>TCC: workerVM</code>). Steht dort <code>Bounds error</code> und <code>ctx=bkWork</code>, ist das Image zu alt (vor dem 12.10.2026). Spiel ein neueres auf.</td></tr>
 </table>
 <p>Die genaue Antwort des Servers steht im Tasmota-Log (<code>TCC: ftp &hellip;</code>).</p>
+</div>
+</section>
+
+<section id="mqttpush">
+<h2>MQTT-Push</h2>
+<div class="en">
+<p>The small extra program <b>MQTT-Push</b> sends meter values to an MQTT topic you choose, in a message you write yourself. The idea came from a go-e charger: it charges the car with PV surplus when it gets the grid power by MQTT every few seconds. It works for anything else that wants the values in its own format, too. Like FTP-Backup it runs in a second slot next to your SML program and reads the meter directly, so your SML program stays as it is.</p>
+<h3>Setting it up</h3>
+<ol>
+<li>Tasmota must be connected to the same MQTT broker as the receiver (for the go-e: the charger too).</li>
+<li>On the device, create the file <code>/mqtt_push.cfg</code> (<i>Tools &rarr; Manage File system</i>, or the <b>mqtt_push.cfg</b> link on the main page once the program runs). Like this (<a href="mqtt_push.cfg" download>example</a>):
+<pre>TOPIC=go-eCharger/123456/ids/set
+JSON={"pGrid":%sml1%,"pPv":0,"pAkku":0}
+EVERY=5
+SMOOTH=0</pre></li>
+<li><i>Tools &rarr; TinyC Console</i>: load <b>MQTT-Push</b> from the repository into a free slot (slot&nbsp;2, for example), switch on autostart and start it.</li>
+</ol>
+<table>
+<tr><th>TOPIC</th><td>Where the message goes. For the go-e: <code>go-eCharger/&lt;serial number&gt;/ids/set</code>.</td></tr>
+<tr><th>JSON</th><td>The message. <code>%sml1%</code> to <code>%sml6%</code> are replaced by values 1 to 6 of your meter, in the order of the meter descriptor. With my descriptors <code>%sml1%</code> is the power in W (+ = from the grid, &minus; = feed-in), <code>%sml2%</code> the import, <code>%sml3%</code> the export. <code>%-sml1%</code> gives the same value with the sign turned.</td></tr>
+<tr><th>EVERY</th><td>Seconds between two messages. Default 5.</td></tr>
+<tr><th>SMOOTH</th><td>Smoothing in seconds. 0 = the current values. 30 = roughly the average of the last 30 seconds, so a kettle does not make the charger jump. 50 is about as calm as <code>power2</code> of the SML programs.</td></tr>
+</table>
+<p>The file is read again every minute, so a change needs no restart. For the go-e, check in its documentation which sign it expects for <code>pGrid</code>. If it is the other way round, write <code>%-sml1%</code>. Do not turn the sign in the meter descriptor: the SML programs need it as it is.</p>
+<h3>On the main page</h3>
+<p>The dot shows the last message: <b style="color:#0c0">&#9679;</b> sent, <b style="color:#e00">&#9679;</b> failed (number in brackets, see below), grey = nothing sent yet. Next to it is the time of the last message. <b>mqtt_push.cfg</b> opens the file in the editor.</p>
+<table>
+<tr><th>-1</th><td>Topic or message not accepted (too long, or empty after reading).</td></tr>
+<tr><th>-2</th><td>MQTT is switched off on the device.</td></tr>
+<tr><th>-3</th><td>No meter values: no SML program running, or no meter descriptor.</td></tr>
+<tr><th>-11</th><td><code>/mqtt_push.cfg</code> is missing, or has no <code>TOPIC=</code> or <code>JSON=</code> line.</td></tr>
+</table>
+</div>
+<div class="de">
+<p>Das kleine Zusatzprogramm <b>MQTT-Push</b> schickt Zählerwerte an ein MQTT-Topic deiner Wahl, in einer Nachricht, die du selbst schreibst. Die Idee kam von einer go-e-Wallbox: Sie lädt das Auto mit PV-Überschuss, wenn sie alle paar Sekunden die Netzleistung per MQTT bekommt. Es passt aber auch für alles andere, das die Werte in einem eigenen Format haben will. Wie FTP-Backup läuft es in einem zweiten Slot neben deinem SML-Programm und liest den Zähler direkt aus. Dein SML-Programm bleibt so, wie es ist.</p>
+<h3>Einrichten</h3>
+<ol>
+<li>Tasmota muss mit demselben MQTT-Broker verbunden sein wie der Empfänger (beim go-e also auch die Wallbox).</li>
+<li>Auf dem Gerät die Datei <code>/mqtt_push.cfg</code> anlegen (<i>Tools &rarr; Manage File system</i>, oder über den Link <b>mqtt_push.cfg</b> auf der Hauptseite, sobald das Programm läuft). So (<a href="mqtt_push.cfg" download>Beispiel</a>):
+<pre>TOPIC=go-eCharger/123456/ids/set
+JSON={"pGrid":%sml1%,"pPv":0,"pAkku":0}
+EVERY=5
+SMOOTH=0</pre></li>
+<li><i>Tools &rarr; TinyC Console</i>: <b>MQTT-Push</b> aus dem Repository in einen freien Slot laden (z.&nbsp;B. Slot&nbsp;2), Autostart einschalten und starten.</li>
+</ol>
+<table>
+<tr><th>TOPIC</th><td>Wohin die Nachricht geht. Beim go-e: <code>go-eCharger/&lt;Seriennummer&gt;/ids/set</code>.</td></tr>
+<tr><th>JSON</th><td>Die Nachricht. <code>%sml1%</code> bis <code>%sml6%</code> werden durch die Werte 1 bis 6 deines Zählers ersetzt, in der Reihenfolge der Zählerbeschreibung. Bei meinen Zählerbeschreibungen ist <code>%sml1%</code> die Leistung in W (+ = Bezug, &minus; = Einspeisung), <code>%sml2%</code> der Bezug, <code>%sml3%</code> die Einspeisung. <code>%-sml1%</code> liefert denselben Wert mit umgedrehtem Vorzeichen.</td></tr>
+<tr><th>EVERY</th><td>Sekunden zwischen zwei Nachrichten. Standard 5.</td></tr>
+<tr><th>SMOOTH</th><td>Glättung in Sekunden. 0 = die aktuellen Werte. 30 = ungefähr der Durchschnitt der letzten 30 Sekunden, damit ein Wasserkocher die Wallbox nicht springen lässt. 50 ist etwa so ruhig wie <code>power2</code> der SML-Programme.</td></tr>
+</table>
+<p>Die Datei wird jede Minute neu gelesen, eine Änderung braucht also keinen Neustart. Schau beim go-e in seiner Dokumentation nach, welches Vorzeichen er bei <code>pGrid</code> erwartet. Ist es andersherum, schreib <code>%-sml1%</code>. Dreh das Vorzeichen nicht in der Zählerbeschreibung um, die SML-Programme brauchen es so, wie es ist.</p>
+<h3>Auf der Hauptseite</h3>
+<p>Der Punkt zeigt die letzte Nachricht: <b style="color:#0c0">&#9679;</b> gesendet, <b style="color:#e00">&#9679;</b> fehlgeschlagen (Zahl in Klammern, siehe unten), grau = noch nichts gesendet. Daneben steht die Uhrzeit der letzten Nachricht. <b>mqtt_push.cfg</b> öffnet die Datei im Editor.</p>
+<table>
+<tr><th>-1</th><td>Topic oder Nachricht nicht angenommen (zu lang, oder nach dem Lesen leer).</td></tr>
+<tr><th>-2</th><td>MQTT ist auf dem Gerät ausgeschaltet.</td></tr>
+<tr><th>-3</th><td>Keine Zählerwerte: kein SML-Programm läuft, oder es gibt keine Zählerbeschreibung.</td></tr>
+<tr><th>-11</th><td><code>/mqtt_push.cfg</code> fehlt, oder es fehlt die Zeile <code>TOPIC=</code> oder <code>JSON=</code>.</td></tr>
+</table>
 </div>
 </section>
 

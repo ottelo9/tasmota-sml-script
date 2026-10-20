@@ -119,6 +119,109 @@ int sml_f24_pos;
 int sml_t1;                     // 5s downcounter
 int sml_t2;                     // 60s downcounter
 int sml_hr_last;                // last seen tasm_hour (midnight edge detect)
+int sml_dlast; int sml_wlast; int sml_mlast;   // day / ISO week / month of the last tick
+int sml_fix;                    // 1 = totals rebuilt at start: note on the main page until midnight
+int sml_fix_done;               // start check of the import side ran
+float sml_z[4];                 // zero points day, week, month, year for sml_chart_fix()
+int sml_bak_done;               // the backup before a correction was made
+
+// The program's own .pvs: it cannot ask the firmware for its file name, so
+// each program names it (the .tcb name with .pvs). Renamed file: no backup.
+#ifndef SML_PVS
+#define SML_PVS "/sml_chart.pvs"
+#define SML_BAK "/sml_chart.bak"
+#endif
+
+// Copy src to dst, in 256-byte steps. 0 = done, -1 = no source.
+int sml_chart_cp(char src[], char dst[]) {
+    byte b[256];
+    int i = fileOpen(src, "r");
+    if (i < 0) return -1;
+    int o = fileOpen(dst, "w");
+    if (o >= 0) {
+        int n = fileRead(i, b, 256);
+        while (n > 0) {
+            fileWrite(o, b, n);
+            n = fileRead(i, b, 256);
+        }
+        fileClose(o);
+    }
+    fileClose(i);
+    return 0;
+}
+
+// Before the start check changes anything: the .pvs and the shared cfg as they
+// are on flash, so the state it started from can be had back. One generation,
+// only when a correction happens.
+void sml_chart_bak() {
+    if (sml_bak_done == 1) return;
+    sml_bak_done = 1;
+    sml_chart_cp(SML_PVS, SML_BAK);
+    sml_chart_cp("/tc_options.cfg", "/tc_options.bak");
+    addLog("chart: backup before correction");
+}
+
+// Days of month m in year y.
+int sml_mdays(int m, int y) {
+    if (m == 2) {
+        if (y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)) return 29;
+        return 28;
+    }
+    if (m == 4 || m == 6 || m == 9 || m == 11) return 30;
+    return 31;
+}
+
+// Start check, once per side. The zero points in sml_z (day, week, month, year)
+// are impossible when one lies above the meter reading e, or so far below it
+// that today/this week/month/year would be more than 1000 per day - a meter
+// change, a .pvs or tc_options.cfg from another device or time. Then they are
+// rebuilt from the bars, which do not depend on them: day = e - today's bar,
+// month = day - the days since the 1st, week = day - the days since Monday,
+// year = month - the months since January. A manual reset stays as it is: its
+// values are possible. Returns 1 when sml_z was rebuilt.
+// c[] = day bars (31), mo[] = month bars (12).
+int sml_chart_fix(float e, float c[], float mo[]) {
+    float dd = e - sml_z[0];
+    float ww = e - sml_z[1];
+    float mm = e - sml_z[2];
+    float yy = e - sml_z[3];
+    if (dd >= 0.0 && dd <= 1000.0 && ww >= 0.0 && ww <= 7000.0
+        && mm >= 0.0 && mm <= 31000.0 && yy >= 0.0 && yy <= 366000.0) return 0;
+    int d = tasm_day;
+    int m = tasm_month;
+    if (d < 1 || d > 31 || m < 1 || m > 12) return 0;
+    // Today's bar counts only when the last midnight seen was today's; after
+    // days switched off it would be the same day of an older month.
+    float t = 0.0;
+    if (sml_da == d) t = c[d - 1];
+    if (t < 0.0 || t > 1000.0) t = 0.0;
+    sml_z[0] = e - t;
+    float sum = 0.0;
+    int i = 1;
+    while (i < d) { sum = sum + c[i - 1]; i = i + 1; }
+    sml_z[2] = sml_z[0] - sum;
+    // Days since Monday (tasm_wday: 1 = Sunday); before the 1st they are the
+    // last days of the previous month, still in the same 31 slots.
+    int n = (tasm_wday + 5) % 7;
+    int pm = m - 1;
+    int py = tasm_year;
+    if (pm < 1) { pm = 12; py = py - 1; }
+    int plen = sml_mdays(pm, py);
+    sum = 0.0;
+    i = 1;
+    while (i <= n) {
+        int day = d - i;
+        if (day < 1) day = day + plen;
+        sum = sum + c[day - 1];
+        i = i + 1;
+    }
+    sml_z[1] = sml_z[0] - sum;
+    sum = 0.0;
+    i = 1;
+    while (i < m) { sum = sum + mo[i - 1]; i = i + 1; }
+    sml_z[3] = sml_z[2] - sum;
+    return 1;
+}
 // sml_buf is declared in sml_descriptor.tc and shared by both modules
 
 // ── Storage ────────────────────────────────────────────────────────────────
@@ -368,13 +471,30 @@ void sml_chart_60s_tick() {
     int   d   = tasm_day;        // 1..31
     int   m   = tasm_month;      // 1..12
     int   cw  = tasm_cw;         // ISO week 1..53
+    int   hr  = tasm_hour;
+    int   roll = 0;
 
-    if (d >= 1 && d <= 31) sml_dcon[d - 1] = ein - sml_dval;
-    if (m >= 1 && m <= 12) sml_mcon[m - 1] = ein - sml_mval;
-    if (cw >= 1 && cw <= 53) sml_wcon[cw - 1] = ein - sml_wval;
+    if (sml_fix_done == 0) {
+        sml_fix_done = 1;
+        sml_z[0] = sml_dval; sml_z[1] = sml_wval; sml_z[2] = sml_mval; sml_z[3] = sml_yval;
+        int fresh = 0;
+        if (sml_dval == 0.0 && sml_wval == 0.0 && sml_mval == 0.0 && sml_yval == 0.0) fresh = 1;
+        if (sml_chart_fix(ein, sml_dcon, sml_mcon) == 1) {
+            sml_chart_bak();
+            sml_dval = sml_z[0]; sml_wval = sml_z[1]; sml_mval = sml_z[2]; sml_yval = sml_z[3];
+            if (fresh == 0) sml_fix = 1;      // a first start is no correction
+            addLog("chart: import totals rebuilt");
+            roll = 2;
+        }
+    }
 
-    int hr = tasm_hour;
     if (sml_hr_last != hr && hr == 0) {
+        // Close the old day, week and month first, with their own zero points.
+        // Writing the slots before the reset put the whole of yesterday into
+        // the new day's bar for a minute - and into the .pvs saved right here.
+        if (sml_dlast >= 1) sml_dcon[sml_dlast - 1] = ein - sml_dval;
+        if (sml_mlast >= 1) sml_mcon[sml_mlast - 1] = ein - sml_mval;
+        if (sml_wlast >= 1) sml_wcon[sml_wlast - 1] = ein - sml_wval;
         if (tasm_wday == 2) sml_wval = ein;   // Monday: a new ISO week
         if (d > 1) {
             sml_da = d;
@@ -388,9 +508,16 @@ void sml_chart_60s_tick() {
         }
         if (d == 1 && m == 1) sml_yval = ein;
         sml_dval = ein;
-        sml_chart_save();
+        roll = 1;
+        sml_fix = 0;                          // the note lasts until midnight
     }
+
+    if (d >= 1 && d <= 31) sml_dcon[d - 1] = ein - sml_dval;
+    if (m >= 1 && m <= 12) sml_mcon[m - 1] = ein - sml_mval;
+    if (cw >= 1 && cw <= 53) sml_wcon[cw - 1] = ein - sml_wval;
+    sml_dlast = d; sml_mlast = m; sml_wlast = cw;
     sml_hr_last = hr;
+    if (roll > 0) sml_chart_save();
 }
 
 // ============================================================================
@@ -417,6 +544,12 @@ void sml_chart_render_meter() {
 
 void sml_chart_render_totals() {
     uiSep();
+    if (sml_fix == 1) {
+        if (ui_de) webSend("{s}&#x26A0;&#xFE0F; Summen korrigiert");
+        else       webSend("{s}&#x26A0;&#xFE0F; Totals corrected");
+        uiI("sml/#fix");
+        webSend("{m}{e}");
+    }
 
 #ifdef SML_M3
     float ein = smlGet(2);
@@ -739,6 +872,8 @@ persist watch int sml_sndpwr;        // 1 = publish smoothed power via MQTT
 
 // ── Runtime state ──────────────────────────────────────────────────────────
 int   sml_pv_hr_last;                // PV-side midnight edge detector
+int   sml_pv_dlast; int sml_pv_wlast; int sml_pv_mlast;   // day / ISO week / month of the last tick
+int   sml_pv_fix_done;               // start check of the export side ran
 byte  sml_pv_resp[64];               // tasmCmd response buffer
 
 // Arrays and baselines go into the slot's .pvs, same as the consumption side.
@@ -842,25 +977,51 @@ void sml_chart_pv_60s_tick() {
     int   d    = tasm_day;
     int   m    = tasm_month;
     int   cw   = tasm_cw;
+    int   hr   = tasm_hour;
+    int   roll = 0;
 
-    if (d >= 1 && d <= 31) sml_dprod[d - 1] = eout - sml_dval2;
-    if (m >= 1 && m <= 12) sml_mprod[m - 1] = eout - sml_mval2;
-    if (cw >= 1 && cw <= 53) sml_wprod[cw - 1] = eout - sml_wval2;
+    // Start check as for the import side; only with an export counter, a
+    // meter without one reads 0 here and has nothing to check.
+    if (sml_pv_fix_done == 0 && eout > 0.0) {
+        sml_pv_fix_done = 1;
+        sml_z[0] = sml_dval2; sml_z[1] = sml_wval2; sml_z[2] = sml_mval2; sml_z[3] = sml_yval2;
+        int fresh = 0;
+        if (sml_dval2 == 0.0 && sml_wval2 == 0.0 && sml_mval2 == 0.0 && sml_yval2 == 0.0) fresh = 1;
+        if (sml_chart_fix(eout, sml_dprod, sml_mprod) == 1) {
+            sml_chart_bak();
+            sml_dval2 = sml_z[0]; sml_wval2 = sml_z[1]; sml_mval2 = sml_z[2]; sml_yval2 = sml_z[3];
+            if (fresh == 0) sml_fix = 1;
+            addLog("chart: export totals rebuilt");
+            roll = 2;
+        }
+    }
 
-    int hr = tasm_hour;
     if (sml_pv_hr_last != hr && hr == 0) {
+        // Close the old day, week and month first, see sml_chart_60s_tick.
+        if (sml_pv_dlast >= 1) sml_dprod[sml_pv_dlast - 1] = eout - sml_dval2;
+        if (sml_pv_mlast >= 1) sml_mprod[sml_pv_mlast - 1] = eout - sml_mval2;
+        if (sml_pv_wlast >= 1) sml_wprod[sml_pv_wlast - 1] = eout - sml_wval2;
         if (tasm_wday == 2) sml_wval2 = eout;   // Monday: a new ISO week
         if (d == 1) {
-            // Month-wrap — zero days past previous month's length.
-            int i = sml_da;
+            // Month-wrap — zero days past previous month's length. Its own last
+            // day: sml_da is already 1 here (the import tick ran first), which
+            // wiped days 2..31 of the feed-in bars every first of the month.
+            int i = sml_pv_dlast;
+            if (i < 1) i = 31;               // restarted just before midnight: leave them
             while (i < 31) { sml_dprod[i] = 0.0; i = i + 1; }
             sml_mval2 = eout;
         }
         if (d == 1 && m == 1) sml_yval2 = eout;
         sml_dval2 = eout;
-        sml_chart_pv_save();
+        roll = 1;
     }
+
+    if (d >= 1 && d <= 31) sml_dprod[d - 1] = eout - sml_dval2;
+    if (m >= 1 && m <= 12) sml_mprod[m - 1] = eout - sml_mval2;
+    if (cw >= 1 && cw <= 53) sml_wprod[cw - 1] = eout - sml_wval2;
+    sml_pv_dlast = d; sml_pv_mlast = m; sml_pv_wlast = cw;
     sml_pv_hr_last = hr;
+    if (roll > 0) sml_chart_pv_save();
 }
 
 // ── Renderers. The 4 h / 24 h line charts and the consumption day chart

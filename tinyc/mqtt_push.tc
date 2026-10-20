@@ -1,0 +1,159 @@
+// @name: MQTT-Push
+// @info: https://ottelo9.github.io/tasmota-sml-script/sml/#mqttpush
+// @order: 32
+// mqtt_push.tc — sends meter values as a JSON of your own to an MQTT topic of
+// your own, e.g. the grid power to a go-e charger for PV surplus charging
+// (tasmota-sml-images issue #67). Runs in its own slot next to the SML
+// program and reads the meter straight from the SML driver, so the SML
+// program stays as it is and devices without it pay no RAM.
+// Docs: https://ottelo9.github.io/tasmota-sml-script/sml/#mqttpush
+//
+// /mqtt_push.cfg, one KEY= per line, // comments allowed:
+//   TOPIC=  where to publish
+//   JSON=   the payload; %sml1% .. %sml6% = values 1..6 of the meter descriptor,
+//           %-sml1% .. %-sml6% the same with the sign turned
+//   EVERY=  seconds between two messages (default 5)
+//   SMOOTH= smoothing in seconds (0 = off); about the average of that time
+// The file is read again every 60 s, so a change needs no restart.
+
+char sml_vers[] = "20.10.2026 17:55";  // build.html: version in the .tcb header and index.json
+
+byte mp_topic[130];
+byte mp_tpl[264];              // 255 chars + room to look 7 ahead for "%-smlN%"
+int mp_every;
+int mp_smooth;
+float mp_v[7];                 // 1..6, smoothed when SMOOTH > 1
+int mp_seed;                   // 0 = take the next values as they are
+int mp_cnt;                    // seconds since the last message
+int mp_load;                   // seconds to the next read of the file
+int mp_res;                    // 0 never sent, 1 ok, 2 failed
+int mp_code;
+int mp_hms;                    // hhmmss of the last attempt
+
+// Value of "\nKEY=" (key at a line start) up to the line end, spaces trimmed.
+// s starts with a '\n', so the first line counts too and "// KEY=" does not.
+void mpVal(byte d[], byte s[], int p, int max) {
+    d[0] = 0;
+    if (p < 0) return;
+    p = p + 1;
+    while (s[p] != '=') p = p + 1;
+    p = p + 1;
+    while (s[p] == ' ') p = p + 1;
+    int i = 0;
+    while (s[p] != 0 && s[p] != '\n' && s[p] != '\r' && i < max - 1) {
+        d[i] = s[p];
+        i = i + 1;
+        p = p + 1;
+    }
+    while (i > 0 && d[i - 1] == ' ') i = i - 1;
+    d[i] = 0;
+}
+
+void mpLoad() {
+    byte cfg[700]; byte t[12];
+    mp_topic[0] = 0; mp_tpl[0] = 0; mp_every = 5; mp_smooth = 0;
+    int f = fileOpen("/mqtt_push.cfg", 0);
+    if (f < 0) return;
+    int k = fileRead(f, cfg, 698);
+    fileClose(f);
+    if (k < 0) k = 0;
+    // a '\n' in front: "\nKEY=" then finds the key on the first line too
+    int i = k;
+    while (i > 0) { cfg[i] = cfg[i - 1]; i = i - 1; }
+    cfg[0] = '\n';
+    cfg[k + 1] = 0;
+    mpVal(mp_topic, cfg, strFind(cfg, "\nTOPIC="), 129);
+    mpVal(mp_tpl, cfg, strFind(cfg, "\nJSON="), 256);
+    mpVal(t, cfg, strFind(cfg, "\nEVERY="), 12);
+    if (t[0] != 0) mp_every = strToInt(t);
+    mpVal(t, cfg, strFind(cfg, "\nSMOOTH="), 12);
+    if (t[0] != 0) mp_smooth = strToInt(t);
+    if (mp_every < 1) mp_every = 1;
+    if (mp_smooth < 0) mp_smooth = 0;
+}
+
+// Number without trailing zeros: 230.000 -> 230, 12.340 -> 12.34
+void mpNum(byte d[], float v) {
+    sprintf(d, "%.3f", v);
+    int i = strlen(d) - 1;
+    while (i > 0 && d[i] == '0') { d[i] = 0; i = i - 1; }
+    if (i > 0 && d[i] == '.') d[i] = 0;
+    if (strcmp(d, "-0") == 0) strcpy(d, "0");
+}
+
+// mp_tpl with %sml1%..%sml6% replaced, %-sml1% = with the sign turned (the
+// SML programs need the descriptor's sign, so it cannot be turned there).
+// Copied char by char: a '%' in a sprintf format would be eaten.
+void mpBuild(byte out[]) {
+    byte nb[24];
+    int i = 0; int o = 0;
+    while (mp_tpl[i] != 0 && o < 500) {
+        int m = 0;
+        if (mp_tpl[i] == '%' && mp_tpl[i + 1] == '-') m = 1;
+        if (mp_tpl[i] == '%' && mp_tpl[i + m + 1] == 's' && mp_tpl[i + m + 2] == 'm' && mp_tpl[i + m + 3] == 'l'
+            && mp_tpl[i + m + 4] >= '1' && mp_tpl[i + m + 4] <= '6' && mp_tpl[i + m + 5] == '%') {
+            float v = mp_v[mp_tpl[i + m + 4] - '0'];
+            if (m == 1) v = 0.0 - v;
+            mpNum(nb, v);
+            int j = 0;
+            while (nb[j] != 0 && o < 500) { out[o] = nb[j]; o = o + 1; j = j + 1; }
+            i = i + m + 6;
+        } else {
+            out[o] = mp_tpl[i];
+            o = o + 1;
+            i = i + 1;
+        }
+    }
+    out[o] = 0;
+}
+
+void EverySecond() {
+    if (mp_load <= 0) { mpLoad(); mp_load = 60; }
+    mp_load = mp_load - 1;
+    int n = smlGet(0);                   // values in the descriptor, 0 = no meter
+    if (n > 6) n = 6;
+    int i;
+    for (i = 1; i <= n; i = i + 1) {
+        float x = smlGet(i);
+        if (mp_smooth > 1 && mp_seed == 1) mp_v[i] = mp_v[i] + (x - mp_v[i]) / mp_smooth;
+        else mp_v[i] = x;
+    }
+    if (n > 0) mp_seed = 1;
+    mp_cnt = mp_cnt + 1;
+    if (mp_cnt < mp_every) return;
+    mp_cnt = 0;
+    mp_hms = tasm_hour * 10000 + tasm_minute * 100 + tasm_second;
+    int e = 0;
+    if (mp_topic[0] == 0 || mp_tpl[0] == 0) e = -11;
+    else if (n == 0) e = -3;
+    else {
+        byte out[512];
+        mpBuild(out);
+        e = mqttPublish(mp_topic, out, 0);   // 0 = no console line every few seconds
+    }
+    if (e == 0) mp_res = 1;
+    else { mp_res = 2; mp_code = e; }
+}
+
+void WebCall() {
+    byte c[200]; byte b[12];
+    if (mp_res == 1)      strcpy(b, "#0c0");
+    else if (mp_res == 2) strcpy(b, "#e00");
+    else                  strcpy(b, "#888");
+    if (mp_res == 0) {
+        sprintf(c, "{s}MQTT-Push <span style='color:%s'>&#9679;</span> -", b);
+    } else {
+        sprintf(c, "{s}MQTT-Push <span style='color:%s'>&#9679;</span> <span style='font-weight:normal;font-size:.85em'>&#x1F552; %02d:%02d:%02d</span>", b, mp_hms / 10000, (mp_hms / 100) % 100, mp_hms % 100);
+    }
+    if (mp_res == 2) {
+        sprintf(b, " (%d)", mp_code);
+        strcat(c, b);
+    }
+    strcat(c, "{m}<a href='/ufse?file=/mqtt_push.cfg'>mqtt_push.cfg</a>{e}");
+    webSend(c);
+}
+
+int main() {
+    addLog("mqttpush: start %s", sml_vers);
+    return 0;
+}
