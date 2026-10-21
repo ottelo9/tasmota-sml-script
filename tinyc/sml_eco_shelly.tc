@@ -13,10 +13,10 @@
 #include "pv_switch_common.tc"
 #include "eco_shelly_common.tc"
 
-char sml_vers[] = "18.10.2026 13:20";
+char sml_vers[] = "21.10.2026 18:09";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
-persist int sml_sndpwr;      // 1 = publish power2 via MQTT
+persist int sml_sndpwr;      // 1 = publish PwrAvg via MQTT
 
 int sml_e_sndpwr;             // edit buffer, applied by Save
 
@@ -53,12 +53,12 @@ void EverySecond() {
 
     if (tasm_uptime - sml_pwr_last >= 5) {
         sml_pwr_last = tasm_uptime;
-        sml_power2 = (0.9 * sml_power2) + (0.1 * smlGet(1));
+        sml_pwravg = (0.9 * sml_pwravg) + (0.1 * smlGet(1));
         if (sml_sndpwr > 0) {
-            sprintf(sml_ftopic, "stat/%s/script/power2", sml_mtopic);
-            sprintf(sml_pub, "%.0f", sml_power2);
+            sprintf(sml_ftopic, "stat/%s/script/PwrAvg", sml_mtopic);
+            sprintf(sml_pub, "%.0f", sml_pwravg);
             smlPublish(sml_ftopic, sml_pub);
-            sprintf(sml_ftopic, "stat/%s/script/cpwr", sml_mtopic);
+            sprintf(sml_ftopic, "stat/%s/script/PwrSP", sml_mtopic);
             sprintf(sml_pub, "%.0f", es_cpwr);
             smlPublish(sml_ftopic, sml_pub);
         }
@@ -69,10 +69,10 @@ void WebOn() {
     int h = webHandler();
     if (esWebOn(h)) return;          // /v1/json, /rpc/*
     if (h != 7) return;              // /pwr
-    sml_cpwr = es_cpwr; sml_hascp = 1;
+    sml_pwrsp = es_cpwr; sml_hascp = 1;
     if (smlVars()) return;          // /pwr?v=... single values
-    smlPwrJson(sml_power2);
-    sprintfAppend(sml_buf, ",\"cpwr\":%.0f}", es_cpwr);
+    smlPwrJson(sml_pwravg);
+    sprintfAppend(sml_buf, ",\"PwrSP\":%.0f}", es_cpwr);
     smlSendJson(sml_buf);
 }
 
@@ -106,11 +106,10 @@ void WebUI() {
 
     swPanel();
     uiHead("&#x1F4E1;", "Telemetry", "Telemetrie", "sml/#telemetry");
-    if (ui_de) webCheckbox(sml_e_sndpwr, "power2 + cpwr senden (MQTT)");
-    else       webCheckbox(sml_e_sndpwr, "Send power2 + cpwr (MQTT)");
-    sprintf(sml_buf, "<div class='n'>power2: <b>%.0f W</b></div>", sml_power2);
+    webCheckbox(sml_e_sndpwr, "PwrAvg / PwrSP (MQTT)");
+    sprintf(sml_buf, "<div class='n'>PwrAvg: <b>%.0f W</b></div>", sml_pwravg);
     webSend(sml_buf);
-    sprintf(sml_buf, "<div class='n'>cpwr: <b>%.0f W</b></div>", es_cpwr);
+    sprintf(sml_buf, "<div class='n'>PwrSP: <b>%.0f W</b></div>", es_cpwr);
     webSend(sml_buf);
     webSend("<b>HTTP API</b>");
     webSend("<div class='n'>HTTP: <a href='/pwr' target='_blank'>/pwr</a> &nbsp; <a href='/pwr?v=all' target='_blank'>/pwr?v=all</a> &nbsp; <a href='/pwr?v=sml[1]' target='_blank'>/pwr?v=sml[1]</a></div>");
@@ -147,7 +146,7 @@ int main() {
 
     sml_e_sndpwr = sml_sndpwr;
     tasmInfo(0, sml_mtopic);
-    sml_power2 = smlGet(1);
+    sml_pwravg = smlGet(1);
     sml_pwr_last = 0;
 
     esInit(1, 2, 3, 5, 6);       // /v1/json, EM, Shelly, EM1, EMData

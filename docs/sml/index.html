@@ -285,7 +285,7 @@ body.lang-de .en{display:none}
 <ul>
 <li>Main page: flow (gas in m³/h, water in l/min), the meter reading, and day, week, month and year, all in m³.</li>
 <li>Charts: the flow in the line charts, the consumption in m³ in the bar charts.</li>
-<li>Hidden: feed-in, 3 phases, import meter, PV switch and power2.</li>
+<li>Hidden: feed-in, 3 phases, import meter, PV switch and PwrAvg.</li>
 </ul>
 <p>The flow is calculated from the change of the meter reading. If no new pulse comes, it goes down, and once twice the last pulse interval has passed without a pulse it drops to 0.</p>
 <p>Set the meter reading once in the Tasmota console, in pulses. Example for gas: <code>Sensor53 c1 123456</code> means 1234.56&nbsp;m³. Your own descriptor works too: value&nbsp;2 must be the reading in m³, and the line <code>;kind=</code> must be in the file. After changing the descriptor by hand, press Save once.</p>
@@ -297,7 +297,7 @@ body.lang-de .en{display:none}
 <ul>
 <li>Hauptseite: Durchfluss (Gas in m³/h, Wasser in l/min), Zählerstand sowie Tag, Woche, Monat und Jahr, alles in m³.</li>
 <li>Diagramme: der Durchfluss in den Liniendiagrammen, der Verbrauch in m³ in den Balken.</li>
-<li>Ausgeblendet: Einspeisung, 3 Phasen, Bezugszähler, PV-Schalter und power2.</li>
+<li>Ausgeblendet: Einspeisung, 3 Phasen, Bezugszähler, PV-Schalter und PwrAvg.</li>
 </ul>
 <p>Der Durchfluss wird aus der Änderung des Zählerstands berechnet. Kommt kein neuer Impuls, sinkt er. Ist doppelt so viel Zeit wie zwischen den letzten beiden Impulsen ohne Impuls vergangen, fällt er auf 0.</p>
 <p>Den Zählerstand setzt du einmal in der Tasmota-Konsole, in Impulsen. Beispiel für Gas: <code>Sensor53 c1 123456</code> bedeutet 1234,56&nbsp;m³. Ein eigener Descriptor geht auch: Wert&nbsp;2 muss der Zählerstand in m³ sein, und die Zeile <code>;kind=</code> muss in der Datei stehen. Nach einer Änderung am Descriptor von Hand einmal Speichern drücken.</p>
@@ -382,6 +382,7 @@ body.lang-de .en{display:none}
 <p>All three buttons ask before they delete anything.</p>
 <p>The <b>&#x1F4BE; CSV</b> button at the bottom of the settings page saves the chart data as a table: <code>/sml_chart.csv</code>, and with feed-in also <code>/sml_chart_pv.csv</code>. You can download the files in Tasmota's <a href="/ufsd">file manager</a> and open them in a spreadsheet. This also works when the meter delivers no values.</p>
 <p>The program itself keeps its data in its own <code>.pvs</code> file. For a backup, copy this one file away. To restore it, copy it back and restart the program. The file <code>/sml_chart.bin</code> is only used once, to take over data from an older version.</p>
+<p>If the device was off over midnight (power cut, update), the program does the change of day when it starts again: today then counts from the start, and the days in between stay empty. What was used while the device was off cannot be split into days.</p>
 <p class="warn">The charts need the correct time. Until the device has fetched the time from the internet, nothing is recorded.</p>
 </div>
 <div class="de">
@@ -393,6 +394,7 @@ body.lang-de .en{display:none}
 <p>Alle drei Knöpfe fragen nach, bevor sie etwas löschen.</p>
 <p>Der Knopf <b>&#x1F4BE; CSV</b> ganz unten auf der Einstellungsseite speichert die Diagrammdaten als Tabelle: <code>/sml_chart.csv</code>, mit Einspeisung zusätzlich <code>/sml_chart_pv.csv</code>. Herunterladen kannst du sie im <a href="/ufsd">Dateimanager</a> von Tasmota und in einer Tabellenkalkulation öffnen. Das geht auch, wenn der Zähler gerade keine Werte liefert.</p>
 <p>Das Programm selbst speichert seine Daten in seiner eigenen <code>.pvs</code>-Datei. Für eine Sicherung kopierst du diese eine Datei weg. Zum Zurückholen kopierst du sie zurück und startest das Programm neu. Die Datei <code>/sml_chart.bin</code> wird nur einmal gelesen, um Daten aus einer älteren Version zu übernehmen.</p>
+<p>War das Gerät über Mitternacht aus (Stromausfall, Update), holt das Programm den Tageswechsel beim Start nach: Heute zählt dann ab dem Start, die Tage dazwischen bleiben leer. Was in der Zeit verbraucht wurde, lässt sich keinem Tag zuordnen.</p>
 <p class="warn">Die Diagramme brauchen die richtige Uhrzeit. Solange das Gerät die Zeit noch nicht aus dem Internet geholt hat, wird nichts aufgezeichnet.</p>
 </div>
 </section>
@@ -412,33 +414,33 @@ body.lang-de .en{display:none}
 <section id="telemetry">
 <h2><span class="en">Telemetry</span><span class="de">Telemetrie</span></h2>
 <div class="en">
-<p><b>Send power2 (MQTT)</b> (with an emulator: <b>Send power2 + cpwr (MQTT)</b>) is off by default. Switched on, the program sends a strongly smoothed power value every 5 seconds over MQTT. With an emulator it also sends <code>cpwr</code>, the value the battery gets. The switch is only for MQTT. The web address <code>/pwr</code> always works. Below the switch you see the current values and links to <code>/pwr</code> and <a href="#vars"><code>/pwr?v=</code></a>.</p>
+<p><b>PwrAvg (MQTT)</b> (with an emulator: <b>PwrAvg / PwrSP (MQTT)</b>) is off by default. Switched on, the program sends a strongly smoothed power value every 5 seconds over MQTT. With an emulator it also sends <code>PwrSP</code>, the value the battery gets. The switch is only for MQTT. The web address <code>/pwr</code> always works. Below the switch you see the current values and links to <code>/pwr</code> and <a href="#vars"><code>/pwr?v=</code></a>. Until 21.10.2026 the two values were called <code>power2</code> and <code>cpwr</code>.</p>
 <h3>MQTT</h3>
 <table>
-<tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Smoothed power [W]. Reacts slowly on purpose.</td></tr>
-<tr><th><code>stat/&lt;topic&gt;/script/cpwr</code></th><td>Only with an emulator: the value the battery gets, including the offset.</td></tr>
+<tr><th><code>stat/&lt;topic&gt;/script/PwrAvg</code></th><td>Smoothed power [W]. Reacts slowly on purpose.</td></tr>
+<tr><th><code>stat/&lt;topic&gt;/script/PwrSP</code></th><td>Only with an emulator: the value the battery gets, including the offset.</td></tr>
 </table>
-<p>In MQTT Explorer or Home Assistant you find the values under <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, for example <code>stat/tasmota_31F8D4/script/power2</code>. <code>&lt;topic&gt;</code> is the MQTT topic of your device (Tasmota: Configuration &rarr; MQTT &rarr; Topic).</p>
+<p>In MQTT Explorer or Home Assistant you find the values under <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, for example <code>stat/tasmota_31F8D4/script/PwrAvg</code>. <code>&lt;topic&gt;</code> is the MQTT topic of your device (Tasmota: Configuration &rarr; MQTT &rarr; Topic).</p>
 <h3>HTTP <code>/pwr</code></h3>
-<pre><code>{"sml1":-440,"sml2":26714.950,"sml3":659.775,"sml4":-440,"sml5":0,"sml6":0,"power2":-217,"cpwr":-180}</code></pre>
+<pre><code>{"sml1":-440,"sml2":26714.950,"sml3":659.775,"sml4":-440,"sml5":0,"sml6":0,"PwrAvg":-217,"PwrSP":-180}</code></pre>
 <p>Useful for a second battery or control system that asks for the values over the network, for example the dynamic power limiter of opendtu-onbattery. It always works and needs no password.</p>
-<p><code>sml1</code> to <code>sml6</code> are the meter values. Without <a href="#meter">3 phases</a>, <code>sml4</code> is the total power and <code>sml5</code>/<code>sml6</code> are 0. <code>cpwr</code> only appears with an emulator.</p>
-<p>Why smoothed? A battery that follows every short spike starts to swing. <code>sml1</code> is the raw value, <code>power2</code> the calm one.</p>
+<p><code>sml1</code> to <code>sml6</code> are the meter values. Without <a href="#meter">3 phases</a>, <code>sml4</code> is the total power and <code>sml5</code>/<code>sml6</code> are 0. <code>PwrSP</code> only appears with an emulator.</p>
+<p>Why smoothed? A battery that follows every short spike starts to swing. <code>sml1</code> is the raw value, <code>PwrAvg</code> the calm one.</p>
 <p>The MQTT messages only show up in the console from <code>weblog&nbsp;3</code> on, so the console stays readable. If sending fails, this is logged once. <code>-2</code> means MQTT is switched off on the device.</p>
 </div>
 <div class="de">
-<p><b>power2 senden (MQTT)</b> (mit Emulator: <b>power2 + cpwr senden (MQTT)</b>) ist standardmäßig aus. Eingeschaltet schickt das Programm alle 5 Sekunden einen stark geglätteten Leistungswert per MQTT. Mit Emulator schickt es zusätzlich <code>cpwr</code>, den Wert, den der Akku bekommt. Der Schalter gilt nur für MQTT. Die Webadresse <code>/pwr</code> funktioniert immer. Unter dem Schalter siehst du die aktuellen Werte und Links zu <code>/pwr</code> und <a href="#vars"><code>/pwr?v=</code></a>.</p>
+<p><b>PwrAvg (MQTT)</b> (mit Emulator: <b>PwrAvg / PwrSP (MQTT)</b>) ist standardmäßig aus. Eingeschaltet schickt das Programm alle 5 Sekunden einen stark geglätteten Leistungswert per MQTT. Mit Emulator schickt es zusätzlich <code>PwrSP</code>, den Wert, den der Akku bekommt. Der Schalter gilt nur für MQTT. Die Webadresse <code>/pwr</code> funktioniert immer. Unter dem Schalter siehst du die aktuellen Werte und Links zu <code>/pwr</code> und <a href="#vars"><code>/pwr?v=</code></a>. Bis 21.10.2026 hießen die beiden Werte <code>power2</code> und <code>cpwr</code>.</p>
 <h3>MQTT</h3>
 <table>
-<tr><th><code>stat/&lt;topic&gt;/script/power2</code></th><td>Geglättete Leistung [W]. Reagiert absichtlich langsam.</td></tr>
-<tr><th><code>stat/&lt;topic&gt;/script/cpwr</code></th><td>Nur mit Emulator: der Wert, den der Akku bekommt, mit Offset.</td></tr>
+<tr><th><code>stat/&lt;topic&gt;/script/PwrAvg</code></th><td>Geglättete Leistung [W]. Reagiert absichtlich langsam.</td></tr>
+<tr><th><code>stat/&lt;topic&gt;/script/PwrSP</code></th><td>Nur mit Emulator: der Wert, den der Akku bekommt, mit Offset.</td></tr>
 </table>
-<p>Im MQTT Explorer oder in Home Assistant findest du die Werte unter <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, zum Beispiel <code>stat/tasmota_31F8D4/script/power2</code>. <code>&lt;topic&gt;</code> ist das MQTT-Topic deines Geräts (Tasmota: Einstellungen &rarr; MQTT &rarr; Topic).</p>
+<p>Im MQTT Explorer oder in Home Assistant findest du die Werte unter <b>stat &rarr; &lt;topic&gt; &rarr; script</b>, zum Beispiel <code>stat/tasmota_31F8D4/script/PwrAvg</code>. <code>&lt;topic&gt;</code> ist das MQTT-Topic deines Geräts (Tasmota: Configuration &rarr; MQTT &rarr; Topic).</p>
 <h3>HTTP <code>/pwr</code></h3>
-<pre><code>{"sml1":-440,"sml2":26714.950,"sml3":659.775,"sml4":-440,"sml5":0,"sml6":0,"power2":-217,"cpwr":-180}</code></pre>
+<pre><code>{"sml1":-440,"sml2":26714.950,"sml3":659.775,"sml4":-440,"sml5":0,"sml6":0,"PwrAvg":-217,"PwrSP":-180}</code></pre>
 <p>Praktisch für einen zweiten Akku oder eine Steuerung, die die Werte übers Netzwerk abfragt, zum Beispiel den Dynamic Power Limiter von opendtu-onbattery. Das geht immer und ohne Passwort.</p>
-<p><code>sml1</code> bis <code>sml6</code> sind die Zählerwerte. Ohne <a href="#meter">3 Phasen</a> ist <code>sml4</code> die Gesamtleistung, <code>sml5</code>/<code>sml6</code> sind 0. <code>cpwr</code> gibt es nur mit Emulator.</p>
-<p>Warum geglättet? Ein Akku, der jeder kurzen Spitze folgt, fängt an zu schwingen. <code>sml1</code> ist der Rohwert, <code>power2</code> der ruhige.</p>
+<p><code>sml1</code> bis <code>sml6</code> sind die Zählerwerte. Ohne <a href="#meter">3 Phasen</a> ist <code>sml4</code> die Gesamtleistung, <code>sml5</code>/<code>sml6</code> sind 0. <code>PwrSP</code> gibt es nur mit Emulator.</p>
+<p>Warum geglättet? Ein Akku, der jeder kurzen Spitze folgt, fängt an zu schwingen. <code>sml1</code> ist der Rohwert, <code>PwrAvg</code> der ruhige.</p>
 <p>Die MQTT-Nachrichten erscheinen in der Konsole erst ab <code>weblog&nbsp;3</code>, damit die Konsole lesbar bleibt. Klappt das Senden nicht, steht das einmal im Log. <code>-2</code> heißt, MQTT ist auf dem Gerät ausgeschaltet.</p>
 </div>
 </section>
@@ -453,8 +455,8 @@ body.lang-de .en{display:none}
 <table>
 <tr><th><code>sml[n]</code> / <code>smln</code></th><td>Meter value number <i>n</i>. <code>sml[3]</code> is the feed-in reading (calculated with <a href="#bezug">Import meter</a>). Without <a href="#meter">3 phases</a>, <code>sml4</code> is the total power and <code>sml5</code>/<code>sml6</code> are 0.</td></tr>
 <tr><th><code>sml</code></th><td>Short for <code>sml1;sml2;sml3;sml4;sml5;sml6</code></td></tr>
-<tr><th><code>power2</code></th><td>Smoothed power [W]</td></tr>
-<tr><th><code>cpwr</code></th><td>Only with an emulator: the value the battery gets [W]</td></tr>
+<tr><th><code>PwrAvg</code></th><td>Smoothed power [W]</td></tr>
+<tr><th><code>PwrSP</code></th><td>Only with an emulator: the value the battery gets [W]</td></tr>
 <tr><th><code>dval wval mval yval</code></th><td>Only in chart programs, like everything below. Energy bought today, this week, month and year [kWh], as on the main page</td></tr>
 <tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Energy fed in, same periods [kWh]</td></tr>
 <tr><th><code>dcon wcon mcon</code></th><td>Bars for energy bought: 31 days, 53 weeks, 12 months</td></tr>
@@ -470,8 +472,8 @@ body.lang-de .en{display:none}
 <table>
 <tr><th><code>sml[n]</code> / <code>smln</code></th><td>Zählerwert Nummer <i>n</i>. <code>sml[3]</code> ist der Einspeise-Zählerstand (beim <a href="#bezug">Bezugszähler</a> der berechnete). Ohne <a href="#meter">3 Phasen</a> ist <code>sml4</code> die Gesamtleistung, <code>sml5</code>/<code>sml6</code> sind 0.</td></tr>
 <tr><th><code>sml</code></th><td>Kurz für <code>sml1;sml2;sml3;sml4;sml5;sml6</code></td></tr>
-<tr><th><code>power2</code></th><td>Geglättete Leistung [W]</td></tr>
-<tr><th><code>cpwr</code></th><td>Nur mit Emulator: der Wert, den der Akku bekommt [W]</td></tr>
+<tr><th><code>PwrAvg</code></th><td>Geglättete Leistung [W]</td></tr>
+<tr><th><code>PwrSP</code></th><td>Nur mit Emulator: der Wert, den der Akku bekommt [W]</td></tr>
 <tr><th><code>dval wval mval yval</code></th><td>Nur in Diagramm-Programmen, wie alles darunter. Bezug heute, diese Woche, diesen Monat, dieses Jahr [kWh], wie auf der Hauptseite</td></tr>
 <tr><th><code>dval2 wval2 mval2 yval2</code></th><td>Einspeisung, dieselben Zeiträume [kWh]</td></tr>
 <tr><th><code>dcon wcon mcon</code></th><td>Balken für den Bezug: 31 Tage, 53 Wochen, 12 Monate</td></tr>
@@ -522,7 +524,7 @@ body.lang-de .en{display:none}
 <tr><th>On [W]</th><td>Switches <b>on</b> when the power drops below this value. Negative means feed-in. Default &minus;300: on from 300&nbsp;W feed-in.</td></tr>
 <tr><th>Off [W]</th><td>Switches <b>off</b> when the power rises above this value. Default 100: off from 100&nbsp;W bought. It can not be lower than <i>On</i>; Save corrects it if needed.</td></tr>
 </table>
-<p>The switch uses the smoothed power (<code>power2</code>), so a passing cloud does not switch the device. A command is only sent when the state changes. The main page shows whether the device is on or off. If you untick the option or enter another IP, the old device is switched off first.</p>
+<p>The switch uses the smoothed power (<code>PwrAvg</code>), so a passing cloud does not switch the device. A command is only sent when the state changes. The main page shows whether the device is on or off. If you untick the option or enter another IP, the old device is switched off first.</p>
 <p>The <b>Toggle</b> button switches the other device by hand, for a quick test. It also works before you save. It does not show whether the device is on or off.</p>
 <h3>The other device</h3>
 <ul>
@@ -539,7 +541,7 @@ body.lang-de .en{display:none}
 <tr><th>Ein [W]</th><td>Schaltet <b>ein</b>, wenn die Leistung unter diesen Wert fällt. Negativ heißt Einspeisung. Standard &minus;300: ein ab 300&nbsp;W Einspeisung.</td></tr>
 <tr><th>Aus [W]</th><td>Schaltet <b>aus</b>, wenn die Leistung über diesen Wert steigt. Standard 100: aus ab 100&nbsp;W Bezug. Der Wert kann nicht kleiner als <i>Ein</i> sein, Speichern korrigiert ihn sonst.</td></tr>
 </table>
-<p>Der Schalter nutzt die geglättete Leistung (<code>power2</code>). Eine vorbeiziehende Wolke schaltet also nicht. Gesendet wird nur, wenn sich der Zustand ändert. Die Hauptseite zeigt, ob das Gerät ein- oder ausgeschaltet ist. Nimmst du das Häkchen weg oder trägst eine andere IP ein, wird das alte Gerät vorher ausgeschaltet.</p>
+<p>Der Schalter nutzt die geglättete Leistung (<code>PwrAvg</code>). Eine vorbeiziehende Wolke schaltet also nicht. Gesendet wird nur, wenn sich der Zustand ändert. Die Hauptseite zeigt, ob das Gerät ein- oder ausgeschaltet ist. Nimmst du das Häkchen weg oder trägst eine andere IP ein, wird das alte Gerät vorher ausgeschaltet.</p>
 <p>Der Knopf <b>Umschalten</b> schaltet das andere Gerät von Hand um, für einen schnellen Test. Das geht auch schon vor dem Speichern. Ob das Gerät gerade ein oder aus ist, zeigt der Knopf nicht.</p>
 <h3>Das andere Gerät</h3>
 <ul>
@@ -653,7 +655,7 @@ SMOOTH=0</pre></li>
 <tr><th>TOPIC</th><td>Where the message goes. For the go-e: <code>go-eCharger/&lt;serial number&gt;/ids/set</code>.</td></tr>
 <tr><th>JSON</th><td>The message. <code>%sml1%</code> to <code>%sml6%</code> are replaced by values 1 to 6 of your meter, in the order of the meter descriptor. With my descriptors <code>%sml1%</code> is the power in W (+ = from the grid, &minus; = feed-in), <code>%sml2%</code> the import, <code>%sml3%</code> the export. <code>%-sml1%</code> gives the same value with the sign turned.</td></tr>
 <tr><th>EVERY</th><td>Seconds between two messages. Default 5.</td></tr>
-<tr><th>SMOOTH</th><td>Smoothing in seconds. 0 = the current values. 30 = roughly the average of the last 30 seconds, so a kettle does not make the charger jump. 50 is about as calm as <code>power2</code> of the SML programs.</td></tr>
+<tr><th>SMOOTH</th><td>Smoothing in seconds. 0 = the current values. 30 = roughly the average of the last 30 seconds, so a kettle does not make the charger jump. 50 is about as calm as <code>PwrAvg</code> of the SML programs.</td></tr>
 </table>
 <p>The file is read again every minute, so a change needs no restart. For the go-e, check in its documentation which sign it expects for <code>pGrid</code>. If it is the other way round, write <code>%-sml1%</code>. Do not turn the sign in the meter descriptor: the SML programs need it as it is.</p>
 <h3>On the main page</h3>
@@ -681,7 +683,7 @@ SMOOTH=0</pre></li>
 <tr><th>TOPIC</th><td>Wohin die Nachricht geht. Beim go-e: <code>go-eCharger/&lt;Seriennummer&gt;/ids/set</code>.</td></tr>
 <tr><th>JSON</th><td>Die Nachricht. <code>%sml1%</code> bis <code>%sml6%</code> werden durch die Werte 1 bis 6 deines Zählers ersetzt, in der Reihenfolge der Zählerbeschreibung. Bei meinen Zählerbeschreibungen ist <code>%sml1%</code> die Leistung in W (+ = Bezug, &minus; = Einspeisung), <code>%sml2%</code> der Bezug, <code>%sml3%</code> die Einspeisung. <code>%-sml1%</code> liefert denselben Wert mit umgedrehtem Vorzeichen.</td></tr>
 <tr><th>EVERY</th><td>Sekunden zwischen zwei Nachrichten. Standard 5.</td></tr>
-<tr><th>SMOOTH</th><td>Glättung in Sekunden. 0 = die aktuellen Werte. 30 = ungefähr der Durchschnitt der letzten 30 Sekunden, damit ein Wasserkocher die Wallbox nicht springen lässt. 50 ist etwa so ruhig wie <code>power2</code> der SML-Programme.</td></tr>
+<tr><th>SMOOTH</th><td>Glättung in Sekunden. 0 = die aktuellen Werte. 30 = ungefähr der Durchschnitt der letzten 30 Sekunden, damit ein Wasserkocher die Wallbox nicht springen lässt. 50 ist etwa so ruhig wie <code>PwrAvg</code> der SML-Programme.</td></tr>
 </table>
 <p>Die Datei wird jede Minute neu gelesen, eine Änderung braucht also keinen Neustart. Schau beim go-e in seiner Dokumentation nach, welches Vorzeichen er bei <code>pGrid</code> erwartet. Ist es andersherum, schreib <code>%-sml1%</code>. Dreh das Vorzeichen nicht in der Zählerbeschreibung um, die SML-Programme brauchen es so, wie es ist.</p>
 <h3>Auf der Hauptseite</h3>

@@ -1256,7 +1256,7 @@ void ctDoCreate() {
 // ─── Building-block API ────────────────────────────────────────────────────
 // This file defines no callbacks - the including program owns them and calls
 // the functions below. Meter setup (descriptor, pins, filter) belongs to
-// sml_descriptor.tc, telemetry (power2, /pwr) to the base program.
+// sml_descriptor.tc, telemetry (PwrAvg, /pwr) to the base program.
 
 int ct_webnum;                       // webOn handler number for /ctreg
 

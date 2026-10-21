@@ -125,12 +125,6 @@ int sml_fix_done;               // start check of the import side ran
 float sml_z[4];                 // zero points day, week, month, year for sml_chart_fix()
 int sml_bak_done;               // the backup before a correction was made
 
-// The program's own .pvs: it cannot ask the firmware for its file name, so
-// each program names it (the .tcb name with .pvs). Renamed file: no backup.
-#ifndef SML_PVS
-#define SML_PVS "/sml_chart.pvs"
-#define SML_BAK "/sml_chart.bak"
-#endif
 
 // Copy src to dst, in 256-byte steps. 0 = done, -1 = no source.
 int sml_chart_cp(char src[], char dst[]) {
@@ -156,7 +150,18 @@ int sml_chart_cp(char src[], char dst[]) {
 void sml_chart_bak() {
     if (sml_bak_done == 1) return;
     sml_bak_done = 1;
-    sml_chart_cp(SML_PVS, SML_BAK);
+    // The program's own .pvs: it cannot ask the firmware for its file name,
+    // so each program sets a flag (renamed file: no backup). Literals, not a
+    // #define string - that reaches a char[] parameter as an empty path.
+#ifdef SML_PVS_CT002
+    sml_chart_cp("/sml_chart_ct002.pvs", "/sml_chart_ct002.bak");
+#else
+#ifdef SML_PVS_ECO
+    sml_chart_cp("/sml_chart_eco_shelly.pvs", "/sml_chart_eco_shelly.bak");
+#else
+    sml_chart_cp("/sml_chart.pvs", "/sml_chart.bak");
+#endif
+#endif
     sml_chart_cp("/tc_options.cfg", "/tc_options.bak");
     addLog("chart: backup before correction");
 }
@@ -185,8 +190,11 @@ int sml_chart_fix(float e, float c[], float mo[]) {
     float ww = e - sml_z[1];
     float mm = e - sml_z[2];
     float yy = e - sml_z[3];
-    if (dd >= 0.0 && dd <= 1000.0 && ww >= 0.0 && ww <= 7000.0
-        && mm >= 0.0 && mm <= 31000.0 && yy >= 0.0 && yy <= 366000.0) return 0;
+    // -1, not 0: the cfg keeps the zero points with 3 decimals, the reading is a
+    // float - with nothing used since midnight (export at night) the zero point
+    // is often a few thousandths ABOVE the reading. That is no wrong value.
+    if (dd >= -1.0 && dd <= 1000.0 && ww >= -1.0 && ww <= 7000.0
+        && mm >= -1.0 && mm <= 31000.0 && yy >= -1.0 && yy <= 366000.0) return 0;
     int d = tasm_day;
     int m = tasm_month;
     if (d < 1 || d > 31 || m < 1 || m > 12) return 0;
@@ -476,6 +484,7 @@ void sml_chart_60s_tick() {
 
     if (sml_fix_done == 0) {
         sml_fix_done = 1;
+        if (sml_chart_catchup(ein) == 1) roll = 2;
         sml_z[0] = sml_dval; sml_z[1] = sml_wval; sml_z[2] = sml_mval; sml_z[3] = sml_yval;
         int fresh = 0;
         if (sml_dval == 0.0 && sml_wval == 0.0 && sml_mval == 0.0 && sml_yval == 0.0) fresh = 1;
@@ -517,6 +526,8 @@ void sml_chart_60s_tick() {
     if (cw >= 1 && cw <= 53) sml_wcon[cw - 1] = ein - sml_wval;
     sml_dlast = d; sml_mlast = m; sml_wlast = cw;
     sml_hr_last = hr;
+    sml_ldate = tasm_year * 10000 + m * 100 + d;
+    sml_lcw = cw;
     if (roll > 0) sml_chart_save();
 }
 
@@ -952,19 +963,121 @@ void sml_chart_pv_init_columns() {
 // 5-s smoothing — first-order EMA on smlGet(1) with α=0.1 (heavy smoothing).
 // MQTT-publishes the smoothed value when sml_sndpwr is enabled.
 void sml_chart_pv_5s_tick() {
-    sml_power2 = 0.9 * sml_power2 + 0.1 * smlGet(1);
+    sml_pwravg = 0.9 * sml_pwravg + 0.1 * smlGet(1);
 #ifdef SML_M3
-    if (sml_sndpwr && sml_kind == 0) {   // gas/water: power2 is no power
+    if (sml_sndpwr && sml_kind == 0) {   // gas/water: PwrAvg is no power
 #else
     if (sml_sndpwr) {
 #endif
-        sprintf(sml_ftopic, "stat/%s/script/power2", sml_mtopic);
-        sprintf(sml_buf, "%d", (int)sml_power2);
+        sprintf(sml_ftopic, "stat/%s/script/PwrAvg", sml_mtopic);
+        sprintf(sml_buf, "%d", (int)sml_pwravg);
         smlPublish(sml_ftopic, sml_buf);
     }
 }
 
 // 60-s tick: production counters + midnight rollover of the PV baselines.
+// ── Missed midnights ────────────────────────────────────────────────────────
+// The rollover runs in the 60 s tick of hour 0. A device that was off over
+// midnight (power cut, a restart in the first minute after it) missed it:
+// "today" kept yesterday's zero point, the days in between kept the bars of
+// an older month, and a week, month or year change was lost. At start the
+// date of the last tick (sml_ldate, persisted) tells: not today = catch up.
+// What was used while the device was off cannot be split into days, so the
+// days in between stay empty and today starts now - unless only the last
+// minutes before midnight were missed (restart in hour 0): then the old day,
+// week and month are closed with the current reading, as midnight would have.
+persist int sml_ldate;          // yyyymmdd of the last 60 s tick
+persist int sml_lcw;            // its ISO week
+
+// Slots a..b (1-based) to 0.
+void sml_chart_zero(float c[], int a, int b) {
+    int i = a;
+    while (i <= b) { c[i - 1] = 0.0; i = i + 1; }
+}
+
+// The slots strictly between old and cur of a ring of n; w = 1 when the ring
+// wrapped (new month / new year), then from old to the end and from 1 to cur.
+void sml_chart_gap(float c[], int old, int cur, int n, int w) {
+    if (w == 0) { sml_chart_zero(c, old + 1, cur - 1); return; }
+    sml_chart_zero(c, old + 1, n);
+    sml_chart_zero(c, 1, cur - 1);
+}
+
+// Returns 1 when it rolled over (the caller saves).
+int sml_chart_catchup(float ein) {
+    int y  = tasm_year;
+    int m  = tasm_month;
+    int d  = tasm_day;
+    int cw = tasm_cw;
+    int now  = y * 10000 + m * 100 + d;
+    int last = sml_ldate;
+    if (last == 0 || last >= now) return 0;
+    int ly = last / 10000;
+    int lm = (last / 100) % 100;
+    int ld = last % 100;
+    if (lm < 1 || lm > 12 || ld < 1 || ld > 31 || cw < 1 || cw > 53) return 0;
+    float eout = SML_PV_TOTAL;
+    int near = 0;
+    if (tasm_hour == 0) {
+        if (ly == y && lm == m && ld == d - 1) near = 1;
+        if (d == 1 && ld >= 28 && ly == y && lm == m - 1) near = 1;
+        if (d == 1 && ld == 31 && ly == y - 1 && lm == 12 && m == 1) near = 1;
+    }
+    if (near == 1) {
+        sml_dcon[ld - 1] = ein - sml_dval;
+        sml_dprod[ld - 1] = eout - sml_dval2;
+        sml_mcon[lm - 1] = ein - sml_mval;
+        sml_mprod[lm - 1] = eout - sml_mval2;
+        if (sml_lcw >= 1 && sml_lcw <= 53) {
+            sml_wcon[sml_lcw - 1] = ein - sml_wval;
+            sml_wprod[sml_lcw - 1] = eout - sml_wval2;
+        }
+    }
+    // Day: the days in between had no recording, today starts now.
+    int mw = 0;
+    if (ly != y || lm != m) mw = 1;
+    sml_chart_gap(sml_dcon, ld, d, 31, mw);
+    sml_chart_gap(sml_dprod, ld, d, 31, mw);
+    sml_dcon[d - 1] = 0.0;
+    sml_dprod[d - 1] = 0.0;
+    sml_dval  = ein;
+    sml_dval2 = eout;
+    // Week: a new ISO week, unless it is the same one across New Year.
+    int wchg = 0;
+    if (cw != sml_lcw) wchg = 1;
+    if (ly != y && cw == sml_lcw && !(lm == 12 && m == 1 && ld >= 25 && d <= 7)) wchg = 1;
+    if (wchg == 1) {
+        if (sml_lcw >= 1 && sml_lcw <= 53) {
+            int ww = 0;
+            if (cw <= sml_lcw) ww = 1;
+            sml_chart_gap(sml_wcon, sml_lcw, cw, 53, ww);
+            sml_chart_gap(sml_wprod, sml_lcw, cw, 53, ww);
+        }
+        sml_wcon[cw - 1] = 0.0;
+        sml_wprod[cw - 1] = 0.0;
+        sml_wval  = ein;
+        sml_wval2 = eout;
+    }
+    // Month and year.
+    if (mw == 1) {
+        int yw = 0;
+        if (m <= lm) yw = 1;
+        sml_chart_gap(sml_mcon, lm, m, 12, yw);
+        sml_chart_gap(sml_mprod, lm, m, 12, yw);
+        sml_mcon[m - 1] = 0.0;
+        sml_mprod[m - 1] = 0.0;
+        sml_mval  = ein;
+        sml_mval2 = eout;
+    }
+    if (ly != y) {
+        sml_yval  = ein;
+        sml_yval2 = eout;
+    }
+    sml_da = d;
+    addLog("chart: missed midnight caught up, last tick %d", last);
+    return 1;
+}
+
 void sml_chart_pv_60s_tick() {
     // The Bezugszaehler option was switched: the export total now comes from
     // a different counter, so today, this week, month and year start over
@@ -1260,8 +1373,8 @@ void sml_chart_datetime_rows() {
 }
 
 // ── /pwr?v=: the chart names ────────────────────────────────────────────────
-// smlVars() in sml_descriptor.tc does the request, the sml names, power2 and
-// cpwr; this adds the totals and the bar arrays. 1 = the name was ours.
+// smlVars() in sml_descriptor.tc does the request, the sml names, PwrAvg and
+// PwrSP; this adds the totals and the bar arrays. 1 = the name was ours.
 // dval..yval2 answer what the main page shows - the energy since the zero
 // point (day/week/month/year), not the zero point itself.
 // mcon is 12 months of import only - the Scripter's months 13..24 are mprod.

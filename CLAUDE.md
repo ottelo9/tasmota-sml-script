@@ -101,11 +101,11 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
 ## HTTP API (`/pwr`)
 
 - `/pwr`, all programs, always (the telemetry switch is for MQTT only):
-  `{"sml1".."sml6","power2"[,"cpwr"]}` — `smlPwrJson()` in `sml_descriptor.tc`,
+  `{"sml1".."sml6","PwrAvg"[,"PwrSP"]}` — `smlPwrJson()` in `sml_descriptor.tc`,
   sent raw via `webRawMode`/`webRawWrite` as `application/json` with
   `Content-Length`. `webSend` would declare `text/html`.
 - `/pwr?v=a;b;c` — `smlVars()` in `sml_descriptor.tc`, chunked JSON collected
-  in ~240-char chunks. `sml`, `smlN`/`sml[N]`, `power2`, `cpwr` everywhere;
+  in ~240-char chunks. `sml`, `smlN`/`sml[N]`, `PwrAvg`, `PwrSP` everywhere;
   the chart names come from `sml_chart_var()` in `sml_chart_common.tc`, hooked
   in with `#define SML_CHART`. `dval`..`yval2` answer the energy since the
   zero point (the main page values), not the zero point. `all`, `sml` are
@@ -132,17 +132,23 @@ chart rings then hold the flow ×100 (`WebChartQ(0.01)`).
   / +4 baselines = 1969 / +wval + wcon 53 = 2023; `sml_chart_pv.bin` 43 / 46
   / 100 the same way. Each block only if present.
 - Start check (`sml_chart_fix()`, first 60 s tick, import and export side):
-  zero points above the reading or more than 1000/day below it are rebuilt
+  zero points more than 1 above the reading (cfg keeps 3 decimals, the
+  reading is a float) or more than 1000/day below it are rebuilt
   from the bars (day = reading - today's bar if `sml_da` is today, month/week
   from the day bars, year from the month bars); `sml_fix` shows
   "Summen korrigiert" (help `#fix`) until midnight. Before changing anything
-  it copies the own .pvs (`SML_PVS`, set per program before the include) to
-  `SML_BAK` and `/tc_options.cfg` to `/tc_options.bak`. Only impossible values
+  it copies the own .pvs (literal path, picked by `SML_PVS_CT002` /
+  `SML_PVS_ECO` set before the include) to `<name>.bak` and `/tc_options.cfg` to `/tc_options.bak`. Only impossible values
   count, so a manual reset survives - never compare zero points with the
   bars, they differ after every reset.
 - Midnight: the old day/week/month slot is closed with the old zero points
   BEFORE they roll; the export side keeps its own last day (`sml_pv_dlast`) -
   `sml_da` is already 1 there on the 1st.
+- Missed midnight (`sml_chart_catchup()`, first 60 s tick, before the start
+  check): `sml_ldate`/`sml_lcw` (persist, set every tick) not today = the
+  device was off over midnight. Days/weeks/months in between are zeroed,
+  today/week/month/year restart at the reading; only a restart in hour 0
+  right after midnight closes the old slots with the reading first.
 - Weeks are ISO (`tasm_cw`), index 0 = week 1, new week on Monday 00:00
   (`tasm_wday == 2`). `sml_wval == 0` at first start falls back to `sml_dval`.
 - Editor (`docs/pvs_editor/tinyc_chart_editor.html`) and converter
@@ -157,6 +163,9 @@ chart rings then hold the flow ×100 (`WebChartQ(0.01)`).
 - Array packing follows the **declared parameter type**: a `byte[]` passed to a
   `char[]` parameter is misread silently. Keep types aligned.
 - `fileGetStr` needs a literal delimiter → one call per key.
+- A `#define` string passed to a `char[]` parameter arrives as an EMPTY path
+  (only a real literal becomes a text reference) - `fileOpen` then fails
+  silently. Pass the literal itself, pick it with `#ifdef`.
 - `WebChart`: title/unit are **literals**; `interval` is whole **minutes**;
   `pos` is the **next** write position (newest = `pos-1`). For a sub-minute
   axis, rewrite `dt` column 0 **and** `o.hAxis` in `WebChartJS` — the firmware

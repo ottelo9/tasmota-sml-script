@@ -250,7 +250,7 @@ void tcOptSave() {
     // 1 = the meter has no export register; the export total is integrated
     // from negative power instead and kept as exp_virt below.
     tcOptW(h,  "sml_bezug",    32);
-    // PV surplus switch: on/off, power2 [W] below which the other device goes
+    // PV surplus switch: on/off, PwrAvg [W] below which the other device goes
     // on and above which it goes off (-300 = 300 W feed-in), its IP.
     tcOptW(h,  "sw_on",        35);
     tcOptW(h,  "sw_won",       36);

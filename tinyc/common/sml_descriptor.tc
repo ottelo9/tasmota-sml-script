@@ -116,7 +116,7 @@ void sml_virt_tick() {
 
 // ── Shared sprintf scratch (also used by chart/totals renderers) ────────────
 byte sml_buf[160];
-float sml_power2;          // smoothed power [W], kept by the program's 5 s tick
+float sml_pwravg;          // smoothed power [W], kept by the program's 5 s tick
 byte sml_ftopic[96];       // full MQTT topic - mqttPublish takes it at runtime
 int  sml_pub_rc;           // last mqttPublish result, logged when it changes
 int  sml_pub_seen;
@@ -245,11 +245,11 @@ float sml_phase(int n) {
 }
 
 // The /pwr answer into sml_buf: meter values 1..6, then the smoothed power.
-// Left open - the emulator programs append ,"cpwr" before the closing }.
+// Left open - the emulator programs append ,"PwrSP" before the closing }.
 void smlPwrJson(float p2) {
     sprintf(sml_buf, "{\"sml1\":%.0f,\"sml2\":%.3f,\"sml3\":%.3f", smlGet(1), smlGet(2), sml_export());
     sprintfAppend(sml_buf, ",\"sml4\":%.0f,\"sml5\":%.0f,\"sml6\":%.0f", sml_phase(4), sml_phase(5), sml_phase(6));
-    sprintfAppend(sml_buf, ",\"power2\":%.0f", p2);
+    sprintfAppend(sml_buf, ",\"PwrAvg\":%.0f", p2);
 }
 
 // ── /pwr?v=: chosen values as JSON ──────────────────────────────────────────
@@ -262,7 +262,7 @@ void smlPwrJson(float p2) {
 // is dropped without a word.
 // Only these names: the VM has no symbol table at runtime. sml[n] (or smln)
 // is meter value n, and sml[3] the export total - computed on a
-// Bezugszaehler, like the Scripter's sml3. power2 everywhere, cpwr in the
+// Bezugszaehler, like the Scripter's sml3. PwrAvg everywhere, PwrSP in the
 // emulators, the day/week/month names only in the chart programs
 // (sml_chart_var()). An unknown name answers null, so a typo shows instead
 // of vanishing.
@@ -306,7 +306,7 @@ void sml_vars_f(float v) {
 }
 
 // The emulators set these before smlVars(): the value handed to the battery.
-float sml_cpwr;
+float sml_pwrsp;
 int   sml_hascp;
 
 void sml_vars_one(byte t[]) {
@@ -330,8 +330,8 @@ void sml_vars_one(byte t[]) {
     sprintf(sml_buf, "\"%s\":", t);
     sml_vars_send(sml_buf);
 
-    if (strcmp(t, "power2") == 0) sml_vars_f(sml_power2);
-    else if (strcmp(t, "cpwr") == 0 && sml_hascp == 1) sml_vars_f(sml_cpwr);
+    if (strcmp(t, "PwrAvg") == 0) sml_vars_f(sml_pwravg);
+    else if (strcmp(t, "PwrSP") == 0 && sml_hascp == 1) sml_vars_f(sml_pwrsp);
     else if (t[0] == 's' && t[1] == 'm' && t[2] == 'l') {
         // sml1 or sml[1]
         int p = 3;
@@ -357,11 +357,11 @@ int smlVars() {
     if (webArg("v", sml_vsel) <= 0) return 0;
     if (strcmp(sml_vsel, "all") == 0) {
 #ifdef SML_CHART
-        strcpy(sml_vsel, "sml1;sml2;sml3;power2;dval;wval;mval;yval;dval2;wval2;mval2;yval2;dcon;wcon;mcon;dprod;wprod;mprod");
+        strcpy(sml_vsel, "sml1;sml2;sml3;PwrAvg;dval;wval;mval;yval;dval2;wval2;mval2;yval2;dcon;wcon;mcon;dprod;wprod;mprod");
 #else
-        strcpy(sml_vsel, "sml1;sml2;sml3;sml4;sml5;sml6;power2");
+        strcpy(sml_vsel, "sml1;sml2;sml3;sml4;sml5;sml6;PwrAvg");
 #endif
-        if (sml_hascp == 1) strcat(sml_vsel, ";cpwr");
+        if (sml_hascp == 1) strcat(sml_vsel, ";PwrSP");
     } else if (strcmp(sml_vsel, "sml") == 0) {
         strcpy(sml_vsel, "sml1;sml2;sml3;sml4;sml5;sml6");
     }

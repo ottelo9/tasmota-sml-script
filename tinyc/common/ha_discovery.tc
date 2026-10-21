@@ -8,8 +8,8 @@
 // HA's own docs suggest. Nothing is written to the device's flash.
 //
 // The entity's state is the plain value on stat/<topic>/script/<key>, like
-// power2 - not the SENSOR JSON, which also carries messages without it.
-// Assumes the default FullTopic %prefix%/%topic%/, as power2 does.
+// PwrAvg - not the SENSOR JSON, which also carries messages without it.
+// Assumes the default FullTopic %prefix%/%topic%/, as PwrAvg does.
 // The entity joins the Tasmota device through its MAC ("connections").
 
 #include "ui_common.tc"

@@ -2,7 +2,7 @@
 // pool pump, say) on PV surplus, like the Scripter's option (Op1). Defines no
 // callbacks; the including program calls swTick / swRows / swPanel.
 //
-// Driven by power2, the smoothed grid power: ON below sw_won, OFF above
+// Driven by PwrAvg, the smoothed grid power: ON below sw_won, OFF above
 // sw_woff (both signed, -300 = 300 W feed-in). A command is sent only on a
 // change, as Tasmota's WebSend to http://<ip>/cm. Deferred: WebSend blocks
 // until the device answers, and tasmDefer runs it with the VM halted.
@@ -14,8 +14,8 @@
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int  sw_on;            // 1 = switch the other device
-persist int  sw_won;           // power2 [W] below which it goes on
-persist int  sw_woff;          // power2 [W] above which it goes off
+persist int  sw_won;           // PwrAvg [W] below which it goes on
+persist int  sw_woff;          // PwrAvg [W] above which it goes off
 persist char sw_ip[16];        // its IP; char[16] - see tc_opt_ip
 
 // ─── Edit buffer ───────────────────────────────────────────────────────────
@@ -93,10 +93,10 @@ void swTick() {
         return;
     }
     if (sw_st == 0) {
-        if (sml_power2 < (float)sw_won) swSend(1);
+        if (sml_pwravg < (float)sw_won) swSend(1);
         return;
     }
-    if (sml_power2 > (float)sw_woff) swSend(0);
+    if (sml_pwravg > (float)sw_woff) swSend(0);
 }
 
 // From WebCall().
