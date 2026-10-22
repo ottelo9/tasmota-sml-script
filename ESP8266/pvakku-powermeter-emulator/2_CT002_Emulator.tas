@@ -1,5 +1,5 @@
 >D 180
-; CT002 Emulator V1.2e (Index Dedupe) für ESP8266 und Tasmota Image von next145 (via KI)
+; CT002 Emulator V1.2f (Index Dedupe) für ESP8266 und Tasmota Image von next145 (via KI)
 ; https://github.com/ottelo9/tasmota-sml-script/discussions/79#discussioncomment-18709465
 ; Emuliert einen Marstek CT002 (Smart Meter) für Marstek Akkus (Venus, Jupiter, B2500)
 ; Bis zu 4 Akkus, UDP-Port 12345. Die Akkus fragen den CT002 per UDP ab, das Script
@@ -428,7 +428,7 @@ if wifis==0 {
 CT Type{m}CT002
 CT MAC{m}%cm%
 Mode A/B/C/D{m}%0d[2]%/%0d[3]%/%0d[4]%/%0d[5]%
-$<small>CT-Emu 19.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
+$<small>CT-Emu 22.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
 
 ; SML Sektion an euren Stromzähler anpassen
 ; Reihenfolge nicht ändern: 1=Leistung sml[1] 2=Verbrauch sml[2] 3=Einspeisung sml[3]

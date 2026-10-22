@@ -1,5 +1,5 @@
 >D 180
-;CT002 Emulator V1.2e (Index Dedupe)
+;CT002 Emulator V1.2f (Index Dedupe)
 cm=""
 rx=""
 r=""
@@ -36,7 +36,7 @@ smlj=9
 >F
 ;Neuen Zaehlerwert erkennen
 if smlv[1]>0 {
-gn+=1
+gn=(gn+1)%65536
 g=smlv[0]
 }
 ;UDP-Rahmen pruefen
@@ -333,7 +333,7 @@ up=udp(0 12345)
 CT Type{m}CT002
 CT MAC{m}%cm%
 Mode A/B/C/D{m}%0d[2]%/%0d[3]%/%0d[4]%/%0d[5]%
-$<small>CT-Emu 19.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
+$<small>CT-Emu 22.10.26 by next145/ottelo (Script: %0slen%/4096)</small>
 
 >M 1
 +1,3,s,0,9600,DTZ541,1
