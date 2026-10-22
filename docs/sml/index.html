@@ -640,7 +640,7 @@ DIR=/Tasmota</pre>
 <section id="mqttpush">
 <h2>MQTT-Push</h2>
 <div class="en">
-<p>The small extra program <b>MQTT-Push</b> sends meter values to an MQTT topic you choose, in a message you write yourself. The idea came from a go-e charger: it charges the car with PV surplus when it gets the grid power by MQTT every few seconds. It works for anything else that wants the values in its own format, too. Like FTP-Backup it runs in a second slot next to your SML program and reads the meter directly, so your SML program stays as it is.</p>
+<p>The small extra program <b>MQTT-Push</b> sends meter values to an MQTT topic you choose, in a message you write yourself. The idea came from a go-e charger (<a href="https://github.com/ottelo9/tasmota-sml-images/issues/67" target="_blank">Go E Charger for the EV</a>): it charges the car with PV surplus when it gets the grid power by MQTT every few seconds. It works for anything else that wants the values in its own format, too. Like FTP-Backup it runs in a second slot next to your SML program and reads the meter directly, so your SML program stays as it is.</p>
 <h3>Setting it up</h3>
 <ol>
 <li>Tasmota must be connected to the same MQTT broker as the receiver (for the go-e: the charger too).</li>
@@ -668,7 +668,7 @@ SMOOTH=0</pre></li>
 </table>
 </div>
 <div class="de">
-<p>Das kleine Zusatzprogramm <b>MQTT-Push</b> schickt Zählerwerte an ein MQTT-Topic deiner Wahl, in einer Nachricht, die du selbst schreibst. Die Idee kam von einer go-e-Wallbox: Sie lädt das Auto mit PV-Überschuss, wenn sie alle paar Sekunden die Netzleistung per MQTT bekommt. Es passt aber auch für alles andere, das die Werte in einem eigenen Format haben will. Wie FTP-Backup läuft es in einem zweiten Slot neben deinem SML-Programm und liest den Zähler direkt aus. Dein SML-Programm bleibt so, wie es ist.</p>
+<p>Das kleine Zusatzprogramm <b>MQTT-Push</b> schickt Zählerwerte an ein MQTT-Topic deiner Wahl, in einer Nachricht, die du selbst schreibst. Die Idee kam von einer go-e-Wallbox (<a href="https://github.com/ottelo9/tasmota-sml-images/issues/67" target="_blank">Go E Charger fürs E Auto</a>): Sie lädt das Auto mit PV-Überschuss, wenn sie alle paar Sekunden die Netzleistung per MQTT bekommt. Es passt aber auch für alles andere, das die Werte in einem eigenen Format haben will. Wie FTP-Backup läuft es in einem zweiten Slot neben deinem SML-Programm und liest den Zähler direkt aus. Dein SML-Programm bleibt so, wie es ist.</p>
 <h3>Einrichten</h3>
 <ol>
 <li>Tasmota muss mit demselben MQTT-Broker verbunden sein wie der Empfänger (beim go-e also auch die Wallbox).</li>
