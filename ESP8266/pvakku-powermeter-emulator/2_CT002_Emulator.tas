@@ -69,7 +69,7 @@ smlj=9
 >F
 ; Neuer Zählerwert da? Dann gn hochzählen und die Statusflags löschen
 if smlv[1]>0 {
-  gn+=1
+  gn=(gn+1)%65536
   g=smlv[0]
 }
 
