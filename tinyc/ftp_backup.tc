@@ -6,14 +6,14 @@
 // Runs in its own slot next to the SML program, so devices without a backup
 // pay no RAM for it. Docs: https://ottelo9.github.io/tasmota-sml-script/sml/#ftp
 //
-// Sends every *.pvs, *.cfg and *.def from the file system (not its own .pvs,
-// ftp.cfg or the firmware's tinyc.cfg) to
+// Sends every *.pvs, *.cfg and *.def from the file system (not its own .pvs
+// or ftp.cfg with the FTP password; tinyc.cfg = slots and autostart, mi-hol #100) to
 // <folder>/<MQTT topic>/<1..7>/ (weekday of the run, Monday = 1), so a week
 // of copies is kept; the Backup button uses 0 instead.
 // /ftp.cfg: HOST=, USER=, PW=, DIR= each on a line of its own, // comments
 // allowed (mi-hol, PR #92). Without HOST= the backup fails with -11.
 
-char sml_vers[] = "18.10.2026 13:20";  // build.html: version in the .tcb header and index.json
+char sml_vers[] = "25.10.2026 20:38";  // build.html: version in the .tcb header and index.json
 
 persist int bk_res;            // 0 never, 1 ok, 2 failed
 persist int bk_code;           // last error
@@ -46,7 +46,7 @@ void bkVal(byte d[], byte s[], int p, int max) {
 }
 
 int bkWant(byte n[]) {
-    if (strcmp(n, "ftp_backup.pvs") == 0 || strcmp(n, "tinyc.cfg") == 0) return 0;
+    if (strcmp(n, "ftp_backup.pvs") == 0) return 0;
     if (strFind(n, ".pvs") > 0) return 1;
     if (strFind(n, ".def") > 0) return 1;
     if (strFind(n, ".cfg") > 0 && strcmp(n, "ftp.cfg") != 0) return 1;
