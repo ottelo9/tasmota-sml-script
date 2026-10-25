@@ -58,6 +58,7 @@ body.lang-de .en{display:none}
   <a href="#overview"><span class="en">Overview</span><span class="de">Überblick</span></a>
   <a href="#programs"><span class="en">Programs</span><span class="de">Programme</span></a>
   <a href="#sleep"><span class="en">Power saving</span><span class="de">Energiesparmodus</span></a>
+  <a href="#time"><span class="en">Time zone</span><span class="de">Zeitzone</span></a>
   <a href="#meter"><span class="en">Meter</span><span class="de">Zähler</span></a>
   <a href="#bezug"><span class="en">Import meter</span><span class="de">Bezugszähler</span></a>
   <a href="#gaswater"><span class="en">Gas / water</span><span class="de">Gas / Wasser</span></a>
@@ -72,6 +73,7 @@ body.lang-de .en{display:none}
   <a href="#pvswitch"><span class="en">PV switch</span><span class="de">PV-Schalter</span></a>
   <a href="#ftp">FTP-Backup</a>
   <a href="#mqttpush">MQTT-Push</a>
+  <a href="#pin"><span class="en">Meter PIN</span><span class="de">Zähler-PIN</span></a>
   <a href="#options"><span class="en">Settings file</span><span class="de">Einstellungsdatei</span></a>
   <a href="#trouble"><span class="en">Troubleshooting</span><span class="de">Fehlersuche</span></a>
 </nav>
@@ -129,6 +131,7 @@ body.lang-de .en{display:none}
 </ol>
 <p><b>Updates:</b> the slot row shows the program's version (date and time) behind its name. When the repository has a newer one, a button &#x1F504; with the new date appears next to it. Press it, and the new version is loaded into the same slot. Your settings and data stay. This needs an image from 18.10.2026 or newer.</p>
 <p>If you want to change a program yourself: the source code (<code>.tc</code>) is in the <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc">tinyc</a> folder. You can compile it in the TinyC IDE, or all programs at once with <code>bytecode/build.html</code>.</p>
+<p>When it starts, every program sets Tasmota to <code>WifiConfig 5</code>: if the device does not find its Wi-Fi (router restart, power cut), it waits for it instead of restarting again and again.</p>
 <p class="warn">The emulator programs only work in slot&nbsp;0. Tasmota sends their web addresses to slot&nbsp;0 only.</p>
 <p>Meter, pins, language and most other settings are kept in a shared <a href="#options">settings file</a>. When you change to another program, they are still there.</p>
 </div>
@@ -151,6 +154,7 @@ body.lang-de .en{display:none}
 </ol>
 <p><b>Updates:</b> In der Zeile des Slots steht hinter dem Namen die Version des Programms (Datum und Uhrzeit). Gibt es im Repository eine neuere, erscheint daneben ein Knopf &#x1F504; mit dem neuen Datum. Drückst du ihn, wird die neue Version in denselben Slot geladen. Deine Einstellungen und Daten bleiben erhalten. Dafür brauchst du ein Image vom 18.10.2026 oder neuer.</p>
 <p>Wenn du ein Programm selbst ändern willst: Der Quellcode (<code>.tc</code>) liegt im Ordner <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/tinyc">tinyc</a>. Kompilieren kannst du ihn in der TinyC-IDE oder alle Programme auf einmal mit <code>bytecode/build.html</code>.</p>
+<p>Beim Start stellt jedes Programm Tasmota auf <code>WifiConfig 5</code>: Findet das Gerät sein WLAN nicht (Router-Neustart, Stromausfall), wartet es darauf, statt immer wieder neu zu starten.</p>
 <p class="warn">Die Emulator-Programme funktionieren nur in Slot&nbsp;0. Tasmota leitet ihre Webadressen nur an Slot&nbsp;0 weiter.</p>
 <p>Zähler, Pins, Sprache und die meisten anderen Einstellungen stehen in einer gemeinsamen <a href="#options">Einstellungsdatei</a>. Wechselst du das Programm, sind sie noch da.</p>
 </div>
@@ -203,6 +207,20 @@ body.lang-de .en{display:none}
 </table>
 <p>Besseres WLAN hilft mehr als dieser Schalter. Ein Repeater oder Access Point in der Nähe des Zählers macht das Gerät schneller und lässt es trotzdem Strom sparen.</p>
 <p class="warn">Schaltest du ihn wieder aus, wird <code>Sleep 50</code> gesetzt, der Tasmota-Standard. Hattest du einen anderen Wert, setze ihn mit dem Befehl <code>Sleep</code> neu. Das Häkchen wirkt nur, wenn du es hier änderst. Ein in der Konsole gesetzter <code>Sleep</code>-Wert wird beim Start nicht verändert.</p>
+</div>
+</section>
+
+<section id="time">
+<h2><span class="en">Time zone</span><span class="de">Zeitzone</span></h2>
+<div class="en">
+<p>Out of the box Tasmota runs on +1&nbsp;hour without summer time, so from March to October the clock is an hour behind - and with it the change of day of the charts. Tick <b>Central European time (summer time)</b> and the program sets Tasmota once to Germany, Austria, Switzerland and their neighbours, with summer time switching by itself:</p>
+<pre>Backlog0 Timezone 99; TimeStd 0,0,10,1,3,60; TimeDst 0,0,3,1,2,120</pre>
+<p>The setting is stored in Tasmota itself, so it stays when you change the program. Unticking sets Tasmota's default again (+1&nbsp;hour, no summer time). For another country, get the command from <a href="https://tasmotatimezone.com/" target="_blank">tasmotatimezone.com</a> and enter it in the Tasmota console; leave the box unticked then.</p>
+</div>
+<div class="de">
+<p>Ab Werk läuft Tasmota auf +1&nbsp;Stunde ohne Sommerzeit. Von März bis Oktober geht die Uhr also eine Stunde nach, und mit ihr der Tageswechsel der Diagramme. Setz den Haken bei <b>Zeitzone Mitteleuropa (Sommerzeit)</b>, dann stellt das Programm Tasmota einmal auf Deutschland, Österreich, Schweiz und Nachbarn ein, mit automatischer Sommerzeit:</p>
+<pre>Backlog0 Timezone 99; TimeStd 0,0,10,1,3,60; TimeDst 0,0,3,1,2,120</pre>
+<p>Die Einstellung steht in Tasmota selbst und bleibt auch nach einem Programmwechsel. Nimmst du den Haken weg, gilt wieder der Tasmota-Standard (+1&nbsp;Stunde, keine Sommerzeit). Für ein anderes Land holst du dir den Befehl auf <a href="https://tasmotatimezone.com/" target="_blank">tasmotatimezone.com</a> und gibst ihn in der Tasmota-Konsole ein. Den Haken lässt du dann weg.</p>
 </div>
 </section>
 
@@ -694,6 +712,52 @@ SMOOTH=0</pre></li>
 <tr><th>-3</th><td>Keine Zählerwerte: kein SML-Programm läuft, oder es gibt keine Zählerbeschreibung.</td></tr>
 <tr><th>-11</th><td><code>/mqtt_push.cfg</code> fehlt, oder es fehlt die Zeile <code>TOPIC=</code> oder <code>JSON=</code>.</td></tr>
 </table>
+</div>
+</section>
+
+<section id="pin">
+<h2><span class="en">Meter PIN</span><span class="de">Zähler-PIN</span></h2>
+<div class="en">
+<p>Most electronic meters in Germany only show the total until you enter a PIN. Only then they also send the power and the phases - which the charts and the battery emulators need. You get the PIN from your grid operator. The meter forgets it after every power cut.</p>
+<p>The small extra program <b>Zähler-PIN</b> enters the PIN for you, with the IR LED of your reading head - no torch needed. After a power cut it does it by itself: if the meter sends its counter but no power for three minutes after the start, it sends the PIN once. It runs in a second slot next to your SML program.</p>
+<h3>Setting it up</h3>
+<ol>
+<li>In the SML settings the <b>TX pin</b> must be set (the GPIO of the reading head's IR LED). The program uses that pin.</li>
+<li>Create the file <code>/sml_pin.cfg</code> on the device (<i>Tools &rarr; Manage File system</i>, or the <b>sml_pin.cfg</b> link on the main page once the program runs) and put your PIN in. Example: <a href="sml_pin.cfg" download>sml_pin.cfg</a>.</li>
+<li><i>Tools &rarr; TinyC Console</i>: load <b>Zähler-PIN</b> from the repository into a free slot, switch on autostart and start it.</li>
+<li>Press <b>&#x1F513; PIN</b> on the main page and watch the meter display: the digits count up, after the last one the extended values appear.</li>
+</ol>
+<table>
+<tr><th>PIN</th><td>The PIN digits.</td></tr>
+<tr><th>AUTO</th><td>1 = send by itself after a power cut (default), 0 = only with the button.</td></tr>
+<tr><th>ON / OFF / GAP</th><td>Light on, light off per pulse, pause after each digit, in ms. Default 200 / 200 / 1500. Does not work: try 300 / 300 / 2000 or 150 / 150 / 1000.</td></tr>
+<tr><th>WAKE</th><td>Single pulses before the first digit. Some meters need one or two to switch the display on and show the PIN entry. Default 0.</td></tr>
+<tr><th>ZERO</th><td>Pulses for the digit 0: 10 (default, counts once round) or 0 (just wait).</td></tr>
+<tr><th>INV</th><td>1 = the LED lights at LOW (most reading heads, default), 0 = at HIGH. If the LED stays lit or nothing happens, try the other one.</td></tr>
+<tr><th>GPIO</th><td>-1 = the TX pin from the SML settings (default), or another GPIO.</td></tr>
+</table>
+<p>While the PIN is sent (10 to 30 seconds) the reading head is busy; the program then restarts the SML reading. On the main page the dot shows the last attempt: green = sent, red = failed (number in brackets): <code>-1</code> no PIN in the file, <code>-2</code> no TX pin set, <code>-3</code> the GPIO is used by Tasmota, <code>-12</code>/<code>-13</code> the sending could not start or stopped.</p>
+</div>
+<div class="de">
+<p>Die meisten elektronischen Zähler in Deutschland zeigen nur den Zählerstand, bis man eine PIN eingibt. Erst dann senden sie auch die Leistung und die Phasen, und die brauchen die Diagramme und die Akku-Emulatoren. Die PIN bekommst du von deinem Netzbetreiber. Nach jedem Stromausfall vergisst der Zähler sie wieder.</p>
+<p>Das kleine Zusatzprogramm <b>Zähler-PIN</b> gibt die PIN für dich ein, mit der IR-LED deines Lesekopfs, ganz ohne Taschenlampe. Nach einem Stromausfall macht es das von selbst: Schickt der Zähler nach dem Start drei Minuten lang seinen Zählerstand, aber keine Leistung, sendet es die PIN einmal. Es läuft in einem zweiten Slot neben deinem SML-Programm.</p>
+<h3>Einrichten</h3>
+<ol>
+<li>In den SML-Einstellungen muss der <b>TX-Pin</b> eingetragen sein (der GPIO der IR-LED im Lesekopf). Diesen Pin nimmt das Programm.</li>
+<li>Auf dem Gerät die Datei <code>/sml_pin.cfg</code> anlegen (<i>Tools &rarr; Manage File system</i>, oder über den Link <b>sml_pin.cfg</b> auf der Hauptseite, sobald das Programm läuft) und deine PIN eintragen. Beispiel: <a href="sml_pin.cfg" download>sml_pin.cfg</a>.</li>
+<li><i>Tools &rarr; TinyC Console</i>: <b>Zähler-PIN</b> aus dem Repository in einen freien Slot laden, Autostart einschalten und starten.</li>
+<li>Auf der Hauptseite <b>&#x1F513; PIN</b> drücken und aufs Zählerdisplay schauen: Die Ziffern zählen hoch, nach der letzten erscheinen die erweiterten Werte.</li>
+</ol>
+<table>
+<tr><th>PIN</th><td>Die Ziffern der PIN.</td></tr>
+<tr><th>AUTO</th><td>1 = nach einem Stromausfall von selbst senden (Standard), 0 = nur mit dem Knopf.</td></tr>
+<tr><th>ON / OFF / GAP</th><td>Licht an, Licht aus je Puls, Pause nach jeder Ziffer, in ms. Standard 200 / 200 / 1500. Klappt es nicht, probier 300 / 300 / 2000 oder 150 / 150 / 1000.</td></tr>
+<tr><th>WAKE</th><td>Einzelne Pulse vor der ersten Ziffer. Manche Zähler brauchen einen oder zwei, um das Display einzuschalten und die PIN-Eingabe zu zeigen. Standard 0.</td></tr>
+<tr><th>ZERO</th><td>Pulse für die Ziffer 0: 10 (Standard, einmal rundherum gezählt) oder 0 (nur warten).</td></tr>
+<tr><th>INV</th><td>1 = die LED leuchtet bei LOW (die meisten Leseköpfe, Standard), 0 = bei HIGH. Leuchtet die LED dauernd oder passiert nichts, probier das andere.</td></tr>
+<tr><th>GPIO</th><td>-1 = der TX-Pin aus den SML-Einstellungen (Standard), oder ein anderer GPIO.</td></tr>
+</table>
+<p>Während die PIN gesendet wird (10 bis 30 Sekunden), ist der Lesekopf belegt. Danach startet das Programm das SML-Lesen neu. Auf der Hauptseite zeigt der Punkt den letzten Versuch: grün = gesendet, rot = fehlgeschlagen (Zahl in Klammern): <code>-1</code> keine PIN in der Datei, <code>-2</code> kein TX-Pin eingestellt, <code>-3</code> der GPIO ist in Tasmota belegt, <code>-12</code>/<code>-13</code> das Senden konnte nicht starten oder brach ab.</p>
 </div>
 </section>
 

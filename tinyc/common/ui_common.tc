@@ -30,6 +30,10 @@ persist watch int ui_de;     // 0 = English (default), 1 = Deutsch
 // (-90 dBm), so the delay was the dozing, not the radio.
 // Costs current and a warmer chip, hence a switch rather than a default.
 persist watch int ui_nosleep;   // 1 = power saving off (Sleep 0)
+// Time zone box: what Tasmota has (99 = summer time by the TimeStd/TimeDst
+// rules), read at start. Lives in Tasmota's own settings, not in the cfg.
+int ui_tz;
+int ui_tz_ack;
 persist int ui_sleep_ack;       // the choice that was last carried out
 
 byte ui_base[] = " <a class='i' target='_blank' href='https://ottelo9.github.io/tasmota-sml-script/";
@@ -295,6 +299,15 @@ void uiApplyBegin() {
         ui_nosleep = tcOptGet(1, ui_nosleep);
         tcOptSet(0, ui_de);
         tcOptSet(1, ui_nosleep);
+        // A device that does not find its access point (router restart, power
+        // cut) waits for it instead of rebooting every few minutes and losing
+        // the day. Sent every start without asking first: the same value
+        // changes nothing in Tasmota's settings, so no flash write.
+        tasmCmd("WifiConfig 5", ui_buf);
+        ui_tz = 0;
+        tasmCmd("Timezone", ui_buf);
+        if (strFind(ui_buf, ":99") >= 0) ui_tz = 1;
+        ui_tz_ack = ui_tz;
     } else {
         tc_opt_first = 0;
         if (tc_opt_dirty == 1) {
@@ -345,6 +358,15 @@ void uiApplyBegin() {
             addLog("ui: Sleep 50");
         }
         ui_sleep_ack = ui_nosleep;
+    }
+
+    // Like the sleep box: acts on a click, at once. Unticked = Tasmota's
+    // default, +1 h without summer time.
+    if (ui_tz != ui_tz_ack) {
+        if (ui_tz == 1) tasmCmd("Backlog0 Timezone 99; TimeStd 0,0,10,1,3,60; TimeDst 0,0,3,1,2,120", ui_buf);
+        else            tasmCmd("Timezone 1", ui_buf);
+        ui_tz_ack = ui_tz;
+        addLog("ui: timezone %d", ui_tz);
     }
 }
 
@@ -428,9 +450,11 @@ void uiLang() {
     if (ui_de) {
         webPulldown(ui_de, "Sprache", "English|Deutsch");
         uiCheckI(ui_nosleep, varIdx(ui_nosleep), "Energiesparmodus aus", "sml/#sleep");
+        uiCheckI(ui_tz, varIdx(ui_tz), "Zeitzone Mitteleuropa (Sommerzeit)", "sml/#time");
     } else {
         webPulldown(ui_de, "Language", "English|Deutsch");
         uiCheckI(ui_nosleep, varIdx(ui_nosleep), "Power saving off", "sml/#sleep");
+        uiCheckI(ui_tz, varIdx(ui_tz), "Central European time (summer time)", "sml/#time");
     }
 }
 

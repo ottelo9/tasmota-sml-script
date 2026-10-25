@@ -9,7 +9,7 @@ GitHub Pages). Personal setup, devices and working rules: `CLAUDE.local.md`
 
 | Path | What |
 |---|---|
-| `tinyc/*.tc` | the six programs: `sml_simple`, `sml_chart`, `sml_ct002`, `sml_chart_ct002`, `sml_eco_shelly`, `sml_chart_eco_shelly`; plus `ftp_backup` (own slot, one language, own `sml_vers` - bumped only when it changes; nightly 00:10 copy of `*.pvs`/`*.cfg`/`*.def` via `/ftp.cfg` into `<folder>/<topic>/<weekday 1..7>`, the button into `.../0`); and `mqtt_push` (own slot, one language: publishes a user JSON with `%sml1%`..`%sml6%` / `%-smlN%` to a user topic, `/mqtt_push.cfg` with `TOPIC=`/`JSON=`/`EVERY=`/`SMOOTH=` (s, exponential), re-read every 60 s; reads `smlGet()` directly, no data from the SML program; go-e PV surplus, images issue #67) |
+| `tinyc/*.tc` | the six programs: `sml_simple`, `sml_chart`, `sml_ct002`, `sml_chart_ct002`, `sml_eco_shelly`, `sml_chart_eco_shelly`; plus `ftp_backup` (own slot, one language, own `sml_vers` - bumped only when it changes; nightly 00:10 copy of `*.pvs`/`*.cfg`/`*.def` via `/ftp.cfg` into `<folder>/<topic>/<weekday 1..7>`, the button into `.../0`); and `mqtt_push` (own slot, one language: publishes a user JSON with `%sml1%`..`%sml6%` / `%-smlN%` to a user topic, `/mqtt_push.cfg` with `TOPIC=`/`JSON=`/`EVERY=`/`SMOOTH=` (s, exponential), re-read every 60 s; reads `smlGet()` directly, no data from the SML program; go-e PV surplus, images issue #67); and `sml_pin_unlock` ("Zähler-PIN", own slot: enters the meter PIN with the IR LED - pulse coding after gemu's meter_pin_unlock.tc; `/sml_pin.cfg` PIN/AUTO/ON/OFF/GAP/WAKE/ZERO/INV/GPIO, LED = `@sml_tx_pin` from tc_options.cfg; spawnTask worker, then `Sensor53 r` so the SML driver takes the pin back; AUTO sends once when after start the counter comes but value 1 stays 0 for 180 s) |
 | `tinyc/other/` | programs outside the repository list (build.html skips subfolders): `cam_dfr1154/` holds everything the camera needs, already renamed (`.tc`/`.tcb`, `ped.espdl` from esp-dl, `picotts_{de-DE,en-US}_{ta,sg}.bin`, `I2SAUDIO.cfg`; the I2SAUDIO plugin and the firmware are linked, not stored); guide = `docs/cam_dfr1154/index.html`. `cam_dfr1154.tc` = gemu's `webcam_tinyc.tc` (fork 72b55d3c6) cut down to DFR1154, person detection, night vision, alarm pictures, photo buttons; plus MQTT alarm `tele/<topic>/ALARM` ON/OFF and an HA binary-sensor discovery, both retained via `tasmCmd("Publish2 …")` (needs TinyC ≥ 1.6.72). For the image `tasmota32s3_dfr1154`; `.tcb` built by hand with the same IDE |
 | `tinyc/common/` | shared modules, `#include`d by the programs |
 | `tinyc/bytecode/` | built `.tcb`, `build.html` (the compiler), `index.json` (program picker) |
@@ -37,7 +37,7 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   `@name`. The firmware (TinyC ≥ 1.6.74) shows `Name 17.10.26 14:30` in the slot
   row and offers a 🔄 update button when the repository has a newer version.
   Never the build time: build.html rebuilds every program.
-- List order: `// @order: N` under `@info` (charts 11-13, SML 21-23, FTP-Backup 31, MQTT-Push 32);
+- List order: `// @order: N` under `@info` (charts 11-13, SML 21-23, FTP-Backup 31, MQTT-Push 32, Zähler-PIN 33);
   build.html writes index.json in that order with `"ordered":true` and a
   `{"sep":1}` separator where the tens change.
 - Help pages are bilingual — change both languages together. Behaviour changes
@@ -59,7 +59,10 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
 - UI text: `if (ui_de) … else …`; widget labels must be string **literals**.
 - **Settings take effect on Save.** Widgets bind to `*_e_*` edit copies;
   `uiApplyBegin()` latches the press, modules act on `ui_applying` /
-  `ui_reloading`. Exceptions: language switch (immediate), CT MAC (`/ctreg`).
+  `ui_reloading`. Exceptions: language switch, power-saving and time-zone boxes (immediate), CT MAC (`/ctreg`).
+- Every SML program sends `WifiConfig 5` at start (`uiApplyBegin` first tick; same
+  value = no flash write) and reads `Timezone` for the time-zone box (`ui_tz`,
+  99 = ticked; ticking sends the Central European Backlog, unticking `Timezone 1`).
 - **`/tc_options.cfg`** carries settings across programs (`.pvs` is per program,
   named after the `.tcb`). `@name=value` lines; `-32768` = absent; floats
   (energy baselines) in a separate table. A new option needs: a slot in

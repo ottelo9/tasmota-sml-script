@@ -1,0 +1,237 @@
+// @name: Zähler-PIN
+// @info: https://ottelo9.github.io/tasmota-sml-script/sml/#pin
+// @order: 33
+// sml_pin_unlock.tc — enters the meter PIN through the IR LED of the reading
+// head, so the meter sends all its values (power, phases). Most German meters
+// lose the unlock on every power cut; with AUTO=1 the program sends the PIN
+// by itself when, after a start, the meter delivers its counter but no power.
+// Pulse coding and timings after gemu's meter_pin_unlock.tc. Own slot next to
+// the SML program; the LED is the TX pin of the SML settings
+// (/tc_options.cfg @sml_tx_pin) unless /sml_pin.cfg names another GPIO.
+// Docs: https://ottelo9.github.io/tasmota-sml-script/sml/#pin
+//
+// /sml_pin.cfg, one KEY= per line, // comments allowed:
+//   PIN=   the PIN digits (leading zeros fine)
+//   AUTO=  1 = send by itself after a power cut (default 1)
+//   ON= OFF= GAP=  light on / off per pulse, pause after a digit [ms] (200/200/1500)
+//   WAKE=  single pulses before the first digit, each followed by GAP (default 0)
+//   ZERO=  pulses for the digit 0: 10 (default) or 0
+//   INV=   1 = the LED lights at LOW (reading heads, default), 0 = at HIGH
+//   GPIO=  GPIO of the IR LED, -1 = the TX pin of the SML settings (default)
+
+char sml_vers[] = "25.10.2026 20:16";  // build.html: version in the .tcb header and index.json
+
+byte pn_pin[12];               // the PIN digits as text
+int pn_auto; int pn_on; int pn_off; int pn_gap; int pn_wake; int pn_zero;
+int pn_inv; int pn_gpio;
+int pn_cfg;                    // 0 = ready, else the error code of the settings
+int pn_load;                   // seconds to the next read of the files
+int pn_go;                     // button
+int pn_now;                    // start at the next tick
+int pn_man;                    // 1 = started by the button
+int pn_busy;                   // worker running
+int pn_done;                   // worker finished the sequence
+int pn_res;                    // 0 never, 1 sent, 2 failed
+int pn_code;
+int pn_hms;                    // hhmm of the last attempt
+int pn_ack;                    // seconds the button still shows the result
+int pn_auto_done;              // the automatic send ran this start
+int pn_miss;                   // seconds with a counter but no power value
+byte pn_b[64];
+
+// Value of "\nKEY=" (key at a line start) up to the line end, spaces trimmed.
+void pnVal(byte d[], byte s[], int p, int max) {
+    d[0] = 0;
+    if (p < 0) return;
+    p = p + 1;
+    while (s[p] != '=') p = p + 1;
+    p = p + 1;
+    while (s[p] == ' ') p = p + 1;
+    int i = 0;
+    while (s[p] != 0 && s[p] != '\n' && s[p] != '\r' && i < max - 1) {
+        d[i] = s[p];
+        i = i + 1;
+        p = p + 1;
+    }
+    while (i > 0 && d[i - 1] == ' ') i = i - 1;
+    d[i] = 0;
+}
+
+// A whole file into b with a '\n' in front, so "\nKEY=" also finds the first
+// line and a "// KEY=" comment never counts. 0 = no file.
+int pnRead(char path[], byte b[], int max) {
+    int f = fileOpen(path, 0);
+    if (f < 0) return 0;
+    int k = fileRead(f, b, max - 2);
+    fileClose(f);
+    if (k < 0) k = 0;
+    int i = k;
+    while (i > 0) { b[i] = b[i - 1]; i = i - 1; }
+    b[0] = '\n';
+    b[k + 1] = 0;
+    return 1;
+}
+
+int pnInt(byte b[], int p, int def) {
+    byte t[12];
+    pnVal(t, b, p, 12);
+    if (t[0] == 0) return def;
+    return strToInt(t);
+}
+
+// Settings from /sml_pin.cfg, the LED pin from the SML settings.
+// 0 = ready, -1 = no PIN, -2 = no GPIO, -3 = GPIO used by Tasmota.
+int pnLoad() {
+    byte b[1024];
+    pn_pin[0] = 0;
+    pn_auto = 1; pn_on = 200; pn_off = 200; pn_gap = 1500;
+    pn_wake = 0; pn_zero = 10; pn_inv = 1; pn_gpio = -1;
+    if (pnRead("/sml_pin.cfg", b, 700) == 1) {
+        pnVal(pn_pin, b, strFind(b, "\nPIN="), 12);
+        pn_auto = pnInt(b, strFind(b, "\nAUTO="), 1);
+        pn_on   = pnInt(b, strFind(b, "\nON="), 200);
+        pn_off  = pnInt(b, strFind(b, "\nOFF="), 200);
+        pn_gap  = pnInt(b, strFind(b, "\nGAP="), 1500);
+        pn_wake = pnInt(b, strFind(b, "\nWAKE="), 0);
+        pn_zero = pnInt(b, strFind(b, "\nZERO="), 10);
+        pn_inv  = pnInt(b, strFind(b, "\nINV="), 1);
+        pn_gpio = pnInt(b, strFind(b, "\nGPIO="), -1);
+    }
+    if (pn_gpio < 0 && pnRead("/tc_options.cfg", b, 1024) == 1) {
+        pn_gpio = pnInt(b, strFind(b, "\n@sml_tx_pin="), -1);
+        if (pn_gpio == -32768) pn_gpio = -1;
+    }
+    int i = 0;
+    while (pn_pin[i] != 0) {
+        if (pn_pin[i] < '0' || pn_pin[i] > '9') { pn_pin[0] = 0; break; }
+        i = i + 1;
+    }
+    if (pn_pin[0] == 0) return -1;
+    if (pn_gpio < 0) return -2;
+    if (pinFree(pn_gpio) == 0) return -3;
+    return 0;
+}
+
+void pnFlash(int n) {
+    int i = 0;
+    while (i < n) {
+        digitalWrite(pn_gpio, 1 - pn_inv);   // light
+        delay(pn_on);
+        digitalWrite(pn_gpio, pn_inv);       // dark
+        delay(pn_off);
+        i = i + 1;
+    }
+}
+
+// spawnTask worker: the sequence takes 10-30 s of delays. The TX pin belongs
+// to the SML driver; the main loop restarts the driver afterwards so it takes
+// the pin back.
+void pnWork() {
+    pinMode(pn_gpio, 3);                     // 3 = OUTPUT
+    digitalWrite(pn_gpio, pn_inv);
+    delay(500);
+    int i = 0;
+    while (i < pn_wake) {
+        pnFlash(1);
+        delay(pn_gap);
+        i = i + 1;
+    }
+    i = 0;
+    while (pn_pin[i] != 0) {
+        int n = pn_pin[i] - '0';
+        if (n == 0) n = pn_zero;
+        pnFlash(n);
+        delay(pn_gap);
+        i = i + 1;
+    }
+    pn_done = 1;
+    pn_busy = 0;
+}
+
+void EverySecond() {
+    if (pn_ack > 0) pn_ack = pn_ack - 1;
+    if (pn_load <= 0 && pn_busy == 0) { pn_cfg = pnLoad(); pn_load = 60; }
+    pn_load = pn_load - 1;
+    if (pn_busy == 1) {
+        // The worker ends with pn_busy = 0. Gone without it = it crashed.
+        if (taskRunning("pnWork") == 0) {
+            pn_busy = 0;
+            pn_res = 2;
+            pn_code = -13;
+            tasmCmd("Sensor53 r", pn_b);
+            if (pn_man == 1) pn_ack = 5;
+        }
+        return;
+    }
+    if (pn_done == 1) {
+        pn_done = 0;
+        pn_res = 1;
+        tasmCmd("Sensor53 r", pn_b);         // the SML driver takes its TX pin back
+        addLog("pin: sent");
+        if (pn_man == 1) pn_ack = 5;
+    }
+    // A locked meter sends its counter but no power value; after a power cut
+    // that is the state at start. Three minutes of it: send the PIN, once.
+    if (pn_auto == 1 && pn_auto_done == 0 && pn_cfg == 0) {
+        if (smlGet(0) > 0 && smlGet(2) > 0.0 && smlGet(1) == 0.0) pn_miss = pn_miss + 1;
+        else pn_miss = 0;
+        if (pn_miss >= 180) {
+            pn_auto_done = 1;
+            pn_now = 1;
+            pn_man = 0;
+            addLog("pin: counter without power - sending PIN");
+        }
+    }
+    if (pn_now == 0) return;
+    pn_now = 0;
+    pn_hms = tasm_hour * 100 + tasm_minute;
+    if (pn_cfg != 0) {
+        pn_res = 2;
+        pn_code = pn_cfg;
+        if (pn_man == 1) pn_ack = 5;
+        return;
+    }
+    pn_busy = 1;
+    if (spawnTask("pnWork") < 0) {
+        pn_busy = 0;
+        pn_res = 2;
+        pn_code = -12;
+    }
+}
+
+void WebCall() {
+    byte b[16];
+    // Handled while drawing: left to the next tick, the answer would still
+    // show the button pressed and the next click would send 0.
+    if (pn_go == 1) {
+        pn_go = 0;
+        if (pn_busy == 0) { pn_now = 1; pn_man = 1; }
+    }
+    if (pn_busy == 1 || pn_now == 1) strcpy(b, "#fa0");
+    else if (pn_res == 1)            strcpy(b, "#0c0");
+    else if (pn_res == 2)            strcpy(b, "#e00");
+    else                             strcpy(b, "#888");
+    byte c[220];
+    if (pn_res == 0) {
+        sprintf(c, "{s}Z&auml;hler-PIN <span style='color:%s'>&#9679;</span> -", b);
+    } else {
+        sprintf(c, "{s}Z&auml;hler-PIN <span style='color:%s'>&#9679;</span> <span style='font-weight:normal;font-size:.85em'>&#x1F552; %02d:%02d</span>", b, pn_hms / 100, pn_hms % 100);
+    }
+    if (pn_res == 2) {
+        sprintf(b, " (%d)", pn_code);
+        strcat(c, b);
+    }
+    strcat(c, "{m}<a href='/ufse?file=/sml_pin.cfg'>sml_pin.cfg</a>{e}");
+    webSend(c);
+    byte lb[24];
+    if (pn_busy == 1 || pn_now == 1)   strcpy(lb, "&#x23F3; PIN");
+    else if (pn_ack > 0 && pn_res == 1) strcpy(lb, "&#x2705; PIN");
+    else if (pn_ack > 0)               strcpy(lb, "&#x274C; PIN");
+    else                               strcpy(lb, "&#x1F513; PIN");
+    webButtonV(pn_go, lb);
+}
+
+int main() {
+    addLog("pin: start %s", sml_vers);
+    return 0;
+}
