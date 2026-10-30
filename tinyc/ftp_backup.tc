@@ -18,8 +18,10 @@ char sml_vers[] = "26.10.2026 20:10";  // build.html: version in the .tcb header
 
 persist int bk_res;            // 0 never, 1 ok, 2 failed
 persist int bk_code;           // last error
-persist int bk_d; persist int bk_m; persist int bk_y;
-persist int bk_hm;             // hhmm
+persist int bk_d;              // last backup day
+persist int bk_m;              // last backup month 
+persist int bk_y;              // last backup year
+persist int bk_hm;             // last backup hhmm
 int bk_go;                     // Backup button
 int bk_now;                    // start at the next tick
 int bk_busy;                   // worker running
