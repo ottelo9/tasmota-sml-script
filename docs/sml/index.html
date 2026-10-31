@@ -585,7 +585,7 @@ body.lang-de .en{display:none}
 USER=fritzuser
 PW=fritzpassword
 DIR=/Tasmota</pre>
-<code>HOST</code> is the IP of the FRITZ!Box. Use the number, not <code>fritz.box</code>. <code>USER</code> and <code>PW</code> are user and password, <code>DIR</code> is the folder, as an FTP program (FileZilla, for example) shows it after logging in to the FRITZ!Box. Lines starting with <code>//</code> are comments. Two optional lines: <code>NAME=</code> gives the device's subfolder a name of your own (the host name, for example), empty = the MQTT topic. <code>ALL=1</code> saves <code>ftp.cfg</code> too, see below.</li>
+<code>HOST</code> is the IP of the FRITZ!Box. Use the number, not <code>fritz.box</code>. <code>USER</code> and <code>PW</code> are user and password, <code>DIR</code> is the folder, as an FTP program (FileZilla, for example) shows it after logging in to the FRITZ!Box. Lines starting with <code>//</code> are comments. Two optional lines: <code>NAME=</code> gives the device's subfolder a name of your own (the host name, for example), empty = the MQTT topic. Umlauts become ae, oe, ue and ss. <code>ALL=1</code> saves <code>ftp.cfg</code> too, see below.</li>
 <li><i>Tools &rarr; TinyC Console</i>: load <b>FTP-Backup</b> from the repository into a free slot (slot&nbsp;1, for example), switch on autostart and start it.</li>
 <li>Press <b>Backup</b> on the main page to test it.</li>
 </ol>
@@ -625,7 +625,7 @@ DIR=/Tasmota</pre>
 USER=fritzuser
 PW=fritzpassword
 DIR=/Tasmota</pre>
-<code>HOST</code> ist die IP der FRITZ!Box. Nimm die Zahl, nicht <code>fritz.box</code>. <code>USER</code> und <code>PW</code> sind Benutzer und Passwort, <code>DIR</code> ist der Ordner, so wie ihn ein FTP-Programm (z.&nbsp;B. FileZilla) nach der Anmeldung an der FRITZ!Box zeigt. Zeilen mit <code>//</code> am Anfang sind Kommentare. Zwei Zeilen sind freiwillig: <code>NAME=</code> gibt dem Unterordner des Geräts einen eigenen Namen (z.&nbsp;B. den Hostnamen), leer = das MQTT-Topic. <code>ALL=1</code> sichert auch die <code>ftp.cfg</code>, siehe unten.</li>
+<code>HOST</code> ist die IP der FRITZ!Box. Nimm die Zahl, nicht <code>fritz.box</code>. <code>USER</code> und <code>PW</code> sind Benutzer und Passwort, <code>DIR</code> ist der Ordner, so wie ihn ein FTP-Programm (z.&nbsp;B. FileZilla) nach der Anmeldung an der FRITZ!Box zeigt. Zeilen mit <code>//</code> am Anfang sind Kommentare. Zwei Zeilen sind freiwillig: <code>NAME=</code> gibt dem Unterordner des Geräts einen eigenen Namen (z.&nbsp;B. den Hostnamen), leer = das MQTT-Topic. Aus Umlauten wird ae, oe, ue und ss. <code>ALL=1</code> sichert auch die <code>ftp.cfg</code>, siehe unten.</li>
 <li><i>Tools &rarr; TinyC Console</i>: <b>FTP-Backup</b> aus dem Repository in einen freien Slot laden (z.&nbsp;B. Slot&nbsp;1), Autostart einschalten und starten.</li>
 <li>Zum Testen auf der Hauptseite <b>Backup</b> drücken.</li>
 </ol>

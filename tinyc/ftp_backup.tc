@@ -14,12 +14,14 @@
 // its own, // comments allowed (mi-hol, PR #92). Without HOST= the backup
 // fails with -11.
 
-char sml_vers[] = "26.10.2026 20:10";  // build.html: version in the .tcb header and index.json
+char sml_vers[] = "31.10.2026 10:35";  // build.html: version in the .tcb header and index.json
 
 persist int bk_res;            // 0 never, 1 ok, 2 failed
 persist int bk_code;           // last error
-persist int bk_d; persist int bk_m; persist int bk_y;
-persist int bk_hm;             // hhmm
+persist int bk_d;              // last backup day
+persist int bk_m;              // last backup month
+persist int bk_y;              // last backup year
+persist int bk_hm;             // last backup hhmm
 int bk_go;                     // Backup button
 int bk_now;                    // start at the next tick
 int bk_busy;                   // worker running
@@ -45,6 +47,40 @@ void bkVal(byte d[], byte s[], int p, int max) {
     }
     while (i > 0 && d[i - 1] == ' ') i = i - 1;
     d[i] = 0;
+}
+
+// NAME= as one folder every FTP server takes: umlauts (UTF-8 or Latin-1)
+// become ae/oe/ue/ss, "/" and other non-ASCII bytes "_".
+void bkName(byte d[], byte s[]) {
+    int i = 0;
+    int j = 0;
+    while (s[i] != 0 && j < 37) {
+        int c = s[i] & 255;
+        i = i + 1;
+        if (c == 0xC3 && (s[i] & 255) >= 0x80) {   // UTF-8 C3 xx = Latin-1 C0..FF
+            c = (s[i] & 255) + 0x40;
+            i = i + 1;
+        }
+        int a = 0;
+        int b = 'e';
+        if (c == 0xE4) a = 'a';
+        else if (c == 0xF6) a = 'o';
+        else if (c == 0xFC) a = 'u';
+        else if (c == 0xC4) a = 'A';
+        else if (c == 0xD6) a = 'O';
+        else if (c == 0xDC) a = 'U';
+        else if (c == 0xDF) { a = 's'; b = 's'; }
+        if (a != 0) {
+            d[j] = a;
+            d[j + 1] = b;
+            j = j + 2;
+        } else {
+            if (c == '/' || c >= 0x80) c = '_';
+            d[j] = c;
+            j = j + 1;
+        }
+    }
+    d[j] = 0;
 }
 
 int bkWant(byte n[]) {
@@ -83,12 +119,8 @@ void bkWork() {
         if (q > 0 && h[q] == '/') h[q] = 0;
         q = strlen(d) - 1;
         if (q > 0 && d[q] == '/') d[q] = 0;
-        bkVal(t, cfg, strFind(cfg, "NAME="), 40);
-        q = 0;
-        while (t[q] != 0) {                  // one folder, no path
-            if (t[q] == '/') t[q] = '_';
-            q = q + 1;
-        }
+        bkVal(n, cfg, strFind(cfg, "NAME="), 40);
+        bkName(t, n);
         bkVal(n, cfg, strFind(cfg, "ALL="), 8);
         bk_all = 0;
         if (n[0] == '1') bk_all = 1;
