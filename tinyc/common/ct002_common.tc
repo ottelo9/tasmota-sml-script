@@ -375,7 +375,11 @@ void ctRotate() {
 
 // Rank of this slot within its bucket, counted from the rotation offset.
 // Gives every battery its turn at being first without keeping a sorted list.
+// With saturation detection a saturated one (full, empty, at its limit) goes
+// last, so a resting one takes over at once instead of after the next
+// rotation, up to 15 min later (AstraMeter #751).
 int ctRank(int idx, int f) {
+    if (ct_sat == 1 && ct_ssat[idx] > 0.4) return CT_NSLOT;
     int r = 0;
     int k = 0;
     int i = 0;
@@ -383,7 +387,7 @@ int ctRank(int idx, int f) {
         i = (k + ct_rotoff) % CT_NSLOT;
         if (ct_sused[i] == 1 && ct_sph[i] == f && ct_spart[i] == 1) {
             if (i == idx) return r;
-            r = r + 1;
+            if (ct_sat == 0 || ct_ssat[i] <= 0.4) r = r + 1;
         }
     }
     return r;

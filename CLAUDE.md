@@ -211,7 +211,7 @@ Control loop ported from AstraMeter (GPL-3.0; credit on page 4),
   share. Batteries on different phases never form a pool — with a netting meter
   they belong on phase D. With saturation detection on, a saturated peer leaves
   the share and the balance average (AstraMeter #679, ceilings there).
-- Last AstraMeter comparison: `814c873` (2026-10-17). Start the next one there.
+- Last AstraMeter comparison: `f0ce885` (2026-10-27). Start the next one there.
 - Source files may be CRLF or LF per file (Git `autocrlf`); patch scripts must
   keep each file's ending.
 
