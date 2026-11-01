@@ -31,22 +31,22 @@ int bk_ack;                    // seconds the button still shows the result
 int bk_all;                    // ALL=1: ftp.cfg is saved too
 
 // Value of "KEY=" at a line start, up to the line end, spaces trimmed.
-// p = strFind of the key; anywhere else than a line start it does not count.
-void bkVal(byte d[], byte s[], int p, int max) {
-    d[0] = 0;
-    if (p < 0) return;
-    if (p > 0 && s[p - 1] != '\n') return;
-    while (s[p] != '=') p = p + 1;
-    p = p + 1;
-    while (s[p] == ' ') p = p + 1;
+// pos = strFind of the key; anywhere else than a line start it does not count.
+void bkVal(byte value[], byte strKey[], int pos, int max) {
+    value[0] = 0;
+    if (pos < 0) return;
+    if (pos > 0 && strKey[pos - 1] != '\n') return;
+    while (strKey[pos] != '=') pos = pos + 1;
+    pos = pos + 1;
+    while (strKey[pos] == ' ') pos = pos + 1;
     int i = 0;
-    while (s[p] != 0 && s[p] != '\n' && s[p] != '\r' && i < max - 1) {
-        d[i] = s[p];
+    while (strKey[pos] != 0 && strKey[pos] != '\n' && strKey[pos] != '\r' && i < max - 1) {
+        value[i] = strKey[pos];
         i = i + 1;
-        p = p + 1;
+        pos = pos + 1;
     }
-    while (i > 0 && d[i - 1] == ' ') i = i - 1;
-    d[i] = 0;
+    while (i > 0 && value[i - 1] == ' ') i = i - 1;
+    value[i] = 0;
 }
 
 // NAME= as one folder every FTP server takes: umlauts (UTF-8 or Latin-1)
@@ -96,7 +96,7 @@ int bkWant(byte n[]) {
 // VM needs the firmware fix that lets a worker use arrays > 16 elements
 // (tasmota-sml-images, 12.10.2026) - without it this dies with BOUNDS.
 void bkWork() {
-    byte cfg[512]; byte h[40]; byte u[40]; byte p[40]; byte d[128];
+    byte cfg[512]; byte host[40]; byte u[40]; byte p[40]; byte d[128];
     byte t[40]; byte n[48]; byte l[52]; byte r[180];
     int e = -11;
     int cnt = 0;
@@ -106,17 +106,17 @@ void bkWork() {
         fileClose(f);
         if (k < 0) k = 0;
         cfg[k] = 0;
-        bkVal(h, cfg, strFind(cfg, "HOST="), 40);
+        bkVal(host, cfg, strFind(cfg, "HOST="), 40);
         bkVal(u, cfg, strFind(cfg, "USER="), 40);
         bkVal(p, cfg, strFind(cfg, "PW="), 40);
         bkVal(d, cfg, strFind(cfg, "DIR="), 100);
-        int q = strFind(h, "://");           // "ftp://ip" or "http://ip/" written by mistake
+        int q = strFind(host, "://");           // "ftp://ip" or "http://ip/" written by mistake
         if (q >= 0) {
-            strSub(t, h, q + 3, 39);
-            strcpy(h, t);
+            strSub(t, host, q + 3, 39);
+            strcpy(host, t);
         }
-        q = strlen(h) - 1;
-        if (q > 0 && h[q] == '/') h[q] = 0;
+        q = strlen(host) - 1;
+        if (q > 0 && host[q] == '/') host[q] = 0;
         q = strlen(d) - 1;
         if (q > 0 && d[q] == '/') d[q] = 0;
         bkVal(n, cfg, strFind(cfg, "NAME="), 40);
@@ -125,10 +125,10 @@ void bkWork() {
         bk_all = 0;
         if (n[0] == '1') bk_all = 1;
     }
-    if (h[0] == 0) f = -1;                   // no HOST=: as if there were no file
+    if (host[0] == 0) f = -1;                   // no HOST=: as if there were no file
     if (f >= 0) {
         if (t[0] == 0) tasmInfo(0, t);
-        e = ftpOpen(h, u, p);
+        e = ftpOpen(host, u, p);
         if (e == 0) {
             ftpMkdir(d);                 // refused if it exists - fine
             strcat(d, "/");
