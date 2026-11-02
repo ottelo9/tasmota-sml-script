@@ -14,223 +14,228 @@
 // its own, // comments allowed (mi-hol, PR #92). Without HOST= the backup
 // fails with -11.
 
-char sml_vers[] = "31.10.2026 10:35";  // build.html: version in the .tcb header and index.json
+char sml_vers[] = "02.11.2026 12:05";  // build.html: version in the .tcb header and index.json
 
+// Kept in ftp_backup.pvs by name: renaming one loses its value.
 persist int bk_res;            // 0 never, 1 ok, 2 failed
 persist int bk_code;           // last error
 persist int bk_d;              // last backup day
 persist int bk_m;              // last backup month
 persist int bk_y;              // last backup year
 persist int bk_hm;             // last backup hhmm
-int bk_go;                     // Backup button
-int bk_now;                    // start at the next tick
-int bk_busy;                   // worker running
-int bk_day;                    // day of the last nightly run
-int bk_man;                    // 1 = started by the button
-int bk_ack;                    // seconds the button still shows the result
-int bk_all;                    // ALL=1: ftp.cfg is saved too
+int bk_button;                 // Backup button
+int bk_start;                  // start at the next tick
+int bk_running;                // worker running
+int bk_last_night;             // day of the last nightly run
+int bk_manual;                 // 1 = started by the button
+int bk_show_secs;              // seconds the button still shows the result
+int bk_save_all;               // ALL=1: ftp.cfg is saved too
 
 // Value of "KEY=" at a line start, up to the line end, spaces trimmed.
-// p = strFind of the key; anywhere else than a line start it does not count.
-void bkVal(byte d[], byte s[], int p, int max) {
-    d[0] = 0;
-    if (p < 0) return;
-    if (p > 0 && s[p - 1] != '\n') return;
-    while (s[p] != '=') p = p + 1;
-    p = p + 1;
-    while (s[p] == ' ') p = p + 1;
-    int i = 0;
-    while (s[p] != 0 && s[p] != '\n' && s[p] != '\r' && i < max - 1) {
-        d[i] = s[p];
-        i = i + 1;
-        p = p + 1;
+// text = the whole file, pos = strFind of the key in it; anywhere else than
+// a line start it does not count.
+void bkGetValue(byte value[], byte text[], int pos, int max) {
+    value[0] = 0;
+    if (pos < 0) return;
+    if (pos > 0 && text[pos - 1] != '\n') return;
+    while (text[pos] != '=') pos = pos + 1;
+    pos = pos + 1;
+    while (text[pos] == ' ') pos = pos + 1;
+    int len = 0;
+    while (text[pos] != 0 && text[pos] != '\n' && text[pos] != '\r' && len < max - 1) {
+        value[len] = text[pos];
+        len = len + 1;
+        pos = pos + 1;
     }
-    while (i > 0 && d[i - 1] == ' ') i = i - 1;
-    d[i] = 0;
+    while (len > 0 && value[len - 1] == ' ') len = len - 1;
+    value[len] = 0;
 }
 
 // NAME= as one folder every FTP server takes: umlauts (UTF-8 or Latin-1)
 // become ae/oe/ue/ss, "/" and other non-ASCII bytes "_".
-void bkName(byte d[], byte s[]) {
-    int i = 0;
-    int j = 0;
-    while (s[i] != 0 && j < 37) {
-        int c = s[i] & 255;
-        i = i + 1;
-        if (c == 0xC3 && (s[i] & 255) >= 0x80) {   // UTF-8 C3 xx = Latin-1 C0..FF
-            c = (s[i] & 255) + 0x40;
-            i = i + 1;
+void bkFolderName(byte folder[], byte name[]) {
+    int in_pos = 0;
+    int out_len = 0;
+    while (name[in_pos] != 0 && out_len < 37) {
+        int ch = name[in_pos] & 255;
+        in_pos = in_pos + 1;
+        if (ch == 0xC3 && (name[in_pos] & 255) >= 0x80) {   // UTF-8 C3 xx = Latin-1 C0..FF
+            ch = (name[in_pos] & 255) + 0x40;
+            in_pos = in_pos + 1;
         }
-        int a = 0;
-        int b = 'e';
-        if (c == 0xE4) a = 'a';
-        else if (c == 0xF6) a = 'o';
-        else if (c == 0xFC) a = 'u';
-        else if (c == 0xC4) a = 'A';
-        else if (c == 0xD6) a = 'O';
-        else if (c == 0xDC) a = 'U';
-        else if (c == 0xDF) { a = 's'; b = 's'; }
-        if (a != 0) {
-            d[j] = a;
-            d[j + 1] = b;
-            j = j + 2;
+        int first = 0;
+        int second = 'e';
+        if (ch == 0xE4) first = 'a';
+        else if (ch == 0xF6) first = 'o';
+        else if (ch == 0xFC) first = 'u';
+        else if (ch == 0xC4) first = 'A';
+        else if (ch == 0xD6) first = 'O';
+        else if (ch == 0xDC) first = 'U';
+        else if (ch == 0xDF) { first = 's'; second = 's'; }
+        if (first != 0) {
+            folder[out_len] = first;
+            folder[out_len + 1] = second;
+            out_len = out_len + 2;
         } else {
-            if (c == '/' || c >= 0x80) c = '_';
-            d[j] = c;
-            j = j + 1;
+            if (ch == '/' || ch >= 0x80) ch = '_';
+            folder[out_len] = ch;
+            out_len = out_len + 1;
         }
     }
-    d[j] = 0;
+    folder[out_len] = 0;
 }
 
-int bkWant(byte n[]) {
-    if (strcmp(n, "ftp_backup.pvs") == 0) return 0;
-    if (strcmp(n, "ftp.cfg") == 0) return bk_all;
-    if (strFind(n, ".pvs") > 0) return 1;
-    if (strFind(n, ".def") > 0) return 1;
-    if (strFind(n, ".cfg") > 0) return 1;
+int bkWantFile(byte file_name[]) {
+    if (strcmp(file_name, "ftp_backup.pvs") == 0) return 0;
+    if (strcmp(file_name, "ftp.cfg") == 0) return bk_save_all;
+    if (strFind(file_name, ".pvs") > 0) return 1;
+    if (strFind(file_name, ".def") > 0) return 1;
+    if (strFind(file_name, ".cfg") > 0) return 1;
     return 0;
 }
 
 // spawnTask worker: FTP blocks, and here the VM lets go meanwhile. Its own
 // VM needs the firmware fix that lets a worker use arrays > 16 elements
 // (tasmota-sml-images, 12.10.2026) - without it this dies with BOUNDS.
-void bkWork() {
-    byte cfg[512]; byte h[40]; byte u[40]; byte p[40]; byte d[128];
-    byte t[40]; byte n[48]; byte l[52]; byte r[180];
-    int e = -11;
-    int cnt = 0;
-    int f = fileOpen("/ftp.cfg", 0);
-    if (f >= 0) {
-        int k = fileRead(f, cfg, 511);
-        fileClose(f);
-        if (k < 0) k = 0;
-        cfg[k] = 0;
-        bkVal(h, cfg, strFind(cfg, "HOST="), 40);
-        bkVal(u, cfg, strFind(cfg, "USER="), 40);
-        bkVal(p, cfg, strFind(cfg, "PW="), 40);
-        bkVal(d, cfg, strFind(cfg, "DIR="), 100);
-        int q = strFind(h, "://");           // "ftp://ip" or "http://ip/" written by mistake
-        if (q >= 0) {
-            strSub(t, h, q + 3, 39);
-            strcpy(h, t);
+void bkWorker() {
+    byte cfg_text[512]; byte host[40]; byte user[40]; byte password[40];
+    byte remote_dir[128]; byte device_folder[40];
+    byte text[48];                           // scratch: NAME/ALL value, weekday, file name
+    byte local_path[52]; byte remote_path[180];
+    int result = -11;
+    int files_sent = 0;
+    int cfg_file = fileOpen("/ftp.cfg", 0);
+    if (cfg_file >= 0) {
+        int bytes_read = fileRead(cfg_file, cfg_text, 511);
+        fileClose(cfg_file);
+        if (bytes_read < 0) bytes_read = 0;
+        cfg_text[bytes_read] = 0;
+        bkGetValue(host, cfg_text, strFind(cfg_text, "HOST="), 40);
+        bkGetValue(user, cfg_text, strFind(cfg_text, "USER="), 40);
+        bkGetValue(password, cfg_text, strFind(cfg_text, "PW="), 40);
+        bkGetValue(remote_dir, cfg_text, strFind(cfg_text, "DIR="), 100);
+        int pos = strFind(host, "://");      // "ftp://ip" or "http://ip/" written by mistake
+        if (pos >= 0) {
+            strSub(text, host, pos + 3, 39);
+            strcpy(host, text);
         }
-        q = strlen(h) - 1;
-        if (q > 0 && h[q] == '/') h[q] = 0;
-        q = strlen(d) - 1;
-        if (q > 0 && d[q] == '/') d[q] = 0;
-        bkVal(n, cfg, strFind(cfg, "NAME="), 40);
-        bkName(t, n);
-        bkVal(n, cfg, strFind(cfg, "ALL="), 8);
-        bk_all = 0;
-        if (n[0] == '1') bk_all = 1;
+        pos = strlen(host) - 1;
+        if (pos > 0 && host[pos] == '/') host[pos] = 0;
+        pos = strlen(remote_dir) - 1;
+        if (pos > 0 && remote_dir[pos] == '/') remote_dir[pos] = 0;
+        bkGetValue(text, cfg_text, strFind(cfg_text, "NAME="), 40);
+        bkFolderName(device_folder, text);
+        bkGetValue(text, cfg_text, strFind(cfg_text, "ALL="), 8);
+        bk_save_all = 0;
+        if (text[0] == '1') bk_save_all = 1;
     }
-    if (h[0] == 0) f = -1;                   // no HOST=: as if there were no file
-    if (f >= 0) {
-        if (t[0] == 0) tasmInfo(0, t);
-        e = ftpOpen(h, u, p);
-        if (e == 0) {
-            ftpMkdir(d);                 // refused if it exists - fine
-            strcat(d, "/");
-            strcat(d, t);
-            ftpMkdir(d);
-            int wd = tasm_wday - 1;      // Tasmota: 1 = Sunday
-            if (wd < 1) wd = 7;
-            if (bk_man == 1) wd = 0;
-            sprintf(n, "/%d", wd);
-            strcat(d, n);
-            ftpMkdir(d);
-            int dh = fileOpenDir("/");
-            if (dh >= 0) {
-                while (e >= 0 && fileReadDir(dh, n)) {
-                    if (bkWant(n)) {
-                        sprintf(l, "/%s", n);
-                        sprintf(r, "%s/%s", d, n);
-                        e = ftpPut(r, l, 0);
-                        if (e >= 0) cnt = cnt + 1;
+    if (host[0] == 0) cfg_file = -1;         // no HOST=: as if there were no file
+    if (cfg_file >= 0) {
+        if (device_folder[0] == 0) tasmInfo(0, device_folder);   // MQTT topic
+        result = ftpOpen(host, user, password);
+        if (result == 0) {
+            ftpMkdir(remote_dir);            // refused if it exists - fine
+            strcat(remote_dir, "/");
+            strcat(remote_dir, device_folder);
+            ftpMkdir(remote_dir);
+            int weekday = tasm_wday - 1;     // Tasmota: 1 = Sunday
+            if (weekday < 1) weekday = 7;
+            if (bk_manual == 1) weekday = 0;
+            sprintf(text, "/%d", weekday);
+            strcat(remote_dir, text);
+            ftpMkdir(remote_dir);
+            int dir_handle = fileOpenDir("/");
+            if (dir_handle >= 0) {
+                while (result >= 0 && fileReadDir(dir_handle, text)) {
+                    if (bkWantFile(text)) {
+                        sprintf(local_path, "/%s", text);
+                        sprintf(remote_path, "%s/%s", remote_dir, text);
+                        result = ftpPut(remote_path, local_path, 0);
+                        if (result >= 0) files_sent = files_sent + 1;
                     }
                 }
-                fileClose(dh);
+                fileClose(dir_handle);
             }
             ftpClose();
         }
     }
     bk_d = tasm_day; bk_m = tasm_month; bk_y = tasm_year;
     bk_hm = tasm_hour * 100 + tasm_minute;
-    if (e >= 0) {
+    if (result >= 0) {
         bk_res = 1;
-        addLog("ftpbk: %d files", cnt);
+        addLog("ftpbk: %d files", files_sent);
     } else {
         bk_res = 2;
-        bk_code = e;
-        addLog("ftpbk: err %d", e);
+        bk_code = result;
+        addLog("ftpbk: err %d", result);
     }
-    if (bk_man == 1) bk_ack = 5;
-    bk_busy = 0;
+    if (bk_manual == 1) bk_show_secs = 5;
+    bk_running = 0;
 }
 
 void EverySecond() {
-    if (bk_ack > 0) bk_ack = bk_ack - 1;
-    if (bk_busy) {
-        // The worker ends with bk_busy = 0. Gone without it = it crashed.
-        if (taskRunning("bkWork") == 0) {
-            bk_busy = 0;
+    if (bk_show_secs > 0) bk_show_secs = bk_show_secs - 1;
+    if (bk_running) {
+        // The worker ends with bk_running = 0. Gone without it = it crashed.
+        if (taskRunning("bkWorker") == 0) {
+            bk_running = 0;
             bk_res = 2;
             bk_code = -13;
             bk_d = tasm_day; bk_m = tasm_month; bk_y = tasm_year;
             bk_hm = tasm_hour * 100 + tasm_minute;
-            if (bk_man == 1) bk_ack = 5;
+            if (bk_manual == 1) bk_show_secs = 5;
         }
         return;
     }
     // 00:10: the SML programs write their files at midnight.
-    if (tasm_hour == 0 && tasm_minute == 10 && bk_day != tasm_day && tasm_year > 2020) {
-        bk_day = tasm_day;
-        bk_now = 1;
-        bk_man = 0;
+    if (tasm_hour == 0 && tasm_minute == 10 && bk_last_night != tasm_day && tasm_year > 2020) {
+        bk_last_night = tasm_day;
+        bk_start = 1;
+        bk_manual = 0;
     }
-    if (bk_now == 0) return;
-    bk_now = 0;
-    bk_busy = 1;
-    if (spawnTask("bkWork", 8) < 0) {
-        bk_busy = 0;
+    if (bk_start == 0) return;
+    bk_start = 0;
+    bk_running = 1;
+    if (spawnTask("bkWorker", 8) < 0) {
+        bk_running = 0;
         bk_res = 2;
         bk_code = -12;
     }
 }
 
 void WebCall() {
-    byte b[24];
+    byte color[24];
     // Handled while drawing: left to the next tick, the answer would still
     // show the button pressed and the next click would send 0.
-    if (bk_go == 1) {
-        bk_go = 0;
-        if (bk_busy == 0) { bk_now = 1; bk_man = 1; }
+    if (bk_button == 1) {
+        bk_button = 0;
+        if (bk_running == 0) { bk_start = 1; bk_manual = 1; }
     }
-    if (bk_busy == 1 || bk_now == 1) strcpy(b, "#fa0");
-    else if (bk_res == 1)            strcpy(b, "#0c0");
-    else if (bk_res == 2)            strcpy(b, "#e00");
-    else                             strcpy(b, "#888");
-    byte c[260];
+    if (bk_running == 1 || bk_start == 1) strcpy(color, "#fa0");
+    else if (bk_res == 1)                 strcpy(color, "#0c0");
+    else if (bk_res == 2)                 strcpy(color, "#e00");
+    else                                  strcpy(color, "#888");
+    byte row[260];
     if (bk_res == 0) {
-        sprintf(c, "{s}<span style='color:%s'>&#9679;</span> -", b);
+        sprintf(row, "{s}<span style='color:%s'>&#9679;</span> -", color);
     } else {
-        sprintf(c, "{s}<span style='color:%s'>&#9679;</span> <span style='font-weight:normal;font-size:.85em'>&#x1F552; %02d.%02d.%04d - %02d:%02d</span>", b, bk_d, bk_m, bk_y, bk_hm / 100, bk_hm % 100);
+        sprintf(row, "{s}<span style='color:%s'>&#9679;</span> <span style='font-weight:normal;font-size:.85em'>&#x1F552; %02d.%02d.%04d - %02d:%02d</span>", color, bk_d, bk_m, bk_y, bk_hm / 100, bk_hm % 100);
     }
     if (bk_res == 2) {
-        sprintf(b, " (%d)", bk_code);
-        strcat(c, b);
+        byte code_text[16];
+        sprintf(code_text, " (%d)", bk_code);
+        strcat(row, code_text);
     }
-    strcat(c, "{m}<a href='/ufse?file=/ftp.cfg'>ftp.cfg</a>{e}");
-    webSend(c);
+    strcat(row, "{m}<a href='/ufse?file=/ftp.cfg'>ftp.cfg</a>{e}");
+    webSend(row);
     // The click itself only flashes a tick; the label shows the run and its
     // result for a few seconds, so a press is visible.
-    byte lb[24];
-    if (bk_busy == 1 || bk_now == 1)  strcpy(lb, "&#x23F3; Backup");
-    else if (bk_ack > 0 && bk_res == 1) strcpy(lb, "&#x2705; Backup");
-    else if (bk_ack > 0)              strcpy(lb, "&#x274C; Backup");
-    else                              strcpy(lb, "Backup");
-    webButtonV(bk_go, lb);
+    byte label[24];
+    if (bk_running == 1 || bk_start == 1)      strcpy(label, "&#x23F3; Backup");
+    else if (bk_show_secs > 0 && bk_res == 1)  strcpy(label, "&#x2705; Backup");
+    else if (bk_show_secs > 0)                 strcpy(label, "&#x274C; Backup");
+    else                                       strcpy(label, "Backup");
+    webButtonV(bk_button, label);
 }
 
 int main() {
