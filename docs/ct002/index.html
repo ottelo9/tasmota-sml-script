@@ -38,6 +38,11 @@ footer{color:var(--mut);font-size:13px;text-align:center;margin-top:26px}
 footer a{color:var(--accent)}
 footer .dis{font-size:12px;line-height:1.45;max-width:560px;margin:12px auto 0;opacity:.85}
 .sw{display:inline-block;background:var(--code);border:1px solid var(--line);border-radius:4px;padding:0 6px;font:600 .8em/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.06em;vertical-align:baseline}
+figure{margin:12px 0}
+figcaption a{color:var(--accent)}
+figure img,figure svg{display:block;max-width:100%;height:auto}
+figure img{border-radius:6px}
+figcaption{color:var(--mut);font-size:13px;margin-top:6px}
 body.lang-en .de{display:none}
 body.lang-de .en{display:none}
 </style>
@@ -84,6 +89,21 @@ body.lang-de .en{display:none}
 <p><b>Du brauchst:</b> einen ESP32 (keinen ESP8266), mein Tasmota-Image mit TinyC <b>1.6.64 oder neuer</b> und einen Lesekopf (Beispiele auf meinem <a href="https://ottelo.jimdofree.com/stromz%C3%A4hler-auslesen-tasmota/#1aESP32">Blog</a>). Eine ältere Firmware lädt das Programm nicht und sagt dir das auch.</p>
 <p><b>ESP8266:</b> Dafür gibt es ein eigenes Script für bis zu 4 Marstek-Akkus, <a href="https://github.com/ottelo9/tasmota-sml-script/tree/main/ESP8266/pvakku-powermeter-emulator">2_CT002_Emulator.tas</a> (von next145), ohne die hier beschriebene zusätzliche Regelung. Es braucht das Image <a href="https://github.com/ottelo9/tasmota-sml-images">tasmota1m_ct002_ottelo_tas</a> (für ein OTA-Update vorher das Minimal-Image laden). Darin gibt es die Seite <b>Marstek CT002</b> (<code>/ctreg</code>, unter Tools), um das CT einmalig in der Marstek-Cloud anzumelden.</p>
 </div>
+<figure>
+<svg viewBox="0 0 480 88" width="480" role="img" aria-label="Meter, ESP as emulator, battery" font-family="inherit" font-size="13" fill="var(--fg)">
+<defs><marker id="ahe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker></defs>
+<rect x="6" y="6" width="110" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="61" y="30" text-anchor="middle" font-weight="600"><tspan class="en">Meter</tspan><tspan class="de">Zähler</tspan></text><text x="61" y="54" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">IR light</tspan><tspan class="de">IR-Licht</tspan></text>
+<line x1="118" y1="44" x2="183" y2="44" stroke="var(--accent)" stroke-width="2" marker-end="url(#ahe)"/>
+<rect x="185" y="6" width="110" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="240" y="30" text-anchor="middle" font-weight="600"><tspan class="en">ESP</tspan><tspan class="de">ESP</tspan></text><text x="240" y="54" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">as CT002/CT003</tspan><tspan class="de">als CT002/CT003</tspan></text>
+<text x="329" y="26" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">asks</tspan><tspan class="de">fragt</tspan></text><line x1="362" y1="34" x2="297" y2="34" stroke="var(--accent)" stroke-width="2" marker-end="url(#ahe)"/><line x1="297" y1="56" x2="362" y2="56" stroke="var(--accent)" stroke-width="2" marker-end="url(#ahe)"/><text x="329" y="72" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">UDP 12345</tspan><tspan class="de">UDP 12345</tspan></text>
+<rect x="364" y="6" width="110" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="419" y="30" text-anchor="middle" font-weight="600"><tspan class="en">Battery</tspan><tspan class="de">Akku</tspan></text><text x="419" y="54" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">adjusts itself</tspan><tspan class="de">regelt sich</tspan></text>
+</svg>
+<figcaption><span class="en">The battery asks the CT for the power at the meter. The ESP answers as if it were a real CT002 or CT003.</span><span class="de">Der Akku fragt das CT nach der Leistung am Zähler. Der ESP antwortet, als wäre er ein echtes CT002 oder CT003.</span></figcaption>
+</figure>
+<figure>
+<a href="img/main.png" target="_blank"><img src="img/main.png" width="300" alt="Main page with the CT rows" loading="lazy"></a>
+<figcaption><span class="en"><b>1</b> the CT type the program poses as &middot; <b>2</b> <a href="#ct">CT MAC</a>, <i>(any)</i> = answers every battery &middot; <b>3</b> one row per battery: phase, its power, how often it asks &middot; <b>4</b> number of batteries &middot; <b>5</b> the power the CT reports</span><span class="de"><b>1</b> der CT-Typ, den das Programm spielt &middot; <b>2</b> <a href="#ct">CT MAC</a>, <i>(any)</i> = antwortet jedem Akku &middot; <b>3</b> je Akku eine Zeile: Phase, seine Leistung, wie oft er fragt &middot; <b>4</b> Anzahl der Akkus &middot; <b>5</b> die Leistung, die das CT meldet</span></figcaption>
+</figure>
 </section>
 
 <section id="setup">
@@ -110,6 +130,10 @@ body.lang-de .en{display:none}
 
 <section id="ct">
 <h2>CT</h2>
+<figure>
+<a href="img/ct.png" target="_blank"><img src="img/ct.png" width="340" alt="CT settings" loading="lazy"></a>
+<figcaption><span class="en"><b>1</b> CT MAC &middot; <b>2</b> type &middot; <b>3</b> port &middot; <b>4</b> Wi-Fi strength &middot; <b>5</b> timeout &middot; <b>6</b> messages received, sent and faulty</span><span class="de"><b>1</b> CT MAC &middot; <b>2</b> Typ &middot; <b>3</b> Port &middot; <b>4</b> WLAN-Stärke &middot; <b>5</b> Timeout &middot; <b>6</b> Nachrichten empfangen, gesendet und fehlerhaft</span></figcaption>
+</figure>
 <div class="en">
 <p>You find all CT and battery settings on their own page: the <b>&#x1F50B; CT</b> button in the Tasmota main menu, or the link at the top of the settings page.</p>
 <table>
@@ -136,6 +160,10 @@ body.lang-de .en{display:none}
 
 <section id="battery">
 <h2><span class="en">Battery</span><span class="de">Akku</span></h2>
+<figure>
+<a href="img/battery.png" target="_blank"><img src="img/battery.png" width="340" alt="Battery settings" loading="lazy"></a>
+<figcaption><span class="en">The numbers follow the table below.</span><span class="de">Die Nummern folgen der Tabelle unten.</span></figcaption>
+</figure>
 <div class="en">
 <table>
 <tr><th>Offset [W]</th><td>The value the battery aims for, instead of exactly 0&nbsp;W. A small positive value (e.g. 20) means you always buy a few watts and never feed in by accident. The offset applies <b>per phase</b>: with three batteries on three phases you end up at three times the value.</td></tr>
@@ -198,6 +226,10 @@ body.lang-de .en{display:none}
 
 <section id="multi">
 <h2><span class="en">Several batteries</span><span class="de">Mehrere Akkus</span></h2>
+<figure>
+<a href="img/multi.png" target="_blank"><img src="img/multi.png" width="340" alt="Settings for several batteries" loading="lazy"></a>
+<figcaption><span class="en">The numbers follow the table below.</span><span class="de">Die Nummern folgen der Tabelle unten.</span></figcaption>
+</figure>
 <div class="en">
 <p>This section only matters if two or more batteries are on the same phase. With one battery you can leave everything here off.</p>
 <p class="warn">With several batteries, switch on <b>Share the load</b>. Otherwise every battery is told the whole difference of its phase. Two batteries then both deliver the full amount, and together they overshoot by double.</p>
@@ -428,11 +460,15 @@ stat/&lt;topic&gt;/script/PwrSP</code></pre>
 
 <section id="marstek">
 <h2><span class="en">Marstek account</span><span class="de">Marstek-Konto</span></h2>
+<figure>
+<a href="img/marstek.png" target="_blank"><img src="img/marstek.png" width="340" alt="Marstek page" loading="lazy"></a>
+<figcaption><span class="en"><b>1</b> your Marstek login &middot; <b>2</b> logs in and checks the account &middot; <b>3</b> creates the CT, greyed out while a CT MAC is set &middot; <b>4</b> shows how it went &middot; <b>5</b> clears the CT MAC on the device</span><span class="de"><b>1</b> deine Marstek-Anmeldung &middot; <b>2</b> meldet an und prüft das Konto &middot; <b>3</b> legt das CT an, grau solange eine CT MAC gesetzt ist &middot; <b>4</b> zeigt, wie es lief &middot; <b>5</b> löscht die CT MAC auf dem Gerät</span></figcaption>
+</figure>
 <div class="en">
 <p>A battery only talks to a CT that exists in your Marstek account. The program can create such a CT in your account for you (the same way AstraMeter does it).</p>
 <ol>
 <li>Press <b>&#x2601;&#xFE0F; Marstek</b> in the Tasmota main menu and enter your Marstek e-mail and password.</li>
-<li>Press <b>Log in + check account</b>. If there is already a CT created this way, it is taken over.</li>
+<li>Press <b>1. Log in</b>. If there is already a CT created this way, it is taken over.</li>
 <li>If none was found: press <b>Create fake CT</b> and confirm. The status line turns green when it worked.</li>
 <li>In the Marstek app, refresh the CT list (if needed, log out and in again), select the new CT and set the battery to automatic.</li>
 </ol>
@@ -449,7 +485,7 @@ stat/&lt;topic&gt;/script/PwrSP</code></pre>
 <p>Ein Akku spricht nur mit einem CT, das in deinem Marstek-Konto existiert. Das Programm kann so ein CT für dich in deinem Konto anlegen (genau wie AstraMeter es macht).</p>
 <ol>
 <li>Im Tasmota-Hauptmenü auf <b>&#x2601;&#xFE0F; Marstek</b> drücken und deine Marstek-E-Mail und dein Passwort eintragen.</li>
-<li><b>Log in + check account</b> drücken. Gibt es schon ein so angelegtes CT, wird es übernommen.</li>
+<li><b>1. Anmelden</b> drücken. Gibt es schon ein so angelegtes CT, wird es übernommen.</li>
 <li>Wurde keins gefunden: <b>Create fake CT</b> drücken und bestätigen. Die Statuszeile wird grün, wenn es geklappt hat.</li>
 <li>In der Marstek-App die CT-Liste aktualisieren (notfalls ab- und wieder anmelden), das neue CT auswählen und den Akku auf Automatik stellen.</li>
 </ol>

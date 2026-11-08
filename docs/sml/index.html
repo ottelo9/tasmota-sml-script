@@ -38,6 +38,12 @@ footer{color:var(--mut);font-size:13px;text-align:center;margin-top:26px}
 footer a{color:var(--accent)}
 footer .dis{font-size:12px;line-height:1.45;max-width:560px;margin:12px auto 0;opacity:.85}
 .sw{display:inline-block;background:var(--code);border:1px solid var(--line);border-radius:4px;padding:0 6px;font:600 .8em/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.06em;vertical-align:baseline}
+figure{margin:12px 0}
+figcaption a{color:var(--accent)}
+figure .row{display:flex;flex-wrap:wrap;gap:8px}
+figure img,figure svg{display:block;max-width:100%;height:auto}
+figure img{border-radius:6px}
+figcaption{color:var(--mut);font-size:13px;margin-top:6px}
 body.lang-en .de{display:none}
 body.lang-de .en{display:none}
 </style>
@@ -108,6 +114,10 @@ body.lang-de .en{display:none}
 </table>
 <p>Die Diagramme haben eine eigene Seite. Du öffnest sie über den Link <b>&#x1F4C8;</b> unter den Werten auf der Hauptseite. Oder du schaltest die Option <a href="#charts">Charts Hauptseite</a> ein, dann erscheinen sie direkt auf der Hauptseite (wie früher bei den Scripten).</p>
 </div>
+<figure>
+<a href="img/main.png" target="_blank"><img src="img/main.png" width="300" alt="Main page with the meter values" loading="lazy"></a>
+<figcaption><span class="en"><b>1</b> current power and meter readings &middot; <b>2</b> power per phase (option <a href="#meter">3 phases</a>) &middot; <b>3</b> consumption and feed-in of the day, week, month and year &middot; <b>4</b> opens the charts</span><span class="de"><b>1</b> aktuelle Leistung und Zählerstände &middot; <b>2</b> Leistung je Phase (Option <a href="#meter">3 Phasen</a>) &middot; <b>3</b> Verbrauch und Einspeisung von Tag, Woche, Monat und Jahr &middot; <b>4</b> öffnet die Diagramme</span></figcaption>
+</figure>
 </section>
 
 <section id="programs">
@@ -158,6 +168,10 @@ body.lang-de .en{display:none}
 <p class="warn">Die Emulator-Programme funktionieren nur in Slot&nbsp;0. Tasmota leitet ihre Webadressen nur an Slot&nbsp;0 weiter.</p>
 <p>Zähler, Pins, Sprache und die meisten anderen Einstellungen stehen in einer gemeinsamen <a href="#options">Einstellungsdatei</a>. Wechselst du das Programm, sind sie noch da.</p>
 </div>
+<figure>
+<a href="img/console.png" target="_blank"><img src="img/console.png" width="400" alt="TinyC Console with slots and repository" loading="lazy"></a>
+<figcaption><span class="en"><b>1</b> your programs: &#x25B6; start, &#x25A0; stop, &#x21BB; restart, &#x23CF; remove, <b>A</b> start automatically (green = on) &middot; <b>2</b> the repository &middot; <b>3</b> choose the program and the slot &middot; <b>4</b> loads it</span><span class="de"><b>1</b> deine Programme: &#x25B6; starten, &#x25A0; stoppen, &#x21BB; neu starten, &#x23CF; entfernen, <b>A</b> automatisch starten (grün = an) &middot; <b>2</b> das Repository &middot; <b>3</b> Programm und Slot wählen &middot; <b>4</b> lädt es</span></figcaption>
+</figure>
 </section>
 
 <section id="sleep">
@@ -226,6 +240,10 @@ body.lang-de .en{display:none}
 
 <section id="meter">
 <h2><span class="en">Meter</span><span class="de">Zähler</span></h2>
+<figure>
+<a href="img/settings.png" target="_blank"><img src="img/settings.png" width="360" alt="Upper part of the settings page" loading="lazy"></a>
+<figcaption><span class="en"><b>1</b> language &middot; <b>2</b> <a href="#sleep">power saving</a> &middot; <b>3</b> <a href="#time">time zone</a> &middot; <b>4, 5, 9, 10</b> see below &middot; <b>6</b> <a href="#bezug">import meter</a> &middot; <b>7</b> <a href="#display">SML display</a> &middot; <b>8</b> <a href="#filter">filter</a> &middot; <b>11, 12</b> <a href="#pins">pins</a></span><span class="de"><b>1</b> Sprache &middot; <b>2</b> <a href="#sleep">Energiesparmodus</a> &middot; <b>3</b> <a href="#time">Zeitzone</a> &middot; <b>4, 5, 9, 10</b> siehe unten &middot; <b>6</b> <a href="#bezug">Bezugszähler</a> &middot; <b>7</b> <a href="#display">SML-Anzeige</a> &middot; <b>8</b> <a href="#filter">Filter</a> &middot; <b>11, 12</b> <a href="#pins">Pins</a></span></figcaption>
+</figure>
 <h3>Descriptor</h3>
 <div class="en">
 <p>The descriptor is a small text file that tells Tasmota how to read your meter: speed, protocol and which value is which. It is stored on the device as <code>/sml_meter.def</code>. You normally just pick your meter from the list.</p>
@@ -249,6 +267,32 @@ body.lang-de .en{display:none}
 </div>
 <a id="pins"></a>
 <h3>Pins</h3>
+<figure>
+<svg viewBox="0 0 480 160" width="480" role="img" aria-label="Meter, reading head and ESP: RX brings the data in, TX goes out" font-family="inherit" font-size="13" fill="var(--fg)">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker></defs>
+<rect x="6" y="24" width="110" height="126" rx="8" fill="var(--code)" stroke="var(--line)"/>
+<text x="61" y="50" text-anchor="middle" font-weight="600"><tspan class="en">Meter</tspan><tspan class="de">Zähler</tspan></text>
+<rect x="185" y="24" width="110" height="126" rx="8" fill="var(--code)" stroke="var(--line)"/>
+<text x="240" y="50" text-anchor="middle" font-weight="600"><tspan class="en">Reading head</tspan><tspan class="de">Lesekopf</tspan></text>
+<rect x="364" y="24" width="110" height="126" rx="8" fill="var(--code)" stroke="var(--line)"/>
+<text x="419" y="50" text-anchor="middle" font-weight="600"><tspan class="en">ESP</tspan><tspan class="de">ESP</tspan></text>
+<text x="61" y="84" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">sends data</tspan><tspan class="de">sendet Daten</tspan></text>
+<text x="61" y="124" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">listens</tspan><tspan class="de">hört zu</tspan></text>
+<text x="240" y="84" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">IR sensor</tspan><tspan class="de">IR-Sensor</tspan></text>
+<text x="240" y="124" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">IR LED</tspan><tspan class="de">IR-LED</tspan></text>
+<text x="419" y="84" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">reads the values</tspan><tspan class="de">liest die Werte</tspan></text>
+<text x="419" y="124" text-anchor="middle" font-size="11" fill="var(--mut)"><tspan class="en">request / PIN</tspan><tspan class="de">Anfrage / PIN</tspan></text>
+<text x="151" y="73" text-anchor="middle" font-size="11"><tspan class="en">IR light</tspan><tspan class="de">IR-Licht</tspan></text>
+<line x1="118" y1="80" x2="183" y2="80" stroke="var(--accent)" stroke-width="2" marker-end="url(#ah)"/>
+<text x="330" y="73" text-anchor="middle" font-size="11"><tspan class="en">RX</tspan><tspan class="de">RX</tspan></text>
+<line x1="297" y1="80" x2="362" y2="80" stroke="var(--accent)" stroke-width="2" marker-end="url(#ah)"/>
+<text x="151" y="113" text-anchor="middle" font-size="11"><tspan class="en">IR light</tspan><tspan class="de">IR-Licht</tspan></text>
+<line x1="183" y1="120" x2="118" y2="120" stroke="var(--accent)" stroke-width="2" marker-end="url(#ah)"/>
+<text x="330" y="113" text-anchor="middle" font-size="11"><tspan class="en">TX</tspan><tspan class="de">TX</tspan></text>
+<line x1="362" y1="120" x2="297" y2="120" stroke="var(--accent)" stroke-width="2" marker-end="url(#ah)"/>
+</svg>
+<figcaption><span class="en">The lower way (TX) is only used when the meter has to be woken up or asked, and for the <a href="#pin">meter PIN</a>.</span><span class="de">Der untere Weg (TX) wird nur benutzt, wenn der Zähler geweckt oder gefragt werden muss, und für die <a href="#pin">Zähler-PIN</a>.</span></figcaption>
+</figure>
 <div class="en">
 <p>RX is the pin where the data wire of the reading head is connected. TX is only needed for meters that have to be woken up or asked for their data.</p>
 <table>
@@ -357,6 +401,10 @@ body.lang-de .en{display:none}
 
 <section id="pv">
 <h2>PV</h2>
+<figure>
+<a href="img/settings2.png" target="_blank"><img src="img/settings2.png" width="360" alt="Lower part of the settings page" loading="lazy"></a>
+<figcaption><span class="en"><b>1</b> <a href="#pv">feed-in</a> &middot; <b>2</b> <a href="#pvswitch">PV switch</a> &middot; <b>3, 4</b> <a href="#telemetry">MQTT and HTTP</a> &middot; <b>5</b> <a href="#modbus">Modbus</a> &middot; <b>6, 7</b> <a href="#charts">charts</a> &middot; <b>8, 10</b> <a href="#data">reset and CSV</a> &middot; <b>9</b> takes over your changes</span><span class="de"><b>1</b> <a href="#pv">Einspeisung</a> &middot; <b>2</b> <a href="#pvswitch">PV-Schalter</a> &middot; <b>3, 4</b> <a href="#telemetry">MQTT und HTTP</a> &middot; <b>5</b> <a href="#modbus">Modbus</a> &middot; <b>6, 7</b> <a href="#charts">Diagramme</a> &middot; <b>8, 10</b> <a href="#data">Reset und CSV</a> &middot; <b>9</b> übernimmt deine Änderungen</span></figcaption>
+</figure>
 <div class="en">
 <p>Only in the chart programs. <span class="sw">OFF</span> shows only what you buy. <span class="sw">ON</span> also shows what you feed in: the feed-in meter reading, rows for day, week, month and year, a chart of the daily feed-in, and both directions in the week and month charts.</p>
 <p>Switch it on if your meter counts the feed-in (it has <code>1.8.0</code> and <code>2.8.0</code>). If it does not, but the power goes negative when you feed in, also switch on <a href="#bezug">Import meter</a>. Without solar panels the extra charts just stay at zero.</p>
@@ -369,6 +417,10 @@ body.lang-de .en{display:none}
 
 <section id="charts">
 <h2><span class="en">Charts</span><span class="de">Diagramme</span></h2>
+<figure>
+<div class="row"><a href="img/charts_power.png" target="_blank"><img src="img/charts_power.png" width="228" alt="Power of the last 15 minutes and 24 hours" loading="lazy"></a><a href="img/charts_days.png" target="_blank"><img src="img/charts_days.png" width="228" alt="Import and export per day" loading="lazy"></a><a href="img/charts_weeks.png" target="_blank"><img src="img/charts_weeks.png" width="228" alt="Import and export per week and month" loading="lazy"></a></div>
+<figcaption><span class="en">Left: power, short term and 24 hours. Middle: import and feed-in per day, red = today. Right: per week and per month. Click a picture to enlarge it.</span><span class="de">Links: Leistung, Kurzzeit und 24 Stunden. Mitte: Bezug und Einspeisung pro Tag, rot = heute. Rechts: pro Woche und pro Monat. Ein Klick vergrößert das Bild.</span></figcaption>
+</figure>
 <div class="en">
 <table>
 <tr><th>Short-term</th><td>The time span of the first chart: <b>15 min</b>, <b>30 min</b>, <b>1 h</b>, <b>2 h</b> or <b>4 h</b> (default). The shorter the span, the more detail: at 15 minutes there is a point every 5 seconds, at 4 hours one per minute.</td></tr>
@@ -591,9 +643,24 @@ DIR=/Tasmota</pre>
 </ol>
 <p>The password is stored in plain text in <code>/ftp.cfg</code> on the device. Better give the FRITZ!Box user access to this folder only. Then <code>ALL=1</code> is safe as well: whoever reads the password in the backup only gets to the backups. Handy if someone else has to restore the device one day.</p>
 <h3>On the main page</h3>
+<figure>
+<a href="img/ftp.png" target="_blank"><img src="img/ftp.png" width="300" alt="FTP-Backup on the main page" loading="lazy"></a>
+<figcaption><b>1</b> saves right now &middot; <b>2</b> dot and time of the last backup, on the right the link to <code>ftp.cfg</code></figcaption>
+</figure>
 <p>The dot shows how the last backup went: <b style="color:#0c0">&#9679;</b> worked, <b style="color:#e00">&#9679;</b> failed (the number in brackets says why, see below), <b style="color:#fa0">&#9679;</b> running, grey = never run. Next to it are the date and time of the last backup. <b>Backup</b> saves right now, <b>ftp.cfg</b> opens the file in the editor.</p>
 <h3>What is saved</h3>
 <p>Every <code>.pvs</code> (the data of the SML programs), every <code>.cfg</code> (settings, among them <code>tinyc.cfg</code> with the programs in the slots and their autostart, but <code>ftp.cfg</code> with the password only with <code>ALL=1</code>) and every <code>.def</code> (meter descriptor). They go into a subfolder named after the device's MQTT topic (or <code>NAME=</code>), so several devices can share one folder. Give each device its own <code>NAME</code>, or they overwrite each other. In there is one folder per weekday, <code>1</code> (Monday) to <code>7</code> (Sunday). So you always have the last seven days, and a broken file does not overwrite the good copy of the day before. The night from Monday to Tuesday lands in <code>2</code>, and holds Monday's data. The <b>Backup</b> button saves into its own folder <code>0</code>, so it never replaces a nightly copy.</p>
+<figure>
+<svg viewBox="0 0 480 86" width="480" role="img" aria-label="Folders of the backup" font-family="inherit" font-size="13" fill="var(--fg)">
+<defs><marker id="ahf1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker></defs>
+<rect x="4" y="6" width="118" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="63" y="30" text-anchor="middle" font-weight="600">Tasmota</text><text x="63" y="54" text-anchor="middle" font-size="11" fill="var(--mut)">DIR=</text>
+<line x1="124" y1="42" x2="158" y2="42" stroke="var(--accent)" stroke-width="2" marker-end="url(#ahf1)"/>
+<rect x="160" y="6" width="150" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="235" y="30" text-anchor="middle" font-weight="600">tasmota_D7D28C</text><text x="235" y="54" text-anchor="middle" font-size="11" fill="var(--mut)">NAME= or MQTT topic</text>
+<line x1="312" y1="42" x2="346" y2="42" stroke="var(--accent)" stroke-width="2" marker-end="url(#ahf1)"/>
+<rect x="348" y="6" width="128" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="412" y="30" text-anchor="middle" font-weight="600">0, 1 &hellip; 7</text><text x="412" y="50" text-anchor="middle" font-size="11" fill="var(--mut)">0 = Backup button</text><text x="412" y="66" text-anchor="middle" font-size="11" fill="var(--mut)">1 = Mon &hellip; 7 = Sun</text>
+</svg>
+<figcaption>One folder per device, in it one folder per weekday. </figcaption>
+</figure>
 <h3>Restoring</h3>
 <ol>
 <li>Download the files from the FRITZ!Box.</li>
@@ -631,9 +698,24 @@ DIR=/Tasmota</pre>
 </ol>
 <p>Das Passwort steht im Klartext in <code>/ftp.cfg</code> auf dem Gerät. Gib dem FRITZ!Box-Benutzer deshalb am besten nur Zugriff auf diesen Ordner. Dann ist auch <code>ALL=1</code> unbedenklich: Wer das Passwort im Backup liest, kommt damit nur an die Backups. Praktisch, wenn mal jemand anderes das Gerät wiederherstellen muss.</p>
 <h3>Auf der Hauptseite</h3>
+<figure>
+<a href="img/ftp.png" target="_blank"><img src="img/ftp.png" width="300" alt="FTP-Backup auf der Hauptseite" loading="lazy"></a>
+<figcaption><b>1</b> sichert sofort &middot; <b>2</b> Punkt und Zeit der letzten Sicherung, rechts der Link zur <code>ftp.cfg</code></figcaption>
+</figure>
 <p>Der Punkt zeigt, wie die letzte Sicherung lief: <b style="color:#0c0">&#9679;</b> hat geklappt, <b style="color:#e00">&#9679;</b> fehlgeschlagen (die Zahl in Klammern sagt warum, siehe unten), <b style="color:#fa0">&#9679;</b> läuft gerade, grau = noch nie gelaufen. Daneben stehen Datum und Uhrzeit der letzten Sicherung. <b>Backup</b> sichert sofort, <b>ftp.cfg</b> öffnet die Datei im Editor.</p>
 <h3>Was gesichert wird</h3>
 <p>Jede <code>.pvs</code> (die Daten der SML-Programme), jede <code>.cfg</code> (Einstellungen, darunter <code>tinyc.cfg</code> mit den Programmen in den Slots und ihrem Autostart, die <code>ftp.cfg</code> mit dem Passwort aber nur mit <code>ALL=1</code>) und jede <code>.def</code> (Zählerbeschreibung). Sie landen in einem Unterordner, der so heißt wie das MQTT-Topic des Geräts (oder wie <code>NAME=</code>). So können sich mehrere Geräte einen Ordner teilen. Gib dann jedem Gerät seinen eigenen <code>NAME</code>, sonst überschreiben sie sich gegenseitig. Darin gibt es je Wochentag einen Ordner, <code>1</code> (Montag) bis <code>7</code> (Sonntag). So hast du immer die letzten sieben Tage, und eine kaputte Datei überschreibt nicht die gute Kopie vom Vortag. Die Nacht von Montag auf Dienstag landet in <code>2</code> und enthält die Daten vom Montag. Der Knopf <b>Backup</b> sichert in einen eigenen Ordner <code>0</code> und ersetzt so nie eine nächtliche Kopie.</p>
+<figure>
+<svg viewBox="0 0 480 86" width="480" role="img" aria-label="Folders of the backup" font-family="inherit" font-size="13" fill="var(--fg)">
+<defs><marker id="ahf2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker></defs>
+<rect x="4" y="6" width="118" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="63" y="30" text-anchor="middle" font-weight="600">Tasmota</text><text x="63" y="54" text-anchor="middle" font-size="11" fill="var(--mut)">DIR=</text>
+<line x1="124" y1="42" x2="158" y2="42" stroke="var(--accent)" stroke-width="2" marker-end="url(#ahf2)"/>
+<rect x="160" y="6" width="150" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="235" y="30" text-anchor="middle" font-weight="600">tasmota_D7D28C</text><text x="235" y="54" text-anchor="middle" font-size="11" fill="var(--mut)">NAME= oder MQTT-Topic</text>
+<line x1="312" y1="42" x2="346" y2="42" stroke="var(--accent)" stroke-width="2" marker-end="url(#ahf2)"/>
+<rect x="348" y="6" width="128" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="412" y="30" text-anchor="middle" font-weight="600">0, 1 &hellip; 7</text><text x="412" y="50" text-anchor="middle" font-size="11" fill="var(--mut)">0 = Knopf Backup</text><text x="412" y="66" text-anchor="middle" font-size="11" fill="var(--mut)">1 = Mo &hellip; 7 = So</text>
+</svg>
+<figcaption>Pro Gerät ein Ordner, darin ein Ordner je Wochentag. </figcaption>
+</figure>
 <h3>Zurückspielen</h3>
 <ol>
 <li>Die Dateien von der FRITZ!Box herunterladen.</li>
@@ -657,6 +739,17 @@ DIR=/Tasmota</pre>
 
 <section id="mqttpush">
 <h2>MQTT-Push</h2>
+<figure>
+<svg viewBox="0 0 480 86" width="480" role="img" aria-label="ESP sends to the MQTT broker, the broker passes it on" font-family="inherit" font-size="13" fill="var(--fg)">
+<defs><marker id="ahm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker></defs>
+<rect x="6" y="6" width="110" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="61" y="30" text-anchor="middle" font-weight="600">ESP</text><text x="61" y="54" text-anchor="middle" font-size="11" fill="var(--mut)">MQTT-Push</text>
+<text x="150" y="34" text-anchor="middle" font-size="11" fill="var(--mut)">JSON</text><line x1="118" y1="42" x2="183" y2="42" stroke="var(--accent)" stroke-width="2" marker-end="url(#ahm)"/>
+<rect x="185" y="6" width="110" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="240" y="30" text-anchor="middle" font-weight="600">Broker</text><text x="240" y="54" text-anchor="middle" font-size="11" fill="var(--mut)">MQTT</text>
+<text x="329" y="34" text-anchor="middle" font-size="11" fill="var(--mut)">JSON</text><line x1="297" y1="42" x2="362" y2="42" stroke="var(--accent)" stroke-width="2" marker-end="url(#ahm)"/>
+<rect x="364" y="6" width="110" height="74" rx="8" fill="var(--code)" stroke="var(--line)"/><text x="419" y="30" text-anchor="middle" font-weight="600">go-e</text><text x="419" y="54" text-anchor="middle" font-size="11" fill="var(--mut)">Wallbox</text>
+</svg>
+<figcaption><span class="en">The program sends your <code>JSON</code> to your <code>TOPIC</code>. The broker hands it to everyone listening on that topic, here the go-e.</span><span class="de">Das Programm schickt dein <code>JSON</code> an dein <code>TOPIC</code>. Der Broker gibt es an alle weiter, die auf dieses Topic hören, hier die go-e.</span></figcaption>
+</figure>
 <div class="en">
 <p>The small extra program <b>MQTT-Push</b> sends meter values to an MQTT topic you choose, in a message you write yourself. The idea came from a go-e charger (<a href="https://github.com/ottelo9/tasmota-sml-images/issues/67" target="_blank">Go E Charger for the EV</a>): it charges the car with PV surplus when it gets the grid power by MQTT every few seconds. It works for anything else that wants the values in its own format, too. Like FTP-Backup it runs in a second slot next to your SML program and reads the meter directly, so your SML program stays as it is.</p>
 <h3>Setting it up</h3>
@@ -727,6 +820,10 @@ SMOOTH=0</pre></li>
 <li><i>Tools &rarr; TinyC Console</i>: load <b>Zähler-PIN</b> from the repository into a free slot, switch on autostart and start it.</li>
 <li>Press <b>&#x1F513; PIN</b> on the main page and watch the meter display: the digits count up, after the last one the extended values appear.</li>
 </ol>
+<figure>
+<a href="img/pin.png" target="_blank"><img src="img/pin.png" width="300" alt="Meter PIN on the main page" loading="lazy"></a>
+<figcaption><b>1</b> sends the PIN &middot; <b>2</b> dot and time of the last attempt, on the right the link to <code>sml_pin.cfg</code></figcaption>
+</figure>
 <table>
 <tr><th>PIN</th><td>The PIN digits.</td></tr>
 <tr><th>AUTO</th><td>1 = send by itself after a power cut (default), 0 = only with the button.</td></tr>
@@ -748,6 +845,10 @@ SMOOTH=0</pre></li>
 <li><i>Tools &rarr; TinyC Console</i>: <b>Zähler-PIN</b> aus dem Repository in einen freien Slot laden, Autostart einschalten und starten.</li>
 <li>Auf der Hauptseite <b>&#x1F513; PIN</b> drücken und aufs Zählerdisplay schauen: Die Ziffern zählen hoch, nach der letzten erscheinen die erweiterten Werte.</li>
 </ol>
+<figure>
+<a href="img/pin.png" target="_blank"><img src="img/pin.png" width="300" alt="Zähler-PIN auf der Hauptseite" loading="lazy"></a>
+<figcaption><b>1</b> sendet die PIN &middot; <b>2</b> Punkt und Zeit des letzten Versuchs, rechts der Link zur <code>sml_pin.cfg</code></figcaption>
+</figure>
 <table>
 <tr><th>PIN</th><td>Die Ziffern der PIN.</td></tr>
 <tr><th>AUTO</th><td>1 = nach einem Stromausfall von selbst senden (Standard), 0 = nur mit dem Knopf.</td></tr>

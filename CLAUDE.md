@@ -16,7 +16,7 @@ GitHub Pages). Personal setup, devices and working rules: `CLAUDE.local.md`
 | `docs/<topic>/index.html` | help pages, `en`/`de` blocks side by side |
 | `script-list-menu/meters/` | SML descriptors (`.tas`) and `smartmeter.json` for the repo pulldown |
 | `pvakku-powermeter-emulator/` | ESP32 Scripter scripts with Shelly/EcoTracker emulator (`.tas`) |
-| `test-tools/` | PowerShell testers: `Shelly-EcoTracker Tester.ps1` (UDP/HTTP/Ping/mDNS against the emulators) |
+| `test-tools/` | PowerShell testers: `Shelly-EcoTracker Tester.ps1` (UDP/HTTP/Ping/mDNS against the emulators); `help-screenshots.mjs` (redoes the pictures in `docs/<topic>/img/` from the test device, English UI, numbered marks) |
 
 Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
 `sml_modbus_common`, `ct002_common`, `eco_shelly_common` each include `ui_common`.
@@ -41,7 +41,9 @@ Module chain: `ui_common` ← `sml_descriptor` ← `sml_chart_common`;
   build.html writes index.json in that order with `"ordered":true` and a
   `{"sep":1}` separator where the tens change.
 - Help pages are bilingual — change both languages together. Behaviour changes
-  go into the help page, not into source comments.
+  go into the help page, not into source comments. Screenshots in them
+  (`docs/<topic>/img/`, from the test device) show the **English** UI only, one
+  image for both languages; only the caption is bilingual.
 - Do not commit unless asked. Commit messages: German, a title line plus short
   bullets.
 - **Line endings are mixed** (LF and CRLF, `autocrlf`) — keep each file's own.

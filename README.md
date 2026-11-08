@@ -11,6 +11,8 @@ Tasmota TinyC-Programs (scripts) for Smart Meter Readers / Smart Powerplugs [by 
 > [!IMPORTANT]
 > Damit die TinyC-Programme oder Scripte funktionieren müsst ihr mein [Tasmota Image](https://github.com/ottelo9/tasmota-sml-images) (Firmware) verwenden (flashen)!
 
+**Inhalt:** [Features](#features) · [A) TinyC-Programme](#a-tinyc-programme) · [B) Tasmota Scripte](#b-tasmota-scripte-veraltet) · [C) Testtools](#c-testtools) · [D) Image/Firmware](#d-tasmota-imagefirmware) · [E) Anleitung](#e-anleitung) · [F) Home Assistant](#f-home-assistant-tasmota-integration) · [Lizenz](#lizenz)
+
 ### Features
 | Feature | Was es macht | Hilfe |
 | ------------- | ------------- | ------------- |
@@ -186,6 +188,21 @@ Wenn ihr euren Zähler über mein Zähler DropDown Menü im Script ausgewählt h
 | **PhaseAngle** | ° | — | — |
 | **TotalStartTime** | *(None)* | — | — |
 Für weitere siehe [hier](https://github.com/ottelo9/tasmota-sml-script/pull/42#issuecomment-4053749869).  
+
+**Werte der einzelnen Phasen**
+
+Namen wie `power_L1`, `voltage_L1` oder `current_L1` kennt die Tasmota Integration nicht. Home Assistant legt die Sensoren zwar an, aber ohne Einheit und `device_class`. Wer das haben möchte, trägt es in der `configuration.yaml` nach (Entity-ID an das eigene Gerät anpassen):
+
+```yaml
+homeassistant:
+  customize:
+    sensor.DEIN_GERAET_power_l1:
+      unit_of_measurement: W
+      device_class: power
+      state_class: measurement
+```
+
+Für L2 und L3 genauso. Bei der Spannung nehmt ihr `V` und `voltage`, beim Strom `A` und `current`.
 
   
 ------------------
