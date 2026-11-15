@@ -973,6 +973,13 @@ void sml_chart_pv_5s_tick() {
         sprintf(sml_buf, "%d", (int)sml_pwravg);
         smlPublish(sml_ftopic, sml_buf);
     }
+#ifdef SML_M3
+    if (sml_sndpwr && sml_kind > 0) {
+        sprintf(sml_ftopic, "stat/%s/script/Flow", sml_mtopic);
+        sprintf(sml_buf, "%.2f", sml_flow());
+        smlPublish(sml_ftopic, sml_buf);
+    }
+#endif
 }
 
 // 60-s tick: production counters + midnight rollover of the PV baselines.

@@ -239,6 +239,9 @@ void smlSendJson(byte s[]) {
 // Meter value 4/5/6 as phase power. Without "3 phases" they carry no phases,
 // so the total counts as L1 and L2/L3 as 0.
 float sml_phase(int n) {
+#ifdef SML_M3
+    if (sml_kind > 0) return 0.0;
+#endif
     if (sml_ph3 == 1) return smlGet(n);
     if (n == 4) return smlGet(1);
     return 0.0;
@@ -246,7 +249,13 @@ float sml_phase(int n) {
 
 // The /pwr answer into sml_buf: meter values 1..6, then the smoothed power.
 // Left open - the emulator programs append ,"PwrSP" before the closing }.
+// Gas/water: sml1 is the computed flow - the driver's value 1 is 0 between
+// pulses (issue #111).
 void smlPwrJson(float p2) {
+#ifdef SML_M3
+    if (sml_kind > 0) sprintf(sml_buf, "{\"sml1\":%.2f,\"sml2\":%.3f,\"sml3\":%.3f", sml_flow(), smlGet(2), sml_export());
+    else
+#endif
     sprintf(sml_buf, "{\"sml1\":%.0f,\"sml2\":%.3f,\"sml3\":%.3f", smlGet(1), smlGet(2), sml_export());
     sprintfAppend(sml_buf, ",\"sml4\":%.0f,\"sml5\":%.0f,\"sml6\":%.0f", sml_phase(4), sml_phase(5), sml_phase(6));
     sprintfAppend(sml_buf, ",\"PwrAvg\":%.0f", p2);
@@ -338,6 +347,10 @@ void sml_vars_one(byte t[]) {
         int n = 0;
         if (t[p] == '[') p = p + 1;
         while (t[p] >= '0' && t[p] <= '9' && n < 1000) { n = n * 10 + (t[p] - '0'); p = p + 1; }
+#ifdef SML_M3
+        if (n == 1 && sml_kind > 0) sml_vars_f(sml_flow());
+        else
+#endif
         if (n == 3)                sml_vars_f(sml_export());
         else if (n >= 4 && n <= 6) sml_vars_f(sml_phase(n));
         else if (n > 0 && n < 100) sml_vars_f(smlGet(n));

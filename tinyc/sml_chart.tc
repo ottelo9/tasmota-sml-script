@@ -13,7 +13,7 @@
 #include "sml_modbus_common.tc"
 #include "pv_switch_common.tc"
 
-char sml_vers[] = "25.10.2026 20:16";
+char sml_vers[] = "15.11.2026 20:07";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 
@@ -175,7 +175,7 @@ void WebUI() {
         webCheckbox(sml_e_sndpwr, "PwrAvg (MQTT)");
         sprintf(sml_buf, "<div class='n'>PwrAvg: <b>%.0f W</b></div>", sml_pwravg);
         webSend(sml_buf);
-    } else webSend("<br>");          // else HTTP API joins the heading line
+    } else webCheckbox(sml_e_sndpwr, "Flow (MQTT)");
     webSend("<b>HTTP API</b>");
     webSend("<div class='n'>HTTP: <a href='/pwr' target='_blank'>/pwr</a> &nbsp; <a href='/pwr?v=all' target='_blank'>/pwr?v=all</a> &nbsp; <a href='/pwr?v=sml[1]' target='_blank'>/pwr?v=sml[1]</a></div>");
     mbPanel();
