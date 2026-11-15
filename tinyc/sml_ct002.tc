@@ -14,7 +14,7 @@
 #include "pv_switch_common.tc"
 #include "ct002_common.tc"
 
-char sml_vers[] = "31.10.2026 10:48";
+char sml_vers[] = "15.11.2026 13:18";
 
 // ─── Settings ──────────────────────────────────────────────────────────────
 persist int  sml_sndpwr;         // 1 = publish PwrAvg via MQTT
