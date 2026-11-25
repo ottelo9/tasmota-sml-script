@@ -82,6 +82,7 @@ int   es_once_mdns;
 int   es_once_udp;
 int   es_bound;             // UDP port actually bound
 int   es_last_api;          // 0 none, 1 EM.GetStatus, 2 Shelly.GetStatus, 3 EM1
+int   es_req;               // tasm_uptime of the last request from the battery, 0 = none yet
 int   es_last_upd;          // tasm_uptime of the last regulation step
 int   es_w1; int es_w2; int es_w3; int es_w4;   // webOn handler numbers
 int   es_w5;                                    // Gen3 adds EMData.GetStatus
@@ -260,6 +261,7 @@ void esPoll() {
             es_last_api = 2;
             served = 1;
         }
+        if (served == 1) es_req = tasm_uptime;
     }
     // Some firmwares regulate better when the value keeps coming without a
     // request - repeat the last answered call.
@@ -362,6 +364,7 @@ void esTick() {
 
 // From WebOn(). Returns 1 when the request was ours.
 int esWebOn(int h) {
+    if (h == es_w1 || h == es_w2 || h == es_w3 || h == es_w4 || h == es_w5) es_req = tasm_uptime;
     if (h == es_w1) {
         // Raw mode + keep-alive: some battery firmwares (Jackery, NOAH)
         // reject Tasmota's chunked wrapper. Emit exactly what a real
@@ -413,6 +416,13 @@ void esRows() {
     if (ui_de) sprintf(es_body, "{s}An den Akku{m}%.0f W{e}", es_cpwr);
     else       sprintf(es_body, "{s}To battery{m}%.0f W{e}", es_cpwr);
     webSend(es_body);
+    // Shows whether the battery still asks - a battery that stops polling
+    // looks exactly like a regulation fault otherwise. Forced sends do not count.
+    if (es_req > 0) {
+        if (ui_de) sprintf(es_body, "{s}Letzte Anfrage{m}%d s{e}", tasm_uptime - es_req);
+        else       sprintf(es_body, "{s}Last request{m}%d s{e}", tasm_uptime - es_req);
+        webSend(es_body);
+    }
 }
 
 // A port row that cannot be changed: same markup the webPulldown widget emits
